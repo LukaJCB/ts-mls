@@ -13,21 +13,21 @@ import { bytesToBase64 } from "../../src/util/byteArray"
 
 for (const [index, x] of jsonCommit.entries()) {
   test(`passive-client-handling-commit test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testPassiveClientScenario(x, impl)
   })
 }
 
 for (const [index, x] of jsonRandom.entries()) {
   test(`passive-client-random test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testPassiveClientScenario(x, impl)
   }, 20000)
 }
 
 for (const [index, x] of jsonWelcome.entries()) {
   test(`passive-client-welcome test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testPassiveClientScenario(x, impl)
   })
 }

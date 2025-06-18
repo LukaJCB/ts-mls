@@ -12,7 +12,7 @@ for (const cs of Object.keys(ciphersuites).slice(0, 1)) {
 }
 
 async function update(cipherSuite: CiphersuiteName) {
-  const impl = getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities, defaultLifetime, [], impl)

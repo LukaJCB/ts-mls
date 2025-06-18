@@ -1,8 +1,7 @@
-import { CipherSuite } from "hpke-js"
-import { AeadAlgorithm, decryptAead, encryptAead, makeAead } from "./aead"
+import { CipherSuite } from "@hpke/core"
+import { AeadAlgorithm, makeAead } from "./aead"
 import { KdfAlgorithm, makeKdf } from "./kdf"
 import { KemAlgorithm, makeDhKem } from "./kem"
-import { utf8ToBytes } from "@noble/ciphers/utils"
 import { encodeVarLenData } from "../codec/variableLength"
 import { bytesToBuffer } from "../util/byteArray"
 
@@ -26,7 +25,7 @@ export function encryptWithLabel(
   return hpke.seal(
     publicKey,
     plaintext,
-    new Uint8Array([...encodeVarLenData(utf8ToBytes(`MLS 1.0 ${label}`)), ...encodeVarLenData(context)]),
+    new Uint8Array([...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), ...encodeVarLenData(context)]),
     new Uint8Array(),
   )
 }
@@ -43,15 +42,16 @@ export function decryptWithLabel(
     privateKey,
     kemOutput,
     ciphertext,
-    new Uint8Array([...encodeVarLenData(utf8ToBytes(`MLS 1.0 ${label}`)), ...encodeVarLenData(context)]),
+    new Uint8Array([...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), ...encodeVarLenData(context)]),
   )
 }
 
-export function makeHpke(hpkealg: HpkeAlgorithm): Hpke {
+export async function makeHpke(hpkealg: HpkeAlgorithm): Promise<Hpke> {
+  const aead = await makeAead(hpkealg.aead)
   const cs = new CipherSuite({
-    kem: makeDhKem(hpkealg.kem),
+    kem: await makeDhKem(hpkealg.kem),
     kdf: makeKdf(hpkealg.kdf),
-    aead: makeAead(hpkealg.aead),
+    aead: aead.hpkeInterface(),
   })
 
   return {
@@ -89,10 +89,10 @@ export function makeHpke(hpkealg: HpkeAlgorithm): Hpke {
       return new Uint8Array(await cs.kem.serializePrivateKey(k))
     },
     async encryptAead(key, nonce, aad, plaintext) {
-      return encryptAead(key, nonce, aad ? aad : new Uint8Array(), plaintext, hpkealg.aead)
+      return aead.encrypt(key, nonce, aad ? aad : new Uint8Array(), plaintext)
     },
     async decryptAead(key, nonce, aad, ciphertext) {
-      return decryptAead(key, nonce, aad ? aad : new Uint8Array(), ciphertext, hpkealg.aead)
+      return aead.decrypt(key, nonce, aad ? aad : new Uint8Array(), ciphertext)
     },
     async deriveKeyPair(ikm) {
       const kp = await cs.kem.deriveKeyPair(bytesToBuffer(ikm))

@@ -14,7 +14,7 @@ import { treeHashRoot } from "../../src/treeHash"
 
 for (const [index, x] of json.entries()) {
   test(`tree-operations test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await treeOperationsTest(x, impl)
   })
 }

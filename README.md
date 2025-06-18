@@ -6,36 +6,6 @@ Typescript implementation of Messaging Layer Security (RFC 9420, MLS).
 
 This project aims to be a full implementation of [RFC 9420](https://datatracker.ietf.org/doc/html/rfc9420) and focuses on immutability and type safety. It is suitable for browsers, Node.js, or serverless environments and supports the recently standardized Post Quantum public-key algorithms (FIPS-203, FIPS-204) as well as the X-Wing hybrid KEM combining X25519 and ML-KEM.
 
-## Supported Ciphersuites
-
-The following cipher suites are supported:
-
-| KEM                      | AEAD             | KDF         | Hash    | Signature | Name                                                | ID  |
-| ------------------------ | ---------------- | ----------- | ------- | --------- | --------------------------------------------------- | --- |
-| DHKEM-X25519-HKDF-SHA256 | AES128GCM        | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519        | 1   |
-| DHKEM-P256-HKDF-SHA256   | AES128GCM        | HKDF-SHA256 | SHA-256 | P256      | MLS_128_DHKEMP256_AES128GCM_SHA256_P256             | 2   |
-| DHKEM-X25519-HKDF-SHA256 | CHACHA20POLY1305 | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519 | 3   |
-| DHKEM-X448-HKDF-SHA512   | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed448     | MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448            | 4   |
-| DHKEM-P521-HKDF-SHA512   | AES256GCM        | HKDF-SHA512 | SHA-512 | P521      | MLS_256_DHKEMP521_AES256GCM_SHA512_P521             | 5   |
-| DHKEM-X448-HKDF-SHA512   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed448     | MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448     | 6   |
-| DHKEM-P384-HKDF-SHA384   | AES256GCM        | HKDF-SHA384 | SHA-384 | P384      | MLS_256_DHKEMP384_AES256GCM_SHA384_P384             | 7   |
-| ML-KEM-512               | AES256GCM        | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_MLKEM512_AES128GCM_SHA256_Ed25519           | 77  |
-| ML-KEM-512               | CHACHA20POLY1305 | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519    | 78  |
-| ML-KEM-768               | AES256GCM        | HKDF-SHA384 | SHA-384 | Ed25519   | MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519           | 79  |
-| ML-KEM-768               | CHACHA20POLY1305 | HKDF-SHA384 | SHA-384 | Ed25519   | MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519    | 80  |
-| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_AES256GCM_SHA512_Ed25519          | 81  |
-| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519   | 82  |
-| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_AES256GCM_SHA512_Ed25519              | 83  |
-| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519       | 84  |
-| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA78          | 85  |
-| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA78   | 86  |
-| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_AES256GCM_SHA512_MLDSA78              | 87  |
-| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA78       | 88  |
-
-## Security Disclaimer
-
-This library has not undergone a formal security audit. While care has been taken to implement the MLS protocol correctly and securely, it may contain undiscovered vulnerabilities. If you plan to use this library in a production or security-critical context, proceed with caution and consider conducting an independent security review.
-
 ## Installation
 
 ```bash
@@ -48,6 +18,51 @@ yarn add ts-mls
 # pnpm
 pnpm add ts-mls
 ```
+
+This project currently only has a single dependency, `@hpke/core`. However, to support different Ciphersuites, you may need to install other libraries. As an example, to use the `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519` Ciphersuite, you would also have to install `@noble/curves`:
+
+```bash
+# npm
+npm install @noble/curves
+
+# yarn
+yarn add @noble/curves
+
+# pnpm
+pnpm add @noble/curves
+```
+
+Please refer to the subsequent table to understand which dependencies are required for which Ciphersuites.
+
+## Supported Ciphersuites
+
+The following cipher suites are supported:
+
+| KEM                      | AEAD             | KDF         | Hash    | Signature | Name                                                | ID  | Dependencies                                                                    |
+| ------------------------ | ---------------- | ----------- | ------- | --------- | --------------------------------------------------- | --- | ------------------------------------------------------------------------------- |
+| DHKEM-X25519-HKDF-SHA256 | AES128GCM        | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519        | 1   | @hpke/core, @noble/curves                                                       |
+| DHKEM-P256-HKDF-SHA256   | AES128GCM        | HKDF-SHA256 | SHA-256 | P256      | MLS_128_DHKEMP256_AES128GCM_SHA256_P256             | 2   | @hpke/core, @noble/curves                                                       |
+| DHKEM-X25519-HKDF-SHA256 | CHACHA20POLY1305 | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519 | 3   | @hpke/core, @hpke/chacha20poly1305, @noble/curves                               |
+| DHKEM-X448-HKDF-SHA512   | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed448     | MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448            | 4   | @hpke/core, @noble/curves                                                       |
+| DHKEM-P521-HKDF-SHA512   | AES256GCM        | HKDF-SHA512 | SHA-512 | P521      | MLS_256_DHKEMP521_AES256GCM_SHA512_P521             | 5   | @hpke/core, @noble/curves                                                       |
+| DHKEM-X448-HKDF-SHA512   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed448     | MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448     | 6   | @hpke/core, @hpke/chacha20poly1305, @noble/curves                               |
+| DHKEM-P384-HKDF-SHA384   | AES256GCM        | HKDF-SHA384 | SHA-384 | P384      | MLS_256_DHKEMP384_AES256GCM_SHA384_P384             | 7   | @hpke/core, @noble/curves                                                       |
+| ML-KEM-512               | AES256GCM        | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_MLKEM512_AES128GCM_SHA256_Ed25519           | 77  | @hpke/core, @hpke/ml-kem, @noble/curves                                         |
+| ML-KEM-512               | CHACHA20POLY1305 | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519    | 78  | @hpke/core, @hpke/ml-kem, @hpke/chacha20poly1305, @noble/curves                 |
+| ML-KEM-768               | AES256GCM        | HKDF-SHA384 | SHA-384 | Ed25519   | MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519           | 79  | @hpke/core, @hpke/ml-kem, @noble/curves                                         |
+| ML-KEM-768               | CHACHA20POLY1305 | HKDF-SHA384 | SHA-384 | Ed25519   | MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519    | 80  | @hpke/core, @hpke/ml-kem, @hpke/chacha20poly1305, @noble/curves                 |
+| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_AES256GCM_SHA512_Ed25519          | 81  | @hpke/core, @hpke/ml-kem, @noble/curves                                         |
+| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519   | 82  | @hpke/core, @hpke/ml-kem, @hpke/chacha20poly1305, @noble/curves                 |
+| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_AES256GCM_SHA512_Ed25519              | 83  | @hpke/core, @hpke/hybridkem-x-wing, @noble/curves                               |
+| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519       | 84  | @hpke/core, @hpke/hybridkem-x-wing, @hpke/chacha20poly1305, @noble/curves       |
+| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA78          | 85  | @hpke/core, @hpke/ml-kem, @noble/post-quantum                                   |
+| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA78   | 86  | @hpke/core, @hpke/ml-kem, @hpke/chacha20poly1305, @noble/post-quantum           |
+| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_AES256GCM_SHA512_MLDSA78              | 87  | @hpke/core, @hpke/hybridkem-x-wing, @noble/post-quantum                         |
+| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA78       | 88  | @hpke/core, @hpke/hybridkem-x-wing, @hpke/chacha20poly1305, @noble/post-quantum |
+
+## Security Disclaimer
+
+This library has not undergone a formal security audit. While care has been taken to implement the MLS protocol correctly and securely, it may contain undiscovered vulnerabilities. If you plan to use this library in a production or security-critical context, proceed with caution and consider conducting an independent security review.
 
 ## Basic Usage
 
@@ -69,7 +84,7 @@ import {
   ProposalAdd,
 } from "ts-mls"
 
-const impl = getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
 
 // alice generates her key package
 const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }

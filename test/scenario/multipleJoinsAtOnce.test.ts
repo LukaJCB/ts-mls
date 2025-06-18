@@ -12,7 +12,7 @@ for (const cs of Object.keys(ciphersuites)) {
 }
 
 async function multipleJoinsAtOnce(cipherSuite: CiphersuiteName) {
-  const impl = getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities, defaultLifetime, [], impl)

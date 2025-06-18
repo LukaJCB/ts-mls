@@ -14,7 +14,7 @@ import { initializeEpoch, mlsExporter } from "../../src/keySchedule"
 for (const [index, x] of json.entries()) {
   test(`key-schedule test vectors ${index}`, async () => {
     const cipherSuite = x.cipher_suite as CiphersuiteId
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(cipherSuite))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(cipherSuite))
     await testKeySchedule(x.group_id, x.initial_init_secret, x.epochs, cipherSuite, impl)
   })
 }

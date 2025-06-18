@@ -2,12 +2,12 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "module": "ESNext", // or "CommonJS" if your module output uses require()
-    "esModuleInterop": true, // usually required for imports from node_modules
+    "module": "ESNext",
+    "esModuleInterop": true,
     "types": [],
-    "baseUrl": ".", // required for resolving module paths
+    "baseUrl": ".",
     "paths": {
-      "ts-mls": ["./src/index.ts"] // or "./src/index.ts" if not yet built
+      "ts-mls": ["./src/index.ts"]
     }
   },
   "include": ["README.md", "docs/**/*.md"]

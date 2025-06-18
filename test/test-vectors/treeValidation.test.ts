@@ -9,7 +9,7 @@ import { verifyParentHashes } from "../../src/parentHash"
 
 for (const [index, x] of json.entries()) {
   test(`tree-validation test vectors" ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await treeOperationsTest(x, impl)
   })
 }

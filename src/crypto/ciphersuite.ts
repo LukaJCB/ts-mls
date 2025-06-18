@@ -68,13 +68,13 @@ export function getCiphersuiteFromName(name: CiphersuiteName): Ciphersuite {
   return ciphersuiteValues[ciphersuites[name]]
 }
 
-export function getCiphersuiteImpl(cs: Ciphersuite): CiphersuiteImpl {
+export async function getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl> {
   const sc = crypto.subtle
   return {
     kdf: makeKdfImpl(makeKdf(cs.hpke.kdf)),
     hash: makeHashImpl(sc, cs.hash),
-    signature: makeNobleSignatureImpl(cs.signature),
-    hpke: makeHpke(cs.hpke),
+    signature: await makeNobleSignatureImpl(cs.signature),
+    hpke: await makeHpke(cs.hpke),
     rng: webCryptoRng,
     name: cs.name,
   }

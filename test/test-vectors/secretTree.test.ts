@@ -7,7 +7,7 @@ import { leafToNodeIndex } from "../../src/treemath"
 
 for (const [index, x] of json.entries()) {
   test(`secret-tree test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testSecretTree(
       x.sender_data.sender_data_secret,
       x.sender_data.ciphertext,

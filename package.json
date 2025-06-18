@@ -1,6 +1,6 @@
 {
   "name": "ts-mls",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "homepage": "https://github.com/LukaJCB/ts-mls#readme",
   "bugs": {
@@ -15,13 +15,30 @@
     }
   },
   "dependencies": {
-    "@hpke/hybridkem-x-wing": "0.5.1",
-    "@hpke/ml-kem": "0.1.0",
-    "@noble/post-quantum": "0.4.1",
-    "hpke-js": "^1.6.2",
+    "@hpke/core": "^1.7.2",
     "patch-package": "^8.0.0"
   },
+  "peerDependencies": {
+    "@hpke/chacha20poly1305": "1.6.2",
+    "@hpke/hybridkem-x-wing": "0.5.1",
+    "@hpke/ml-kem": "0.1.0",
+    "@noble/curves": "^1.9.2",
+    "@noble/post-quantum": "0.4.1"
+  },
+  "optionalDependencies": {
+    "@hpke/chacha20poly1305": "1.6.2",
+    "@hpke/hybridkem-x-wing": "0.5.1",
+    "@hpke/ml-kem": "0.1.0",
+    "@noble/curves": "^1.9.2",
+    "@noble/post-quantum": "0.4.1"
+  },
   "devDependencies": {
+    "@hpke/chacha20poly1305": "1.6.2",
+    "@hpke/hybridkem-x-wing": "0.5.1",
+    "@hpke/ml-kem": "0.1.0",
+    "@noble/ciphers": "^1.3.0",
+    "@noble/curves": "^1.9.2",
+    "@noble/post-quantum": "0.4.1",
     "@types/jest": "^29.5.14",
     "madge": "^8.0.0",
     "prettier": "3.5.1",
@@ -43,7 +60,7 @@
     "format:check": "prettier -c .",
     "postinstall": "patch-package",
     "verify-docs": "typescript-docs-verifier --project tsconfig.docs.json",
-    "verify": "npm run build && npm run test && npm run format:check && npm run verify-docs && npx madge -c src/**/*.ts"
+    "verify": "npm run build && npm run format:check && npm run verify-docs && npx madge -c src/**/*.ts && npm run test"
   },
   "keywords": [
     "mls",

@@ -5,7 +5,7 @@ import { bytesToHex, hexToBytes } from "@noble/ciphers/utils"
 
 for (const [index, x] of json.entries()) {
   test(`psk_secret test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testPskSecret(x.psk_secret, x.psks, impl)
   })
 }

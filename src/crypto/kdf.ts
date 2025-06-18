@@ -1,4 +1,4 @@
-import { KdfInterface } from "hpke-js"
+import { KdfInterface } from "@hpke/core"
 import { utf8ToBytes } from "@noble/ciphers/utils"
 import { HkdfSha256, HkdfSha384, HkdfSha512 } from "@hpke/core"
 import { encodeVarLenData } from "../codec/variableLength"

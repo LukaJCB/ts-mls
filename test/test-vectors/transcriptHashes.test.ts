@@ -6,7 +6,7 @@ import { createConfirmedHash, createInterimHash } from "../../src/transcriptHash
 
 for (const [index, x] of json.entries()) {
   test(`transcript-hashes test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testTranscriptHash(
       x.authenticated_content,
       x.confirmation_key,

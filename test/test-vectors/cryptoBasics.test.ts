@@ -8,7 +8,7 @@ import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke"
 
 for (const [index, x] of json.entries()) {
   test(`crypto-basics test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await test_ref_hash(impl, x.ref_hash)
     await test_derive_secret(impl, x.derive_secret)
     await test_derive_tree_secret(impl, x.derive_tree_secret)

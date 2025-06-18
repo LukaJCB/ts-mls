@@ -10,7 +10,7 @@ import { PrivateKey } from "../../src/crypto/hpke"
 
 for (const [index, x] of json.entries()) {
   test(`welcome test vectors ${index}`, async () => {
-    const impl = getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await testWelcome(x.init_priv, x.key_package, x.signer_pub, x.welcome, impl)
   })
 }
