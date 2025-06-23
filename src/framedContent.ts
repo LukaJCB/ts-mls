@@ -87,14 +87,6 @@ export function toTbs(content: FramedContent, wireformat: WireformatName, contex
   return { protocolVersion: context.version, wireformat, content, senderType: content.sender.senderType, context }
 }
 
-// export function toTbsGroupContext(protocolVersion: ProtocolVersionName, content: FramedContentMember | FramedContentNewMemberCommit, wireformat: WireformatName, context: GroupContext): FramedContentTBS {
-//   return { protocolVersion, wireformat, content, senderType: content.sender.senderType, context }
-// }
-
-// export function toTbs(protocolVersion: ProtocolVersionName, content: FramedContentExternal | FramedContentNewMemberProposal, wireformat: WireformatName): FramedContentTBS {
-//   return { protocolVersion, wireformat, content, senderType: content.sender.senderType }
-// }
-
 export type FramedContent = FramedContentData & FramedContentInfo
 export type FramedContentData = Readonly<{
   groupId: Uint8Array

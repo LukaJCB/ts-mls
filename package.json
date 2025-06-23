@@ -60,7 +60,8 @@
     "format:check": "prettier -c .",
     "postinstall": "patch-package",
     "verify-docs": "typescript-docs-verifier --project tsconfig.docs.json --input-files README.md docs/*.md",
-    "verify": "npm run build && npm run format:check && npm run verify-docs && npx madge -c src/**/*.ts && npm run test"
+    "verify-madge": "madge --extensions ts --circular src",
+    "verify": "npm run build && npm run format:check && npm run verify-docs && npm run verify-madge && npm run test"
   },
   "keywords": [
     "mls",

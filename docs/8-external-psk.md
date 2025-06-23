@@ -87,13 +87,22 @@ bobGroup = processPskResult.newState
 It's also possible to use an external PSK when inviting a new member to the group, that new member will have to use the PSK when joining.
 
 ```typescript
-import { defaultCapabilities, defaultLifetime } from "../test/scenario/common"
-import { createCommit, createGroup, joinGroup, makePskIndex } from "src/clientState"
-import { Credential } from "src/credential"
-import { getCiphersuiteImpl, getCiphersuiteFromName } from "src/crypto/ciphersuite"
-import { generateKeyPackage } from "src/keyPackage"
-import { Proposal, ProposalAdd } from "src/proposal"
-import { bytesToBase64 } from "src/util/byteArray"
+import {
+  createGroup,
+  Credential,
+  generateKeyPackage,
+  defaultCapabilities,
+  defaultLifetime,
+  getCiphersuiteImpl,
+  getCiphersuiteFromName,
+  createCommit,
+  Proposal,
+  emptyPskIndex,
+  joinGroup,
+  processPrivateMessage,
+  makePskIndex,
+  bytesToBase64,
+} from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
 const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -122,7 +131,7 @@ const base64PskId = bytesToBase64(pskId)
 const sharedPsks = { [base64PskId]: pskSecret }
 
 // Add Bob and use PSK in the same commit
-const addBobProposal: ProposalAdd = {
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }

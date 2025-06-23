@@ -12,7 +12,7 @@ import {
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
-  ProposalAdd,
+  Proposal,
   emptyPskIndex,
   joinGroup,
   joinGroupExternal,
@@ -34,7 +34,7 @@ const charlieCredential: Credential = { credentialType: "basic", identity: new T
 const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities, defaultLifetime, [], impl)
 
 // Alice adds Bob
-const addBobProposal: ProposalAdd = {
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
@@ -49,8 +49,10 @@ let bobGroup = await joinGroup(
   aliceGroup.ratchetTree,
 )
 
-// Charlie joins externally
+// Alice creates groupInfo and sends it to Charlie
 const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, impl)
+
+// Charlie joins externally
 const charlieJoinGroupCommitResult = await joinGroupExternal(
   groupInfo,
   charlie.publicPackage,

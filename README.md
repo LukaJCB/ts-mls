@@ -82,7 +82,7 @@ import {
   generateKeyPackage,
   encodeMlsMessage,
   decodeMlsMessage,
-  ProposalAdd,
+  Proposal,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -113,7 +113,7 @@ const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
 if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expected key package")
 
 // alice creates proposal to add bob
-const addBobProposal: ProposalAdd = {
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: {
     keyPackage: decodedKeyPackage.keyPackage,

@@ -12,7 +12,7 @@ import {
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
-  ProposalAdd,
+  Proposal,
   emptyPskIndex,
   joinGroup,
   processPrivateMessage,
@@ -32,7 +32,7 @@ const charlieCredential: Credential = { credentialType: "basic", identity: new T
 const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities, defaultLifetime, [], impl)
 
 // Alice adds Bob
-const addBobProposal: ProposalAdd = {
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
@@ -60,7 +60,7 @@ const bobProcessCommitResult = await processPrivateMessage(
 bobGroup = bobProcessCommitResult.newState
 
 // Alice adds Charlie
-const addCharlieProposal: ProposalAdd = {
+const addCharlieProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: charlie.publicPackage },
 }

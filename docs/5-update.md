@@ -16,7 +16,7 @@ import {
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   generateKeyPackage,
-  ProposalAdd,
+  Proposal,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -29,7 +29,7 @@ const bobCredential: Credential = { credentialType: "basic", identity: new TextE
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities, defaultLifetime, [], impl)
 
 // Alice adds Bob
-const addBobProposal: ProposalAdd = {
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }

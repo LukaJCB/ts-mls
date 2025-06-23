@@ -97,7 +97,7 @@ This checks all markdown files in the `docs/` directory and the `README.md` for 
 To check for circular dependencies:
 
 ```bash
-npx madge -c src/**/*.ts
+npx run verify-madge
 ```
 
 This ensures the codebase doesn't have circular import dependencies.
@@ -115,7 +115,7 @@ This command runs all the previously mentioned checks in sequence:
 1. **Build Check** (`npm run build`)
 2. **Format Check** (`npm run format:check`)
 3. **Documentation Verification** (`npm run verify-docs`)
-4. **Circular Dependency Check** (`npx madge -c src/**/*.ts`)
+4. **Circular Dependency Check** (`npm run verify-madge`)
 5. **Test Suite** (`npm run test`)
 
 ## Making Changes

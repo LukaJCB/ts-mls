@@ -17,37 +17,32 @@ import {
   processPrivateMessage,
   createApplicationMessage,
   createCommit,
+  Proposal,
 } from "ts-mls"
-
-import { ProposalAdd } from "src/proposal"
 
 // Setup ciphersuite and credentials
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
 const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities, defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
+
+// Alice creates the group
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
 const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities, defaultLifetime, [], impl)
 
-// Alice adds Bob
-const addBobProposal: ProposalAdd = {
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+
+// Alice adds Bob with the ratchetTreeExtension = true
+const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
 aliceGroup = commitResult.newState
 
-// Bob joins using the welcome message
-let bobGroup = await joinGroup(
-  commitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  impl,
-  aliceGroup.ratchetTree,
-)
+// Bob joins using the welcome message and does not need to provide a ratchetTree
+let bobGroup = await joinGroup(commitResult.welcome!, bob.publicPackage, bob.privatePackage, emptyPskIndex, impl)
 
 // Alice sends a message to Bob
 const messageToBob = new TextEncoder().encode("Hello bob!")

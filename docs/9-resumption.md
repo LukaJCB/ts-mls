@@ -1,6 +1,6 @@
-# Adding multiple members at once
+# Resumption
 
-This scenario demonstrates how Alice creates a group and adds both Bob and Charlie in a single commit, allowing them to join at the same time.
+This scenario demonstrates how to branch a group and resume with new key packages and a new group ID.
 
 ```typescript
 import {
@@ -12,11 +12,13 @@ import {
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
-  ProposalAdd,
+  Proposal,
   emptyPskIndex,
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  joinGroupFromBranch,
+  branchGroup,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -28,37 +30,41 @@ let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePa
 const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities, defaultLifetime, [], impl)
 
-const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
-const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities, defaultLifetime, [], impl)
-
-// Alice adds Bob and Charlie in the same commit
-const addBobProposal: ProposalAdd = {
+// Alice adds Bob
+const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const addCharlieProposal: ProposalAdd = {
-  proposalType: "add",
-  add: { keyPackage: charlie.publicPackage },
-}
-const addCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal, addCharlieProposal], impl)
-aliceGroup = addCommitResult.newState
-
-if (addCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
-
+const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+aliceGroup = addBobCommitResult.newState
 let bobGroup = await joinGroup(
-  addCommitResult.welcome!,
+  addBobCommitResult.welcome!,
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
   impl,
   aliceGroup.ratchetTree,
 )
-let charlieGroup = await joinGroup(
-  addCommitResult.welcome!,
-  charlie.publicPackage,
-  charlie.privatePackage,
-  emptyPskIndex,
+
+// Prepare new key packages and group ID
+const bobNewKeyPackage = await generateKeyPackage(bobCredential, defaultCapabilities, defaultLifetime, [], impl)
+const aliceNewKeyPackage = await generateKeyPackage(aliceCredential, defaultCapabilities, defaultLifetime, [], impl)
+const newGroupId = new TextEncoder().encode("new-group1")
+const branchCommitResult = await branchGroup(
+  aliceGroup,
+  aliceNewKeyPackage.publicPackage,
+  aliceNewKeyPackage.privatePackage,
+  [bobNewKeyPackage.publicPackage],
+  newGroupId,
   impl,
+)
+aliceGroup = branchCommitResult.newState
+bobGroup = await joinGroupFromBranch(
+  bobGroup,
+  branchCommitResult.welcome!,
+  bobNewKeyPackage.publicPackage,
+  bobNewKeyPackage.privatePackage,
   aliceGroup.ratchetTree,
+  impl,
 )
 ```

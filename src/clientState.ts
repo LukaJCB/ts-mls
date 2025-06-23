@@ -7,9 +7,12 @@ import { deriveSecret, Kdf } from "./crypto/kdf"
 import { Extension, extensionsEqual } from "./extension"
 import {
   createConfirmationTag,
+  FramedContent,
   FramedContentAuthDataCommit,
   FramedContentCommit,
+  FramedContentTBSApplicationOrProposal,
   FramedContentTBSCommit,
+  signFramedContentApplicationOrProposal,
   signFramedContentTBS,
   toTbs,
   verifyConfirmationTag,
@@ -26,13 +29,7 @@ import {
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage"
 import { deriveKeySchedule, initializeEpoch, initializeKeySchedule, KeySchedule } from "./keySchedule"
 import { PreSharedKeyID, ResumptionPSKUsageName, updatePskSecret } from "./presharedkey"
-import {
-  PrivateMessage,
-  protect,
-  protectApplicationData,
-  protectProposal,
-  unprotectPrivateMessage,
-} from "./privateMessage"
+import { PrivateMessage, protect, unprotectPrivateMessage } from "./privateMessage"
 import {
   Proposal,
   ProposalAdd,
@@ -48,6 +45,7 @@ import {
 import { protectPublicMessage, PublicMessage, unprotectPublicMessage } from "./publicMessage"
 import {
   addLeafNode,
+  encodeRatchetTree,
   findBlankLeafNodeIndex,
   findFirstNonBlankAncestor,
   findLeafIndex,
@@ -95,7 +93,7 @@ export type ClientState = {
   unappliedProposals: UnappliedProposals
   confirmationTag: Uint8Array
   historicalResumptionPsks: Map<bigint, Uint8Array>
-  suspendedPendingReinit?: Reinit
+  suspendedPendingReinit?: Reinit //todo expand this to include removedFromGroup?
 }
 
 export type ProposalWithSender = { proposal: Proposal; senderLeafIndex: number | undefined }
@@ -337,6 +335,7 @@ async function processCommit(
       state.groupContext.epoch,
       state.keySchedule.resumptionPsk,
     ),
+    unappliedProposals: {},
     suspendedPendingReinit: result.additionalResult.kind === "reinit" ? result.additionalResult.reinit : undefined,
   }
 }
@@ -421,7 +420,7 @@ async function updatePrivateKeyPath(
   return [newPkp, commitSecret] as const
 }
 
-async function processProposal(
+export async function processProposal(
   state: ClientState,
   content: AuthenticatedContent,
   proposal: Proposal,
@@ -471,6 +470,40 @@ type ApplyProposalsData =
   | { kind: "externalCommit"; externalInitSecret: Uint8Array }
   | { kind: "reinit"; reinit: Reinit }
 
+function flattenExtensions(groupContextExtensions: { proposal: ProposalGroupContextExtensions }[]): Extension[] {
+  return groupContextExtensions.reduce((acc, { proposal }) => {
+    return [...acc, ...proposal.groupContextExtensions.extensions]
+  }, [] as Extension[])
+}
+
+/**
+ * Helper to accumulate PSK secret and IDs from grouped PSK proposals.
+ */
+async function accumulatePskSecret(
+  groupedPsk: { proposal: ProposalPSK }[],
+  pskSearch: PskIndex,
+  cs: CiphersuiteImpl,
+  zeroes: Uint8Array,
+): Promise<[Uint8Array, PreSharedKeyID[]]> {
+  return groupedPsk.reduce<Promise<[Uint8Array, PreSharedKeyID[]]>>(
+    async (acc, cur, index) => {
+      const [previousSecret, ids] = await acc
+      const psk = pskSearch.findPsk(cur.proposal.psk.preSharedKeyId)
+      if (psk === undefined) throw new Error("Could not find pskId referenced in proposal")
+      const pskSecret = await updatePskSecret(
+        previousSecret,
+        cur.proposal.psk.preSharedKeyId,
+        psk,
+        index,
+        groupedPsk.length,
+        cs,
+      )
+      return [pskSecret, [...ids, cur.proposal.psk.preSharedKeyId]]
+    },
+    Promise.resolve([zeroes, []]),
+  )
+}
+
 async function applyProposals(
   state: ClientState,
   proposals: ProposalOrRef[],
@@ -513,52 +546,17 @@ async function applyProposals(
       }
     }
 
-    const newExtensions = grouped.group_context_extensions.reduce((acc, { proposal }) => {
-      return [...acc, ...proposal.groupContextExtensions.extensions]
-    }, [] as Extension[])
+    const newExtensions = flattenExtensions(grouped.group_context_extensions)
 
-    const treeAfterUpdate = grouped.update.reduce((acc, { senderLeafIndex, proposal }) => {
-      if (senderLeafIndex === undefined) throw new Error("No sender index found for update proposal")
-      return updateLeafNode(acc, proposal.update.leafNode, senderLeafIndex)
-    }, state.ratchetTree)
+    const [mutatedTree, addedLeafNodes] = applyTreeMutations(state.ratchetTree, grouped)
 
-    const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
-      return removeLeafNode(acc, proposal.remove.removed)
-    }, treeAfterUpdate)
-
-    const [treeAfterAdd, addedLeafNodes] = grouped.add.reduce(
-      (acc, { proposal }) => {
-        const [tree, ws] = acc
-        const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
-        return [updatedTree, [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [number, KeyPackage]]]
-      },
-      [treeAfterRemove, []] as [RatchetTree, [number, KeyPackage][]],
-    )
-
-    const [updatedPskSecret, pskIds] = await grouped.psk.reduce(
-      async (acc, cur, index) => {
-        const [previousSecret, ids] = await acc
-        const psk = pskSearch.findPsk(cur.proposal.psk.preSharedKeyId)
-        if (psk === undefined) throw new Error("Could not find pskId referenced in proposal")
-
-        const pskSecret = await updatePskSecret(
-          previousSecret,
-          cur.proposal.psk.preSharedKeyId,
-          psk,
-          index,
-          grouped.psk.length,
-          cs,
-        )
-        return [pskSecret, [...ids, cur.proposal.psk.preSharedKeyId]]
-      },
-      Promise.resolve([zeroes, [] as PreSharedKeyID[]] as const),
-    )
+    const [updatedPskSecret, pskIds] = await accumulatePskSecret(grouped.psk, pskSearch, cs, zeroes)
 
     const needsUpdatePath =
       allProposals.length === 0 || Object.values(grouped.update).length > 1 || Object.values(grouped.remove).length > 1
 
     return {
-      tree: treeAfterAdd,
+      tree: mutatedTree,
       pskSecret: updatedPskSecret,
       additionalResult: {
         kind: "memberCommit" as const,
@@ -587,24 +585,7 @@ async function applyProposals(
 
     const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
 
-    const [updatedPskSecret, pskIds] = await grouped.psk.reduce(
-      async (acc, cur, index) => {
-        const [previousSecret, ids] = await acc
-        const psk = pskSearch.findPsk(cur.proposal.psk.preSharedKeyId)
-        if (psk === undefined) throw new Error("Could not find pskId referenced in proposal")
-
-        const pskSecret = await updatePskSecret(
-          previousSecret,
-          cur.proposal.psk.preSharedKeyId,
-          psk,
-          index,
-          grouped.psk.length,
-          cs,
-        )
-        return [pskSecret, [...ids, cur.proposal.psk.preSharedKeyId]]
-      },
-      Promise.resolve([zeroes, [] as PreSharedKeyID[]] as const),
-    )
+    const [updatedPskSecret, pskIds] = await accumulatePskSecret(grouped.psk, pskSearch, cs, zeroes)
 
     const initProposal = grouped.external_init.at(0)!
 
@@ -632,9 +613,12 @@ export async function createCommit(
   state: ClientState,
   pskSearch: PskIndex,
   publicMessage: boolean,
-  extraProposals: Proposal[] = [],
+  extraProposals: Proposal[],
   cs: CiphersuiteImpl,
+  ratchetTreeExtension: boolean = false,
 ): Promise<CreateCommitResult> {
+  if (state.suspendedPendingReinit !== undefined) throw new Error("Group is suspended pending reinit")
+
   const refs: ProposalOrRef[] = Object.keys(state.unappliedProposals).map((p) => ({
     proposalOrRefType: "reference",
     reference: base64ToBytes(p),
@@ -656,10 +640,12 @@ export async function createCommit(
     ? await createUpdatePath(res.tree, state.privatePath.leafIndex, state.groupContext, state.signaturePrivateKey, cs)
     : [res.tree, undefined, [] as PathSecret[], undefined]
 
-  const groupContextWithExtensions =
+  const updatedExtensions =
     res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions.length > 0
-      ? { ...state.groupContext, extensions: res.additionalResult.extensions }
-      : state.groupContext
+      ? res.additionalResult.extensions
+      : state.groupContext.extensions
+
+  const groupContextWithExtensions = { ...state.groupContext, extensions: updatedExtensions }
 
   const privateKeys = mergePrivateKeyPaths(
     newPrivateKey !== undefined
@@ -723,7 +709,9 @@ export async function createCommit(
     cs.hash,
   )
 
-  const groupInfo = await createGroupInfo(updatedGroupContext, confirmationTag, state, cs)
+  const groupInfo = ratchetTreeExtension
+    ? await createGroupInfoWithRatchetTree(updatedGroupContext, confirmationTag, state, tree, cs)
+    : await createGroupInfo(updatedGroupContext, confirmationTag, state, cs)
 
   const encryptedGroupInfo = await encryptGroupInfo(groupInfo, epochSecrets.welcomeSecret, cs)
 
@@ -763,7 +751,7 @@ export async function createCommit(
     confirmationTag,
   }
 
-  const [commit] = await protectCommit(publicMessage, state, wireformat, authenticatedData, tbs.content, authData, cs)
+  const [commit] = await protectCommit(publicMessage, state, authenticatedData, tbs.content, authData, cs)
 
   const newState: ClientState = {
     groupContext: updatedGroupContext,
@@ -801,6 +789,20 @@ export async function createGroupInfo(
   return signGroupInfo(groupInfoTbs, state.signaturePrivateKey, cs.signature)
 }
 
+export async function createGroupInfoWithRatchetTree(
+  groupContext: GroupContext,
+  confirmationTag: Uint8Array,
+  state: ClientState,
+  tree: RatchetTree,
+  cs: CiphersuiteImpl,
+): Promise<GroupInfo> {
+  const gi = await createGroupInfo(groupContext, confirmationTag, state, cs)
+
+  const encodedTree = encodeRatchetTree(tree)
+
+  return { ...gi, extensions: [...gi.extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }] }
+}
+
 export async function createGroupInfoWithExternalPub(state: ClientState, cs: CiphersuiteImpl): Promise<GroupInfo> {
   const gi = await createGroupInfo(state.groupContext, state.confirmationTag, state, cs)
 
@@ -813,12 +815,13 @@ export async function createGroupInfoWithExternalPub(state: ClientState, cs: Cip
 async function protectCommit(
   publicMessage: boolean,
   state: ClientState,
-  wireformat: WireformatName,
   authenticatedData: Uint8Array,
   content: FramedContentCommit,
   authData: FramedContentAuthDataCommit,
   cs: CiphersuiteImpl,
 ): Promise<[MLSMessage, SecretTree]> {
+  const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
+
   const authenticatedContent: AuthenticatedContentCommit = {
     wireformat,
     content,
@@ -834,21 +837,19 @@ async function protectCommit(
     )
 
     return [{ version: "mls10", wireformat: "mls_public_message", publicMessage: msg }, state.secretTree]
-  }
-  const res = await protect(
-    state.keySchedule.senderDataSecret,
-    authenticatedData,
-    state.groupContext,
-    state.secretTree,
-    { ...content, auth: authData },
-    state.privatePath.leafIndex,
-    cs,
-  )
+  } else {
+    const res = await protect(
+      state.keySchedule.senderDataSecret,
+      authenticatedData,
+      state.groupContext,
+      state.secretTree,
+      { ...content, auth: authData },
+      state.privatePath.leafIndex,
+      cs,
+    )
 
-  return [
-    { version: "mls10", wireformat: "mls_private_message", privateMessage: res.privateMessage },
-    res.tree,
-  ] as const
+    return [{ version: "mls10", wireformat: "mls_private_message", privateMessage: res.privateMessage }, res.tree]
+  }
 }
 
 export async function applyUpdatePathSecret(
@@ -1250,23 +1251,54 @@ export async function createGroup(
   }
 }
 
-export async function propose(state: ClientState, proposal: Proposal, impl: CiphersuiteImpl) {
-  const result = await protectProposal(
-    state.signaturePrivateKey,
-    state.keySchedule.senderDataSecret,
-    proposal,
-    new Uint8Array(),
-    state.groupContext,
-    state.secretTree,
-    state.privatePath.leafIndex,
-    impl,
-  )
+export async function createProposal(
+  state: ClientState,
+  publicMessage: boolean,
+  proposal: Proposal,
+  cs: CiphersuiteImpl,
+): Promise<{ newState: ClientState; message: MLSMessage }> {
+  const authenticatedData = new Uint8Array()
 
-  return { newState: { ...state, secretTree: result.tree }, privateMessage: result.privateMessage }
+  if (publicMessage) {
+    const result = await protectProposalPublic(
+      state,
+      state.signaturePrivateKey,
+      state.keySchedule.membershipKey,
+      state.groupContext,
+      authenticatedData,
+      proposal,
+      state.privatePath.leafIndex,
+      cs,
+    )
+    return {
+      newState: result.newState,
+      message: { wireformat: "mls_public_message", version: "mls10", publicMessage: result.publicMessage },
+    }
+  } else {
+    const result = await protectProposal(
+      state,
+      state.signaturePrivateKey,
+      state.keySchedule.senderDataSecret,
+      proposal,
+      authenticatedData,
+      state.groupContext,
+      state.secretTree,
+      state.privatePath.leafIndex,
+      cs,
+    )
+
+    return {
+      newState: result.newState,
+      message: { wireformat: "mls_private_message", version: "mls10", privateMessage: result.privateMessage },
+    }
+  }
 }
 
-export async function createApplicationMessage(state: ClientState, message: Uint8Array, impl: CiphersuiteImpl) {
+export async function createApplicationMessage(state: ClientState, message: Uint8Array, cs: CiphersuiteImpl) {
+  if (state.suspendedPendingReinit !== undefined) throw new Error("Group is suspended pending reinit")
+
   const result = await protectApplicationData(
+    state,
     state.signaturePrivateKey,
     state.keySchedule.senderDataSecret,
     message,
@@ -1274,10 +1306,10 @@ export async function createApplicationMessage(state: ClientState, message: Uint
     state.groupContext,
     state.secretTree,
     state.privatePath.leafIndex,
-    impl,
+    cs,
   )
 
-  return { newState: { ...state, secretTree: result.tree }, privateMessage: result.privateMessage }
+  return result
 }
 
 async function exportSecret(
@@ -1431,3 +1463,153 @@ export async function joinGroupFromReinit(
 
   return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, suspendedState)
 }
+
+function applyTreeMutations(tree: RatchetTree, grouped: Proposals): [RatchetTree, [number, KeyPackage][]] {
+  const treeAfterUpdate = grouped.update.reduce((acc, { senderLeafIndex, proposal }) => {
+    if (senderLeafIndex === undefined) throw new Error("No sender index found for update proposal")
+    return updateLeafNode(acc, proposal.update.leafNode, senderLeafIndex)
+  }, tree)
+
+  const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
+    return removeLeafNode(acc, proposal.remove.removed)
+  }, treeAfterUpdate)
+
+  const [treeAfterAdd, addedLeafNodes] = grouped.add.reduce(
+    (acc, { proposal }) => {
+      const [tree, ws] = acc
+      const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
+      return [updatedTree, [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [number, KeyPackage]]]
+    },
+    [treeAfterRemove, []] as [RatchetTree, [number, KeyPackage][]],
+  )
+
+  return [treeAfterAdd, addedLeafNodes]
+}
+export async function protectApplicationData(
+  state: ClientState,
+  signKey: Uint8Array,
+  senderDataSecret: Uint8Array,
+  applicationData: Uint8Array,
+  authenticatedData: Uint8Array,
+  groupContext: GroupContext,
+  secretTree: SecretTree,
+  leafIndex: number,
+  cs: CiphersuiteImpl,
+): Promise<ProtectResult> {
+  const tbs: FramedContentTBSApplicationOrProposal = {
+    protocolVersion: groupContext.version,
+    wireformat: "mls_private_message",
+    content: {
+      contentType: "application",
+      applicationData,
+      groupId: groupContext.groupId,
+      epoch: groupContext.epoch,
+      sender: {
+        senderType: "member",
+        leafIndex: leafIndex,
+      },
+      authenticatedData,
+    },
+    senderType: "member",
+    context: groupContext,
+  }
+
+  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
+
+  const content = {
+    ...tbs.content,
+    auth,
+  }
+
+  const result = await protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
+
+  return { newState: { ...state, secretTree: result.tree }, privateMessage: result.privateMessage }
+}
+
+export async function protectProposal(
+  state: ClientState,
+  signKey: Uint8Array,
+  senderDataSecret: Uint8Array,
+  p: Proposal,
+  authenticatedData: Uint8Array,
+  groupContext: GroupContext,
+  secretTree: SecretTree,
+  leafIndex: number,
+  cs: CiphersuiteImpl,
+): Promise<ProtectResult> {
+  const tbs: FramedContentTBSApplicationOrProposal = {
+    protocolVersion: groupContext.version,
+    wireformat: "mls_private_message",
+    content: {
+      contentType: "proposal",
+      proposal: p,
+      groupId: groupContext.groupId,
+      epoch: groupContext.epoch,
+      sender: {
+        senderType: "member",
+        leafIndex: leafIndex,
+      },
+      authenticatedData,
+    },
+    senderType: "member",
+    context: groupContext,
+  }
+
+  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
+
+  const content = {
+    ...tbs.content,
+    auth,
+  }
+
+  const updatedState = await processProposal(state, { content, auth, wireformat: "mls_private_message" }, p, cs.hash)
+
+  const result = await protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
+
+  return { newState: { ...updatedState, secretTree: result.tree }, privateMessage: result.privateMessage }
+}
+
+export type ProtectResult = { privateMessage: PrivateMessage; newState: ClientState }
+export async function protectProposalPublic(
+  state: ClientState,
+  signKey: Uint8Array,
+  membershipKey: Uint8Array,
+  groupContext: GroupContext,
+  authenticatedData: Uint8Array,
+  proposal: Proposal,
+  leafIndex: number,
+  cs: CiphersuiteImpl,
+): Promise<ProtectResultPublic> {
+  const framedContent: FramedContent = {
+    groupId: groupContext.groupId,
+    epoch: groupContext.epoch,
+    sender: { senderType: "member", leafIndex },
+    contentType: "proposal",
+    authenticatedData,
+    proposal,
+  }
+
+  const tbs = {
+    protocolVersion: groupContext.version,
+    wireformat: "mls_public_message",
+    content: framedContent,
+    senderType: "member",
+    context: groupContext,
+  } as const
+
+  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
+
+  const authenticatedContent: AuthenticatedContent = {
+    wireformat: "mls_public_message",
+    content: framedContent,
+    auth,
+  }
+
+  const newState = await processProposal(state, authenticatedContent, proposal, cs.hash)
+
+  const msg = await protectPublicMessage(membershipKey, groupContext, authenticatedContent, cs)
+
+  return { newState, publicMessage: msg }
+}
+
+export type ProtectResultPublic = { publicMessage: PublicMessage; newState: ClientState }

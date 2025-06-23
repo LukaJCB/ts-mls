@@ -16,14 +16,12 @@ import {
   FramedContentAuthDataCommit,
   FramedContentCommitData,
   FramedContentProposalData,
-  FramedContentTBSApplicationOrProposal,
   FramedContentTBSCommit,
-  signFramedContentApplicationOrProposal,
   signFramedContentCommit,
   verifyFramedContentSignature,
 } from "./framedContent"
 import { GroupContext } from "./groupContext"
-import { decodeProposal, encodeProposal, Proposal } from "./proposal"
+import { decodeProposal, encodeProposal } from "./proposal"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
 import { consumeRatchet, deriveKey, deriveNonce, GenerationSecret, ratchetToGeneration, SecretTree } from "./secretTree"
 import {
@@ -255,44 +253,6 @@ export function privateMessageContentToAuthenticatedContent(
   }
 }
 
-export async function protectApplicationData(
-  signKey: Uint8Array,
-  senderDataSecret: Uint8Array,
-  applicationData: Uint8Array,
-  authenticatedData: Uint8Array,
-  groupContext: GroupContext,
-  secretTree: SecretTree,
-  leafIndex: number,
-  cs: CiphersuiteImpl,
-): Promise<ProtectResult> {
-  const tbs: FramedContentTBSApplicationOrProposal = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
-    content: {
-      contentType: "application",
-      applicationData,
-      groupId: groupContext.groupId,
-      epoch: groupContext.epoch,
-      sender: {
-        senderType: "member",
-        leafIndex: leafIndex,
-      },
-      authenticatedData,
-    },
-    senderType: "member",
-    context: groupContext,
-  }
-
-  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
-
-  const content = {
-    ...tbs.content,
-    auth,
-  }
-
-  return protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
-}
-
 export async function protectCommit(
   signKey: Uint8Array,
   senderDataSecret: Uint8Array,
@@ -332,46 +292,6 @@ export async function protectCommit(
   return protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
 }
 
-export async function protectProposal(
-  signKey: Uint8Array,
-  senderDataSecret: Uint8Array,
-  p: Proposal,
-  authenticatedData: Uint8Array,
-  groupContext: GroupContext,
-  secretTree: SecretTree,
-  leafIndex: number,
-  cs: CiphersuiteImpl,
-): Promise<ProtectResult> {
-  const tbs: FramedContentTBSApplicationOrProposal = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
-    content: {
-      contentType: "proposal",
-      proposal: p,
-      groupId: groupContext.groupId,
-      epoch: groupContext.epoch,
-      sender: {
-        senderType: "member",
-        leafIndex: leafIndex,
-      },
-      authenticatedData,
-    },
-    senderType: "member",
-    context: groupContext,
-  }
-
-  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
-
-  const content = {
-    ...tbs.content,
-    auth,
-  }
-
-  //todo store proposal?
-
-  return protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
-}
-
 export type ProtectResult = { privateMessage: PrivateMessage; tree: SecretTree }
 
 export async function protect(
@@ -382,7 +302,7 @@ export async function protect(
   content: PrivateMessageContent,
   leafIndex: number,
   cs: CiphersuiteImpl,
-): Promise<ProtectResult> {
+): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
   const node = secretTree[leafToNodeIndex(leafIndex)]
   if (node === undefined) throw new Error("Bad node index for secret tree")
 

@@ -22,13 +22,11 @@ import {
   FramedContentTBS,
   FramedContentTBSExternal,
   signFramedContent,
-  signFramedContentApplicationOrProposal,
   signFramedContentCommit,
   toTbs,
   verifyFramedContentSignature,
 } from "./framedContent"
 import { GroupContext } from "./groupContext"
-import { Proposal } from "./proposal"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
 import { SenderTypeName } from "./sender"
 
@@ -94,43 +92,6 @@ export async function createMemberPublicMessage(
     senderType: "member",
     membershipTag: tag,
   }
-}
-
-export async function protectProposalPublic(
-  signKey: Uint8Array,
-  membershipKey: Uint8Array,
-  groupContext: GroupContext,
-  authenticatedData: Uint8Array,
-  proposal: Proposal,
-  cs: CiphersuiteImpl,
-  leafIndex: number,
-): Promise<PublicMessage> {
-  const framedContent: FramedContent = {
-    groupId: groupContext.groupId,
-    epoch: groupContext.epoch,
-    sender: { senderType: "member", leafIndex },
-    contentType: "proposal",
-    authenticatedData,
-    proposal,
-  }
-
-  const tbs = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_public_message",
-    content: framedContent,
-    senderType: "member",
-    context: groupContext,
-  } as const
-
-  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
-
-  const authenticatedContent: AuthenticatedContent = {
-    wireformat: "mls_public_message",
-    content: framedContent,
-    auth,
-  }
-
-  return protectPublicMessage(membershipKey, groupContext, authenticatedContent, cs)
 }
 
 export async function protectCommitPublic(
