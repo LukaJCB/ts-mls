@@ -10,7 +10,6 @@ import {
   FramedContentAuthDataCommit,
   FramedContentCommit,
   FramedContentTBSCommit,
-  signFramedContentApplicationOrProposal,
   signFramedContentTBS,
   toTbs,
   verifyConfirmationTag,
@@ -1295,37 +1294,12 @@ export async function createProposal(
       cs,
     )
 
-    // Reconstruct the auth for the proposal
-    const tbs = {
-      protocolVersion: state.groupContext.version,
-      wireformat: "mls_private_message" as const,
-      content: {
-        contentType: "proposal" as const,
-        proposal,
-        groupId: state.groupContext.groupId,
-        epoch: state.groupContext.epoch,
-        sender: {
-          senderType: "member" as const,
-          leafIndex: state.privatePath.leafIndex,
-        },
-        authenticatedData,
-      },
-      senderType: "member" as const,
-      context: state.groupContext,
-    }
-    const auth = await signFramedContentApplicationOrProposal(state.signaturePrivateKey, tbs, cs)
-    const authenticatedContent = {
-      wireformat: "mls_private_message" as const,
-      content: tbs.content,
-      auth,
-    }
-    const ref = await makeProposalRef(authenticatedContent, cs.hash)
-    const r = Buffer.from(ref).toString("base64")
+    // Store the proposal reference in the sender's unappliedProposals
     const newState = {
       ...result.newState,
       unappliedProposals: {
         ...result.newState.unappliedProposals,
-        [r]: { proposal, senderLeafIndex: state.privatePath.leafIndex },
+        [result.proposalRef]: { proposal, senderLeafIndex: state.privatePath.leafIndex },
       },
     }
 
@@ -1527,7 +1501,7 @@ function applyTreeMutations(tree: RatchetTree, grouped: Proposals): [RatchetTree
   return [treeAfterAdd, addedLeafNodes]
 }
 
-export type ProtectResult = { privateMessage: PrivateMessage; newState: ClientState }
+export type ProtectResult = { privateMessage: PrivateMessage; newState: ClientState; proposalRef: string }
 export async function protectProposal(
   state: ClientState,
   signKey: Uint8Array,
@@ -1550,7 +1524,11 @@ export async function protectProposal(
     cs,
   )
 
-  return { newState: { ...state, secretTree: result.newSecretTree }, privateMessage: result.privateMessage }
+  return {
+    newState: { ...state, secretTree: result.newSecretTree },
+    privateMessage: result.privateMessage,
+    proposalRef: result.proposalRef,
+  }
 }
 
 export type ProtectResultPublic = { publicMessage: PublicMessage; newState: ClientState }

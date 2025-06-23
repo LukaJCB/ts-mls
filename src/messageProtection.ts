@@ -1,4 +1,4 @@
-import { AuthenticatedContent } from "./authenticatedContent"
+import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import {
   FramedContent,
@@ -55,7 +55,7 @@ export async function protectApplicationData(
   return { newSecretTree: result.tree, privateMessage: result.privateMessage }
 }
 
-export type ProtectProposalResult = { privateMessage: PrivateMessage; newSecretTree: SecretTree }
+export type ProtectProposalResult = { privateMessage: PrivateMessage; newSecretTree: SecretTree; proposalRef: string }
 
 export async function protectProposal(
   signKey: Uint8Array,
@@ -67,34 +67,49 @@ export async function protectProposal(
   leafIndex: number,
   cs: CiphersuiteImpl,
 ): Promise<ProtectProposalResult> {
-  const tbs: FramedContentTBSApplicationOrProposal = {
+  const tbs = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
+    wireformat: "mls_private_message" as const,
     content: {
-      contentType: "proposal",
+      contentType: "proposal" as const,
       proposal: p,
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
       sender: {
-        senderType: "member",
-        leafIndex: leafIndex,
+        senderType: "member" as const,
+        leafIndex,
       },
       authenticatedData,
     },
-    senderType: "member",
+    senderType: "member" as const,
     context: groupContext,
   }
 
   const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
+  const content = { ...tbs.content, auth }
 
-  const content = {
-    ...tbs.content,
+  const privateMessage = await protect(
+    senderDataSecret,
+    authenticatedData,
+    groupContext,
+    secretTree,
+    content,
+    leafIndex,
+    cs,
+  )
+
+  const newSecretTree = privateMessage.tree
+
+  // Generate proposal reference
+  const authenticatedContent = {
+    wireformat: "mls_private_message" as const,
+    content,
     auth,
   }
+  const ref = await makeProposalRef(authenticatedContent, cs.hash)
+  const proposalRef = Buffer.from(ref).toString("base64")
 
-  const result = await protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
-
-  return { newSecretTree: result.tree, privateMessage: result.privateMessage }
+  return { privateMessage: privateMessage.privateMessage, newSecretTree, proposalRef }
 }
 
 export type ProtectProposalPublicResult = { publicMessage: PublicMessage }
