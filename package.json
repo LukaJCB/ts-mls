@@ -41,7 +41,7 @@
     "@noble/post-quantum": "0.4.1",
     "@types/jest": "^30.0.0",
     "madge": "^8.0.0",
-    "prettier": "3.5.3",
+    "prettier": "3.6.0",
     "ts-jest": "^29.2.5",
     "typescript": "~5.8.3",
     "typescript-docs-verifier": "^2.5.3"
