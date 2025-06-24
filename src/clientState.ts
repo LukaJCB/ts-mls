@@ -7,14 +7,8 @@ import { deriveSecret, Kdf } from "./crypto/kdf"
 import { Extension, extensionsEqual } from "./extension"
 import {
   createConfirmationTag,
-  FramedContent,
   FramedContentAuthDataCommit,
   FramedContentCommit,
-  FramedContentTBSApplicationOrProposal,
-  FramedContentTBSCommit,
-  signFramedContentApplicationOrProposal,
-  signFramedContentTBS,
-  toTbs,
   verifyConfirmationTag,
 } from "./framedContent"
 import { encodeGroupContext, GroupContext } from "./groupContext"
@@ -29,20 +23,13 @@ import {
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage"
 import { deriveKeySchedule, initializeEpoch, initializeKeySchedule, KeySchedule } from "./keySchedule"
 import { PreSharedKeyID, ResumptionPSKUsageName, updatePskSecret } from "./presharedkey"
-import { PrivateMessage, protect, unprotectPrivateMessage } from "./privateMessage"
-import {
-  Proposal,
-  ProposalAdd,
-  ProposalExternalInit,
-  ProposalGroupContextExtensions,
-  ProposalPSK,
-  ProposalReinit,
-  ProposalRemove,
-  ProposalUpdate,
-  Reinit,
-} from "./proposal"
+import { PrivateMessage } from "./privateMessage"
+import { protect, unprotectPrivateMessage } from "./messageProtection"
+import { createContentCommitSignature } from "./framedContent"
+import { protectApplicationData, protectProposal } from "./messageProtection"
+import { protectProposalPublic, protectPublicMessage, unprotectPublicMessage } from "./messageProtectionPublic"
 
-import { protectPublicMessage, PublicMessage, unprotectPublicMessage } from "./publicMessage"
+import { PublicMessage } from "./publicMessage"
 import {
   addLeafNode,
   encodeRatchetTree,
@@ -82,6 +69,17 @@ import { ProposalOrRef } from "./proposalOrRefType"
 import { MLSMessage } from "./message"
 import { encodeCredential } from "./credential"
 import { ProtocolVersionName } from "./protocolVersion"
+import {
+  Proposal,
+  ProposalAdd,
+  ProposalExternalInit,
+  ProposalGroupContextExtensions,
+  ProposalPSK,
+  ProposalReinit,
+  ProposalRemove,
+  ProposalUpdate,
+  Reinit,
+} from "./proposal"
 
 export type ClientState = {
   groupContext: GroupContext
@@ -427,13 +425,14 @@ export async function processProposal(
   h: Hash,
 ): Promise<ClientState> {
   const ref = await makeProposalRef(content, h)
-  const r = bytesToBase64(ref)
   return {
     ...state,
-    unappliedProposals: {
-      ...state.unappliedProposals,
-      [r]: { proposal, senderLeafIndex: getSenderLeafNodeIndex(content.content.sender) },
-    },
+    unappliedProposals: addUnappliedProposal(
+      ref,
+      state.unappliedProposals,
+      proposal,
+      getSenderLeafNodeIndex(content.content.sender),
+    ),
   }
 }
 
@@ -469,6 +468,19 @@ type ApplyProposalsData =
   | { kind: "memberCommit"; addedLeafNodes: [number, KeyPackage][]; extensions: Extension[] }
   | { kind: "externalCommit"; externalInitSecret: Uint8Array }
   | { kind: "reinit"; reinit: Reinit }
+
+function addUnappliedProposal(
+  ref: Uint8Array,
+  proposals: UnappliedProposals,
+  proposal: Proposal,
+  senderLeafIndex: number | undefined,
+): UnappliedProposals {
+  const r = bytesToBase64(ref)
+  return {
+    ...proposals,
+    [r]: { proposal, senderLeafIndex },
+  }
+}
 
 function flattenExtensions(groupContextExtensions: { proposal: ProposalGroupContextExtensions }[]): Extension[] {
   return groupContextExtensions.reduce((acc, { proposal }) => {
@@ -663,32 +675,22 @@ export async function createCommit(
 
   const authenticatedData = new Uint8Array()
 
-  const tbs: FramedContentTBSCommit = {
-    protocolVersion: state.groupContext.version,
+  const { signature, framedContent } = await createContentCommitSignature(
+    state.groupContext,
     wireformat,
-    content: {
-      contentType: "commit",
-      commit: { proposals: allProposals, path: updatePath },
-      groupId: state.groupContext.groupId,
-      epoch: state.groupContext.epoch,
-      sender: {
-        senderType: "member",
-        leafIndex: state.privatePath.leafIndex,
-      },
-      authenticatedData,
-    },
-    senderType: "member",
-    context: state.groupContext,
-  }
-
-  const signature = await signFramedContentTBS(state.signaturePrivateKey, tbs, cs.signature)
+    { proposals: allProposals, path: updatePath },
+    { senderType: "member", leafIndex: state.privatePath.leafIndex },
+    authenticatedData,
+    state.signaturePrivateKey,
+    cs.signature,
+  )
 
   const treeHash = await treeHashRoot(tree, cs.hash)
 
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
     wireformat,
-    tbs.content,
+    framedContent,
     signature,
     treeHash,
     state.confirmationTag,
@@ -708,6 +710,14 @@ export async function createCommit(
     updatedGroupContext.confirmedTranscriptHash,
     cs.hash,
   )
+
+  const authData: FramedContentAuthDataCommit = {
+    contentType: framedContent.contentType,
+    signature,
+    confirmationTag,
+  }
+
+  const [commit] = await protectCommit(publicMessage, state, authenticatedData, framedContent, authData, cs)
 
   const groupInfo = ratchetTreeExtension
     ? await createGroupInfoWithRatchetTree(updatedGroupContext, confirmationTag, state, tree, cs)
@@ -744,14 +754,6 @@ export async function createCommit(
           encryptedGroupInfo,
         }
       : undefined
-
-  const authData: FramedContentAuthDataCommit = {
-    contentType: tbs.content.contentType,
-    signature,
-    confirmationTag,
-  }
-
-  const [commit] = await protectCommit(publicMessage, state, authenticatedData, tbs.content, authData, cs)
 
   const newState: ClientState = {
     groupContext: updatedGroupContext,
@@ -1005,23 +1007,15 @@ export async function joinGroupExternal(
 
   const pskSecret = new Uint8Array(cs.kdf.size)
 
-  const framedContent: FramedContentCommit = {
-    groupId: groupInfo.groupContext.groupId,
-    epoch: groupInfo.groupContext.epoch,
-    sender: {
+  const { signature, framedContent } = await createContentCommitSignature(
+    groupInfo.groupContext,
+    "mls_public_message",
+    { proposals: proposals.map((p) => ({ proposalOrRefType: "proposal", proposal: p })), path: updatePath },
+    {
       senderType: "new_member_commit",
     },
-    authenticatedData: new Uint8Array(),
-    contentType: "commit",
-    commit: {
-      proposals: proposals.map((p) => ({ proposalOrRefType: "proposal", proposal: p })),
-      path: updatePath,
-    },
-  }
-
-  const signature = await signFramedContentTBS(
+    new Uint8Array(),
     privateKeys.signaturePrivateKey,
-    toTbs(framedContent, "mls_public_message", groupInfo.groupContext),
     cs.signature,
   )
 
@@ -1261,7 +1255,6 @@ export async function createProposal(
 
   if (publicMessage) {
     const result = await protectProposalPublic(
-      state,
       state.signaturePrivateKey,
       state.keySchedule.membershipKey,
       state.groupContext,
@@ -1270,13 +1263,18 @@ export async function createProposal(
       state.privatePath.leafIndex,
       cs,
     )
+    const newState = await processProposal(
+      state,
+      { content: result.publicMessage.content, auth: result.publicMessage.auth, wireformat: "mls_public_message" },
+      proposal,
+      cs.hash,
+    )
     return {
-      newState: result.newState,
+      newState,
       message: { wireformat: "mls_public_message", version: "mls10", publicMessage: result.publicMessage },
     }
   } else {
     const result = await protectProposal(
-      state,
       state.signaturePrivateKey,
       state.keySchedule.senderDataSecret,
       proposal,
@@ -1287,8 +1285,19 @@ export async function createProposal(
       cs,
     )
 
+    const newState = {
+      ...state,
+      secretTree: result.newSecretTree,
+      unappliedProposals: addUnappliedProposal(
+        result.proposalRef,
+        state.unappliedProposals,
+        proposal,
+        state.privatePath.leafIndex,
+      ),
+    }
+
     return {
-      newState: result.newState,
+      newState,
       message: { wireformat: "mls_private_message", version: "mls10", privateMessage: result.privateMessage },
     }
   }
@@ -1298,7 +1307,6 @@ export async function createApplicationMessage(state: ClientState, message: Uint
   if (state.suspendedPendingReinit !== undefined) throw new Error("Group is suspended pending reinit")
 
   const result = await protectApplicationData(
-    state,
     state.signaturePrivateKey,
     state.keySchedule.senderDataSecret,
     message,
@@ -1309,7 +1317,7 @@ export async function createApplicationMessage(state: ClientState, message: Uint
     cs,
   )
 
-  return result
+  return { newState: { ...state, secretTree: result.newSecretTree }, privateMessage: result.privateMessage }
 }
 
 async function exportSecret(
@@ -1485,131 +1493,3 @@ function applyTreeMutations(tree: RatchetTree, grouped: Proposals): [RatchetTree
 
   return [treeAfterAdd, addedLeafNodes]
 }
-export async function protectApplicationData(
-  state: ClientState,
-  signKey: Uint8Array,
-  senderDataSecret: Uint8Array,
-  applicationData: Uint8Array,
-  authenticatedData: Uint8Array,
-  groupContext: GroupContext,
-  secretTree: SecretTree,
-  leafIndex: number,
-  cs: CiphersuiteImpl,
-): Promise<ProtectResult> {
-  const tbs: FramedContentTBSApplicationOrProposal = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
-    content: {
-      contentType: "application",
-      applicationData,
-      groupId: groupContext.groupId,
-      epoch: groupContext.epoch,
-      sender: {
-        senderType: "member",
-        leafIndex: leafIndex,
-      },
-      authenticatedData,
-    },
-    senderType: "member",
-    context: groupContext,
-  }
-
-  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
-
-  const content = {
-    ...tbs.content,
-    auth,
-  }
-
-  const result = await protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
-
-  return { newState: { ...state, secretTree: result.tree }, privateMessage: result.privateMessage }
-}
-
-export async function protectProposal(
-  state: ClientState,
-  signKey: Uint8Array,
-  senderDataSecret: Uint8Array,
-  p: Proposal,
-  authenticatedData: Uint8Array,
-  groupContext: GroupContext,
-  secretTree: SecretTree,
-  leafIndex: number,
-  cs: CiphersuiteImpl,
-): Promise<ProtectResult> {
-  const tbs: FramedContentTBSApplicationOrProposal = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
-    content: {
-      contentType: "proposal",
-      proposal: p,
-      groupId: groupContext.groupId,
-      epoch: groupContext.epoch,
-      sender: {
-        senderType: "member",
-        leafIndex: leafIndex,
-      },
-      authenticatedData,
-    },
-    senderType: "member",
-    context: groupContext,
-  }
-
-  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
-
-  const content = {
-    ...tbs.content,
-    auth,
-  }
-
-  const updatedState = await processProposal(state, { content, auth, wireformat: "mls_private_message" }, p, cs.hash)
-
-  const result = await protect(senderDataSecret, authenticatedData, groupContext, secretTree, content, leafIndex, cs)
-
-  return { newState: { ...updatedState, secretTree: result.tree }, privateMessage: result.privateMessage }
-}
-
-export type ProtectResult = { privateMessage: PrivateMessage; newState: ClientState }
-export async function protectProposalPublic(
-  state: ClientState,
-  signKey: Uint8Array,
-  membershipKey: Uint8Array,
-  groupContext: GroupContext,
-  authenticatedData: Uint8Array,
-  proposal: Proposal,
-  leafIndex: number,
-  cs: CiphersuiteImpl,
-): Promise<ProtectResultPublic> {
-  const framedContent: FramedContent = {
-    groupId: groupContext.groupId,
-    epoch: groupContext.epoch,
-    sender: { senderType: "member", leafIndex },
-    contentType: "proposal",
-    authenticatedData,
-    proposal,
-  }
-
-  const tbs = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_public_message",
-    content: framedContent,
-    senderType: "member",
-    context: groupContext,
-  } as const
-
-  const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
-
-  const authenticatedContent: AuthenticatedContent = {
-    wireformat: "mls_public_message",
-    content: framedContent,
-    auth,
-  }
-
-  const newState = await processProposal(state, authenticatedContent, proposal, cs.hash)
-
-  const msg = await protectPublicMessage(membershipKey, groupContext, authenticatedContent, cs)
-
-  return { newState, publicMessage: msg }
-}
-
-export type ProtectResultPublic = { publicMessage: PublicMessage; newState: ClientState }

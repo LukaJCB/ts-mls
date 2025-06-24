@@ -9,15 +9,14 @@ import {
   getCiphersuiteNameFromId,
 } from "../../src/crypto/ciphersuite"
 import { decodeMlsMessage } from "../../src/message"
-import { protectCommit, unprotectPrivateMessage } from "../../src/privateMessage"
-import { protectApplicationData, protectProposal } from "../../src/clientState"
+import { protect, unprotectPrivateMessage } from "../../src/messageProtection"
+import { createContentCommitSignature } from "../../src/framedContent"
 import { decodeProposal, encodeProposal } from "../../src/proposal"
 import { decodeCommit, encodeCommit } from "../../src/commit"
-import { protectCommitPublic, protectPublicMessage, unprotectPublicMessage } from "../../src/publicMessage"
-import { protectProposalPublic } from "../../src/clientState"
 import { AuthenticatedContent } from "../../src/authenticatedContent"
 import { createSecretTree } from "../../src/secretTree"
-import { ClientState } from "../../src/clientState"
+import { protectApplicationData, protectProposal } from "../../src/messageProtection"
+import { protectProposalPublic, protectPublicMessage, unprotectPublicMessage } from "../../src/messageProtectionPublic"
 
 for (const [index, x] of json.entries()) {
   test(`message-protection test vectors ${index}`, async () => {
@@ -85,7 +84,6 @@ async function protectThenUnprotectProposalPublic(
   if (p === undefined) throw new Error("could not decode proposal")
 
   const prot = await protectProposalPublic(
-    {} as ClientState,
     hexToBytes(data.signature_priv),
     hexToBytes(data.membership_key),
     gc,
@@ -111,20 +109,28 @@ async function protectThenUnprotectProposalPublic(
 }
 
 async function protectThenUnprotectCommitPublic(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
-  const p = decodeCommit(hexToBytes(data.commit), 0)
-  if (p === undefined) throw new Error("could not decode commit")
+  const c = decodeCommit(hexToBytes(data.commit), 0)
+  if (c === undefined) throw new Error("could not decode commit")
 
-  const confirmationKey = crypto.getRandomValues(new Uint8Array(impl.hpke.keyLength)) // should I be getting this elsewhere?
-  const prot = await protectCommitPublic(
-    hexToBytes(data.signature_priv),
-    hexToBytes(data.membership_key),
-    confirmationKey,
+  const confirmationTag = crypto.getRandomValues(new Uint8Array(impl.hpke.keyLength)) // should I be getting this elsewhere?
+
+  const { framedContent, signature } = await createContentCommitSignature(
     gc,
+    "mls_public_message",
+    c[0],
+    { leafIndex: 1, senderType: "member" },
     new Uint8Array(),
-    p[0],
-    impl,
-    1,
+    hexToBytes(data.signature_priv),
+    impl.signature,
   )
+
+  const authenticatedContent: AuthenticatedContent = {
+    wireformat: "mls_public_message",
+    content: framedContent,
+    auth: { contentType: "commit", signature: signature, confirmationTag },
+  }
+
+  const prot = await protectPublicMessage(hexToBytes(data.membership_key), gc, authenticatedContent, impl)
 
   const unprotected = await unprotectPublicMessage(
     hexToBytes(data.membership_key),
@@ -268,7 +274,6 @@ async function protectThenUnprotectProposal(data: MessageProtectionData, gc: Gro
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
 
   const pro = await protectProposal(
-    {} as ClientState, //todo refactor this
     hexToBytes(data.signature_priv),
     hexToBytes(data.sender_data_secret),
     p[0],
@@ -296,15 +301,12 @@ async function protectThenUnprotectProposal(data: MessageProtectionData, gc: Gro
 }
 
 async function protectThenUnprotectApplication(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
-  const applicationData = hexToBytes(data.application)
-
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
 
   const pro = await protectApplicationData(
-    {} as ClientState,
     hexToBytes(data.signature_priv),
     hexToBytes(data.sender_data_secret),
-    applicationData,
+    hexToBytes(data.application),
     new Uint8Array(),
     gc,
     secretTree,
@@ -334,18 +336,28 @@ async function protectThenUnprotectCommit(data: MessageProtectionData, gc: Group
 
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
 
-  const confirmationKey = crypto.getRandomValues(new Uint8Array(impl.hpke.keyLength)) // should I be getting this elsewhere?
-  const pro = await protectCommit(
-    hexToBytes(data.signature_priv),
-    hexToBytes(data.sender_data_secret),
-    confirmationKey,
-    c[0],
-    new Uint8Array(),
+  const confirmationTag = crypto.getRandomValues(new Uint8Array(impl.hpke.keyLength)) // should I be getting this elsewhere?
+
+  const { framedContent, signature } = await createContentCommitSignature(
     gc,
-    secretTree,
-    1,
-    impl,
+    "mls_private_message",
+    c[0],
+    { leafIndex: 1, senderType: "member" },
+    new Uint8Array(),
+    hexToBytes(data.signature_priv),
+    impl.signature,
   )
+
+  const content = {
+    ...framedContent,
+    auth: {
+      contentType: framedContent.contentType,
+      signature,
+      confirmationTag,
+    },
+  }
+
+  const pro = await protect(hexToBytes(data.sender_data_secret), new Uint8Array(), gc, secretTree, content, 1, impl)
 
   const unprotected = await unprotectPrivateMessage(
     hexToBytes(data.sender_data_secret),

@@ -319,3 +319,30 @@ export function verifyConfirmationTag(
 ): Promise<boolean> {
   return h.verifyMac(confirmationKey, tag, confirmedTranscriptHash)
 }
+export async function createContentCommitSignature(
+  groupContext: GroupContext,
+  wireformat: WireformatName,
+  c: Commit,
+  sender: Sender,
+  authenticatedData: Uint8Array,
+  signKey: Uint8Array,
+  s: Signature,
+): Promise<{ framedContent: FramedContentCommit; signature: Uint8Array }> {
+  const tbs: FramedContentTBSCommit = {
+    protocolVersion: groupContext.version,
+    wireformat,
+    content: {
+      contentType: "commit",
+      commit: c,
+      groupId: groupContext.groupId,
+      epoch: groupContext.epoch,
+      sender,
+      authenticatedData,
+    },
+    senderType: "member",
+    context: groupContext,
+  }
+
+  const signature = await signFramedContentTBS(signKey, tbs, s)
+  return { framedContent: tbs.content, signature }
+}
