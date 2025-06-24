@@ -1,5 +1,6 @@
 import { AuthenticatedContentCommit } from "./authenticatedContent"
-import { ClientState, applyProposals, nextEpochContext, applyUpdatePathSecret, processProposal } from "./clientState"
+import { ClientState, applyProposals, nextEpochContext, processProposal } from "./clientState"
+import { applyUpdatePathSecret } from "./createCommit"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { Kdf, deriveSecret } from "./crypto/kdf"
 import { verifyConfirmationTag } from "./framedContent"

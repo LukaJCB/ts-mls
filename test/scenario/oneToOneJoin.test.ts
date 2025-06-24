@@ -1,4 +1,6 @@
-import { createApplicationMessage, createCommit, createGroup, joinGroup, makePskIndex } from "../../src/clientState"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
+import { createCommit } from "../../src/createCommit"
+import { createApplicationMessage } from "../../src/createMessage"
 import { processPrivateMessage } from "../../src/processMessages"
 import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"

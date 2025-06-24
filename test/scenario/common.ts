@@ -1,5 +1,6 @@
 import { Capabilities } from "../../src/capabilities"
-import { ClientState, createApplicationMessage, makePskIndex } from "../../src/clientState"
+import { ClientState, makePskIndex } from "../../src/clientState"
+import { createApplicationMessage } from "../../src/createMessage"
 import { processPrivateMessage } from "../../src/processMessages"
 import { CiphersuiteName, CiphersuiteImpl, ciphersuites } from "../../src/crypto/ciphersuite"
 import { Lifetime } from "../../src/lifetime"

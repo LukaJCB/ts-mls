@@ -1,4 +1,5 @@
-import { ClientState, CreateCommitResult, createCommit, makePskIndex, createGroup, joinGroup } from "./clientState"
+import { ClientState, makePskIndex, createGroup, joinGroup } from "./clientState"
+import { CreateCommitResult, createCommit } from "./createCommit"
 import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite"
 import { Extension } from "./extension"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage"

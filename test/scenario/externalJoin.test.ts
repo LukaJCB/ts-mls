@@ -1,11 +1,6 @@
-import {
-  createGroup,
-  createCommit,
-  joinGroup,
-  joinGroupExternal,
-  createGroupInfoWithExternalPub,
-  makePskIndex,
-} from "../../src/clientState"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
+import { joinGroupExternal } from "../../src/createCommit"
+import { createCommit, createGroupInfoWithExternalPub } from "../../src/createCommit"
 import { processPublicMessage } from "../../src/processMessages"
 import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"

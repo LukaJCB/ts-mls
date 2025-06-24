@@ -1,12 +1,8 @@
-export {
-  createApplicationMessage,
-  createCommit,
-  createGroup,
-  createGroupInfoWithExternalPub,
-  makePskIndex,
-  joinGroup,
-  joinGroupExternal,
-} from "./clientState"
+export { createGroup, makePskIndex, joinGroup } from "./clientState"
+
+export { createApplicationMessage, createProposal } from "./createMessage"
+
+export { joinGroupExternal, createCommit, createGroupInfoWithExternalPub } from "./createCommit"
 
 export { processPrivateMessage, processPublicMessage } from "./processMessages"
 

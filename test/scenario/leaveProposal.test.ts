@@ -1,4 +1,6 @@
-import { createCommit, createGroup, createProposal, joinGroup } from "../../src/clientState"
+import { createGroup, joinGroup } from "../../src/clientState"
+import { createCommit } from "../../src/createCommit"
+import { createProposal } from "../../src/createMessage"
 import { processPrivateMessage } from "../../src/processMessages"
 import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"
