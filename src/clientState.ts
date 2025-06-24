@@ -1,6 +1,6 @@
 import { addToMap } from "./util/addToMap"
 import { AuthenticatedContent, AuthenticatedContentCommit, makeProposalRef } from "./authenticatedContent"
-import { CiphersuiteImpl, CiphersuiteName, getCiphersuiteFromName, getCiphersuiteImpl } from "./crypto/ciphersuite"
+import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { Hash } from "./crypto/hash"
 import { decryptWithLabel } from "./crypto/hpke"
 import { deriveSecret, Kdf } from "./crypto/kdf"
@@ -22,7 +22,7 @@ import {
 } from "./groupInfo"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage"
 import { deriveKeySchedule, initializeEpoch, initializeKeySchedule, KeySchedule } from "./keySchedule"
-import { PreSharedKeyID, ResumptionPSKUsageName, updatePskSecret } from "./presharedkey"
+import { PreSharedKeyID, updatePskSecret } from "./presharedkey"
 import { PrivateMessage } from "./privateMessage"
 import { protect, unprotectPrivateMessage } from "./messageProtection"
 import { createContentCommitSignature } from "./framedContent"
@@ -68,7 +68,6 @@ import { WireformatName } from "./wireformat"
 import { ProposalOrRef } from "./proposalOrRefType"
 import { MLSMessage } from "./message"
 import { encodeCredential } from "./credential"
-import { ProtocolVersionName } from "./protocolVersion"
 import {
   Proposal,
   ProposalAdd,
@@ -80,6 +79,9 @@ import {
   ProposalUpdate,
   Reinit,
 } from "./proposal"
+import { PathSecrets, pathToPathSecrets } from "./pathSecrets"
+import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath, updateLeafKey } from "./privateKeyPath"
+import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals"
 
 export type ClientState = {
   groupContext: GroupContext
@@ -92,60 +94,6 @@ export type ClientState = {
   confirmationTag: Uint8Array
   historicalResumptionPsks: Map<bigint, Uint8Array>
   suspendedPendingReinit?: Reinit //todo expand this to include removedFromGroup?
-}
-
-export type ProposalWithSender = { proposal: Proposal; senderLeafIndex: number | undefined }
-export type UnappliedProposals = Record<string, ProposalWithSender>
-
-/**
- * PathSecrets is a record with nodeIndex as keys and the path secret as values
- */
-export type PathSecrets = Record<number, Uint8Array>
-
-function pathToPathSecrets(pathSecrets: PathSecret[]): PathSecrets {
-  return pathSecrets.reduce(
-    (acc, cur) => ({
-      ...acc,
-      [cur.nodeIndex]: cur.secret,
-    }),
-    {},
-  )
-}
-
-export type PrivateKeyPath = {
-  leafIndex: number
-  privateKeys: Record<number, Uint8Array>
-}
-
-/**
- * Merges PrivateKeyPaths, BEWARE, if there is a conflict, this function will prioritize the second `b` parameter
- */
-function mergePrivateKeyPaths(a: PrivateKeyPath, b: PrivateKeyPath): PrivateKeyPath {
-  return { ...a, privateKeys: { ...a.privateKeys, ...b.privateKeys } }
-}
-
-function updateLeafKey(path: PrivateKeyPath, newKey: Uint8Array): PrivateKeyPath {
-  return { ...path, privateKeys: { ...path.privateKeys, [leafToNodeIndex(path.leafIndex)]: newKey } }
-}
-
-export async function toPrivateKeyPath(
-  pathSecrets: PathSecrets,
-  leafIndex: number,
-  cs: CiphersuiteImpl,
-): Promise<PrivateKeyPath> {
-  //todo: Object.fromEntries is pretty bad
-  const privateKeys: Record<number, Uint8Array> = Object.fromEntries(
-    await Promise.all(
-      Object.entries(pathSecrets).map(async ([nodeIndex, pathSecret]) => {
-        const nodeSecret = await deriveSecret(pathSecret, "node", cs.kdf)
-        const { privateKey } = await cs.hpke.deriveKeyPair(nodeSecret)
-
-        return [Number(nodeIndex), await cs.hpke.exportPrivateKey(privateKey)]
-      }),
-    ),
-  )
-
-  return { leafIndex, privateKeys }
 }
 
 export async function getCommitSecret(
@@ -436,7 +384,7 @@ export async function processProposal(
   }
 }
 
-type Proposals = {
+export type Proposals = {
   add: { senderLeafIndex: number | undefined; proposal: ProposalAdd }[]
   update: { senderLeafIndex: number | undefined; proposal: ProposalUpdate }[]
   remove: { senderLeafIndex: number | undefined; proposal: ProposalRemove }[]
@@ -468,19 +416,6 @@ type ApplyProposalsData =
   | { kind: "memberCommit"; addedLeafNodes: [number, KeyPackage][]; extensions: Extension[] }
   | { kind: "externalCommit"; externalInitSecret: Uint8Array }
   | { kind: "reinit"; reinit: Reinit }
-
-function addUnappliedProposal(
-  ref: Uint8Array,
-  proposals: UnappliedProposals,
-  proposal: Proposal,
-  senderLeafIndex: number | undefined,
-): UnappliedProposals {
-  const r = bytesToBase64(ref)
-  return {
-    ...proposals,
-    [r]: { proposal, senderLeafIndex },
-  }
-}
 
 function flattenExtensions(groupContextExtensions: { proposal: ProposalGroupContextExtensions }[]): Extension[] {
   return groupContextExtensions.reduce((acc, { proposal }) => {
@@ -1342,137 +1277,7 @@ async function importSecret(privateKey: Uint8Array, kemOutput: Uint8Array, cs: C
   )
 }
 
-export async function reinitGroup(
-  state: ClientState,
-  groupId: Uint8Array,
-  version: ProtocolVersionName,
-  cipherSuite: CiphersuiteName,
-  extensions: Extension[],
-  cs: CiphersuiteImpl,
-): Promise<CreateCommitResult> {
-  const reinitProposal: Proposal = {
-    proposalType: "reinit",
-    reinit: {
-      groupId,
-      version,
-      cipherSuite,
-      extensions,
-    },
-  }
-
-  return createCommit(state, makePskIndex(state, {}), false, [reinitProposal], cs)
-}
-
-export async function reinitCreateNewGroup(
-  state: ClientState,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  memberKeyPackages: KeyPackage[],
-  groupId: Uint8Array,
-  cipherSuite: CiphersuiteName,
-  extensions: Extension[],
-): Promise<CreateCommitResult> {
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
-  const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, cs)
-
-  const addProposals: Proposal[] = memberKeyPackages.map((kp) => ({
-    proposalType: "add",
-    add: { keyPackage: kp },
-  }))
-
-  const psk = makeResumptionPsk(state, "reinit", cs)
-
-  const resumptionPsk: Proposal = {
-    proposalType: "psk",
-    psk: {
-      preSharedKeyId: psk.id,
-    },
-  }
-
-  return createCommit(newGroup, makePskIndex(state, {}), false, [...addProposals, resumptionPsk], cs)
-}
-
-export function makeResumptionPsk(
-  state: ClientState,
-  usage: ResumptionPSKUsageName,
-  cs: CiphersuiteImpl,
-): { id: PreSharedKeyID; secret: Uint8Array } {
-  const secret = state.keySchedule.resumptionPsk
-
-  const pskNonce = cs.rng.randomBytes(cs.kdf.size)
-
-  const psk = {
-    pskEpoch: state.groupContext.epoch,
-    pskGroupId: state.groupContext.groupId,
-    psktype: "resumption",
-    pskNonce,
-    usage,
-  } as const
-
-  return { id: psk, secret }
-}
-
-export async function branchGroup(
-  state: ClientState,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  memberKeyPackages: KeyPackage[],
-  newGroupId: Uint8Array,
-  cs: CiphersuiteImpl,
-): Promise<CreateCommitResult> {
-  const resumptionPsk = makeResumptionPsk(state, "branch", cs)
-
-  const pskSearch = makePskIndex(state, {})
-
-  const newGroup = await createGroup(newGroupId, keyPackage, privateKeyPackage, state.groupContext.extensions, cs)
-
-  const addMemberProposals: ProposalAdd[] = memberKeyPackages.map((kp) => ({
-    proposalType: "add",
-    add: {
-      keyPackage: kp,
-    },
-  }))
-
-  const branchPskProposal: ProposalPSK = {
-    proposalType: "psk",
-    psk: {
-      preSharedKeyId: resumptionPsk.id,
-    },
-  }
-
-  return createCommit(newGroup, pskSearch, false, [...addMemberProposals, branchPskProposal], cs)
-}
-
-export async function joinGroupFromBranch(
-  oldState: ClientState,
-  welcome: Welcome,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  ratchetTree: RatchetTree | undefined,
-  cs: CiphersuiteImpl,
-): Promise<ClientState> {
-  const pskSearch = makePskIndex(oldState, {})
-
-  return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, oldState)
-}
-
-export async function joinGroupFromReinit(
-  suspendedState: ClientState,
-  welcome: Welcome,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  ratchetTree: RatchetTree | undefined,
-): Promise<ClientState> {
-  const pskSearch = makePskIndex(suspendedState, {})
-  if (suspendedState.suspendedPendingReinit === undefined)
-    throw new Error("Cannot reinit because no init proposal found in last commit")
-
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(suspendedState.suspendedPendingReinit.cipherSuite))
-
-  return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, suspendedState)
-}
-
-function applyTreeMutations(tree: RatchetTree, grouped: Proposals): [RatchetTree, [number, KeyPackage][]] {
+export function applyTreeMutations(tree: RatchetTree, grouped: Proposals): [RatchetTree, [number, KeyPackage][]] {
   const treeAfterUpdate = grouped.update.reduce((acc, { senderLeafIndex, proposal }) => {
     if (senderLeafIndex === undefined) throw new Error("No sender index found for update proposal")
     return updateLeafNode(acc, proposal.update.leafNode, senderLeafIndex)

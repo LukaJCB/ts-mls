@@ -3,12 +3,10 @@ import {
   createGroup,
   emptyPskIndex,
   joinGroup,
-  joinGroupFromReinit,
   makePskIndex,
   processPrivateMessage,
-  reinitCreateNewGroup,
-  reinitGroup,
 } from "../../src/clientState"
+import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption"
 import { Credential } from "../../src/credential"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
 import { generateKeyPackage } from "../../src/keyPackage"

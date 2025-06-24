@@ -9,12 +9,9 @@ export {
   joinGroupExternal,
   processPrivateMessage,
   processPublicMessage,
-  joinGroupFromReinit,
-  reinitCreateNewGroup,
-  reinitGroup,
-  joinGroupFromBranch,
-  branchGroup,
 } from "./clientState"
+
+export { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup, joinGroupFromBranch, branchGroup } from "./resumption"
 
 export { type Credential } from "./credential"
 

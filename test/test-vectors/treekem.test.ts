@@ -13,13 +13,9 @@ import { GroupContext } from "../../src/groupContext"
 import { treeHashRoot } from "../../src/treeHash"
 import { deriveSecret } from "../../src/crypto/kdf"
 import { leafToNodeIndex } from "../../src/treemath"
-import {
-  applyUpdatePathSecret,
-  getCommitSecret,
-  PathSecrets,
-  PrivateKeyPath,
-  toPrivateKeyPath,
-} from "../../src/clientState"
+import { applyUpdatePathSecret, getCommitSecret } from "../../src/clientState"
+import { PrivateKeyPath, toPrivateKeyPath } from "../../src/privateKeyPath"
+import { PathSecrets } from "../../src/pathSecrets"
 import { hpkeKeysMatch } from "../crypto/keyMatch"
 
 for (const [index, x] of json.entries()) {
