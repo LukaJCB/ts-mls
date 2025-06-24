@@ -1,4 +1,5 @@
-import { createCommit, createGroup, emptyPskIndex, joinGroup } from "../../src/clientState"
+import { createCommit, createGroup, joinGroup } from "../../src/clientState"
+import { emptyPskIndex } from "../../src/pskIndex"
 import { branchGroup, joinGroupFromBranch } from "../../src/resumption"
 import { Credential } from "../../src/credential"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"

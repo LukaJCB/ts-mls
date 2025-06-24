@@ -3,13 +3,14 @@ export {
   createCommit,
   createGroup,
   createGroupInfoWithExternalPub,
-  emptyPskIndex,
   makePskIndex,
   joinGroup,
   joinGroupExternal,
-  processPrivateMessage,
-  processPublicMessage,
 } from "./clientState"
+
+export { processPrivateMessage, processPublicMessage } from "./processMessages"
+
+export { type PskIndex, emptyPskIndex } from "./pskIndex"
 
 export { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup, joinGroupFromBranch, branchGroup } from "./resumption"
 

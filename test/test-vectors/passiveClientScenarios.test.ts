@@ -8,7 +8,8 @@ import { hpkeKeysMatch, signatureKeysMatch } from "../crypto/keyMatch"
 import { decodeMlsMessage } from "../../src/message"
 import { decodeRatchetTree } from "../../src/ratchetTree"
 
-import { joinGroup, makePskIndex, processPrivateMessage, processPublicMessage } from "../../src/clientState"
+import { joinGroup, makePskIndex } from "../../src/clientState"
+import { processPrivateMessage, processPublicMessage } from "../../src/processMessages"
 import { bytesToBase64 } from "../../src/util/byteArray"
 
 for (const [index, x] of jsonCommit.entries()) {

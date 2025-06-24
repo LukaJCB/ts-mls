@@ -1,3 +1,6 @@
+import { Kdf, deriveSecret } from "./crypto/kdf"
+import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree"
+import { root, leafWidth } from "./treemath"
 import { PathSecret } from "./updatePath"
 
 /**
@@ -13,4 +16,37 @@ export function pathToPathSecrets(pathSecrets: PathSecret[]): PathSecrets {
     }),
     {},
   )
+}
+export async function getCommitSecret(
+  tree: RatchetTree,
+  nodeIndex: number,
+  pathSecret: Uint8Array,
+  kdf: Kdf,
+): Promise<Uint8Array> {
+  const rootIndex = root(leafWidth(tree.length))
+  const path = await pathToRoot(tree, nodeIndex, pathSecret, kdf)
+  const rootSecret = path[rootIndex]
+
+  if (rootSecret === undefined) throw new Error("Could not find secret for root")
+  return deriveSecret(rootSecret, "path", kdf)
+}
+
+export async function pathToRoot(
+  tree: RatchetTree,
+  nodeIndex: number,
+  pathSecret: Uint8Array,
+  kdf: Kdf,
+): Promise<PathSecrets> {
+  const rootIndex = root(leafWidth(tree.length))
+  let currentIndex = nodeIndex
+  let pathSecrets = { [nodeIndex]: pathSecret }
+  while (currentIndex != rootIndex) {
+    const nextIndex = findFirstNonBlankAncestor(tree, currentIndex)
+    const nextSecret = await deriveSecret(pathSecrets[currentIndex]!, "path", kdf)
+
+    pathSecrets[nextIndex] = nextSecret
+    currentIndex = nextIndex
+  }
+
+  return pathSecrets
 }

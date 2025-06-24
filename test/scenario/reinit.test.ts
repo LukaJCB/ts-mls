@@ -1,11 +1,6 @@
-import {
-  createCommit,
-  createGroup,
-  emptyPskIndex,
-  joinGroup,
-  makePskIndex,
-  processPrivateMessage,
-} from "../../src/clientState"
+import { createCommit, createGroup, joinGroup, makePskIndex } from "../../src/clientState"
+import { processPrivateMessage } from "../../src/processMessages"
+import { emptyPskIndex } from "../../src/pskIndex"
 import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption"
 import { Credential } from "../../src/credential"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"

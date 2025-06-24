@@ -3,11 +3,11 @@ import {
   createCommit,
   joinGroup,
   joinGroupExternal,
-  processPublicMessage,
   createGroupInfoWithExternalPub,
-  emptyPskIndex,
   makePskIndex,
 } from "../../src/clientState"
+import { processPublicMessage } from "../../src/processMessages"
+import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"
 import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
 import { generateKeyPackage } from "../../src/keyPackage"
