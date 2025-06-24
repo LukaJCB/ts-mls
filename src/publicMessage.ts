@@ -1,14 +1,7 @@
-import {
-  AuthenticatedContent,
-  AuthenticatedContentProposalOrCommit,
-  AuthenticatedContentTBM,
-  createMembershipTag,
-  verifyMembershipTag,
-} from "./authenticatedContent"
+import { AuthenticatedContentTBM, createMembershipTag } from "./authenticatedContent"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder"
 import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Commit } from "./commit"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { Extension } from "./extension"
 import { decodeExternalSender, ExternalSender } from "./externalSender"
@@ -19,12 +12,6 @@ import {
   encodeFramedContentAuthData,
   FramedContent,
   FramedContentAuthData,
-  FramedContentTBS,
-  FramedContentTBSExternal,
-  signFramedContent,
-  signFramedContentCommit,
-  toTbs,
-  verifyFramedContentSignature,
 } from "./framedContent"
 import { GroupContext } from "./groupContext"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
@@ -94,118 +81,7 @@ export async function createMemberPublicMessage(
   }
 }
 
-export async function protectCommitPublic(
-  signKey: Uint8Array,
-  membershipKey: Uint8Array,
-  confirmationKey: Uint8Array,
-  groupContext: GroupContext,
-  authenticatedData: Uint8Array,
-  commit: Commit,
-  cs: CiphersuiteImpl,
-  leafIndex: number,
-): Promise<PublicMessage> {
-  const framedContent: FramedContent = {
-    groupId: groupContext.groupId,
-    epoch: groupContext.epoch,
-    sender: { senderType: "member", leafIndex },
-    contentType: "commit",
-    authenticatedData,
-    commit,
-  }
-
-  const tbs = {
-    protocolVersion: groupContext.version,
-    wireformat: "mls_public_message",
-    content: framedContent,
-    senderType: "member",
-    context: groupContext,
-  } as const
-
-  const auth = await signFramedContentCommit(signKey, confirmationKey, groupContext.confirmedTranscriptHash, tbs, cs)
-
-  const authenticatedContent: AuthenticatedContent = {
-    wireformat: "mls_public_message",
-    content: framedContent,
-    auth,
-  }
-
-  return protectPublicMessage(membershipKey, groupContext, authenticatedContent, cs)
-}
-
-export async function protectPublicMessage(
-  membershipKey: Uint8Array,
-  groupContext: GroupContext,
-  content: AuthenticatedContent,
-  cs: CiphersuiteImpl,
-): Promise<PublicMessage> {
-  if (content.content.contentType === "application") throw new Error("Can't make an application message public")
-
-  if (content.content.sender.senderType == "member") {
-    const authenticatedContent: AuthenticatedContentTBM = {
-      contentTbs: toTbs(content.content, "mls_public_message", groupContext),
-      auth: content.auth,
-    }
-
-    const tag = await createMembershipTag(membershipKey, authenticatedContent, cs.hash)
-    return {
-      content: content.content,
-      auth: content.auth,
-      senderType: "member",
-      membershipTag: tag,
-    }
-  }
-
-  return {
-    content: content.content,
-    auth: content.auth,
-    senderType: content.content.sender.senderType,
-  }
-}
-
-export async function unprotectPublicMessage(
-  membershipKey: Uint8Array,
-  groupContext: GroupContext,
-  ratchetTree: RatchetTree,
-  msg: PublicMessage,
-  cs: CiphersuiteImpl,
-  overrideSignatureKey?: Uint8Array,
-): Promise<AuthenticatedContentProposalOrCommit> {
-  if (msg.content.contentType === "application") throw new Error("Can't make an application message public")
-
-  if (msg.senderType === "member") {
-    const authenticatedContent: AuthenticatedContentTBM = {
-      contentTbs: toTbs(msg.content, "mls_public_message", groupContext),
-      auth: msg.auth,
-    }
-
-    if (!(await verifyMembershipTag(membershipKey, authenticatedContent, msg.membershipTag, cs.hash)))
-      throw new Error("Could not verify membership")
-  }
-
-  const signaturePublicKey =
-    overrideSignatureKey !== undefined
-      ? overrideSignatureKey
-      : findSignaturePublicKey(ratchetTree, groupContext, msg.content)
-
-  const signatureValid = await verifyFramedContentSignature(
-    signaturePublicKey,
-    "mls_public_message",
-    msg.content,
-    msg.auth,
-    groupContext,
-    cs.signature,
-  )
-
-  if (!signatureValid) throw new Error("Signature invalid")
-
-  return {
-    wireformat: "mls_public_message",
-    content: msg.content,
-    auth: msg.auth,
-  }
-}
-
-function findSignaturePublicKey(
+export function findSignaturePublicKey(
   ratchetTree: RatchetTree,
   groupContext: GroupContext,
   framedContent: FramedContent,
@@ -238,31 +114,4 @@ export function senderFromExtension(extensions: Extension[], senderIndex: number
 
     return externalSender[0]
   }
-}
-
-export async function createPublicMessage(
-  signKey: Uint8Array,
-  confirmationKey: Uint8Array,
-  confirmedTranscriptHash: Uint8Array,
-  tbs: FramedContentTBSExternal,
-  cs: CiphersuiteImpl,
-): Promise<PublicMessage> {
-  const auth = await signFramedContent(signKey, confirmationKey, confirmedTranscriptHash, tbs, cs)
-  return { auth, content: tbs.content, senderType: tbs.senderType }
-}
-
-export async function createPublicMessageMember(
-  signKey: Uint8Array,
-  confirmationKey: Uint8Array,
-  confirmedTranscriptHash: Uint8Array,
-  membershipKey: Uint8Array,
-  tbs: FramedContentTBS,
-  cs: CiphersuiteImpl,
-): Promise<MemberPublicMessage> {
-  const auth = await signFramedContent(signKey, confirmationKey, confirmedTranscriptHash, tbs, cs)
-  const tbm = { auth, contentTbs: tbs }
-
-  const tag = await createMembershipTag(membershipKey, tbm, cs.hash)
-
-  return { auth, content: tbs.content, senderType: "member", membershipTag: new Uint8Array(tag) }
 }
