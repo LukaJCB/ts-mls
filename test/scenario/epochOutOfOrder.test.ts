@@ -11,27 +11,27 @@ import { defaultCapabilities, defaultLifetime, shuffledIndices, testEveryoneCanM
 import { PrivateMessage } from "../../src/privateMessage"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
 
-describe("Out of order message processing by generation", () => {
+describe("Out of order message processing by epoch", () => {
   for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation ${cs}`, async () => {
-      await generationOutOfOrder(cs as CiphersuiteName)
+    test(`Out of order epoch ${cs}`, async () => {
+      await epochOutOfOrder(cs as CiphersuiteName)
     })
   }
 
   for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation random ${cs}`, async () => {
-      await generationOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForGenerations)
+    test(`Out of order epoch random ${cs}`, async () => {
+      await epochOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForEpochs)
     })
   }
 
-  for (const cs of Object.keys(ciphersuites).slice(0, 1)) {
-    test(`Out of order generation limit reached fails ${cs}`, async () => {
-      await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
+  for (const cs of Object.keys(ciphersuites)) {
+    test(`Out of order epoch limit reached fails ${cs}`, async () => {
+      await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
     })
   }
 })
 
-async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
+async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -39,6 +39,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
+  // group starts at epoch 0
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
@@ -51,10 +52,12 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     },
   }
 
+  // alice adds bob and initiates epoch 1
   const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
 
   aliceGroup = addBobCommitResult.newState
 
+  // bob joins at epoch 1
   let bobGroup = await joinGroup(
     addBobCommitResult.welcome!,
     bob.publicPackage,
@@ -69,15 +72,62 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
 
   const thirdMessage = new TextEncoder().encode("Have you heard the news?")
 
-  // alice sends the first message
+  // alice sends the first message in epoch 1
   const aliceCreateFirstMessageResult = await createApplicationMessage(aliceGroup, firstMessage, impl)
   aliceGroup = aliceCreateFirstMessageResult.newState
 
+  // bob creates an empty commit and goes to epoch 2
+  const emptyCommitResult1 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  bobGroup = emptyCommitResult1.newState
+
+  if (emptyCommitResult1.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+
+  // alice processes the empty commit and goes to epoch 2
+  const aliceProcessFirstCommitResult = await processPrivateMessage(
+    aliceGroup,
+    emptyCommitResult1.commit.privateMessage,
+    emptyPskIndex,
+    impl,
+  )
+  aliceGroup = aliceProcessFirstCommitResult.newState
+
+  // alice sends the 2nd message in epoch 2
   const aliceCreateSecondMessageResult = await createApplicationMessage(aliceGroup, secondMessage, impl)
   aliceGroup = aliceCreateSecondMessageResult.newState
 
+  // bob creates an empty commit and goes to epoch 3
+  const emptyCommitResult2 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  bobGroup = emptyCommitResult2.newState
+
+  if (emptyCommitResult2.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+
+  // alice processes the empty commit and goes to epoch 3
+  const aliceProcessSecondCommitResult = await processPrivateMessage(
+    aliceGroup,
+    emptyCommitResult2.commit.privateMessage,
+    emptyPskIndex,
+    impl,
+  )
+  aliceGroup = aliceProcessSecondCommitResult.newState
+
+  // alice sends the 3rd message in epoch 3
   const aliceCreateThirdMessageResult = await createApplicationMessage(aliceGroup, thirdMessage, impl)
   aliceGroup = aliceCreateThirdMessageResult.newState
+
+  // bob creates an empty commit and goes to epoch 4
+  const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  bobGroup = emptyCommitResult3.newState
+
+  if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+
+  // alice processes the empty commit and goes to epoch 4
+  const aliceProcessThirdCommitResult = await processPrivateMessage(
+    aliceGroup,
+    emptyCommitResult3.commit.privateMessage,
+    emptyPskIndex,
+    impl,
+  )
+  aliceGroup = aliceProcessThirdCommitResult.newState
 
   // bob receives 3rd message first
   const bobProcessThirdMessageResult = await processPrivateMessage(
@@ -111,7 +161,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
 }
 
-async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages: number) {
+async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages: number) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -148,7 +198,23 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
   let messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
+    // alice sends the first message in current epoch
     aliceGroup = createMessageResult.newState
+
+    // bob creates an empty commit and goes to next epoch
+    const emptyCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+    bobGroup = emptyCommitResult.newState
+
+    if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+
+    // alice processes the empty commit and goes to next epoch
+    const aliceProcessCommitResult = await processPrivateMessage(
+      aliceGroup,
+      emptyCommitResult.commit.privateMessage,
+      emptyPskIndex,
+      impl,
+    )
+    aliceGroup = aliceProcessCommitResult.newState
     messages.push(createMessageResult.privateMessage)
   }
 
@@ -162,7 +228,7 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
 }
 
-async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMessages: number) {
+async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMessages: number) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -170,7 +236,7 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
 
   const groupId = new TextEncoder().encode("group1")
 
-  const retainConfig = { retainKeysForGenerations: totalMessages - 1, retainKeysForEpochs: 1 }
+  const retainConfig = { retainKeysForGenerations: 1, retainKeysForEpochs: totalMessages - 1 }
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
@@ -202,17 +268,28 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
   const message = new TextEncoder().encode("Hi!")
 
   let messages: PrivateMessage[] = []
-  for (let i = 0; i < totalMessages + 1; i++) {
+  for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
+    // alice sends the first message in current epoch
     aliceGroup = createMessageResult.newState
+
+    // bob creates an empty commit and goes to next epoch
+    const emptyCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+    bobGroup = emptyCommitResult.newState
+
+    if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+
+    // alice processes the empty commit and goes to next epoch
+    const aliceProcessCommitResult = await processPrivateMessage(
+      aliceGroup,
+      emptyCommitResult.commit.privateMessage,
+      emptyPskIndex,
+      impl,
+    )
+    aliceGroup = aliceProcessCommitResult.newState
     messages.push(createMessageResult.privateMessage)
   }
 
-  // read the last message first
-  const processResult = await processPrivateMessage(bobGroup, messages.at(-1)!, emptyPskIndex, impl)
-
-  bobGroup = processResult.newState
-
-  // should fail reading the first message
+  //process last message
   await expect(processPrivateMessage(bobGroup, messages.at(0)!, emptyPskIndex, impl)).rejects.toThrow()
 }

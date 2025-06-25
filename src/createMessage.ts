@@ -1,4 +1,4 @@
-import { ClientState, processProposal } from "./clientState"
+import { checkCanSendApplicationMessages, ClientState, processProposal } from "./clientState"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { MLSMessage } from "./message"
 import { protectProposal, protectApplicationData } from "./messageProtection"
@@ -65,7 +65,7 @@ export async function createProposal(
 }
 
 export async function createApplicationMessage(state: ClientState, message: Uint8Array, cs: CiphersuiteImpl) {
-  if (state.suspendedPendingReinit !== undefined) throw new Error("Group is suspended pending reinit")
+  checkCanSendApplicationMessages(state)
 
   const result = await protectApplicationData(
     state.signaturePrivateKey,

@@ -66,20 +66,16 @@ export async function deriveKey(secret: Uint8Array, generation: number, cs: Ciph
   return await deriveTreeSecret(secret, "key", generation, cs.hpke.keyLength, cs.kdf)
 }
 
-export async function ratchetUntil(current: GenerationSecret, desiredGen: number, kdf: Kdf): Promise<GenerationSecret> {
-  if (current.generation > desiredGen) {
-    const desired = current.unusedGenerations[desiredGen]
-
-    if (desired !== undefined) {
-      const { [desiredGen]: _, ...removeDesiredGen } = current.unusedGenerations
-      return {
-        ...current,
-        unusedGenerations: removeDesiredGen,
-      }
-    }
-    throw new Error("Desired gen in the past")
-  }
+export async function ratchetUntil(
+  current: GenerationSecret,
+  desiredGen: number,
+  retainGenerationsMax: number,
+  kdf: Kdf,
+): Promise<GenerationSecret> {
+  if (current.generation > desiredGen) throw new Error("Desired gen in the past")
   const generationDifference = desiredGen - current.generation
+
+  if (generationDifference > 500) throw new Error("Desired generation too far in the future")
 
   return await repeatAsync(
     async (s) => {
@@ -87,11 +83,35 @@ export async function ratchetUntil(current: GenerationSecret, desiredGen: number
       return {
         secret: nextSecret,
         generation: s.generation + 1,
-        unusedGenerations: { ...s.unusedGenerations, [s.generation]: s.secret },
+        unusedGenerations: newFunction(s, retainGenerationsMax),
       }
     },
     current,
     generationDifference,
+  )
+}
+
+function newFunction(s: GenerationSecret, retainGenerationsMax: number): Record<number, Uint8Array> {
+  const withNew = { ...s.unusedGenerations, [s.generation]: s.secret }
+
+  const generations = Object.keys(withNew)
+
+  const result =
+    generations.length >= retainGenerationsMax ? removeOldGenerations(withNew, retainGenerationsMax) : withNew
+
+  return result
+}
+
+function removeOldGenerations(
+  historicalReceiverData: Record<number, Uint8Array>,
+  max: number,
+): Record<number, Uint8Array> {
+  const sortedGenerations = Object.keys(historicalReceiverData)
+    .map(Number)
+    .sort((a, b) => (a < b ? -1 : 1))
+
+  return Object.fromEntries(
+    sortedGenerations.slice(-max).map((generation) => [generation, historicalReceiverData[generation]!]),
   )
 }
 
@@ -116,6 +136,7 @@ export async function ratchetToGeneration(
   tree: SecretTree,
   senderData: SenderData,
   contentType: ContentTypeName,
+  retainGenerationsMax: number,
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
   const index = leafToNodeIndex(senderData.leafIndex)
@@ -146,7 +167,12 @@ export async function ratchetToGeneration(
     throw new Error("Desired gen in the past")
   }
 
-  const currentSecret = await ratchetUntil(ratchetForContentType(node, contentType), senderData.generation, cs.kdf)
+  const currentSecret = await ratchetUntil(
+    ratchetForContentType(node, contentType),
+    senderData.generation,
+    retainGenerationsMax,
+    cs.kdf,
+  )
 
   return createRatchetResult(node, index, currentSecret, senderData.reuseGuard, tree, contentType, cs)
 }

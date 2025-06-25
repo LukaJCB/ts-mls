@@ -7,7 +7,7 @@ import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteIm
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { defaultCapabilities, defaultLifetime, testEveryoneCanMessageEveryone } from "./common"
+import { cannotMessageAnymore, defaultCapabilities, defaultLifetime, testEveryoneCanMessageEveryone } from "./common"
 
 for (const cs of Object.keys(ciphersuites)) {
   test(`Remove ${cs}`, async () => {
@@ -108,6 +108,10 @@ async function remove(cipherSuite: CiphersuiteName) {
   )
 
   charlieGroup = charlieProcessCommitResult.newState
+
+  expect(bobGroup.groupActiveState).toStrictEqual({ kind: "removedFromGroup" })
+
+  await cannotMessageAnymore(bobGroup, impl)
 
   await checkHpkeKeysMatch(aliceGroup, impl)
   await checkHpkeKeysMatch(charlieGroup, impl)

@@ -37,6 +37,8 @@ import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privat
 import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals"
 import { accumulatePskSecret, PskIndex } from "./pskIndex"
 import { getSenderLeafNodeIndex } from "./sender"
+import { addToMap } from "./util/addToMap"
+import { KeyRetentionConfig, defaultKeyRetentionConfig } from "./keyRetentionConfig"
 
 export type ClientState = {
   groupContext: GroupContext
@@ -47,8 +49,39 @@ export type ClientState = {
   signaturePrivateKey: Uint8Array
   unappliedProposals: UnappliedProposals
   confirmationTag: Uint8Array
-  historicalResumptionPsks: Map<bigint, Uint8Array>
-  suspendedPendingReinit?: Reinit //todo expand this to include removedFromGroup?
+  historicalReceiverData: Map<bigint, EpochReceiverData>
+  groupActiveState: GroupActiveState
+  keyRetentionConfig: KeyRetentionConfig
+}
+
+export type GroupActiveState =
+  | { kind: "active" }
+  | { kind: "suspendedPendingReinit"; reinit: Reinit }
+  | { kind: "removedFromGroup" }
+
+/**
+ * This type contains everything necessary to receieve application messages for an earlier epoch
+ */
+export type EpochReceiverData = {
+  resumptionPsk: Uint8Array
+  secretTree: SecretTree
+  ratchetTree: RatchetTree
+  senderDataSecret: Uint8Array
+  groupContext: GroupContext
+}
+
+export function checkCanSendApplicationMessages(state: ClientState): void {
+  if (Object.keys(state.unappliedProposals).length !== 0)
+    throw new Error("Cannot send application message with unapplied proposals")
+
+  checkCanSendHandshakeMessages(state)
+}
+
+export function checkCanSendHandshakeMessages(state: ClientState): void {
+  if (state.groupActiveState.kind === "suspendedPendingReinit")
+    throw new Error("Cannot send messages while Group is suspended pending reinit")
+  else if (state.groupActiveState.kind === "removedFromGroup")
+    throw new Error("Cannot send messages after being removed from group")
 }
 
 export type Proposals = {
@@ -77,6 +110,7 @@ export type ApplyProposalsResult = {
   pskIds: PreSharedKeyID[]
   needsUpdatePath: boolean
   additionalResult: ApplyProposalsData
+  selfRemoved: boolean
 }
 
 type ApplyProposalsData =
@@ -129,6 +163,7 @@ export async function applyProposals(
           kind: "reinit",
           reinit,
         },
+        selfRemoved: false,
       }
     }
 
@@ -137,6 +172,8 @@ export async function applyProposals(
     const [mutatedTree, addedLeafNodes] = applyTreeMutations(state.ratchetTree, grouped)
 
     const [updatedPskSecret, pskIds] = await accumulatePskSecret(grouped.psk, pskSearch, cs, zeroes)
+
+    const selfRemoved = mutatedTree[leafToNodeIndex(state.privatePath.leafIndex)] === undefined
 
     const needsUpdatePath =
       allProposals.length === 0 || Object.values(grouped.update).length > 1 || Object.values(grouped.remove).length > 1
@@ -151,6 +188,7 @@ export async function applyProposals(
       },
       pskIds,
       needsUpdatePath,
+      selfRemoved,
     }
   } else {
     if (grouped.external_init.length > 1) throw new Error("Cannot contain more than one external_init proposal")
@@ -189,6 +227,7 @@ export async function applyProposals(
       pskSecret: updatedPskSecret,
       pskIds,
       additionalResult: { kind: "externalCommit", externalInitSecret },
+      selfRemoved: false,
     }
   }
 }
@@ -202,7 +241,7 @@ export function makePskIndex(state: ClientState | undefined, externalPsks: Recor
 
       if (state !== undefined && constantTimeEqual(preSharedKeyId.pskGroupId, state.groupContext.groupId)) {
         if (preSharedKeyId.pskEpoch === state.groupContext.epoch) return state.keySchedule.resumptionPsk
-        else return state.historicalResumptionPsks.get(preSharedKeyId.pskEpoch)
+        else return state.historicalReceiverData.get(preSharedKeyId.pskEpoch)?.resumptionPsk
       }
     },
   }
@@ -236,6 +275,7 @@ export async function joinGroup(
   cs: CiphersuiteImpl,
   ratchetTree?: RatchetTree,
   resumingFromState?: ClientState,
+  keyRetentionConfig: KeyRetentionConfig = defaultKeyRetentionConfig,
 ): Promise<ClientState> {
   const keyPackageRef = await makeKeyPackageRef(keyPackage, cs.hash)
   const privKey = await cs.hpke.importPrivateKey(privateKeys.initPrivateKey)
@@ -280,19 +320,19 @@ export async function joinGroup(
     if (gi.groupContext.epoch !== 1n) throw new Error("Resumption must be started at epoch 1")
 
     if (resumptionPsk.usage === "reinit") {
-      if (resumingFromState.suspendedPendingReinit === undefined)
+      if (resumingFromState.groupActiveState.kind !== "suspendedPendingReinit")
         throw new Error("Found reinit psk but no old suspended clientState")
 
-      if (!constantTimeEqual(resumingFromState.suspendedPendingReinit.groupId, gi.groupContext.groupId))
+      if (!constantTimeEqual(resumingFromState.groupActiveState.reinit.groupId, gi.groupContext.groupId))
         throw new Error("new groupId mismatch")
 
-      if (resumingFromState.suspendedPendingReinit.version !== gi.groupContext.version)
+      if (resumingFromState.groupActiveState.reinit.version !== gi.groupContext.version)
         throw new Error("Version mismatch")
 
-      if (resumingFromState.suspendedPendingReinit.cipherSuite !== gi.groupContext.cipherSuite)
+      if (resumingFromState.groupActiveState.reinit.cipherSuite !== gi.groupContext.cipherSuite)
         throw new Error("Ciphersuite mismatch")
 
-      if (!extensionsEqual(resumingFromState.suspendedPendingReinit.extensions, gi.groupContext.extensions))
+      if (!extensionsEqual(resumingFromState.groupActiveState.reinit.extensions, gi.groupContext.extensions))
         throw new Error("Extensions mismatch")
     }
   }
@@ -360,7 +400,9 @@ export async function joinGroup(
     unappliedProposals: {},
     keySchedule,
     secretTree,
-    historicalResumptionPsks: new Map(),
+    historicalReceiverData: new Map(),
+    groupActiveState: { kind: "active" },
+    keyRetentionConfig,
   }
 }
 
@@ -370,6 +412,7 @@ export async function createGroup(
   privateKeyPackage: PrivateKeyPackage,
   extensions: Extension[],
   cs: CiphersuiteImpl,
+  keyRetentionConfig: KeyRetentionConfig = defaultKeyRetentionConfig,
 ): Promise<ClientState> {
   const ratchetTree: RatchetTree = [{ nodeType: "leaf", leaf: keyPackage.leafNode }]
 
@@ -405,9 +448,11 @@ export async function createGroup(
     privatePath,
     signaturePrivateKey: privateKeyPackage.signaturePrivateKey,
     unappliedProposals: {},
-    historicalResumptionPsks: new Map(),
+    historicalReceiverData: new Map(),
     groupContext,
     confirmationTag,
+    groupActiveState: { kind: "active" },
+    keyRetentionConfig,
   }
 }
 
@@ -471,4 +516,32 @@ export async function processProposal(
       getSenderLeafNodeIndex(content.content.sender),
     ),
   }
+}
+
+export function addHistoricalReceiverData(state: ClientState): Map<bigint, EpochReceiverData> {
+  const withNew = addToMap(state.historicalReceiverData, state.groupContext.epoch, {
+    secretTree: state.secretTree,
+    ratchetTree: state.ratchetTree,
+    senderDataSecret: state.keySchedule.senderDataSecret,
+    groupContext: state.groupContext,
+    resumptionPsk: state.keySchedule.resumptionPsk,
+  })
+
+  const epochs = [...withNew.keys()]
+
+  const result =
+    epochs.length >= state.keyRetentionConfig.retainKeysForEpochs
+      ? removeOldHistoricalReceiverData(withNew, state.keyRetentionConfig.retainKeysForEpochs)
+      : withNew
+
+  return result
+}
+
+function removeOldHistoricalReceiverData(
+  historicalReceiverData: Map<bigint, EpochReceiverData>,
+  max: number,
+): Map<bigint, EpochReceiverData> {
+  const sortedEpochs = [...historicalReceiverData.keys()].sort((a, b) => (a < b ? -1 : 1))
+
+  return new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!]))
 }

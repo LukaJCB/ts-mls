@@ -194,6 +194,7 @@ export async function unprotectPrivateMessage(
   secretTree: SecretTree,
   ratchetTree: RatchetTree,
   groupContext: GroupContext,
+  retainKeysForGenerations: number,
   cs: CiphersuiteImpl,
   overrideSignatureKey?: Uint8Array,
 ): Promise<UnprotectResult> {
@@ -201,7 +202,13 @@ export async function unprotectPrivateMessage(
 
   if (senderData === undefined) throw new Error("Could not decrypt senderdata")
 
-  const { key, nonce, newTree } = await ratchetToGeneration(secretTree, senderData, msg.contentType, cs)
+  const { key, nonce, newTree } = await ratchetToGeneration(
+    secretTree,
+    senderData,
+    msg.contentType,
+    retainKeysForGenerations,
+    cs,
+  )
 
   const aad: PrivateContentAAD = {
     groupId: msg.groupId,

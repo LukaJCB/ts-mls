@@ -30,13 +30,10 @@ export async function signatureKeysMatch(
   return s.verify(publicKey, testMessage, signature)
 }
 
-export async function checkHpkeKeysMatch(group: ClientState, impl: CiphersuiteImpl): Promise<boolean> {
+export async function checkHpkeKeysMatch(group: ClientState, impl: CiphersuiteImpl): Promise<void> {
   for (const [nodeIndex, privateKey] of Object.entries(group.privatePath.privateKeys)) {
     const pub = getHpkePublicKey(group.ratchetTree[Number(nodeIndex)]!)
     const x = await hpkeKeysMatch(pub, privateKey, impl.hpke)
-    if (!x) {
-      return false
-    }
+    expect(x).toBe(true)
   }
-  return true
 }

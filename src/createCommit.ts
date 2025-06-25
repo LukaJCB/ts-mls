@@ -1,5 +1,15 @@
+import { addHistoricalReceiverData } from "./clientState"
 import { AuthenticatedContentCommit } from "./authenticatedContent"
-import { ClientState, applyProposals, nextEpochContext, ApplyProposalsResult, exportSecret } from "./clientState"
+import {
+  ClientState,
+  applyProposals,
+  nextEpochContext,
+  ApplyProposalsResult,
+  exportSecret,
+  checkCanSendHandshakeMessages,
+  GroupActiveState,
+} from "./clientState"
+import { KeyRetentionConfig, defaultKeyRetentionConfig } from "./keyRetentionConfig"
 import { encodeCredential } from "./credential"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { decryptWithLabel } from "./crypto/hpke"
@@ -33,7 +43,6 @@ import { createSecretTree, SecretTree } from "./secretTree"
 import { treeHashRoot } from "./treeHash"
 import { leafWidth, nodeToLeafIndex } from "./treemath"
 import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath"
-import { addToMap } from "./util/addToMap"
 import { base64ToBytes } from "./util/byteArray"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome"
@@ -48,7 +57,7 @@ export async function createCommit(
   cs: CiphersuiteImpl,
   ratchetTreeExtension: boolean = false,
 ): Promise<CreateCommitResult> {
-  if (state.suspendedPendingReinit !== undefined) throw new Error("Group is suspended pending reinit")
+  checkCanSendHandshakeMessages(state)
 
   const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
 
@@ -143,6 +152,12 @@ export async function createCommit(
     pathSecrets,
   )
 
+  const groupActiveState: GroupActiveState = res.selfRemoved
+    ? { kind: "removedFromGroup" }
+    : suspendedPendingReinit !== undefined
+      ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
+      : { kind: "active" }
+
   const newState: ClientState = {
     groupContext: updatedGroupContext,
     ratchetTree: tree,
@@ -150,18 +165,16 @@ export async function createCommit(
     keySchedule: epochSecrets.keySchedule,
     privatePath: privateKeys,
     unappliedProposals: {},
-    historicalResumptionPsks: addToMap(
-      state.historicalResumptionPsks,
-      state.groupContext.epoch,
-      state.keySchedule.resumptionPsk,
-    ),
+    historicalReceiverData: addHistoricalReceiverData(state),
     confirmationTag,
     signaturePrivateKey: state.signaturePrivateKey,
-    suspendedPendingReinit,
+    groupActiveState,
+    keyRetentionConfig: state.keyRetentionConfig,
   }
 
   return { newState, welcome, commit }
 }
+
 function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): ProposalOrRef[] {
   const refs: ProposalOrRef[] = Object.keys(state.unappliedProposals).map((p) => ({
     proposalOrRefType: "reference",
@@ -385,6 +398,7 @@ export async function joinGroupExternal(
   resync: boolean,
   cs: CiphersuiteImpl,
   tree?: RatchetTree,
+  keyRetentionConfig: KeyRetentionConfig = defaultKeyRetentionConfig,
 ) {
   const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === "external_pub")
 
@@ -489,10 +503,12 @@ export async function joinGroupExternal(
     secretTree: await createSecretTree(leafWidth(newTree.length), epochSecrets.keySchedule.encryptionSecret, cs.kdf),
     privatePath: privateKeyPath,
     confirmationTag,
-    historicalResumptionPsks: new Map(),
+    historicalReceiverData: new Map(),
     signaturePrivateKey: privateKeys.signaturePrivateKey,
     keySchedule: epochSecrets.keySchedule,
     unappliedProposals: {},
+    groupActiveState: { kind: "active" },
+    keyRetentionConfig,
   }
 
   const authenticatedContent: AuthenticatedContentCommit = {

@@ -25,12 +25,22 @@
     "@noble/curves": "^1.9.2",
     "@noble/post-quantum": "0.4.1"
   },
-  "optionalDependencies": {
-    "@hpke/chacha20poly1305": "1.6.2",
-    "@hpke/hybridkem-x-wing": "0.5.1",
-    "@hpke/ml-kem": "0.1.0",
-    "@noble/curves": "^1.9.2",
-    "@noble/post-quantum": "0.4.1"
+  "peerDependenciesMeta": {
+    "@hpke/chacha20poly1305": {
+      "optional": true
+    },
+    "@hpke/hybridkem-x-wing": {
+      "optional": true
+    },
+    "@hpke/ml-kem": {
+      "optional": true
+    },
+    "@noble/curves": {
+      "optional": true
+    },
+    "@noble/post-quantum": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@hpke/chacha20poly1305": "1.6.2",

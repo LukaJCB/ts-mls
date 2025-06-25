@@ -131,10 +131,10 @@ export async function joinGroupFromReinit(
   ratchetTree: RatchetTree | undefined,
 ): Promise<ClientState> {
   const pskSearch = makePskIndex(suspendedState, {})
-  if (suspendedState.suspendedPendingReinit === undefined)
+  if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
     throw new Error("Cannot reinit because no init proposal found in last commit")
 
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(suspendedState.suspendedPendingReinit.cipherSuite))
+  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite))
 
   return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, suspendedState)
 }

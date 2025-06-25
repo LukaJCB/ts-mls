@@ -5,7 +5,10 @@ import { processPrivateMessage } from "../../src/processMessages"
 import { CiphersuiteName, CiphersuiteImpl, ciphersuites } from "../../src/crypto/ciphersuite"
 import { Lifetime } from "../../src/lifetime"
 
-export async function testEveryoneCanMessageEveryone(clients: ClientState[], impl: CiphersuiteImpl) {
+export async function testEveryoneCanMessageEveryone(
+  clients: ClientState[],
+  impl: CiphersuiteImpl,
+): Promise<{ updatedGroups: ClientState[] }> {
   const encoder = new TextEncoder()
   const updatedGroups = [...clients]
 
@@ -37,6 +40,11 @@ export async function testEveryoneCanMessageEveryone(clients: ClientState[], imp
 
   return { updatedGroups }
 }
+
+export async function cannotMessageAnymore(state: ClientState, impl: CiphersuiteImpl): Promise<void> {
+  await expect(createApplicationMessage(state, new TextEncoder().encode("hello"), impl)).rejects.toThrow()
+}
+
 export const defaultCapabilities: Capabilities = {
   versions: ["mls10"],
   ciphersuites: Object.keys(ciphersuites) as CiphersuiteName[],

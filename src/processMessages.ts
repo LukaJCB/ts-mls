@@ -1,5 +1,12 @@
 import { AuthenticatedContentCommit } from "./authenticatedContent"
-import { ClientState, applyProposals, nextEpochContext, processProposal } from "./clientState"
+import {
+  ClientState,
+  GroupActiveState,
+  addHistoricalReceiverData,
+  applyProposals,
+  nextEpochContext,
+  processProposal,
+} from "./clientState"
 import { applyUpdatePathSecret } from "./createCommit"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { Kdf, deriveSecret } from "./crypto/kdf"
@@ -28,22 +35,54 @@ export type ProcessPrivateMessageResult =
       newState: ClientState
     }
   | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState }
+
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
  */
-
 export async function processPrivateMessage(
   state: ClientState,
   pm: PrivateMessage,
   pskSearch: PskIndex,
   cs: CiphersuiteImpl,
 ): Promise<ProcessPrivateMessageResult> {
+  if (pm.epoch < state.groupContext.epoch) {
+    const receiverData = state.historicalReceiverData.get(pm.epoch)
+
+    if (receiverData !== undefined) {
+      const result = await unprotectPrivateMessage(
+        receiverData.senderDataSecret,
+        pm,
+        receiverData.secretTree,
+        receiverData.ratchetTree,
+        receiverData.groupContext,
+        state.keyRetentionConfig.retainKeysForGenerations,
+        cs,
+      )
+
+      const newHistoricalReceiverData = addToMap(state.historicalReceiverData, pm.epoch, {
+        ...receiverData,
+        secretTree: result.tree,
+      })
+
+      const newState = { ...state, historicalReceiverData: newHistoricalReceiverData }
+
+      if (result.content.content.contentType === "application") {
+        return { kind: "applicationMessage", message: result.content.content.applicationData, newState }
+      } else {
+        throw new Error("Cannot process commit or proposal from former epoch")
+      }
+    } else {
+      throw new Error("Cannot process message, epoch too old")
+    }
+  }
+
   const result = await unprotectPrivateMessage(
     state.keySchedule.senderDataSecret,
     pm,
     state.secretTree,
     state.ratchetTree,
     state.groupContext,
+    state.keyRetentionConfig.retainKeysForGenerations,
     cs,
   )
 
@@ -76,6 +115,8 @@ export async function processPublicMessage(
   pskSearch: PskIndex,
   cs: CiphersuiteImpl,
 ): Promise<ClientState> {
+  if (pm.content.epoch < state.groupContext.epoch) throw new Error("Cannot process message, epoch too old")
+
   const content = await unprotectPublicMessage(
     state.keySchedule.membershipKey,
     state.groupContext,
@@ -159,6 +200,14 @@ async function processCommit(
 
   const secretTree = await createSecretTree(leafWidth(tree.length), epochSecrets.keySchedule.encryptionSecret, cs.kdf)
 
+  const suspendedPendingReinit = result.additionalResult.kind === "reinit" ? result.additionalResult.reinit : undefined
+
+  const groupActiveState: GroupActiveState = result.selfRemoved
+    ? { kind: "removedFromGroup" }
+    : suspendedPendingReinit !== undefined
+      ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
+      : { kind: "active" }
+
   return {
     ...state,
     secretTree,
@@ -167,13 +216,9 @@ async function processCommit(
     groupContext: updatedGroupContext,
     keySchedule: epochSecrets.keySchedule,
     confirmationTag: content.auth.confirmationTag,
-    historicalResumptionPsks: addToMap(
-      state.historicalResumptionPsks,
-      state.groupContext.epoch,
-      state.keySchedule.resumptionPsk,
-    ),
+    historicalReceiverData: addHistoricalReceiverData(state),
     unappliedProposals: {},
-    suspendedPendingReinit: result.additionalResult.kind === "reinit" ? result.additionalResult.reinit : undefined,
+    groupActiveState,
   }
 }
 

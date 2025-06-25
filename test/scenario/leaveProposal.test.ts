@@ -8,7 +8,7 @@ import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteIm
 import { generateKeyPackage } from "../../src/keyPackage"
 import { Proposal, ProposalAdd } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { defaultCapabilities, defaultLifetime, testEveryoneCanMessageEveryone } from "./common"
+import { cannotMessageAnymore, defaultCapabilities, defaultLifetime, testEveryoneCanMessageEveryone } from "./common"
 
 for (const cs of Object.keys(ciphersuites)) {
   test(`Leave Proposal ${cs}`, async () => {
@@ -132,6 +132,9 @@ async function leaveProposal(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.unappliedProposals).toEqual({})
   expect(charlieGroup.unappliedProposals).toEqual({})
+  expect(aliceGroup.groupActiveState).toStrictEqual({ kind: "removedFromGroup" })
+
+  await cannotMessageAnymore(aliceGroup, impl)
   await checkHpkeKeysMatch(bobGroup, impl)
   await checkHpkeKeysMatch(charlieGroup, impl)
   await testEveryoneCanMessageEveryone([bobGroup, charlieGroup], impl)

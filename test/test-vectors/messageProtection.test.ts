@@ -198,6 +198,7 @@ async function publicApplicationFails(data: MessageProtectionData, gc: GroupCont
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
@@ -234,6 +235,7 @@ async function commit(data: MessageProtectionData, gc: GroupContext, impl: Ciphe
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
@@ -257,6 +259,7 @@ async function application(data: MessageProtectionData, gc: GroupContext, impl: 
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
@@ -290,6 +293,7 @@ async function protectThenUnprotectProposal(data: MessageProtectionData, gc: Gro
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
@@ -320,6 +324,7 @@ async function protectThenUnprotectApplication(data: MessageProtectionData, gc: 
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
@@ -365,6 +370,7 @@ async function protectThenUnprotectCommit(data: MessageProtectionData, gc: Group
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
@@ -388,6 +394,7 @@ async function proposal(data: MessageProtectionData, gc: GroupContext, impl: Cip
     secretTree,
     [],
     gc,
+    1,
     impl,
     hexToBytes(data.signature_pub),
   )
