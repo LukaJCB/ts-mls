@@ -10,6 +10,9 @@ import { ProposalAdd } from "../../src/proposal"
 import { defaultCapabilities, defaultLifetime, shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
 import { PrivateMessage } from "../../src/privateMessage"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
+import { ClientState } from "../../src/clientState"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { KeyRetentionConfig } from "../../src/keyRetentionConfig"
 
 describe("Out of order message processing by epoch", () => {
   for (const cs of Object.keys(ciphersuites)) {
@@ -31,7 +34,16 @@ describe("Out of order message processing by epoch", () => {
   }
 })
 
-async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
+type TestParticipants = {
+  aliceGroup: ClientState
+  bobGroup: ClientState
+  impl: CiphersuiteImpl
+}
+
+async function setupTestParticipants(
+  cipherSuite: CiphersuiteName,
+  retainConfig?: KeyRetentionConfig,
+): Promise<TestParticipants> {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -54,22 +66,31 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
 
   // alice adds bob and initiates epoch 1
   const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
-
   aliceGroup = addBobCommitResult.newState
 
   // bob joins at epoch 1
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
     impl,
+    undefined,
+    undefined,
+    retainConfig,
   )
 
+  return { aliceGroup, bobGroup, impl }
+}
+
+async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
+  const { aliceGroup: initialAliceGroup, bobGroup: initialBobGroup, impl } = await setupTestParticipants(cipherSuite)
+
+  let aliceGroup = initialAliceGroup
+  let bobGroup = initialBobGroup
+
   const firstMessage = new TextEncoder().encode("Hello bob!")
-
   const secondMessage = new TextEncoder().encode("How are ya?")
-
   const thirdMessage = new TextEncoder().encode("Have you heard the news?")
 
   // alice sends the first message in epoch 1
@@ -145,7 +166,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     makePskIndex(bobGroup, {}),
     impl,
   )
-
   bobGroup = bobProcessFirstMessageResult.newState
 
   // bob receives 2nd message last
@@ -155,43 +175,16 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     makePskIndex(bobGroup, {}),
     impl,
   )
-
   bobGroup = bobProcessSecondMessageResult.newState
 
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
 }
 
 async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages: number) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const { aliceGroup: initialAliceGroup, bobGroup: initialBobGroup, impl } = await setupTestParticipants(cipherSuite)
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities, defaultLifetime, [], impl)
-
-  const groupId = new TextEncoder().encode("group1")
-
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
-
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities, defaultLifetime, [], impl)
-
-  const addBobProposal: ProposalAdd = {
-    proposalType: "add",
-    add: {
-      keyPackage: bob.publicPackage,
-    },
-  }
-
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
-
-  aliceGroup = addBobCommitResult.newState
-
-  let bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-  )
+  let aliceGroup = initialAliceGroup
+  let bobGroup = initialBobGroup
 
   const message = new TextEncoder().encode("Hi!")
 
@@ -229,41 +222,15 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
 }
 
 async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMessages: number) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
-
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities, defaultLifetime, [], impl)
-
-  const groupId = new TextEncoder().encode("group1")
-
   const retainConfig = { retainKeysForGenerations: 1, retainKeysForEpochs: totalMessages - 1 }
-
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
-
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities, defaultLifetime, [], impl)
-
-  const addBobProposal: ProposalAdd = {
-    proposalType: "add",
-    add: {
-      keyPackage: bob.publicPackage,
-    },
-  }
-
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
-
-  aliceGroup = addBobCommitResult.newState
-
-  let bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
+  const {
+    aliceGroup: initialAliceGroup,
+    bobGroup: initialBobGroup,
     impl,
-    undefined,
-    undefined,
-    retainConfig,
-  )
+  } = await setupTestParticipants(cipherSuite, retainConfig)
+
+  let aliceGroup = initialAliceGroup
+  let bobGroup = initialBobGroup
 
   const message = new TextEncoder().encode("Hi!")
 
