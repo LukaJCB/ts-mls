@@ -48,3 +48,13 @@ export const defaultLifetime: Lifetime = {
   notBefore: 0n,
   notAfter: 9223372036854775807n,
 }
+export function shuffledIndices<T>(arr: T[]): number[] {
+  const indices = arr.map((_, i) => i)
+
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[indices[i], indices[j]!] = [indices[j]!, indices[i]!]
+  }
+
+  return indices
+}

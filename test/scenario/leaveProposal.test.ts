@@ -10,7 +10,7 @@ import { Proposal, ProposalAdd } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
 import { defaultCapabilities, defaultLifetime, testEveryoneCanMessageEveryone } from "./common"
 
-for (const cs of Object.keys(ciphersuites).slice(0, 1)) {
+for (const cs of Object.keys(ciphersuites)) {
   test(`Leave Proposal ${cs}`, async () => {
     await leaveProposal(cs as CiphersuiteName)
   })

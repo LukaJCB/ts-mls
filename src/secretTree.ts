@@ -67,7 +67,18 @@ export async function deriveKey(secret: Uint8Array, generation: number, cs: Ciph
 }
 
 export async function ratchetUntil(current: GenerationSecret, desiredGen: number, kdf: Kdf): Promise<GenerationSecret> {
-  if (current.generation > desiredGen) throw new Error("Desired gen in the past")
+  if (current.generation > desiredGen) {
+    const desired = current.unusedGenerations[desiredGen]
+
+    if (desired !== undefined) {
+      const { [desiredGen]: _, ...removeDesiredGen } = current.unusedGenerations
+      return {
+        ...current,
+        unusedGenerations: removeDesiredGen,
+      }
+    }
+    throw new Error("Desired gen in the past")
+  }
   const generationDifference = desiredGen - current.generation
 
   return await repeatAsync(
@@ -85,11 +96,12 @@ export async function ratchetUntil(current: GenerationSecret, desiredGen: number
 }
 
 export async function derivePrivateMessageNonce(
-  secret: GenerationSecret,
+  secret: Uint8Array,
+  generation: number,
   reuseGuard: Uint8Array,
   cs: CiphersuiteImpl,
 ): Promise<Uint8Array> {
-  const nonce = await deriveNonce(secret.secret, secret.generation, cs)
+  const nonce = await deriveNonce(secret, generation, cs)
 
   if (nonce.length >= 4 && reuseGuard.length >= 4) {
     for (let i = 0; i < 4; i++) {
@@ -109,6 +121,30 @@ export async function ratchetToGeneration(
   const index = leafToNodeIndex(senderData.leafIndex)
   const node = tree[index]
   if (node === undefined) throw new Error("Bad node index for secret tree")
+
+  const ratchet = ratchetForContentType(node, contentType)
+
+  if (ratchet.generation > senderData.generation) {
+    const desired = ratchet.unusedGenerations[senderData.generation]
+
+    if (desired !== undefined) {
+      const { [senderData.generation]: _, ...removedDesiredGen } = ratchet.unusedGenerations
+      const ratchetState = { ...ratchet, unusedGenerations: removedDesiredGen }
+
+      return await createRatchetResultWithSecret(
+        node,
+        index,
+        desired,
+        senderData.generation,
+        senderData.reuseGuard,
+        tree,
+        contentType,
+        cs,
+        ratchetState,
+      )
+    }
+    throw new Error("Desired gen in the past")
+  }
 
   const currentSecret = await ratchetUntil(ratchetForContentType(node, contentType), senderData.generation, cs.kdf)
 
@@ -139,9 +175,6 @@ async function createRatchetResult(
   contentType: ContentTypeName,
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
-  const key = await deriveKey(currentSecret.secret, currentSecret.generation, cs)
-  const nonce = await derivePrivateMessageNonce(currentSecret, reuseGuard, cs)
-
   const nextSecret = await deriveTreeSecret(
     currentSecret.secret,
     "secret",
@@ -152,18 +185,50 @@ async function createRatchetResult(
 
   const ratchetState = { ...currentSecret, secret: nextSecret, generation: currentSecret.generation + 1 }
 
+  return await createRatchetResultWithSecret(
+    node,
+    index,
+    currentSecret.secret,
+    currentSecret.generation,
+    reuseGuard,
+    tree,
+    contentType,
+    cs,
+    ratchetState,
+  )
+}
+
+async function createRatchetResultWithSecret(
+  node: SecretTreeNode,
+  index: number,
+  secret: Uint8Array,
+  generation: number,
+  reuseGuard: ReuseGuard,
+  tree: SecretTree,
+  contentType: ContentTypeName,
+  cs: CiphersuiteImpl,
+  ratchetState: GenerationSecret,
+): Promise<ConsumeRatchetResult> {
+  const { nonce, key } = await createKeyAndNonce(secret, generation, reuseGuard, cs)
+
   const newNode =
     contentType === "application" ? { ...node, application: ratchetState } : { ...node, handshake: ratchetState }
 
   const newTree = updateArray(tree, index, newNode)
 
   return {
-    generation: currentSecret.generation,
+    generation: generation,
     reuseGuard,
     nonce,
     key,
     newTree,
   }
+}
+
+async function createKeyAndNonce(secret: Uint8Array, generation: number, reuseGuard: ReuseGuard, cs: CiphersuiteImpl) {
+  const key = await deriveKey(secret, generation, cs)
+  const nonce = await derivePrivateMessageNonce(secret, generation, reuseGuard, cs)
+  return { nonce, key }
 }
 
 function ratchetForContentType(node: SecretTreeNode, contentType: ContentTypeName): GenerationSecret {

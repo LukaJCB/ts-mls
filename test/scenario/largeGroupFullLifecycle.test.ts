@@ -12,7 +12,7 @@ import {
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
 import { Credential } from "../../src/credential"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal"
-import { defaultCapabilities, defaultLifetime, testEveryoneCanMessageEveryone } from "./common"
+import { defaultCapabilities, defaultLifetime, shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
 
 import { randomInt } from "crypto"
 
@@ -189,15 +189,4 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
 
     m.state = result.newState
   }
-}
-
-function shuffledIndices<T>(arr: T[]): number[] {
-  const indices = arr.map((_, i) => i)
-
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[indices[i], indices[j]!] = [indices[j]!, indices[i]!]
-  }
-
-  return indices
 }
