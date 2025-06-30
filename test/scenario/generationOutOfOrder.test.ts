@@ -30,7 +30,7 @@ describe("Out of order message processing by generation", () => {
     })
   }
 
-  for (const cs of Object.keys(ciphersuites).slice(0, 1)) {
+  for (const cs of Object.keys(ciphersuites)) {
     test(`Out of order generation limit reached fails ${cs}`, async () => {
       await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
     })

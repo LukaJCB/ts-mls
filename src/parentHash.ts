@@ -2,6 +2,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder"
 import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
 import { Hash } from "./crypto/hash"
+import { InternalError } from "./mlsError"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree"
 import { treeHash } from "./treeHash"
 import { isLeaf, leafToNodeIndex, leafWidth, left, right, root } from "./treemath"
@@ -37,12 +38,14 @@ function validateParentHashCoverage(parentIndices: number[], coverage: Record<nu
   return true
 }
 
-export async function verifyParentHashes(tree: RatchetTree, h: Hash) {
-  const parentNodes = tree.reduce<number[]>((acc, cur, index) => {
+export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<boolean> {
+  const parentNodes = tree.reduce((acc, cur, index) => {
     if (cur !== undefined && cur.nodeType === "parent") {
       return [...acc, index]
     } else return acc
-  }, [])
+  }, [] as number[])
+
+  if (parentNodes.length === 0) return true
 
   const coverage = await parentHashCoverage(tree, h)
 
@@ -75,7 +78,7 @@ function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, 
         const [parentHash, parentHashNodeIndex] = await calculateParentHash(tree, currentIndex, h)
 
         if (parentHashNodeIndex === undefined) {
-          throw new Error("Internal error: Reached root? todo")
+          throw new InternalError("Reached root before completing parent hash coeverage")
         }
 
         const expectedParentHash = getParentHash(currentNode)
@@ -120,7 +123,8 @@ export async function calculateParentHash(
 
   const parentNode = tree[parentNodeIndex]
 
-  if (parentNode === undefined || parentNode.nodeType === "leaf") throw new Error("Expected non-blank parent Noded")
+  if (parentNode === undefined || parentNode.nodeType === "leaf")
+    throw new InternalError("Expected non-blank parent Node")
 
   const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves)
 

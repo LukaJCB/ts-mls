@@ -1,4 +1,5 @@
 import { Kdf, deriveSecret } from "./crypto/kdf"
+import { InternalError } from "./mlsError"
 import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree"
 import { root, leafWidth } from "./treemath"
 import { PathSecret } from "./updatePath"
@@ -27,7 +28,7 @@ export async function getCommitSecret(
   const path = await pathToRoot(tree, nodeIndex, pathSecret, kdf)
   const rootSecret = path[rootIndex]
 
-  if (rootSecret === undefined) throw new Error("Could not find secret for root")
+  if (rootSecret === undefined) throw new InternalError("Could not find secret for root")
   return deriveSecret(rootSecret, "path", kdf)
 }
 

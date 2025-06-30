@@ -1,4 +1,5 @@
 import { encodeVarLenData } from "../codec/variableLength"
+import { DependencyError } from "../mlsError"
 
 export interface Signature {
   sign(signKey: Uint8Array, message: Uint8Array): Promise<Uint8Array>
@@ -52,7 +53,9 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           },
         }
       } catch (err) {
-        throw new Error("Optional dependency '@noble/curves' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+        )
       }
 
     case "Ed448":
@@ -71,7 +74,9 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           },
         }
       } catch (err) {
-        throw new Error("Optional dependency '@noble/curves' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+        )
       }
 
     case "P256":
@@ -90,7 +95,9 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           },
         }
       } catch (err) {
-        throw new Error("Optional dependency '@noble/curves' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+        )
       }
     case "P384":
       try {
@@ -108,11 +115,13 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           },
         }
       } catch (err) {
-        throw new Error("Optional dependency '@noble/curves' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+        )
       }
     case "P521":
       try {
-        const { p521 } = await await import("@noble/curves/nist")
+        const { p521 } = await import("@noble/curves/nist")
         return {
           async sign(signKey, message) {
             return p521.sign(message, signKey, { prehash: true }).toCompactRawBytes()
@@ -126,7 +135,9 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           },
         }
       } catch (err) {
-        throw new Error("Optional dependency '@noble/curves' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+        )
       }
     case "ML-DSA-87":
       try {
@@ -144,7 +155,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           },
         }
       } catch (err) {
-        throw new Error(
+        throw new DependencyError(
           "Optional dependency '@noble/post-quantum' is not installed. Please install it to use this feature.",
         )
       }

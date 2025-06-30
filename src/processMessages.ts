@@ -1,4 +1,5 @@
 import { AuthenticatedContentCommit } from "./authenticatedContent"
+import { AuthenticationService, defaultAuthenticationService } from "./authenticationService"
 import {
   ClientState,
   GroupActiveState,
@@ -6,6 +7,8 @@ import {
   applyProposals,
   nextEpochContext,
   processProposal,
+  throwIfDefined,
+  validateLeafNodeUpdateOrCommit,
 } from "./clientState"
 import { applyUpdatePathSecret } from "./createCommit"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
@@ -15,6 +18,7 @@ import { GroupContext } from "./groupContext"
 import { initializeEpoch } from "./keySchedule"
 import { unprotectPrivateMessage } from "./messageProtection"
 import { unprotectPublicMessage } from "./messageProtectionPublic"
+import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError"
 import { pathToRoot } from "./pathSecrets"
 import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath"
 import { PrivateMessage } from "./privateMessage"
@@ -44,6 +48,7 @@ export async function processPrivateMessage(
   pm: PrivateMessage,
   pskSearch: PskIndex,
   cs: CiphersuiteImpl,
+  authService: AuthenticationService = defaultAuthenticationService,
 ): Promise<ProcessPrivateMessageResult> {
   if (pm.epoch < state.groupContext.epoch) {
     const receiverData = state.historicalReceiverData.get(pm.epoch)
@@ -69,10 +74,10 @@ export async function processPrivateMessage(
       if (result.content.content.contentType === "application") {
         return { kind: "applicationMessage", message: result.content.content.applicationData, newState }
       } else {
-        throw new Error("Cannot process commit or proposal from former epoch")
+        throw new ValidationError("Cannot process commit or proposal from former epoch")
       }
     } else {
-      throw new Error("Cannot process message, epoch too old")
+      throw new ValidationError("Cannot process message, epoch too old")
     }
   }
 
@@ -98,6 +103,7 @@ export async function processPrivateMessage(
         result.content as AuthenticatedContentCommit,
         "mls_private_message",
         pskSearch,
+        authService,
         cs,
       ), //todo solve with types
     }
@@ -114,8 +120,9 @@ export async function processPublicMessage(
   pm: PublicMessage,
   pskSearch: PskIndex,
   cs: CiphersuiteImpl,
+  authService: AuthenticationService = defaultAuthenticationService,
 ): Promise<ClientState> {
-  if (pm.content.epoch < state.groupContext.epoch) throw new Error("Cannot process message, epoch too old")
+  if (pm.content.epoch < state.groupContext.epoch) throw new ValidationError("Cannot process message, epoch too old")
 
   const content = await unprotectPublicMessage(
     state.keySchedule.membershipKey,
@@ -125,12 +132,10 @@ export async function processPublicMessage(
     cs,
   )
 
-  if (content === undefined) throw new Error("Could not unprotect private message")
-
   if (content.content.contentType === "proposal")
     return processProposal(state, content, content.content.proposal, cs.hash)
   else {
-    return processCommit(state, content as AuthenticatedContentCommit, "mls_public_message", pskSearch, cs) //todo solve with types
+    return processCommit(state, content as AuthenticatedContentCommit, "mls_public_message", pskSearch, authService, cs) //todo solve with types
   }
 }
 
@@ -139,17 +144,45 @@ async function processCommit(
   content: AuthenticatedContentCommit,
   wireformat: WireformatName,
   pskSearch: PskIndex,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<ClientState> {
-  if (content.content.epoch !== state.groupContext.epoch) throw new Error("Could not validate epoch")
+  if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
 
   const senderLeafIndex = content.content.sender.senderType === "member" ? content.content.sender.leafIndex : undefined
 
-  //TODO Verify that the proposals vector is valid according to the rules in Section 12.2.
-  //TODO Verify that all PreSharedKey proposals in the proposals vector are available.
-  const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, cs)
+  const result = await applyProposals(
+    state,
+    content.content.commit.proposals,
+    senderLeafIndex,
+    pskSearch,
+    false,
+    authService,
+    cs,
+  )
 
-  if (result.needsUpdatePath && content.content.commit.path === undefined) throw new Error("Update path is required")
+  if (content.content.commit.path !== undefined) {
+    const committerLeafIndex =
+      senderLeafIndex ??
+      (result.additionalResult.kind === "externalCommit" ? result.additionalResult.newMemberLeafIndex : undefined)
+
+    if (committerLeafIndex === undefined)
+      throw new ValidationError("Cannot verify commit leaf node because no commiter leaf index found")
+
+    throwIfDefined(
+      await validateLeafNodeUpdateOrCommit(
+        content.content.commit.path.leafNode,
+        committerLeafIndex,
+        state.groupContext,
+        result.tree,
+        authService,
+        cs.signature,
+      ),
+    )
+  }
+
+  if (result.needsUpdatePath && content.content.commit.path === undefined)
+    throw new ValidationError("Update path is required")
 
   const groupContextWithExtensions =
     result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions.length > 0
@@ -171,7 +204,7 @@ async function processCommit(
 
   const newTreeHash = await treeHashRoot(tree, cs.hash)
 
-  if (content.auth.contentType !== "commit") throw new Error("Received content as commit, but not auth") //todo solve this with types?
+  if (content.auth.contentType !== "commit") throw new ValidationError("Received content as commit, but not auth") //todo solve this with types?
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
     wireformat,
@@ -196,7 +229,7 @@ async function processCommit(
     cs.hash,
   )
 
-  if (!confirmationTagValid) throw new Error("Could not verify confirmation tag")
+  if (!confirmationTagValid) throw new CryptoVerificationError("Could not verify confirmation tag")
 
   const secretTree = await createSecretTree(leafWidth(tree.length), epochSecrets.keySchedule.encryptionSecret, cs.kdf)
 
@@ -250,7 +283,7 @@ async function applyTreeUpdate(
     const [treeWithLeafNode, leafNodeIndex] = addLeafNode(tree, path.leafNode)
 
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
-    const updatedTree = await applyUpdatePath(treeWithLeafNode, senderLeafIndex, path, cs.hash)
+    const updatedTree = await applyUpdatePath(treeWithLeafNode, senderLeafIndex, path, cs.hash, true)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       updatedTree,
@@ -291,7 +324,7 @@ async function updatePrivateKeyPath(
 
   const rootIndex = root(leafWidth(tree.length))
   const rootSecret = pathSecrets[rootIndex]
-  if (rootSecret === undefined) throw new Error("Could not find secret for root")
+  if (rootSecret === undefined) throw new InternalError("Could not find secret for root")
 
   const commitSecret = await deriveSecret(rootSecret, "path", cs.kdf)
   return [newPkp, commitSecret] as const

@@ -1,3 +1,5 @@
+import { InternalError } from "./mlsError"
+
 function log2(x: number): number {
   if (x === 0) return 0
   let k = 0
@@ -48,7 +50,7 @@ export function root(leafWidth: number): number {
 
 export function left(nodeIndex: number): number {
   const k = level(nodeIndex)
-  if (k === 0) throw new Error("leaf node has no children")
+  if (k === 0) throw new InternalError("leaf node has no children")
   return nodeIndex ^ (0x01 << (k - 1))
 }
 
@@ -60,12 +62,12 @@ export function leftOrLeaf(nodeIndex: number): number | undefined {
 
 export function right(nodeIndex: number): number {
   const k = level(nodeIndex)
-  if (k === 0) throw new Error("leaf node has no children")
+  if (k === 0) throw new InternalError("leaf node has no children")
   return nodeIndex ^ (0x03 << (k - 1))
 }
 
 export function parent(nodeIndex: number, leafWidth: number): number {
-  if (nodeIndex === root(leafWidth)) throw new Error("root node has no parent")
+  if (nodeIndex === root(leafWidth)) throw new InternalError("root node has no parent")
   const k = level(nodeIndex)
   const b = (nodeIndex >> (k + 1)) & 0x01
   return (nodeIndex | (1 << k)) ^ (b << (k + 1))
@@ -98,13 +100,17 @@ export function copath(nodeIndex: number, leafWidth: number): number[] {
   return d.map((y) => sibling(y, leafWidth))
 }
 
+export function isAncestor(childNodeIndex: number, ancestor: number, nodeWidth: number): boolean {
+  return directPath(childNodeIndex, leafWidth(nodeWidth)).includes(ancestor)
+}
+
 export function commonAncestorSemantic(x: number, y: number, n: number): number {
   const dx = new Set<number>([x, ...directPath(x, n)])
   const dy = new Set<number>([y, ...directPath(y, n)])
 
   const intersection = Array.from(dx).filter((z) => dy.has(z))
   if (intersection.length === 0) {
-    throw new Error("failed to find common ancestor")
+    throw new InternalError("failed to find common ancestor")
   }
 
   return intersection.reduce((min, current) => {

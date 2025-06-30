@@ -1,6 +1,7 @@
 import { Aes128Gcm, Aes256Gcm } from "@hpke/core"
 import { AeadInterface } from "@hpke/core"
 import { bytesToBuffer } from "../util/byteArray"
+import { DependencyError } from "../mlsError"
 
 export type AeadAlgorithm = "AES128GCM" | "CHACHA20POLY1305" | "AES256GCM"
 
@@ -52,7 +53,7 @@ export async function makeAead(aeadAlg: AeadAlgorithm): Promise<Aead> {
           },
         }
       } catch (err) {
-        throw new Error(
+        throw new DependencyError(
           "Optional dependency '@hpke/chacha20poly1305' is not installed. Please install it to use this feature.",
         )
       }

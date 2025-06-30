@@ -2,6 +2,7 @@ import { ContentTypeName } from "./contentType"
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf"
 import { KeyRetentionConfig } from "./keyRetentionConfig"
+import { InternalError, ValidationError } from "./mlsError"
 import { ReuseGuard, SenderData } from "./sender"
 import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex } from "./treemath"
 import { updateArray } from "./util/array"
@@ -49,7 +50,7 @@ async function deriveChildren(tree: Uint8Array[], nodeIndex: number, kdf: Kdf): 
   const r = right(nodeIndex)
 
   const parentSecret = tree[nodeIndex]
-  if (parentSecret === undefined) throw new Error("Bad node index for secret tree")
+  if (parentSecret === undefined) throw new InternalError("Bad node index for secret tree")
   const leftSecret = await expandWithLabel(parentSecret, "tree", new TextEncoder().encode("left"), kdf.size, kdf)
 
   const rightSecret = await expandWithLabel(parentSecret, "tree", new TextEncoder().encode("right"), kdf.size, kdf)
@@ -73,11 +74,10 @@ export async function ratchetUntil(
   config: KeyRetentionConfig,
   kdf: Kdf,
 ): Promise<GenerationSecret> {
-  if (current.generation > desiredGen) throw new Error("Desired gen in the past")
   const generationDifference = desiredGen - current.generation
 
   if (generationDifference > config.maximumForwardRatchetSteps)
-    throw new Error("Desired generation too far in the future")
+    throw new ValidationError("Desired generation too far in the future")
 
   return await repeatAsync(
     async (s) => {
@@ -129,7 +129,7 @@ export async function derivePrivateMessageNonce(
     for (let i = 0; i < 4; i++) {
       nonce[i]! ^= reuseGuard[i]!
     }
-  } else throw new Error("Reuse guard or nonce incorrect length")
+  } else throw new ValidationError("Reuse guard or nonce incorrect length")
 
   return nonce
 }
@@ -143,7 +143,7 @@ export async function ratchetToGeneration(
 ): Promise<ConsumeRatchetResult> {
   const index = leafToNodeIndex(senderData.leafIndex)
   const node = tree[index]
-  if (node === undefined) throw new Error("Bad node index for secret tree")
+  if (node === undefined) throw new InternalError("Bad node index for secret tree")
 
   const ratchet = ratchetForContentType(node, contentType)
 
@@ -166,7 +166,7 @@ export async function ratchetToGeneration(
         ratchetState,
       )
     }
-    throw new Error("Desired gen in the past")
+    throw new ValidationError("Desired gen in the past")
   }
 
   const currentSecret = await ratchetUntil(
@@ -186,7 +186,7 @@ export async function consumeRatchet(
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
   const node = tree[index]
-  if (node === undefined) throw new Error("Bad node index for secret tree")
+  if (node === undefined) throw new InternalError("Bad node index for secret tree")
 
   const currentSecret = ratchetForContentType(node, contentType)
   const reuseGuard = cs.rng.randomBytes(4) as ReuseGuard

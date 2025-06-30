@@ -6,6 +6,7 @@ import {
   DhkemX448HkdfSha512,
   KemInterface,
 } from "@hpke/core"
+import { DependencyError } from "../mlsError"
 
 export type KemAlgorithm =
   | "DHKEM-P256-HKDF-SHA256"
@@ -35,7 +36,9 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
         const { MlKem512 } = await import("@hpke/ml-kem")
         return new MlKem512()
       } catch (err) {
-        throw new Error("Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.",
+        )
       }
 
     case "ML-KEM-768":
@@ -43,21 +46,25 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
         const { MlKem768 } = await import("@hpke/ml-kem")
         return new MlKem768()
       } catch (err) {
-        throw new Error("Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.",
+        )
       }
     case "ML-KEM-1024":
       try {
         const { MlKem1024 } = await import("@hpke/ml-kem")
         return new MlKem1024()
       } catch (err) {
-        throw new Error("Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.")
+        throw new DependencyError(
+          "Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.",
+        )
       }
     case "X-Wing":
       try {
         const { XWing } = await import("@hpke/hybridkem-x-wing")
         return new XWing()
       } catch (err) {
-        throw new Error(
+        throw new DependencyError(
           "Optional dependency '@hpke/hybridkem-x-wing' is not installed. Please install it to use this feature.",
         )
       }

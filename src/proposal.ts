@@ -8,17 +8,18 @@ import { decodeKeyPackage, encodeKeyPackage, KeyPackage } from "./keyPackage"
 import { decodePskId, encodePskId, PreSharedKeyID } from "./presharedkey"
 import { decodeProposalType, encodeProposalType } from "./proposalType"
 import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
-import { decodeLeafNode, encodeLeafNode, LeafNode } from "./leafNode"
+import { decodeLeafNodeUpdate, encodeLeafNode, LeafNodeUpdate } from "./leafNode"
+import { InternalError } from "./mlsError"
 
 export type Add = { keyPackage: KeyPackage }
 
 export const encodeAdd: Encoder<Add> = contramapEncoder(encodeKeyPackage, (a) => a.keyPackage)
 export const decodeAdd: Decoder<Add> = mapDecoder(decodeKeyPackage, (keyPackage) => ({ keyPackage }))
 
-export type Update = { leafNode: LeafNode }
+export type Update = { leafNode: LeafNodeUpdate }
 
 export const encodeUpdate: Encoder<Update> = contramapEncoder(encodeLeafNode, (u) => u.leafNode)
-export const decodeUpdate: Decoder<Update> = mapDecoder(decodeLeafNode, (leafNode) => ({ leafNode }))
+export const decodeUpdate: Decoder<Update> = mapDecoder(decodeLeafNodeUpdate, (leafNode) => ({ leafNode }))
 
 export type Remove = { removed: number }
 
@@ -197,7 +198,7 @@ export const decodeProposal: Decoder<Proposal> = flatMapDecoder(
       case "group_context_extensions":
         return decodeProposalGroupContextExtensions
       default:
-        throw new Error("Unknown proposal type")
+        throw new InternalError("Unknown proposal type")
     }
   },
 )

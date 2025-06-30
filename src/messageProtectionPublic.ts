@@ -13,6 +13,7 @@ import {
   verifyFramedContentSignature,
 } from "./framedContent"
 import { GroupContext } from "./groupContext"
+import { CryptoVerificationError, UsageError } from "./mlsError"
 import { Proposal } from "./proposal"
 import { findSignaturePublicKey, PublicMessage } from "./publicMessage"
 import { RatchetTree } from "./ratchetTree"
@@ -64,7 +65,7 @@ export async function protectPublicMessage(
   content: AuthenticatedContent,
   cs: CiphersuiteImpl,
 ): Promise<PublicMessage> {
-  if (content.content.contentType === "application") throw new Error("Can't make an application message public")
+  if (content.content.contentType === "application") throw new UsageError("Can't make an application message public")
 
   if (content.content.sender.senderType == "member") {
     const authenticatedContent: AuthenticatedContentTBM = {
@@ -98,7 +99,7 @@ export async function unprotectPublicMessage(
   cs: CiphersuiteImpl,
   overrideSignatureKey?: Uint8Array,
 ): Promise<AuthenticatedContentProposalOrCommit> {
-  if (msg.content.contentType === "application") throw new Error("Can't make an application message public")
+  if (msg.content.contentType === "application") throw new UsageError("Can't make an application message public")
 
   if (msg.senderType === "member") {
     const authenticatedContent: AuthenticatedContentTBM = {
@@ -107,7 +108,7 @@ export async function unprotectPublicMessage(
     }
 
     if (!(await verifyMembershipTag(membershipKey, authenticatedContent, msg.membershipTag, cs.hash)))
-      throw new Error("Could not verify membership")
+      throw new CryptoVerificationError("Could not verify membership")
   }
 
   const signaturePublicKey =
@@ -124,7 +125,7 @@ export async function unprotectPublicMessage(
     cs.signature,
   )
 
-  if (!signatureValid) throw new Error("Signature invalid")
+  if (!signatureValid) throw new CryptoVerificationError("Signature invalid")
 
   return {
     wireformat: "mls_public_message",

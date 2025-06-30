@@ -3,7 +3,7 @@ import { Decoder, mapDecoderOption } from "./codec/tlsDecoder"
 import { contramapEncoder, Encoder } from "./codec/tlsEncoder"
 import { enumNumberToKey } from "./util/enumHelpers"
 
-const protocolVersions = {
+export const protocolVersions = {
   mls10: 1,
 } as const
 

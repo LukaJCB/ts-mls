@@ -201,6 +201,12 @@ export const decodeLeafNodeCommit: Decoder<LeafNodeCommit> = mapDecoderOption(de
   ln.leafNodeSource === "commit" ? ln : undefined,
 )
 
+export type LeafNodeUpdate = LeafNode & LeafNodeInfoUpdate
+
+export const decodeLeafNodeUpdate: Decoder<LeafNodeUpdate> = mapDecoderOption(decodeLeafNode, (ln) =>
+  ln.leafNodeSource === "update" ? ln : undefined,
+)
+
 function toTbs(leafNode: LeafNode, groupId: Uint8Array, leafIndex: number): LeafNodeTBS {
   return { ...leafNode, info: { leafNodeSource: leafNode.leafNodeSource, groupId, leafIndex } }
 }
@@ -231,6 +237,16 @@ export function verifyLeafNodeSignature(
     leaf.signaturePublicKey,
     "LeafNodeTBS",
     encodeLeafNodeTBS(toTbs(leaf, groupId, leafIndex)),
+    leaf.signature,
+    sig,
+  )
+}
+
+export function verifyLeafNodeSignatureKeyPackage(leaf: LeafNodeKeyPackage, sig: Signature): Promise<boolean> {
+  return verifyWithLabel(
+    leaf.signaturePublicKey,
+    "LeafNodeTBS",
+    encodeLeafNodeTBS({ ...leaf, info: { leafNodeSource: leaf.leafNodeSource } }),
     leaf.signature,
     sig,
   )

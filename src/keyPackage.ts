@@ -3,7 +3,7 @@ import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
 import { CiphersuiteImpl, CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite"
 import { Hash, refhash } from "./crypto/hash"
-import { Signature } from "./crypto/signature"
+import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature"
 import { decodeExtension, encodeExtension, Extension } from "./extension"
 import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
 import {
@@ -70,11 +70,11 @@ export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
 )
 
 export async function signKeyPackage(tbs: KeyPackageTBS, signKey: Uint8Array, s: Signature): Promise<KeyPackage> {
-  return { ...tbs, signature: await s.sign(signKey, encodeKeyPackageTBS(tbs)) }
+  return { ...tbs, signature: await signWithLabel(signKey, "KeyPackageTBS", encodeKeyPackageTBS(tbs), s) }
 }
 
-export async function verifySignature(kp: KeyPackage, s: Signature): Promise<boolean> {
-  return s.verify(kp.leafNode.signaturePublicKey, encodeKeyPackageTBS(kp), kp.signature)
+export async function verifyKeyPackage(kp: KeyPackage, s: Signature): Promise<boolean> {
+  return verifyWithLabel(kp.leafNode.signaturePublicKey, "KeyPackageTBS", encodeKeyPackageTBS(kp), kp.signature, s)
 }
 
 export function makeKeyPackageRef(value: KeyPackage, h: Hash) {

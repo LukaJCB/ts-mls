@@ -20,6 +20,7 @@ import { directPath, leafToNodeIndex, leafWidth } from "./treemath"
 import { updateArray } from "./util/array"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext"
+import { InternalError, ValidationError } from "./mlsError"
 
 export type UpdatePathNode = Readonly<{
   hpkePublicKey: Uint8Array
@@ -62,7 +63,7 @@ export async function createUpdatePath(
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey]> {
   const originalLeafNode = originalTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === "parent")
-    throw new Error("Expected non-blank leaf node")
+    throw new InternalError("Expected non-blank leaf node")
 
   const pathSecret = cs.rng.randomBytes(cs.kdf.size)
 
@@ -163,7 +164,7 @@ async function insertParentHashes(
       const parentHash = await calculateParentHash(tree, nodeIndex, cs.hash)
       const currentNode = tree[nodeIndex]
       if (currentNode === undefined || currentNode.nodeType === "leaf")
-        throw new Error("Expected non-blank parent node")
+        throw new InternalError("Expected non-blank parent node")
       const updatedNode: Node = { nodeType: "parent", parent: { ...currentNode.parent, parentHash: parentHash[0] } }
 
       return updateArray(tree, nodeIndex, updatedNode)
@@ -212,7 +213,32 @@ export async function applyUpdatePath(
   senderLeafIndex: number,
   path: UpdatePath,
   h: Hash,
+  isExternal: boolean = false,
 ): Promise<RatchetTree> {
+  // if this is an external commit, the leaf node did not exist prior
+  if (!isExternal) {
+    const leafToUpdate = tree[leafToNodeIndex(senderLeafIndex)]
+
+    if (leafToUpdate === undefined || leafToUpdate.nodeType === "parent")
+      throw new InternalError("Leaf node not defined or is parent")
+
+    const leafNodePublicKeyNotNew = constantTimeEqual(leafToUpdate.leaf.hpkePublicKey, path.leafNode.hpkePublicKey)
+
+    if (leafNodePublicKeyNotNew)
+      throw new ValidationError("Public key in the LeafNode is the same as the committer's current leaf node")
+  }
+
+  const pathNodePublicKeysExistInTree = path.nodes.some((node) =>
+    tree.some((treeNode) => {
+      return treeNode?.nodeType === "parent"
+        ? constantTimeEqual(treeNode.parent.hpkePublicKey, node.hpkePublicKey)
+        : false
+    }),
+  )
+
+  if (pathNodePublicKeysExistInTree)
+    throw new ValidationError("Public keys in the UpdatePath may not appear in a node of the new ratchet tree")
+
   const copy = tree.slice()
 
   copy[leafToNodeIndex(senderLeafIndex)] = { nodeType: "leaf", leaf: path.leafNode }
@@ -223,7 +249,7 @@ export async function applyUpdatePath(
   const reverseUpdatePath = path.nodes.slice().reverse()
 
   if (reverseUpdatePath.length !== reverseFilteredDirectPath.length) {
-    throw new Error("Invalid length of UpdatePath")
+    throw new ValidationError("Invalid length of UpdatePath")
   }
 
   for (const [level, nodeIndex] of reverseFilteredDirectPath.entries()) {
@@ -238,7 +264,7 @@ export async function applyUpdatePath(
   const leafParentHash = await calculateParentHash(copy, leafToNodeIndex(senderLeafIndex), h)
 
   if (!constantTimeEqual(leafParentHash[0], path.leafNode.parentHash))
-    throw new Error("Parent hash did not match the UpdatePath")
+    throw new ValidationError("Parent hash did not match the UpdatePath")
 
   return copy
 }
@@ -258,7 +284,7 @@ export function firstCommonAncestor(tree: RatchetTree, leafIndex: number, sender
     }
   }
 
-  throw new Error("Could not find common ancestor")
+  throw new ValidationError("Could not find common ancestor")
 }
 
 export function firstMatchAncestor(
@@ -275,5 +301,5 @@ export function firstMatchAncestor(
     }
   }
 
-  throw new Error("Could not find common ancestor")
+  throw new ValidationError("Could not find common ancestor")
 }

@@ -1,4 +1,10 @@
-import { addHistoricalReceiverData } from "./clientState"
+import {
+  addHistoricalReceiverData,
+  defaultLifetimeConfig,
+  LifetimeConfig,
+  throwIfDefined,
+  validateRatchetTree,
+} from "./clientState"
 import { AuthenticatedContentCommit } from "./authenticatedContent"
 import {
   ClientState,
@@ -36,6 +42,7 @@ import {
   RatchetTree,
   addLeafNode,
   encodeRatchetTree,
+  getCredentialFromLeafIndex,
   getSignaturePublicKeyFromLeafIndex,
   removeLeafNode,
 } from "./ratchetTree"
@@ -46,6 +53,8 @@ import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMat
 import { base64ToBytes } from "./util/byteArray"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome"
+import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError"
+import { AuthenticationService, defaultAuthenticationService } from "./authenticationService"
 
 export type CreateCommitResult = { newState: ClientState; welcome: Welcome | undefined; commit: MLSMessage }
 
@@ -56,6 +65,7 @@ export async function createCommit(
   extraProposals: Proposal[],
   cs: CiphersuiteImpl,
   ratchetTreeExtension: boolean = false,
+  authService: AuthenticationService = defaultAuthenticationService,
 ): Promise<CreateCommitResult> {
   checkCanSendHandshakeMessages(state)
 
@@ -63,9 +73,9 @@ export async function createCommit(
 
   const allProposals = bundleAllProposals(state, extraProposals)
 
-  const res = await applyProposals(state, allProposals, state.privatePath.leafIndex, pskSearch, cs)
+  const res = await applyProposals(state, allProposals, state.privatePath.leafIndex, pskSearch, true, authService, cs)
 
-  if (res.additionalResult.kind === "externalCommit") throw new Error("Cannot create externalCommit as a member")
+  if (res.additionalResult.kind === "externalCommit") throw new UsageError("Cannot create externalCommit as a member")
 
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
@@ -389,7 +399,7 @@ export async function applyUpdatePathSecret(
     }
   }
 
-  throw new Error("No overlap between provided private keys and update path")
+  throw new InternalError("No overlap between provided private keys and update path")
 }
 export async function joinGroupExternal(
   groupInfo: GroupInfo,
@@ -399,22 +409,41 @@ export async function joinGroupExternal(
   cs: CiphersuiteImpl,
   tree?: RatchetTree,
   keyRetentionConfig: KeyRetentionConfig = defaultKeyRetentionConfig,
+  lifetimeConfig: LifetimeConfig = defaultLifetimeConfig,
+  authService: AuthenticationService = defaultAuthenticationService,
 ) {
   const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === "external_pub")
 
-  if (externalPub === undefined) throw new Error("Could not find external_pub extension")
+  if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
 
   const { enc, secret: initSecret } = await exportSecret(externalPub.extensionData, cs)
 
   const ratchetTree = ratchetTreeFromExtension(groupInfo) ?? tree
 
-  if (ratchetTree === undefined) throw new Error("No RatchetTree passed and no ratchet_tree extension")
+  if (ratchetTree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
+
+  throwIfDefined(
+    await validateRatchetTree(
+      ratchetTree,
+      groupInfo.groupContext,
+      lifetimeConfig,
+      authService,
+      groupInfo.groupContext.treeHash,
+      cs,
+    ),
+  )
 
   const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(ratchetTree, groupInfo.signer)
 
+  const signerCredential = getCredentialFromLeafIndex(ratchetTree, groupInfo.signer)
+
+  const credentialVerified = await authService.validateCredential(signerCredential, signaturePublicKey)
+
+  if (!credentialVerified) throw new ValidationError("Could not validate credential")
+
   const groupInfoSignatureVerified = verifyGroupInfoSignature(groupInfo, signaturePublicKey, cs.signature)
 
-  if (!groupInfoSignatureVerified) throw new Error("Could not verify groupInfo Signature")
+  if (!groupInfoSignatureVerified) throw new CryptoVerificationError("Could not verify groupInfo Signature")
 
   const formerLeafIndex = resync
     ? nodeToLeafIndex(
@@ -451,7 +480,7 @@ export async function joinGroupExternal(
 
   const commitSecret =
     lastPathSecret === undefined
-      ? new Uint8Array(cs.kdf.size) //todo is this right?
+      ? new Uint8Array(cs.kdf.size)
       : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
 
   const externalInitProposal: ProposalExternalInit = {
