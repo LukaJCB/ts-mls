@@ -18,6 +18,7 @@ import {
   FramedContentProposalData,
 } from "./framedContent"
 import { GroupContext } from "./groupContext"
+import { CryptoError } from "./mlsError"
 import { decodeProposal, encodeProposal } from "./proposal"
 import { deriveKey, deriveNonce, GenerationSecret } from "./secretTree"
 import {
@@ -203,7 +204,7 @@ export async function derivePrivateMessageNonce(
     for (let i = 0; i < 4; i++) {
       nonce[i]! ^= reuseGuard[i]!
     }
-  } else throw new Error("Reuse guard or nonce incorrect length")
+  } else throw new CryptoError("Reuse guard or nonce incorrect length")
 
   return nonce
 }

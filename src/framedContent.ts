@@ -294,15 +294,6 @@ export async function signFramedContentApplicationOrProposal(
   }
 }
 
-export async function verifyFramedContentApplicationOrProposal(
-  signKey: Uint8Array,
-  tbs: FramedContentTBSApplicationOrProposal,
-  auth: FramedContentAuthDataApplicationOrProposal,
-  cs: CiphersuiteImpl,
-): Promise<boolean> {
-  return verifyWithLabel(signKey, "FramedContentTBS", encodeFramedContentTBS(tbs), auth.signature, cs.signature)
-}
-
 export function createConfirmationTag(
   confirmationKey: Uint8Array,
   confirmedTranscriptHash: Uint8Array,

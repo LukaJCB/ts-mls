@@ -3,6 +3,7 @@ import { CreateCommitResult, createCommit } from "./createCommit"
 import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite"
 import { Extension } from "./extension"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage"
+import { UsageError } from "./mlsError"
 import { ResumptionPSKUsageName, PreSharedKeyID } from "./presharedkey"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal"
 import { ProtocolVersionName } from "./protocolVersion"
@@ -132,7 +133,7 @@ export async function joinGroupFromReinit(
 ): Promise<ClientState> {
   const pskSearch = makePskIndex(suspendedState, {})
   if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
-    throw new Error("Cannot reinit because no init proposal found in last commit")
+    throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
   const cs = await getCiphersuiteImpl(getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite))
 

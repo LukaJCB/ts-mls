@@ -18,6 +18,8 @@ import { createSecretTree } from "../../src/secretTree"
 import { protectApplicationData, protectProposal } from "../../src/messageProtection"
 import { protectProposalPublic, protectPublicMessage, unprotectPublicMessage } from "../../src/messageProtectionPublic"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
+import { defaultCapabilities } from "../scenario/common"
+import { RatchetTree } from "../../src/ratchetTree"
 
 for (const [index, x] of json.entries()) {
   test(`message-protection test vectors ${index}`, async () => {
@@ -75,6 +77,25 @@ async function testMessageProtection(data: MessageProtectionData, impl: Ciphersu
 
   await publicApplicationFails(data, gc, impl)
 }
+
+// need to provide a ratchet tree with non blank leaf node so senderData validation doesn't fail
+const treeForLeafIndex1: RatchetTree = [
+  undefined,
+  undefined,
+  {
+    nodeType: "leaf",
+    leaf: {
+      leafNodeSource: "commit",
+      hpkePublicKey: new Uint8Array(),
+      signaturePublicKey: new Uint8Array(),
+      capabilities: defaultCapabilities,
+      parentHash: new Uint8Array(),
+      extensions: [],
+      signature: new Uint8Array(),
+      credential: { credentialType: "basic", identity: new Uint8Array() },
+    },
+  },
+]
 
 async function protectThenUnprotectProposalPublic(
   data: MessageProtectionData,
@@ -197,7 +218,7 @@ async function publicApplicationFails(data: MessageProtectionData, gc: GroupCont
     hexToBytes(data.sender_data_secret),
     privateApplication[0].privateMessage,
     secretTree,
-    [],
+    treeForLeafIndex1,
     gc,
     defaultKeyRetentionConfig,
     impl,
@@ -234,7 +255,7 @@ async function commit(data: MessageProtectionData, gc: GroupContext, impl: Ciphe
     hexToBytes(data.sender_data_secret),
     privateCommit[0].privateMessage,
     secretTree,
-    [],
+    treeForLeafIndex1,
     gc,
     defaultKeyRetentionConfig,
     impl,
@@ -258,7 +279,7 @@ async function application(data: MessageProtectionData, gc: GroupContext, impl: 
     hexToBytes(data.sender_data_secret),
     privateApplication[0].privateMessage,
     secretTree,
-    [],
+    treeForLeafIndex1,
     gc,
     defaultKeyRetentionConfig,
     impl,
@@ -292,7 +313,7 @@ async function protectThenUnprotectProposal(data: MessageProtectionData, gc: Gro
     hexToBytes(data.sender_data_secret),
     pro.privateMessage,
     secretTree,
-    [],
+    treeForLeafIndex1,
     gc,
     defaultKeyRetentionConfig,
     impl,
@@ -323,7 +344,7 @@ async function protectThenUnprotectApplication(data: MessageProtectionData, gc: 
     hexToBytes(data.sender_data_secret),
     pro.privateMessage,
     secretTree,
-    [],
+    treeForLeafIndex1,
     gc,
     defaultKeyRetentionConfig,
     impl,
@@ -369,7 +390,7 @@ async function protectThenUnprotectCommit(data: MessageProtectionData, gc: Group
     hexToBytes(data.sender_data_secret),
     pro.privateMessage,
     secretTree,
-    [],
+    treeForLeafIndex1,
     gc,
     defaultKeyRetentionConfig,
     impl,
@@ -393,7 +414,23 @@ async function proposal(data: MessageProtectionData, gc: GroupContext, impl: Cip
     hexToBytes(data.sender_data_secret),
     privateProposal[0].privateMessage,
     secretTree,
-    [],
+    [
+      undefined,
+      undefined,
+      {
+        nodeType: "leaf",
+        leaf: {
+          leafNodeSource: "commit",
+          hpkePublicKey: new Uint8Array(),
+          signaturePublicKey: new Uint8Array(),
+          capabilities: defaultCapabilities,
+          parentHash: new Uint8Array(),
+          extensions: [],
+          signature: new Uint8Array(),
+          credential: { credentialType: "basic", identity: new Uint8Array() },
+        },
+      },
+    ],
     gc,
     defaultKeyRetentionConfig,
     impl,

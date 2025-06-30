@@ -23,6 +23,7 @@ import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
 import { SenderData, SenderDataAAD } from "./sender"
 import { leafToNodeIndex } from "./treemath"
 import { KeyRetentionConfig } from "./keyRetentionConfig"
+import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError"
 
 export type ProtectApplicationDataResult = { privateMessage: PrivateMessage; newSecretTree: SecretTree }
 
@@ -137,7 +138,7 @@ export async function protect(
   cs: CiphersuiteImpl,
 ): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
   const node = secretTree[leafToNodeIndex(leafIndex)]
-  if (node === undefined) throw new Error("Bad node index for secret tree")
+  if (node === undefined) throw new InternalError("Bad node index for secret tree")
 
   const { newTree, generation, reuseGuard, nonce, key } = await consumeRatchet(
     secretTree,
@@ -201,7 +202,9 @@ export async function unprotectPrivateMessage(
 ): Promise<UnprotectResult> {
   const senderData = await decryptSenderData(msg, senderDataSecret, cs)
 
-  if (senderData === undefined) throw new Error("Could not decrypt senderdata")
+  if (senderData === undefined) throw new CodecError("Could not decode senderdata")
+
+  validateSenderData(senderData, ratchetTree)
 
   const { key, nonce, newTree } = await ratchetToGeneration(secretTree, senderData, msg.contentType, config, cs)
 
@@ -216,7 +219,7 @@ export async function unprotectPrivateMessage(
 
   const pmc = decodePrivateMessageContent(msg.contentType)(decrypted, 0)?.[0]
 
-  if (pmc === undefined) throw new Error("Could not decode PrivateMessageContent")
+  if (pmc === undefined) throw new CodecError("Could not decode PrivateMessageContent")
 
   const content = toAuthenticatedContent(pmc, msg, senderData.leafIndex)
 
@@ -234,7 +237,12 @@ export async function unprotectPrivateMessage(
     cs.signature,
   )
 
-  if (!signatureValid) throw new Error("Signature invalid")
+  if (!signatureValid) throw new CryptoVerificationError("Signature invalid")
 
   return { tree: newTree, content }
+}
+
+export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
+  if (tree[leafToNodeIndex(senderData.leafIndex)]?.nodeType !== "leaf")
+    return new ValidationError("SenderData did not point to a non-blank leaf node")
 }

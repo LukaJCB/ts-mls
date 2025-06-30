@@ -5,6 +5,7 @@ import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
 import { encodeVarLenData, decodeVarLenData } from "./codec/variableLength"
 import { Hash } from "./crypto/hash"
 import { LeafNode, encodeLeafNode, decodeLeafNode } from "./leafNode"
+import { InternalError } from "./mlsError"
 import { encodeNodeType, decodeNodeType } from "./nodeType"
 import { ParentNode, encodeParentNode, decodeParentNode } from "./parentNode"
 import { RatchetTree } from "./ratchetTree"
@@ -79,7 +80,7 @@ export async function treeHashRoot(tree: RatchetTree, h: Hash): Promise<Uint8Arr
 export async function treeHash(tree: RatchetTree, subtreeIndex: number, h: Hash): Promise<Uint8Array> {
   if (isLeaf(subtreeIndex)) {
     const leafNode = tree[subtreeIndex]
-    if (leafNode?.nodeType === "parent") throw new Error("Somehow found parent node in leaf position")
+    if (leafNode?.nodeType === "parent") throw new InternalError("Somehow found parent node in leaf position")
     const input = encodeLeafNodeHashInput({
       nodeType: "leaf",
       leafIndex: nodeToLeafIndex(subtreeIndex),
@@ -88,7 +89,7 @@ export async function treeHash(tree: RatchetTree, subtreeIndex: number, h: Hash)
     return await h.digest(input)
   } else {
     const parentNode = tree[subtreeIndex]
-    if (parentNode?.nodeType === "leaf") throw new Error("Somehow found leaf node in parent position")
+    if (parentNode?.nodeType === "leaf") throw new InternalError("Somehow found leaf node in parent position")
     const leftHash = await treeHash(tree, left(subtreeIndex), h)
     const rightHash = await treeHash(tree, right(subtreeIndex), h)
     const input = {

@@ -14,6 +14,7 @@ import {
   FramedContentAuthData,
 } from "./framedContent"
 import { GroupContext } from "./groupContext"
+import { CodecError, ValidationError } from "./mlsError"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
 import { SenderTypeName } from "./sender"
 
@@ -92,12 +93,17 @@ export function findSignaturePublicKey(
     case "external":
       return senderFromExtension(groupContext.extensions, framedContent.sender.senderIndex)!.signaturePublicKey //todo error handling
     case "new_member_proposal":
-      throw new Error("Not implemented yet")
+      if (framedContent.contentType !== "proposal")
+        throw new ValidationError("Received new_member_proposal but contentType is not proposal")
+      if (framedContent.proposal.proposalType !== "add")
+        throw new ValidationError("Received new_member_proposal but proposalType was not add")
+
+      return framedContent.proposal.add.keyPackage.leafNode.signaturePublicKey
     case "new_member_commit": {
       if (framedContent.contentType !== "commit")
-        throw new Error("Received new_member_commit but contentType is not commit")
+        throw new ValidationError("Received new_member_commit but contentType is not commit")
 
-      if (framedContent.commit.path === undefined) throw new Error("Commit contains no update path")
+      if (framedContent.commit.path === undefined) throw new ValidationError("Commit contains no update path")
       return framedContent.commit.path.leafNode.signaturePublicKey
     }
   }
@@ -110,7 +116,7 @@ export function senderFromExtension(extensions: Extension[], senderIndex: number
 
   if (externalSenderExtension !== undefined) {
     const externalSender = decodeExternalSender(externalSenderExtension.extensionData, 0)
-    if (externalSender === undefined) throw new Error("Could not decode ExternalSender")
+    if (externalSender === undefined) throw new CodecError("Could not decode ExternalSender")
 
     return externalSender[0]
   }

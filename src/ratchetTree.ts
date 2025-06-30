@@ -19,6 +19,7 @@ import {
 } from "./treemath"
 import { LeafNode, encodeLeafNode, decodeLeafNode } from "./leafNode"
 import { constantTimeEqual } from "./util/constantTimeCompare"
+import { InternalError, ValidationError } from "./mlsError"
 
 export type Node = NodeParent | NodeLeaf
 type NodeParent = { nodeType: "parent"; parent: ParentNode }
@@ -66,7 +67,7 @@ export function extendRatchetTree(tree: RatchetTree): RatchetTree {
   const lastIndex = tree.length - 1
 
   if (tree[lastIndex] === undefined) {
-    throw new Error("The last node in the ratchet tree must be non-blank.")
+    throw new InternalError("The last node in the ratchet tree must be non-blank.")
   }
 
   // Compute the smallest full binary tree size >= current length
@@ -144,6 +145,11 @@ export function findBlankLeafNodeIndex(tree: RatchetTree): number | undefined {
   else return nodeIndex
 }
 
+export function findBlankLeafNodeIndexOrExtend(tree: RatchetTree): number {
+  const blankLeaf = findBlankLeafNodeIndex(tree)
+  return blankLeaf === undefined ? tree.length + 1 : blankLeaf
+}
+
 export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, number] {
   const newRoot = undefined
   const insertedNodeIndex = tree.length + 1
@@ -158,11 +164,11 @@ export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree
   }
 
   const insertedLeafIndex = nodeToLeafIndex(blankLeaf)
-  const directPathWithoutRoot = directPath(blankLeaf, leafWidth(tree.length)).slice(0, -1)
+  const dp = directPath(blankLeaf, leafWidth(tree.length))
 
   const copy = tree.slice()
 
-  for (const nodeIndex of directPathWithoutRoot) {
+  for (const nodeIndex of dp) {
     const node = tree[nodeIndex]
     if (node !== undefined) {
       const parentNode = node as NodeParent
@@ -305,7 +311,7 @@ export function traverseToRoot<T>(
     const currentNode = tree[currentIndex]
     if (currentNode !== undefined) {
       if (currentNode.nodeType === "leaf") {
-        throw new Error("Expected parent node")
+        throw new InternalError("Expected parent node")
       }
 
       const result = f(currentIndex, currentNode.parent)
@@ -325,7 +331,7 @@ export function findFirstNonBlankAncestor(tree: RatchetTree, nodeIndex: number):
 export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): number | undefined {
   const foundIndex = tree.findIndex((node, nodeIndex) => {
     if (isLeaf(nodeIndex) && node !== undefined) {
-      if (node.nodeType === "parent") throw new Error("Found parent node in leaf node position")
+      if (node.nodeType === "parent") throw new InternalError("Found parent node in leaf node position")
       //todo is there a better comparison method?
       return constantTimeEqual(encodeLeafNode(node.leaf), encodeLeafNode(leaf))
     }
@@ -336,10 +342,25 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): number | undef
   return foundIndex === -1 ? undefined : nodeToLeafIndex(foundIndex)
 }
 
-export function getSignaturePublicKeyFromLeafIndex(ratchetTree: RatchetTree, leafIndex: number) {
+export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: number) {
   const senderLeafNode = ratchetTree[leafToNodeIndex(leafIndex)]
 
   if (senderLeafNode === undefined || senderLeafNode.nodeType === "parent")
-    throw new Error("Unable to find leafnode for sender")
-  return senderLeafNode.leaf.signaturePublicKey
+    throw new ValidationError("Unable to find leafnode for leafIndex")
+  return senderLeafNode.leaf.credential
+}
+
+export function getSignaturePublicKeyFromLeafIndex(ratchetTree: RatchetTree, leafIndex: number): Uint8Array {
+  const leafNode = ratchetTree[leafToNodeIndex(leafIndex)]
+
+  if (leafNode === undefined || leafNode.nodeType === "parent")
+    throw new ValidationError("Unable to find leafnode for leafIndex")
+  return leafNode.leaf.signaturePublicKey
+}
+
+export function getHpkePublicKeyFromNode(ratchetTree: RatchetTree, nodeIndex: number) {
+  const node = ratchetTree[nodeIndex]
+
+  if (node === undefined) throw new ValidationError("Unable to find node for nodeIndex")
+  return getHpkePublicKey(node)
 }

@@ -7,6 +7,7 @@ import { expandWithLabel } from "./crypto/kdf"
 import { decodeGroupInfo, encodeGroupInfo, extractWelcomeSecret, GroupInfo } from "./groupInfo"
 import { decodeGroupSecrets, encodeGroupSecrets, GroupSecrets } from "./groupSecrets"
 import { HPKECiphertext, encodeHpkeCiphertext, decodeHpkeCiphertext } from "./hpkeCiphertext"
+import { ValidationError } from "./mlsError"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 
 export type EncryptedGroupSecrets = Readonly<{
@@ -92,7 +93,7 @@ export async function decryptGroupSecrets(
   hpke: Hpke,
 ): Promise<GroupSecrets | undefined> {
   const secret = welcome.secrets.find((s) => constantTimeEqual(s.newMember, keyPackageRef))
-  if (secret === undefined) throw new Error("No matching secret found")
+  if (secret === undefined) throw new ValidationError("No matching secret found")
   const decrypted = await decryptWithLabel(
     initPrivateKey,
     "Welcome",
