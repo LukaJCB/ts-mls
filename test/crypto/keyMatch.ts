@@ -9,15 +9,11 @@ export async function hpkeKeysMatch(publicKey: Uint8Array, privateKey: Uint8Arra
   const plaintext = encoder.encode("test")
   const info = encoder.encode("key check")
 
-  try {
-    const { ct, enc } = await hpke.seal(await hpke.importPublicKey(publicKey), plaintext, info)
+  const { ct, enc } = await hpke.seal(await hpke.importPublicKey(publicKey), plaintext, info)
 
-    const decrypted = await hpke.open(await hpke.importPrivateKey(privateKey), enc, ct, info)
+  const decrypted = await hpke.open(await hpke.importPrivateKey(privateKey), enc, ct, info)
 
-    return new TextDecoder().decode(decrypted) === "test"
-  } catch (err) {
-    return false
-  }
+  return new TextDecoder().decode(decrypted) === "test"
 }
 
 export async function signatureKeysMatch(

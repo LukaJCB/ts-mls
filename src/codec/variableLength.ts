@@ -11,7 +11,7 @@ export const encodeVarLenData: Encoder<Uint8Array> = (data) => {
   return result
 }
 
-function encodeLength(len: number): Uint8Array {
+export function encodeLength(len: number): Uint8Array {
   if (len < 64) {
     // 1-byte length: 00xxxxxx
     return new Uint8Array([len & 0b00111111])

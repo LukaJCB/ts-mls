@@ -1,6 +1,6 @@
 import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
 import { createCommit } from "../../src/createCommit"
-import { createApplicationMessage } from "../../src/createMessage"
+import { createApplicationMessage, createProposal } from "../../src/createMessage"
 import { processPrivateMessage } from "../../src/processMessages"
 import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"
@@ -101,6 +101,15 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   const aliceCreateFirstMessageResult = await createApplicationMessage(aliceGroup, firstMessage, impl)
   aliceGroup = aliceCreateFirstMessageResult.newState
 
+  // alice sends a proposal message in epoch 1
+  const aliceCreateFirstProposalResult = await createProposal(
+    aliceGroup,
+    false,
+    { proposalType: 7, proposalData: new Uint8Array() },
+    impl,
+  )
+  aliceGroup = aliceCreateFirstProposalResult.newState
+
   // bob creates an empty commit and goes to epoch 2
   const emptyCommitResult1 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
   bobGroup = emptyCommitResult1.newState
@@ -180,6 +189,15 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     impl,
   )
   bobGroup = bobProcessSecondMessageResult.newState
+
+  //bob won't be able to receive the proposal from an older epoch
+
+  if (aliceCreateFirstProposalResult.message.wireformat !== "mls_private_message")
+    throw new Error("Expected private message")
+
+  expect(
+    processPrivateMessage(bobGroup, aliceCreateFirstProposalResult.message.privateMessage, emptyPskIndex, impl),
+  ).rejects.toThrow(ValidationError)
 
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
 }

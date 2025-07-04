@@ -16,7 +16,7 @@ import {
   RatchetTree,
 } from "./ratchetTree"
 import { treeHashRoot } from "./treeHash"
-import { directPath, leafToNodeIndex, leafWidth } from "./treemath"
+import { isAncestor, leafToNodeIndex } from "./treemath"
 import { updateArray } from "./util/array"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext"
@@ -269,17 +269,11 @@ export async function applyUpdatePath(
   return copy
 }
 
-function isAncestor(tree: RatchetTree, leafIndex: number, nodeIndex: number): boolean {
-  return (
-    directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length)).find((index) => index === nodeIndex) !== undefined
-  )
-}
-
 export function firstCommonAncestor(tree: RatchetTree, leafIndex: number, senderLeafIndex: number): number {
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, tree)
 
   for (const { nodeIndex } of fdp) {
-    if (isAncestor(tree, leafIndex, nodeIndex)) {
+    if (isAncestor(leafToNodeIndex(leafIndex), nodeIndex, tree.length)) {
       return nodeIndex
     }
   }
@@ -296,7 +290,7 @@ export function firstMatchAncestor(
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, tree)
 
   for (const [n, { nodeIndex, resolution }] of fdp.entries()) {
-    if (isAncestor(tree, leafIndex, nodeIndex)) {
+    if (isAncestor(leafToNodeIndex(leafIndex), nodeIndex, tree.length)) {
       return { nodeIndex, resolution, updateNode: path.nodes[n] }
     }
   }

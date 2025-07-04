@@ -57,6 +57,22 @@ test("encode and decode works for uint64: 18446744073709551615", () => {
   uint64RoundTrip(18446744073709551615n)
 })
 
+test("decodeUint8 fails for an array that's empty", () => {
+  expect(decodeUint8(new Uint8Array([]), 0)).toBeUndefined
+})
+
+test("decodeUint16 fails for an array that's too small", () => {
+  expect(decodeUint16(new Uint8Array([0]), 0)).toBeUndefined
+})
+
+test("decodeUint32 fails for an array that's too small", () => {
+  expect(decodeUint32(new Uint8Array([0, 1]), 0)).toBeUndefined
+})
+
+test("decodeUint64 fails for an array that's too small", () => {
+  expect(decodeUint64(new Uint8Array([0, 1, 2, 3]), 0)).toBeUndefined
+})
+
 function uint8RoundTrip(num: number) {
   const encoded = encodeUint8(num)
 

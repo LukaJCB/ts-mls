@@ -1,8 +1,6 @@
-import { AuthenticatedContentTBM, createMembershipTag } from "./authenticatedContent"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder"
 import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { Extension } from "./extension"
 import { decodeExternalSender, ExternalSender } from "./externalSender"
 import {
@@ -66,21 +64,6 @@ export const decodePublicMessage: Decoder<PublicMessage> = flatMapDecoder(decode
     }),
   ),
 )
-
-export async function createMemberPublicMessage(
-  membershipKey: Uint8Array,
-  content: AuthenticatedContentTBM,
-  cs: CiphersuiteImpl,
-): Promise<MemberPublicMessage> {
-  const tag = await createMembershipTag(membershipKey, content, cs.hash)
-
-  return {
-    content: content.contentTbs.content,
-    auth: content.auth,
-    senderType: "member",
-    membershipTag: tag,
-  }
-}
 
 export function findSignaturePublicKey(
   ratchetTree: RatchetTree,

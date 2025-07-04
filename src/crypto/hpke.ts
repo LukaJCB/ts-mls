@@ -125,7 +125,7 @@ export async function makeHpke(hpkealg: HpkeAlgorithm): Promise<Hpke> {
     },
     async decryptAead(key, nonce, aad, ciphertext) {
       try {
-        return aead.decrypt(key, nonce, aad ? aad : new Uint8Array(), ciphertext)
+        return await aead.decrypt(key, nonce, aad ? aad : new Uint8Array(), ciphertext)
       } catch (e) {
         throw new CryptoError(`${e}`)
       }

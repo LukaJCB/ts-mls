@@ -14,9 +14,7 @@ import {
   FramedContentData,
   FramedContentProposalData,
   FramedContentTBS,
-  toTbs,
 } from "./framedContent"
-import { GroupContext } from "./groupContext"
 import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
 
 export type AuthenticatedContent = {
@@ -57,10 +55,6 @@ export const decodeAuthenticatedContent: Decoder<AuthenticatedContent> = mapDeco
     ...contentAuth,
   }),
 )
-
-export function toTbm(content: AuthenticatedContent, context: GroupContext): AuthenticatedContentTBM {
-  return { auth: content.auth, contentTbs: toTbs(content.content, content.wireformat, context) }
-}
 
 export type AuthenticatedContentTBM = {
   contentTbs: FramedContentTBS

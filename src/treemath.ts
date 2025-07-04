@@ -54,12 +54,6 @@ export function left(nodeIndex: number): number {
   return nodeIndex ^ (0x01 << (k - 1))
 }
 
-export function leftOrLeaf(nodeIndex: number): number | undefined {
-  const k = level(nodeIndex)
-  if (k === 0) return undefined
-  return nodeIndex ^ (0x01 << (k - 1))
-}
-
 export function right(nodeIndex: number): number {
   const k = level(nodeIndex)
   if (k === 0) throw new InternalError("leaf node has no children")

@@ -80,14 +80,6 @@ export function orDecoder<T, U>(decT: Decoder<T>, decU: Decoder<U>): Decoder<T |
   }
 }
 
-export function composeDecoders<T, U>(dt: Decoder<T>, du: Decoder<U>): Decoder<[T, U]> {
-  return mapDecoders([dt, du], (t, u) => [t, u])
-}
-
-export function flatMapTupleDecoder<T, U>(dec: Decoder<T>, f: (t: T) => Decoder<U>): Decoder<[T, U]> {
-  return flatMapDecoderAndMap(dec, f, (t, u) => [t, u] as const)
-}
-
 export function flatMapDecoderAndMap<T, U, V>(
   dec: Decoder<T>,
   f: (t: T) => Decoder<U>,

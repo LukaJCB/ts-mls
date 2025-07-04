@@ -25,8 +25,7 @@ export const decodeUint16: Decoder<number> = (b, offset) => {
   try {
     return [view.getUint16(offset), 2]
   } catch (e) {
-    if (e instanceof RangeError) return undefined
-    throw e
+    return undefined
   }
 }
 
@@ -42,8 +41,7 @@ export const decodeUint32: Decoder<number> = (b, offset) => {
   try {
     return [view.getUint32(offset), 4]
   } catch (e) {
-    if (e instanceof RangeError) return undefined
-    throw e
+    return undefined
   }
 }
 
@@ -59,7 +57,6 @@ export const decodeUint64: Decoder<bigint> = (b, offset) => {
   try {
     return [view.getBigUint64(offset), 8]
   } catch (e) {
-    if (e instanceof RangeError) return undefined
-    throw e
+    return undefined
   }
 }

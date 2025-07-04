@@ -56,7 +56,7 @@ export async function encryptGroupInfo(
 ): Promise<Uint8Array> {
   const key = await welcomeKey(welcomeSecret, cs)
   const nonce = await welcomeNonce(welcomeSecret, cs)
-  const encrypted = await cs.hpke.encryptAead(key, nonce, new Uint8Array(), encodeGroupInfo(groupInfo))
+  const encrypted = await cs.hpke.encryptAead(key, nonce, undefined, encodeGroupInfo(groupInfo))
 
   return encrypted
 }
@@ -71,7 +71,7 @@ export async function decryptGroupInfo(
 
   const key = await welcomeKey(welcomeSecret, cs)
   const nonce = await welcomeNonce(welcomeSecret, cs)
-  const decrypted = await cs.hpke.decryptAead(key, nonce, new Uint8Array(), w.encryptedGroupInfo)
+  const decrypted = await cs.hpke.decryptAead(key, nonce, undefined, w.encryptedGroupInfo)
 
   const decoded = decodeGroupInfo(decrypted, 0)
   return decoded?.[0]

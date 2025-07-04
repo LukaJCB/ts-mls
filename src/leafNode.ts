@@ -1,5 +1,5 @@
 import { Capabilities, decodeCapabilities, encodeCapabilities } from "./capabilities"
-import { encodeUint32, decodeUint32 } from "./codec/number"
+import { encodeUint32 } from "./codec/number"
 import { Decoder, mapDecoders, mapDecoder, flatMapDecoder, succeedDecoder, mapDecoderOption } from "./codec/tlsDecoder"
 import { Encoder, contramapEncoders, contramapEncoder } from "./codec/tlsEncoder"
 import { encodeVarLenData, decodeVarLenData, encodeVarLenType, decodeVarLenType } from "./codec/variableLength"
@@ -108,12 +108,6 @@ export const encodeGroupIdLeafIndex: Encoder<GroupIdLeafIndex> = contramapEncode
   [encodeVarLenData, encodeUint32],
   (g) => [g.groupId, g.leafIndex] as const,
 )
-
-export function decodeGroupIdLeafIndex(
-  leafNodeSource: Exclude<LeafNodeSourceName, "key_package">,
-): Decoder<GroupIdLeafIndex> {
-  return mapDecoders([decodeVarLenData, decodeUint32], (groupId, leafIndex) => ({ groupId, leafIndex, leafNodeSource }))
-}
 
 export type LeafNodeGroupInfo = GroupIdLeafIndex | { leafNodeSource: "key_package" }
 

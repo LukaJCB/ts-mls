@@ -1,10 +1,18 @@
 import { randomBytes } from "@noble/ciphers/webcrypto"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "../../src/codec/variableLength"
+import {
+  decodeVarLenData,
+  decodeVarLenType,
+  determineLength,
+  encodeLength,
+  encodeVarLenData,
+  encodeVarLenType,
+} from "../../src/codec/variableLength"
 import { createRoundtripTest } from "./roundtrip"
 import { Encoder } from "../../src/codec/tlsEncoder"
 import { Decoder } from "../../src/codec/tlsDecoder"
 import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number"
 import { decodeOptional, encodeOptional } from "../../src/codec/optional"
+import { CodecError } from "../../src/mlsError"
 
 test("encode and decode works for 1 random byte", () => {
   varLenRoundtrip(randomBytes(1))
@@ -77,6 +85,34 @@ test("encode and decode works for array of optional random bytes", () => {
     randomBytes(99),
     randomBytes(99),
   ])
+})
+
+test("decode doesn't work if offset is too large", () => {
+  expect(() => decodeVarLenData(new Uint8Array(0), 2)).toThrow(CodecError)
+})
+
+test("determineLength doesn't work if offset is too large", () => {
+  expect(() => determineLength(new Uint8Array(0), 2)).toThrow(CodecError)
+})
+
+test("determineLength doesn't work if prefix is too large", () => {
+  expect(() => determineLength(encodeLength(50000000000), 1)).toThrow(CodecError)
+})
+
+test("determineLength doesn't work if offset is ffsd large", () => {
+  expect(() => determineLength(new Uint8Array([0xff, 0xff]), 0)).toThrow(CodecError)
+})
+
+test("decode doesn't work if length is too large", () => {
+  const e = encodeVarLenData(randomBytes(64))
+  e[1] = 0xff
+  expect(() => decodeVarLenData(e, 0)).toThrow(CodecError)
+})
+
+test("decodeVarLenType doesn't work if underlying decoder doesn't work", () => {
+  const brokenDecoder: Decoder<number> = () => undefined
+
+  expect(decodeVarLenType(brokenDecoder)(encodeVarLenData(randomBytes(16)), 0)).toBeUndefined()
 })
 
 const varLenRoundtrip = createRoundtripTest(encodeVarLenData, decodeVarLenData)
