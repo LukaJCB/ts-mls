@@ -7,15 +7,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [19, 20, 21, 22, 23, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "24.2.0"
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
       - run: npm ci
       - run: npm run verify
       - name: Coveralls
+        if: matrix.node-version == 24
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
