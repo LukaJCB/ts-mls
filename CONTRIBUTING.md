@@ -6,8 +6,10 @@ Thank you for your interest in contributing to ts-mls! This document outlines th
 
 ### Prerequisites
 
-- Node.js (version 18 or higher recommended)
+- Node.js (version 19 or higher required)
 - npm (comes with Node.js)
+
+> **Note**: Node.js 19+ is required because this project uses the Web Crypto API (`crypto.subtle`) which is only available as a global object starting from Node.js 19.
 
 ### Installation
 
