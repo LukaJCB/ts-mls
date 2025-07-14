@@ -26,8 +26,6 @@ Thank you for your interest in contributing to ts-mls! This document outlines th
    npm install
    ```
 
-   Note: The `postinstall` script will automatically run `patch-package` to apply a necessary patch to the hpke-js dependency.
-
 ### Project Structure
 
 - `src/` - Main TypeScript source code
