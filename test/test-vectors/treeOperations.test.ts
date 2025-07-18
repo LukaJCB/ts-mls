@@ -12,9 +12,7 @@ import json from "../../test_vectors/tree-operations.json"
 import { decodeProposal, Proposal } from "../../src/proposal"
 import { treeHashRoot } from "../../src/treeHash"
 
-// How can there be a proposal with leaf_node_source = key_package in the test vectors?
-// https://github.com/mlswg/mls-implementations/issues/195
-for (const [index, x] of json.filter((_n, idx) => idx !== 2).entries()) {
+for (const [index, x] of json.entries()) {
   test(`tree-operations test vectors ${index}`, async () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await treeOperationsTest(x, impl)
