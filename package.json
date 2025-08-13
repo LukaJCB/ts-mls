@@ -55,7 +55,9 @@
     "@types/jest": "^30.0.0",
     "madge": "^8.0.0",
     "prettier": "3.6.2",
+    "tinybench": "^4.0.1",
     "ts-jest": "^29.2.5",
+    "tsx": "^4.20.3",
     "typescript": "~5.9.2",
     "typescript-docs-verifier": "^3.0.1"
   },
@@ -68,6 +70,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "benchmark": "tsx bench/index.ts",
     "test": "jest --coverage",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
