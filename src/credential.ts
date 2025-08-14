@@ -5,10 +5,19 @@ import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "
 
 export type Credential = CredentialBasic | CredentialX509
 
-export type CredentialBasic = { credentialType: "basic"; identity: Uint8Array }
-export type CredentialX509 = { credentialType: "x509"; certificates: Uint8Array[] }
+export interface CredentialBasic {
+  credentialType: "basic"
+  identity: Uint8Array
+}
+export interface CredentialX509 {
+  credentialType: "x509"
+  certificates: Uint8Array[]
+}
 
-export type CredentialCustom = { credentialType: CredentialTypeName; data: Uint8Array }
+export interface CredentialCustom {
+  credentialType: CredentialTypeName
+  data: Uint8Array
+}
 
 export const encodeCredentialBasic: Encoder<CredentialBasic> = contramapEncoders(
   [encodeCredentialType, encodeVarLenData],

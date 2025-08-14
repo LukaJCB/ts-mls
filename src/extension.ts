@@ -17,7 +17,7 @@ export const encodeExtensionType: Encoder<ExtensionType> = (t) =>
 
 export const decodeExtensionType: Decoder<ExtensionType> = orDecoder(decodeDefaultExtensionType, decodeUint16)
 
-export type Extension = {
+export interface Extension {
   extensionType: ExtensionType
   extensionData: Uint8Array
 }

@@ -9,7 +9,7 @@ import { decodeExtension, encodeExtension, Extension } from "./extension"
 
 import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
 
-export type GroupContext = {
+export interface GroupContext {
   version: ProtocolVersionName
   cipherSuite: CiphersuiteName
   groupId: Uint8Array

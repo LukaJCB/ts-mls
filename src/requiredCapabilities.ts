@@ -4,7 +4,7 @@ import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder"
 import { decodeUint16, encodeUint16 } from "./codec/number"
 
-export type RequiredCapabilities = {
+export interface RequiredCapabilities {
   extensionTypes: number[]
   proposalTypes: number[]
   credentialTypes: CredentialTypeName[]

@@ -23,9 +23,16 @@ export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeName> = mapDecode
   enumNumberToKey(proposalOrRefTypes),
 )
 
+export interface ProposalOrRefProposal {
+  proposalOrRefType: "proposal"
+  proposal: Proposal
+}
+export interface ProposalOrRefProposalRef {
+  proposalOrRefType: "reference"
+  reference: Uint8Array
+}
+
 export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef
-export type ProposalOrRefProposal = { proposalOrRefType: "proposal"; proposal: Proposal }
-export type ProposalOrRefProposalRef = { proposalOrRefType: "reference"; reference: Uint8Array }
 
 export const encodeProposalOrRefProposal: Encoder<ProposalOrRefProposal> = contramapEncoders(
   [encodeProposalOrRefType, encodeProposal],

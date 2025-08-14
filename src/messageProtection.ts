@@ -26,7 +26,10 @@ import { KeyRetentionConfig } from "./keyRetentionConfig"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError"
 import { PaddingConfig } from "./paddingConfig"
 
-export type ProtectApplicationDataResult = { privateMessage: PrivateMessage; newSecretTree: SecretTree }
+export interface ProtectApplicationDataResult {
+  privateMessage: PrivateMessage
+  newSecretTree: SecretTree
+}
 
 export async function protectApplicationData(
   signKey: Uint8Array,
@@ -78,7 +81,7 @@ export async function protectApplicationData(
   return { newSecretTree: result.tree, privateMessage: result.privateMessage }
 }
 
-export type ProtectProposalResult = {
+export interface ProtectProposalResult {
   privateMessage: PrivateMessage
   newSecretTree: SecretTree
   proposalRef: Uint8Array
@@ -139,7 +142,10 @@ export async function protectProposal(
   return { privateMessage: privateMessage.privateMessage, newSecretTree, proposalRef }
 }
 
-export type ProtectResult = { privateMessage: PrivateMessage; tree: SecretTree }
+export interface ProtectResult {
+  privateMessage: PrivateMessage
+  tree: SecretTree
+}
 
 export async function protect(
   senderDataSecret: Uint8Array,
@@ -202,7 +208,10 @@ export async function protect(
   }
 }
 
-export type UnprotectResult = { content: AuthenticatedContent; tree: SecretTree }
+export interface UnprotectResult {
+  content: AuthenticatedContent
+  tree: SecretTree
+}
 
 export async function unprotectPrivateMessage(
   senderDataSecret: Uint8Array,

@@ -10,7 +10,7 @@ import { HPKECiphertext, encodeHpkeCiphertext, decodeHpkeCiphertext } from "./hp
 import { ValidationError } from "./mlsError"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 
-export type EncryptedGroupSecrets = {
+export interface EncryptedGroupSecrets {
   newMember: Uint8Array
   encryptedGroupSecrets: HPKECiphertext
 }
@@ -25,7 +25,7 @@ export const decodeEncryptedGroupSecrets: Decoder<EncryptedGroupSecrets> = mapDe
   (newMember, encryptedGroupSecrets) => ({ newMember, encryptedGroupSecrets }),
 )
 
-export type Welcome = {
+export interface Welcome {
   cipherSuite: CiphersuiteName
   secrets: EncryptedGroupSecrets[]
   encryptedGroupInfo: Uint8Array

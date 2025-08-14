@@ -8,13 +8,20 @@ import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex } from "./treemat
 import { updateArray } from "./util/array"
 import { repeatAsync } from "./util/repeat"
 
-export type GenerationSecret = { secret: Uint8Array; generation: number; unusedGenerations: Record<number, Uint8Array> }
+export interface GenerationSecret {
+  secret: Uint8Array
+  generation: number
+  unusedGenerations: Record<number, Uint8Array>
+}
 
-export type SecretTreeNode = { handshake: GenerationSecret; application: GenerationSecret }
+export interface SecretTreeNode {
+  handshake: GenerationSecret
+  application: GenerationSecret
+}
 
 export type SecretTree = SecretTreeNode[]
 
-export type ConsumeRatchetResult = {
+export interface ConsumeRatchetResult {
   nonce: Uint8Array
   reuseGuard: ReuseGuard
   key: Uint8Array

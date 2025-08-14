@@ -5,7 +5,10 @@ import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength"
 import { decodeProposalOrRef, encodeProposalOrRef, ProposalOrRef } from "./proposalOrRefType"
 import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "./updatePath"
 
-export type Commit = { proposals: ProposalOrRef[]; path: UpdatePath | undefined }
+export interface Commit {
+  proposals: ProposalOrRef[]
+  path: UpdatePath | undefined
+}
 
 export const encodeCommit: Encoder<Commit> = contramapEncoders(
   [encodeVarLenType(encodeProposalOrRef), encodeOptional(encodeUpdatePath)],

@@ -48,7 +48,11 @@ import { CryptoVerificationError, InternalError, UsageError, ValidationError } f
 import { ClientConfig, defaultClientConfig } from "./clientConfig"
 import { extensionsSupportedByCapabilities } from "./extension"
 
-export type CreateCommitResult = { newState: ClientState; welcome: Welcome | undefined; commit: MLSMessage }
+export interface CreateCommitResult {
+  newState: ClientState
+  welcome: Welcome | undefined
+  commit: MLSMessage
+}
 
 export async function createCommit(
   state: ClientState,

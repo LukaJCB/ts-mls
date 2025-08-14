@@ -21,15 +21,25 @@ export const encodeSenderType: Encoder<SenderTypeName> = contramapEncoder(encode
 
 export const decodeSenderType: Decoder<SenderTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(senderTypes))
 
-export type Sender = SenderMember | SenderNonMember
-
-export type SenderMember = { senderType: "member"; leafIndex: number }
+export interface SenderMember {
+  senderType: "member"
+  leafIndex: number
+}
 
 export type SenderNonMember = SenderExternal | SenderNewMemberProposal | SenderNewMemberCommit
 
-export type SenderExternal = { senderType: "external"; senderIndex: number }
-export type SenderNewMemberProposal = { senderType: "new_member_proposal" }
-export type SenderNewMemberCommit = { senderType: "new_member_commit" }
+export interface SenderExternal {
+  senderType: "external"
+  senderIndex: number
+}
+export interface SenderNewMemberProposal {
+  senderType: "new_member_proposal"
+}
+export interface SenderNewMemberCommit {
+  senderType: "new_member_commit"
+}
+
+export type Sender = SenderMember | SenderNonMember
 
 export const encodeSender: Encoder<Sender> = (s) => {
   switch (s.senderType) {
@@ -82,7 +92,7 @@ export function getSenderLeafNodeIndex(sender: Sender): number | undefined {
   return sender.senderType === "member" ? sender.leafIndex : undefined
 }
 
-export type SenderData = {
+export interface SenderData {
   leafIndex: number
   generation: number
   reuseGuard: ReuseGuard
@@ -110,7 +120,7 @@ export const decodeSenderData: Decoder<SenderData> = mapDecoders(
   }),
 )
 
-export type SenderDataAAD = {
+export interface SenderDataAAD {
   groupId: Uint8Array
   epoch: bigint
   contentType: ContentTypeName

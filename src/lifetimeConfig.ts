@@ -1,4 +1,4 @@
-export type LifetimeConfig = {
+export interface LifetimeConfig {
   maximumTotalLifetime: bigint
   validateLifetimeOnReceive: boolean
 }

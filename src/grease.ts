@@ -8,7 +8,7 @@ export const greaseValues = [
   0xeaea,
 ]
 
-export type GreaseConfig = {
+export interface GreaseConfig {
   probabilityPerGreaseValue: number
 }
 

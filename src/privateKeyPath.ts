@@ -3,7 +3,7 @@ import { deriveSecret } from "./crypto/kdf"
 import { PathSecrets } from "./pathSecrets"
 import { leafToNodeIndex } from "./treemath"
 
-export type PrivateKeyPath = {
+export interface PrivateKeyPath {
   leafIndex: number
   privateKeys: Record<number, Uint8Array>
 }

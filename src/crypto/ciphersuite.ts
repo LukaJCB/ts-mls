@@ -8,7 +8,7 @@ import { Decoder, mapDecoderOption } from "../codec/tlsDecoder"
 import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers"
 import { Rng, webCryptoRng } from "./rng"
 
-export type CiphersuiteImpl = {
+export interface CiphersuiteImpl {
   hash: Hash
   hpke: Hpke
   signature: Signature

@@ -4,7 +4,7 @@ import { defaultKeyRetentionConfig, KeyRetentionConfig } from "./keyRetentionCon
 import { defaultLifetimeConfig, LifetimeConfig } from "./lifetimeConfig"
 import { defaultPaddingConfig, PaddingConfig } from "./paddingConfig"
 
-export type ClientConfig = {
+export interface ClientConfig {
   keyRetentionConfig: KeyRetentionConfig
   lifetimeConfig: LifetimeConfig
   keyPackageEqualityConfig: KeyPackageEqualityConfig

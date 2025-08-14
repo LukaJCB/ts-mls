@@ -9,6 +9,7 @@ import { PathSecret } from "./updatePath"
  */
 
 export type PathSecrets = Record<number, Uint8Array>
+
 export function pathToPathSecrets(pathSecrets: PathSecret[]): PathSecrets {
   return pathSecrets.reduce(
     (acc, cur) => ({

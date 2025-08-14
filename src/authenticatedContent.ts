@@ -17,7 +17,7 @@ import {
 } from "./framedContent"
 import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
 
-export type AuthenticatedContent = {
+export interface AuthenticatedContent {
   wireformat: WireformatName
   content: FramedContent
   auth: FramedContentAuthData
@@ -56,7 +56,7 @@ export const decodeAuthenticatedContent: Decoder<AuthenticatedContent> = mapDeco
   }),
 )
 
-export type AuthenticatedContentTBM = {
+export interface AuthenticatedContentTBM {
   contentTbs: FramedContentTBS
   auth: FramedContentAuthData
 }

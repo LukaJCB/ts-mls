@@ -27,7 +27,7 @@ import {
   SenderDataAAD,
 } from "./sender"
 
-export type PrivateMessage = {
+export interface PrivateMessage {
   groupId: Uint8Array
   epoch: bigint
   contentType: ContentTypeName
@@ -54,7 +54,7 @@ export const decodePrivateMessage: Decoder<PrivateMessage> = mapDecoders(
   }),
 )
 
-export type PrivateContentAAD = {
+export interface PrivateContentAAD {
   groupId: Uint8Array
   epoch: bigint
   contentType: ContentTypeName

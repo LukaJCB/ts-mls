@@ -2,7 +2,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder"
 import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
 import { encodeVarLenData, decodeVarLenData } from "./codec/variableLength"
 
-export type HPKECiphertext = {
+export interface HPKECiphertext {
   kemOutput: Uint8Array
   ciphertext: Uint8Array
 }

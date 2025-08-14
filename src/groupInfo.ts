@@ -10,7 +10,7 @@ import { decodeGroupContext, encodeGroupContext, extractEpochSecret, GroupContex
 import { CodecError } from "./mlsError"
 import { decodeRatchetTree, RatchetTree } from "./ratchetTree"
 
-export type GroupInfoTBS = {
+export interface GroupInfoTBS {
   groupContext: GroupContext
   extensions: Extension[]
   confirmationTag: Uint8Array

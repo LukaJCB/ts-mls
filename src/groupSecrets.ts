@@ -4,7 +4,7 @@ import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
 import { decodePskId, encodePskId, PreSharedKeyID } from "./presharedkey"
 
-export type GroupSecrets = {
+export interface GroupSecrets {
   joinerSecret: Uint8Array
   pathSecret: Uint8Array | undefined
   psks: PreSharedKeyID[]

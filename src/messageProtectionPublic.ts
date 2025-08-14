@@ -19,7 +19,9 @@ import { ExternalPublicMessage, findSignaturePublicKey, PublicMessage } from "./
 import { RatchetTree } from "./ratchetTree"
 import { SenderNonMember } from "./sender"
 
-export type ProtectProposalPublicResult = { publicMessage: PublicMessage }
+export interface ProtectProposalPublicResult {
+  publicMessage: PublicMessage
+}
 
 export async function protectProposalPublic(
   signKey: Uint8Array,
@@ -126,7 +128,9 @@ export async function protectPublicMessage(
   }
 }
 
-export type ProtectCommitPublicResult = { publicMessage: PublicMessage }
+export interface ProtectCommitPublicResult {
+  publicMessage: PublicMessage
+}
 
 export async function unprotectPublicMessage(
   membershipKey: Uint8Array,

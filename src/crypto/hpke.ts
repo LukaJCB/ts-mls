@@ -10,7 +10,7 @@ export type PublicKey = CryptoKey & { type: "public" }
 export type SecretKey = CryptoKey & { type: "secret" }
 export type PrivateKey = CryptoKey & { type: "private" }
 
-export type HpkeAlgorithm = {
+export interface HpkeAlgorithm {
   kem: KemAlgorithm
   kdf: KdfAlgorithm
   aead: AeadAlgorithm

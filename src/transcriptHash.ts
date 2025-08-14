@@ -5,7 +5,7 @@ import { Hash } from "./crypto/hash"
 import { decodeFramedContent, encodeFramedContent, FramedContentCommit } from "./framedContent"
 import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
 
-export type ConfirmedTranscriptHashInput = {
+export interface ConfirmedTranscriptHashInput {
   wireformat: WireformatName
   content: FramedContentCommit
   signature: Uint8Array

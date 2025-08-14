@@ -23,9 +23,18 @@ import {
 
 export type FramedContentInfo = FramedContentApplicationData | FramedContentProposalData | FramedContentCommitData
 
-export type FramedContentApplicationData = { contentType: "application"; applicationData: Uint8Array }
-export type FramedContentProposalData = { contentType: "proposal"; proposal: Proposal }
-export type FramedContentCommitData = { contentType: "commit"; commit: Commit }
+export interface FramedContentApplicationData {
+  contentType: "application"
+  applicationData: Uint8Array
+}
+export interface FramedContentProposalData {
+  contentType: "proposal"
+  proposal: Proposal
+}
+export interface FramedContentCommitData {
+  contentType: "commit"
+  commit: Commit
+}
 
 export const encodeFramedContentApplicationData: Encoder<FramedContentApplicationData> = contramapEncoders(
   [encodeContentType, encodeVarLenData],
@@ -87,7 +96,7 @@ export function toTbs(content: FramedContent, wireformat: WireformatName, contex
 }
 
 export type FramedContent = FramedContentData & FramedContentInfo
-export type FramedContentData = {
+export interface FramedContentData {
   groupId: Uint8Array
   epoch: bigint
   sender: Sender

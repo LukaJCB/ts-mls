@@ -3,7 +3,11 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder"
 import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
 import { encodeVarLenData, encodeVarLenType, decodeVarLenData, decodeVarLenType } from "./codec/variableLength"
 
-export type ParentNode = { hpkePublicKey: Uint8Array; parentHash: Uint8Array; unmergedLeaves: number[] }
+export interface ParentNode {
+  hpkePublicKey: Uint8Array
+  parentHash: Uint8Array
+  unmergedLeaves: number[]
+}
 
 export const encodeParentNode: Encoder<ParentNode> = contramapEncoders(
   [encodeVarLenData, encodeVarLenData, encodeVarLenType(encodeUint32)],

@@ -81,7 +81,7 @@ export function makeKeyPackageRef(value: KeyPackage, h: Hash) {
   return refhash("MLS 1.0 KeyPackage Reference", encodeKeyPackage(value), h)
 }
 
-export type PrivateKeyPackage = {
+export interface PrivateKeyPackage {
   initPrivateKey: Uint8Array
   hpkePrivateKey: Uint8Array
   signaturePrivateKey: Uint8Array

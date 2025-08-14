@@ -22,7 +22,7 @@ import { constantTimeEqual } from "./util/constantTimeCompare"
 import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext"
 import { InternalError, ValidationError } from "./mlsError"
 
-export type UpdatePathNode = {
+export interface UpdatePathNode {
   hpkePublicKey: Uint8Array
   encryptedPathSecret: HPKECiphertext[]
 }
@@ -37,7 +37,7 @@ export const decodeUpdatePathNode: Decoder<UpdatePathNode> = mapDecoders(
   (hpkePublicKey, encryptedPathSecret) => ({ hpkePublicKey, encryptedPathSecret }),
 )
 
-export type UpdatePath = {
+export interface UpdatePath {
   leafNode: LeafNodeCommit
   nodes: UpdatePathNode[]
 }
@@ -52,7 +52,11 @@ export const decodeUpdatePath: Decoder<UpdatePath> = mapDecoders(
   (leafNode, nodes) => ({ leafNode, nodes }),
 )
 
-export type PathSecret = { nodeIndex: number; secret: Uint8Array; sendTo: number[] }
+export interface PathSecret {
+  nodeIndex: number
+  secret: Uint8Array
+  sendTo: number[]
+}
 
 export async function createUpdatePath(
   originalTree: RatchetTree,

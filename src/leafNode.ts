@@ -9,7 +9,7 @@ import { Extension, encodeExtension, decodeExtension } from "./extension"
 import { encodeLeafNodeSource, decodeLeafNodeSource, LeafNodeSourceName } from "./leafNodeSource"
 import { Lifetime, encodeLifetime, decodeLifetime } from "./lifetime"
 
-export type LeafNodeData = {
+export interface LeafNodeData {
   hpkePublicKey: Uint8Array
   signaturePublicKey: Uint8Array
   credential: Credential
@@ -32,9 +32,17 @@ export const decodeLeafNodeData: Decoder<LeafNodeData> = mapDecoders(
 )
 
 export type LeafNodeInfo = LeafNodeInfoKeyPackage | LeafNodeInfoUpdate | LeafNodeInfoCommit
-export type LeafNodeInfoKeyPackage = { leafNodeSource: "key_package"; lifetime: Lifetime }
-export type LeafNodeInfoUpdate = { leafNodeSource: "update" }
-export type LeafNodeInfoCommit = { leafNodeSource: "commit"; parentHash: Uint8Array }
+export interface LeafNodeInfoKeyPackage {
+  leafNodeSource: "key_package"
+  lifetime: Lifetime
+}
+export interface LeafNodeInfoUpdate {
+  leafNodeSource: "update"
+}
+export interface LeafNodeInfoCommit {
+  leafNodeSource: "commit"
+  parentHash: Uint8Array
+}
 
 export const encodeLeafNodeInfoLifetime: Encoder<LeafNodeInfoKeyPackage> = contramapEncoders(
   [encodeLeafNodeSource, encodeLifetime],
@@ -86,7 +94,9 @@ export const decodeLeafNodeInfo: Decoder<LeafNodeInfo> = flatMapDecoder(
   },
 )
 
-export type LeafNodeExtensions = { extensions: Extension[] }
+export interface LeafNodeExtensions {
+  extensions: Extension[]
+}
 
 export const encodeLeafNodeExtensions: Encoder<LeafNodeExtensions> = contramapEncoder(
   encodeVarLenType(encodeExtension),

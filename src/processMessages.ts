@@ -134,7 +134,7 @@ export async function processPrivateMessage(
   }
 }
 
-export type NewStateWithActionTaken = {
+export interface NewStateWithActionTaken {
   newState: ClientState
   actionTaken: IncomingMessageAction
 }

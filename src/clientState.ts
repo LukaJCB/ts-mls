@@ -67,7 +67,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig"
 import { decodeExternalSender } from "./externalSender"
 import { arraysEqual } from "./util/array"
 
-export type ClientState = {
+export interface ClientState {
   groupContext: GroupContext
   keySchedule: KeySchedule
   secretTree: SecretTree
@@ -89,7 +89,7 @@ export type GroupActiveState =
 /**
  * This type contains everything necessary to receieve application messages for an earlier epoch
  */
-export type EpochReceiverData = {
+export interface EpochReceiverData {
   resumptionPsk: Uint8Array
   secretTree: SecretTree
   ratchetTree: RatchetTree
@@ -111,7 +111,7 @@ export function checkCanSendHandshakeMessages(state: ClientState): void {
     throw new UsageError("Cannot send messages after being removed from group")
 }
 
-export type Proposals = {
+export interface Proposals {
   add: { senderLeafIndex: number | undefined; proposal: ProposalAdd }[]
   update: { senderLeafIndex: number | undefined; proposal: ProposalUpdate }[]
   remove: { senderLeafIndex: number | undefined; proposal: ProposalRemove }[]
@@ -524,7 +524,7 @@ function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined
   if (tree[leafToNodeIndex(remove.removed)] === undefined) return new ValidationError("Tried to remove empty leaf node")
 }
 
-export type ApplyProposalsResult = {
+export interface ApplyProposalsResult {
   tree: RatchetTree
   pskSecret: Uint8Array
   pskIds: PreSharedKeyID[]

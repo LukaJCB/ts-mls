@@ -1,7 +1,10 @@
 import { Proposal } from "./proposal"
 import { bytesToBase64 } from "./util/byteArray"
 
-export type ProposalWithSender = { proposal: Proposal; senderLeafIndex: number | undefined }
+export interface ProposalWithSender {
+  proposal: Proposal
+  senderLeafIndex: number | undefined
+}
 export type UnappliedProposals = Record<string, ProposalWithSender>
 export function addUnappliedProposal(
   ref: Uint8Array,

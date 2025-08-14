@@ -2,7 +2,7 @@ import { KeyPackage } from "./keyPackage"
 import { LeafNode } from "./leafNode"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 
-export type KeyPackageEqualityConfig = {
+export interface KeyPackageEqualityConfig {
   compareKeyPackages(a: KeyPackage, b: KeyPackage): boolean
   compareKeyPackageToLeafNode(a: KeyPackage, b: LeafNode): boolean
 }

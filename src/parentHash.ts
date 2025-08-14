@@ -9,7 +9,7 @@ import { isLeaf, leafToNodeIndex, leafWidth, left, right, root } from "./treemat
 
 import { constantTimeEqual } from "./util/constantTimeCompare"
 
-export type ParentHashInput = {
+export interface ParentHashInput {
   encryptionKey: Uint8Array
   parentHash: Uint8Array
   originalSiblingTreeHash: Uint8Array

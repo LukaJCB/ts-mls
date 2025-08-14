@@ -37,8 +37,11 @@ export const decodeResumptionPSKUsage: Decoder<ResumptionPSKUsageName> = mapDeco
   enumNumberToKey(resumptionPSKUsages),
 )
 
-export type PSKInfoExternal = { psktype: "external"; pskId: Uint8Array }
-export type PSKInfoResumption = {
+export interface PSKInfoExternal {
+  psktype: "external"
+  pskId: Uint8Array
+}
+export interface PSKInfoResumption {
   psktype: "resumption"
   usage: ResumptionPSKUsageName
   pskGroupId: Uint8Array

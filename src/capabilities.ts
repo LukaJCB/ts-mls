@@ -6,7 +6,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder"
 import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength"
 import { decodeUint16, encodeUint16 } from "./codec/number"
 
-export type Capabilities = {
+export interface Capabilities {
   versions: ProtocolVersionName[]
   ciphersuites: CiphersuiteName[]
   extensions: number[]

@@ -3,7 +3,7 @@ import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
 import { Credential, decodeCredential, encodeCredential } from "./credential"
 
-export type ExternalSender = {
+export interface ExternalSender {
   signaturePublicKey: Uint8Array
   credential: Credential
 }

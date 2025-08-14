@@ -10,27 +10,35 @@ import { decodeDefaultProposalType, encodeDefaultProposalType } from "./defaultP
 import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
 import { decodeLeafNodeUpdate, encodeLeafNode, LeafNodeUpdate } from "./leafNode"
 
-export type Add = { keyPackage: KeyPackage }
+export interface Add {
+  keyPackage: KeyPackage
+}
 
 export const encodeAdd: Encoder<Add> = contramapEncoder(encodeKeyPackage, (a) => a.keyPackage)
 export const decodeAdd: Decoder<Add> = mapDecoder(decodeKeyPackage, (keyPackage) => ({ keyPackage }))
 
-export type Update = { leafNode: LeafNodeUpdate }
+export interface Update {
+  leafNode: LeafNodeUpdate
+}
 
 export const encodeUpdate: Encoder<Update> = contramapEncoder(encodeLeafNode, (u) => u.leafNode)
 export const decodeUpdate: Decoder<Update> = mapDecoder(decodeLeafNodeUpdate, (leafNode) => ({ leafNode }))
 
-export type Remove = { removed: number }
+export interface Remove {
+  removed: number
+}
 
 export const encodeRemove: Encoder<Remove> = contramapEncoder(encodeUint32, (r) => r.removed)
 export const decodeRemove: Decoder<Remove> = mapDecoder(decodeUint32, (removed) => ({ removed }))
 
-export type PSK = { preSharedKeyId: PreSharedKeyID }
+export interface PSK {
+  preSharedKeyId: PreSharedKeyID
+}
 
 export const encodePSK: Encoder<PSK> = contramapEncoder(encodePskId, (p) => p.preSharedKeyId)
 export const decodePSK: Decoder<PSK> = mapDecoder(decodePskId, (preSharedKeyId) => ({ preSharedKeyId }))
 
-export type Reinit = {
+export interface Reinit {
   groupId: Uint8Array
   version: ProtocolVersionName
   cipherSuite: CiphersuiteName
@@ -47,12 +55,14 @@ export const decodeReinit: Decoder<Reinit> = mapDecoders(
   (groupId, version, cipherSuite, extensions) => ({ groupId, version, cipherSuite, extensions }),
 )
 
-export type ExternalInit = { kemOutput: Uint8Array }
+export interface ExternalInit {
+  kemOutput: Uint8Array
+}
 
 export const encodeExternalInit: Encoder<ExternalInit> = contramapEncoder(encodeVarLenData, (e) => e.kemOutput)
 export const decodeExternalInit: Decoder<ExternalInit> = mapDecoder(decodeVarLenData, (kemOutput) => ({ kemOutput }))
 
-export type GroupContextExtensions = {
+export interface GroupContextExtensions {
   extensions: Extension[]
 }
 
@@ -66,27 +76,42 @@ export const decodeGroupContextExtensions: Decoder<GroupContextExtensions> = map
   (extensions) => ({ extensions }),
 )
 
-export type ProposalAdd = { proposalType: "add"; add: Add }
+export interface ProposalAdd {
+  proposalType: "add"
+  add: Add
+}
 
-export type ProposalUpdate = { proposalType: "update"; update: Update }
+export interface ProposalUpdate {
+  proposalType: "update"
+  update: Update
+}
 
-export type ProposalRemove = { proposalType: "remove"; remove: Remove }
+export interface ProposalRemove {
+  proposalType: "remove"
+  remove: Remove
+}
 
-export type ProposalPSK = { proposalType: "psk"; psk: PSK }
+export interface ProposalPSK {
+  proposalType: "psk"
+  psk: PSK
+}
 
-export type ProposalReinit = {
+export interface ProposalReinit {
   proposalType: "reinit"
   reinit: Reinit
 }
 
-export type ProposalExternalInit = { proposalType: "external_init"; externalInit: ExternalInit }
+export interface ProposalExternalInit {
+  proposalType: "external_init"
+  externalInit: ExternalInit
+}
 
-export type ProposalGroupContextExtensions = {
+export interface ProposalGroupContextExtensions {
   proposalType: "group_context_extensions"
   groupContextExtensions: GroupContextExtensions
 }
 
-export type ProposalCustom = {
+export interface ProposalCustom {
   proposalType: number
   proposalData: Uint8Array
 }
