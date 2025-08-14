@@ -1,7 +1,7 @@
 import { Kdf, deriveSecret } from "./crypto/kdf"
 import { InternalError } from "./mlsError"
 import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree"
-import { root, leafWidth } from "./treemath"
+import { root, leafWidth, NodeIndex } from "./treemath"
 import { PathSecret } from "./updatePath"
 
 /**
@@ -20,7 +20,7 @@ export function pathToPathSecrets(pathSecrets: PathSecret[]): PathSecrets {
 }
 export async function getCommitSecret(
   tree: RatchetTree,
-  nodeIndex: number,
+  nodeIndex: NodeIndex,
   pathSecret: Uint8Array,
   kdf: Kdf,
 ): Promise<Uint8Array> {
@@ -34,7 +34,7 @@ export async function getCommitSecret(
 
 export async function pathToRoot(
   tree: RatchetTree,
-  nodeIndex: number,
+  nodeIndex: NodeIndex,
   pathSecret: Uint8Array,
   kdf: Kdf,
 ): Promise<PathSecrets> {

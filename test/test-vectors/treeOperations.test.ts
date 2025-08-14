@@ -11,6 +11,7 @@ import { hexToBytes } from "@noble/ciphers/utils"
 import json from "../../test_vectors/tree-operations.json"
 import { decodeProposal, Proposal } from "../../src/proposal"
 import { treeHashRoot } from "../../src/treeHash"
+import { toLeafIndex } from "../../src/treemath"
 
 // How can there be a proposal with leaf_node_source = key_package in the test vectors?
 // https://github.com/mlswg/mls-implementations/issues/195
@@ -56,9 +57,9 @@ function applyProposal(proposal: Proposal, tree: RatchetTree, data: TreeOperatio
     case "add":
       return addLeafNode(tree, proposal.add.keyPackage.leafNode)[0]
     case "update":
-      return updateLeafNode(tree, proposal.update.leafNode, data.proposal_sender)
+      return updateLeafNode(tree, proposal.update.leafNode, toLeafIndex(data.proposal_sender))
     case "remove":
-      return removeLeafNode(tree, proposal.remove.removed)
+      return removeLeafNode(tree, toLeafIndex(proposal.remove.removed))
     case "psk":
     case "reinit":
     case "external_init":

@@ -1,5 +1,5 @@
 import json from "../../test_vectors/tree-math.json"
-import { left, nodeWidth, parent, right, root, sibling } from "../../src/treemath"
+import { left, nodeWidth, parent, right, root, sibling, toNodeIndex } from "../../src/treemath"
 import { InternalError } from "../../src/mlsError"
 
 for (const [index, x] of json.entries()) {
@@ -24,7 +24,7 @@ function treemathTest(t: {
 
   //left[i] is the node index of the left child of the node with index i in a tree with n_leaves leaves
   for (const [i, expected] of t.left.entries()) {
-    const leftFn = () => left(i)
+    const leftFn = () => left(toNodeIndex(i))
     if (expected != null) {
       expect(leftFn()).toBe(expected)
     } else {
@@ -34,7 +34,7 @@ function treemathTest(t: {
 
   //right[i] is the node index of the right child of the node with index i in a tree with n_leaves leaves
   for (const [i, expected] of t.right.entries()) {
-    const rightFn = () => right(i)
+    const rightFn = () => right(toNodeIndex(i))
     if (expected != null) {
       expect(rightFn()).toBe(expected)
     } else {
@@ -44,7 +44,7 @@ function treemathTest(t: {
 
   //parent[i] is the node index of the parent of the node with index i in a tree with n_leaves leaves
   for (const [i, expected] of t.parent.entries()) {
-    const parentFn = () => parent(i, t.n_leaves)
+    const parentFn = () => parent(toNodeIndex(i), t.n_leaves)
     if (expected != null) {
       expect(parentFn()).toBe(expected)
     } else {
@@ -54,7 +54,7 @@ function treemathTest(t: {
 
   //sibling[i] is the node index of the sibling of the node with index i in a tree with n_leaves leaves
   for (const [i, expected] of t.sibling.entries()) {
-    const siblingFn = () => sibling(i, t.n_leaves)
+    const siblingFn = () => sibling(toNodeIndex(i), t.n_leaves)
     if (expected != null) {
       expect(siblingFn()).toBe(expected)
     } else {

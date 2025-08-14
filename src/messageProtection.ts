@@ -21,7 +21,7 @@ import {
 import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
 import { SenderData, SenderDataAAD } from "./sender"
-import { leafToNodeIndex } from "./treemath"
+import { leafToNodeIndex, toLeafIndex } from "./treemath"
 import { KeyRetentionConfig } from "./keyRetentionConfig"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError"
 import { PaddingConfig } from "./paddingConfig"
@@ -151,12 +151,12 @@ export async function protect(
   config: PaddingConfig,
   cs: CiphersuiteImpl,
 ): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
-  const node = secretTree[leafToNodeIndex(leafIndex)]
+  const node = secretTree[leafToNodeIndex(toLeafIndex(leafIndex))]
   if (node === undefined) throw new InternalError("Bad node index for secret tree")
 
   const { newTree, generation, reuseGuard, nonce, key } = await consumeRatchet(
     secretTree,
-    leafToNodeIndex(leafIndex),
+    leafToNodeIndex(toLeafIndex(leafIndex)),
     content.contentType,
     cs,
   )
@@ -240,7 +240,7 @@ export async function unprotectPrivateMessage(
   const signaturePublicKey =
     overrideSignatureKey !== undefined
       ? overrideSignatureKey
-      : getSignaturePublicKeyFromLeafIndex(ratchetTree, senderData.leafIndex)
+      : getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(senderData.leafIndex))
 
   const signatureValid = await verifyFramedContentSignature(
     signaturePublicKey,
@@ -257,6 +257,6 @@ export async function unprotectPrivateMessage(
 }
 
 export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(senderData.leafIndex)]?.nodeType !== "leaf")
+  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== "leaf")
     return new ValidationError("SenderData did not point to a non-blank leaf node")
 }

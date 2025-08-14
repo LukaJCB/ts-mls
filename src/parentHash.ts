@@ -5,7 +5,18 @@ import { Hash } from "./crypto/hash"
 import { InternalError } from "./mlsError"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree"
 import { treeHash } from "./treeHash"
-import { isLeaf, leafToNodeIndex, leafWidth, left, right, root } from "./treemath"
+import {
+  isLeaf,
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  left,
+  NodeIndex,
+  right,
+  root,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath"
 
 import { constantTimeEqual } from "./util/constantTimeCompare"
 
@@ -56,12 +67,12 @@ export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<bo
  * Traverse tree from bottom up, verifying that all non-blank parent nodes are covered by exactly one chain
  */
 function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, number>> {
-  const leaves = tree.filter((_v, i) => isLeaf(i))
+  const leaves = tree.filter((_v, i) => isLeaf(toNodeIndex(i)))
   return leaves.reduce(
     async (acc, leafNode, leafIndex) => {
       if (leafNode === undefined) return acc
 
-      let currentIndex = leafToNodeIndex(leafIndex)
+      let currentIndex = leafToNodeIndex(toLeafIndex(leafIndex))
       let updated = { ...(await acc) }
 
       const rootIndex = root(leafWidth(tree.length))
@@ -110,9 +121,9 @@ function getParentHash(node: Node): Uint8Array | undefined {
  */
 export async function calculateParentHash(
   tree: RatchetTree,
-  nodeIndex: number,
+  nodeIndex: NodeIndex,
   h: Hash,
-): Promise<[Uint8Array, number | undefined]> {
+): Promise<[Uint8Array, NodeIndex | undefined]> {
   const rootIndex = root(leafWidth(tree.length))
   if (nodeIndex === rootIndex) {
     return [new Uint8Array(), undefined]
@@ -131,7 +142,7 @@ export async function calculateParentHash(
   if (parentNode === undefined || parentNode.nodeType === "leaf")
     throw new InternalError("Expected non-blank parent Node")
 
-  const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves)
+  const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves as LeafIndex[])
 
   const originalSiblingTreeHash = await treeHash(removedUnmerged, siblingIndex, h)
 

@@ -9,13 +9,17 @@ import {
   copath,
   directPath,
   isLeaf,
+  LeafIndex,
   leafToNodeIndex,
   leafWidth,
   left,
+  NodeIndex,
   nodeToLeafIndex,
   parent,
   right,
   root,
+  toLeafIndex,
+  toNodeIndex,
 } from "./treemath"
 import { LeafNode, encodeLeafNode, decodeLeafNode } from "./leafNode"
 import { constantTimeEqual } from "./util/constantTimeCompare"
@@ -116,25 +120,25 @@ export const decodeRatchetTree: Decoder<RatchetTree> = mapDecoder(
   extendRatchetTree,
 )
 
-export function findBlankLeafNodeIndex(tree: RatchetTree): number | undefined {
-  const nodeIndex = tree.findIndex((node, nodeIndex) => node === undefined && isLeaf(nodeIndex))
+export function findBlankLeafNodeIndex(tree: RatchetTree): NodeIndex | undefined {
+  const nodeIndex = tree.findIndex((node, nodeIndex) => node === undefined && isLeaf(toNodeIndex(nodeIndex)))
   if (nodeIndex < 0) return undefined
-  else return nodeIndex
+  else return toNodeIndex(nodeIndex)
 }
 
-export function findBlankLeafNodeIndexOrExtend(tree: RatchetTree): number {
+export function findBlankLeafNodeIndexOrExtend(tree: RatchetTree): NodeIndex {
   const blankLeaf = findBlankLeafNodeIndex(tree)
-  return blankLeaf === undefined ? tree.length + 1 : blankLeaf
+  return blankLeaf === undefined ? toNodeIndex(tree.length + 1) : blankLeaf
 }
 
-export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, number] {
+export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, NodeIndex] {
   const newRoot = undefined
-  const insertedNodeIndex = tree.length + 1
+  const insertedNodeIndex = toNodeIndex(tree.length + 1)
   const newTree: RatchetTree = [...tree, newRoot, { nodeType: "leaf", leaf: leafNode }, ...new Array(tree.length - 1)]
   return [newTree, insertedNodeIndex]
 }
 
-export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, number] {
+export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, NodeIndex] {
   const blankLeaf = findBlankLeafNodeIndex(tree)
   if (blankLeaf === undefined) {
     return extendTree(tree, leafNode)
@@ -163,7 +167,7 @@ export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree
   return [copy, blankLeaf]
 }
 
-export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex: number): RatchetTree {
+export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex: LeafIndex): RatchetTree {
   const leafNodeIndex = leafToNodeIndex(leafIndex)
   const pathToBlank = directPath(leafNodeIndex, leafWidth(tree.length))
 
@@ -180,7 +184,7 @@ export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex:
   return copy
 }
 
-export function removeLeafNode(tree: RatchetTree, removedLeafIndex: number) {
+export function removeLeafNode(tree: RatchetTree, removedLeafIndex: LeafIndex) {
   const leafNodeIndex = leafToNodeIndex(removedLeafIndex)
   const pathToBlank = directPath(leafNodeIndex, leafWidth(tree.length))
 
@@ -204,7 +208,7 @@ function condenseRatchetTreeAfterRemove(tree: RatchetTree) {
   return extendRatchetTree(stripBlankNodes(tree))
 }
 
-export function resolution(tree: (Node | undefined)[], nodeIndex: number): number[] {
+export function resolution(tree: (Node | undefined)[], nodeIndex: NodeIndex): NodeIndex[] {
   const node = tree[nodeIndex]
 
   if (node === undefined) {
@@ -224,12 +228,12 @@ export function resolution(tree: (Node | undefined)[], nodeIndex: number): numbe
   }
 
   const unmerged = node.nodeType === "parent" ? node.parent.unmergedLeaves : []
-  return [nodeIndex, ...unmerged.map(leafToNodeIndex)]
+  return [nodeIndex, ...unmerged.map((u) => leafToNodeIndex(toLeafIndex(u)))]
 }
 
-export function filteredDirectPath(leafIndex: number, tree: RatchetTree): number[] {
+export function filteredDirectPath(leafIndex: LeafIndex, tree: RatchetTree): NodeIndex[] {
   const leafNodeIndex = leafToNodeIndex(leafIndex)
-  const leafWidth = nodeToLeafIndex(tree.length)
+  const leafWidth = nodeToLeafIndex(toNodeIndex(tree.length))
   const cp = copath(leafNodeIndex, leafWidth)
   // the filtered direct path of a leaf node L is the node's direct path,
   // with any node removed whose child on the copath of L has an empty resolution
@@ -237,33 +241,34 @@ export function filteredDirectPath(leafIndex: number, tree: RatchetTree): number
 }
 
 export function filteredDirectPathAndCopathResolution(
-  leafIndex: number,
+  leafIndex: LeafIndex,
   tree: RatchetTree,
-): { resolution: number[]; nodeIndex: number }[] {
+): { resolution: NodeIndex[]; nodeIndex: NodeIndex }[] {
   const leafNodeIndex = leafToNodeIndex(leafIndex)
-  const leafWidth = nodeToLeafIndex(tree.length)
-  const cp = copath(leafNodeIndex, leafWidth)
+  const lWidth = leafWidth(tree.length)
+  const cp = copath(leafNodeIndex, lWidth)
 
   // the filtered direct path of a leaf node L is the node's direct path,
   // with any node removed whose child on the copath of L has an empty resolution
-  return directPath(leafNodeIndex, leafWidth).reduce(
+  return directPath(leafNodeIndex, lWidth).reduce(
     (acc, cur, n) => {
       const r = resolution(tree, cp[n]!)
       if (r.length === 0) return acc
       else return [...acc, { nodeIndex: cur, resolution: r }]
     },
-    [] as { resolution: number[]; nodeIndex: number }[],
+    [] as { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
   )
 }
 
-export function removeLeaves(tree: RatchetTree, leafIndices: number[]) {
+export function removeLeaves(tree: RatchetTree, leafIndices: LeafIndex[]) {
   const copy = tree.slice()
   function shouldBeRemoved(leafIndex: number): boolean {
     return leafIndices.find((x) => leafIndex === x) !== undefined
   }
   for (const [i, n] of tree.entries()) {
     if (n !== undefined) {
-      if (isLeaf(i) && shouldBeRemoved(nodeToLeafIndex(i))) {
+      const nodeIndex = toNodeIndex(i)
+      if (isLeaf(nodeIndex) && shouldBeRemoved(nodeToLeafIndex(nodeIndex))) {
         copy[i] = undefined
       } else if (n.nodeType === "parent") {
         copy[i] = {
@@ -278,9 +283,9 @@ export function removeLeaves(tree: RatchetTree, leafIndices: number[]) {
 
 export function traverseToRoot<T>(
   tree: RatchetTree,
-  leafIndex: number,
-  f: (nodeIndex: number, node: ParentNode) => T | undefined,
-): [T, number] | undefined {
+  leafIndex: LeafIndex,
+  f: (nodeIndex: NodeIndex, node: ParentNode) => T | undefined,
+): [T, NodeIndex] | undefined {
   const rootIndex = root(leafWidth(tree.length))
   let currentIndex = leafToNodeIndex(leafIndex)
   while (currentIndex != rootIndex) {
@@ -298,16 +303,16 @@ export function traverseToRoot<T>(
     }
   }
 }
-export function findFirstNonBlankAncestor(tree: RatchetTree, nodeIndex: number): number {
+export function findFirstNonBlankAncestor(tree: RatchetTree, nodeIndex: NodeIndex): NodeIndex {
   return (
-    traverseToRoot(tree, nodeToLeafIndex(nodeIndex), (nodeIndex: number, _node: ParentNode) => nodeIndex)?.[0] ??
+    traverseToRoot(tree, nodeToLeafIndex(nodeIndex), (nodeIndex: NodeIndex, _node: ParentNode) => nodeIndex)?.[0] ??
     root(leafWidth(tree.length))
   )
 }
 
-export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): number | undefined {
+export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | undefined {
   const foundIndex = tree.findIndex((node, nodeIndex) => {
-    if (isLeaf(nodeIndex) && node !== undefined) {
+    if (isLeaf(toNodeIndex(nodeIndex)) && node !== undefined) {
       if (node.nodeType === "parent") throw new InternalError("Found parent node in leaf node position")
       //todo is there a better (faster) comparison method?
       return constantTimeEqual(encodeLeafNode(node.leaf), encodeLeafNode(leaf))
@@ -316,10 +321,10 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): number | undef
     return false
   })
 
-  return foundIndex === -1 ? undefined : nodeToLeafIndex(foundIndex)
+  return foundIndex === -1 ? undefined : nodeToLeafIndex(toNodeIndex(foundIndex))
 }
 
-export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: number) {
+export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: LeafIndex) {
   const senderLeafNode = ratchetTree[leafToNodeIndex(leafIndex)]
 
   if (senderLeafNode === undefined || senderLeafNode.nodeType === "parent")
@@ -327,7 +332,7 @@ export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: 
   return senderLeafNode.leaf.credential
 }
 
-export function getSignaturePublicKeyFromLeafIndex(ratchetTree: RatchetTree, leafIndex: number): Uint8Array {
+export function getSignaturePublicKeyFromLeafIndex(ratchetTree: RatchetTree, leafIndex: LeafIndex): Uint8Array {
   const leafNode = ratchetTree[leafToNodeIndex(leafIndex)]
 
   if (leafNode === undefined || leafNode.nodeType === "parent")

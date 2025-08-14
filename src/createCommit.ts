@@ -40,7 +40,7 @@ import {
 } from "./ratchetTree"
 import { createSecretTree, SecretTree } from "./secretTree"
 import { treeHashRoot } from "./treeHash"
-import { leafWidth, nodeToLeafIndex } from "./treemath"
+import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath"
 import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath"
 import { base64ToBytes } from "./util/byteArray"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome"
@@ -65,14 +65,20 @@ export async function createCommit(
 
   const allProposals = bundleAllProposals(state, extraProposals)
 
-  const res = await applyProposals(state, allProposals, state.privatePath.leafIndex, pskSearch, true, cs)
+  const res = await applyProposals(state, allProposals, toLeafIndex(state.privatePath.leafIndex), pskSearch, true, cs)
 
   if (res.additionalResult.kind === "externalCommit") throw new UsageError("Cannot create externalCommit as a member")
 
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
   const [tree, updatePath, pathSecrets, newPrivateKey] = res.needsUpdatePath
-    ? await createUpdatePath(res.tree, state.privatePath.leafIndex, state.groupContext, state.signaturePrivateKey, cs)
+    ? await createUpdatePath(
+        res.tree,
+        toLeafIndex(state.privatePath.leafIndex),
+        state.groupContext,
+        state.signaturePrivateKey,
+        cs,
+      )
     : [res.tree, undefined, [] as PathSecret[], undefined]
 
   const updatedExtensions =
@@ -233,7 +239,7 @@ async function createWelcome(
 
 async function createEncryptedGroupSecrets(
   tree: RatchetTree,
-  leafNodeIndex: number,
+  leafNodeIndex: LeafIndex,
   state: ClientState,
   pathSecrets: PathSecret[],
   cs: CiphersuiteImpl,
@@ -242,7 +248,7 @@ async function createEncryptedGroupSecrets(
   epochSecrets: EpochSecrets,
   res: ApplyProposalsResult,
 ) {
-  const nodeIndex = firstCommonAncestor(tree, leafNodeIndex, state.privatePath.leafIndex)
+  const nodeIndex = firstCommonAncestor(tree, leafNodeIndex, toLeafIndex(state.privatePath.leafIndex))
   const pathSecret = pathSecrets.find((ps) => ps.nodeIndex === nodeIndex)
   const pk = await cs.hpke.importPublicKey(keyPackage.initKey)
   const egs = await encryptGroupSecrets(
@@ -361,17 +367,17 @@ async function protectCommit(
 export async function applyUpdatePathSecret(
   tree: RatchetTree,
   privatePath: PrivateKeyPath,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   gc: GroupContext,
   path: UpdatePath,
-  excludeNodes: number[],
+  excludeNodes: NodeIndex[],
   cs: CiphersuiteImpl,
-): Promise<{ nodeIndex: number; pathSecret: Uint8Array }> {
+): Promise<{ nodeIndex: NodeIndex; pathSecret: Uint8Array }> {
   const {
     nodeIndex: ancestorNodeIndex,
     resolution,
     updateNode,
-  } = firstMatchAncestor(tree, privatePath.leafIndex, senderLeafIndex, path)
+  } = firstMatchAncestor(tree, toLeafIndex(privatePath.leafIndex), senderLeafIndex, path)
 
   for (const [i, nodeIndex] of filterNewLeaves(resolution, excludeNodes).entries()) {
     if (privatePath.privateKeys[nodeIndex] !== undefined) {
@@ -430,9 +436,9 @@ export async function joinGroupExternal(
     ),
   )
 
-  const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(ratchetTree, groupInfo.signer)
+  const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
 
-  const signerCredential = getCredentialFromLeafIndex(ratchetTree, groupInfo.signer)
+  const signerCredential = getCredentialFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
 
   const credentialVerified = await clientConfig.authService.validateCredential(signerCredential, signaturePublicKey)
 
@@ -444,12 +450,14 @@ export async function joinGroupExternal(
 
   const formerLeafIndex = resync
     ? nodeToLeafIndex(
-        ratchetTree.findIndex((n) => {
-          if (n !== undefined && n.nodeType === "leaf") {
-            return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
-          }
-          return false
-        }),
+        toNodeIndex(
+          ratchetTree.findIndex((n) => {
+            if (n !== undefined && n.nodeType === "leaf") {
+              return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
+            }
+            return false
+          }),
+        ),
       )
     : undefined
 
@@ -544,7 +552,7 @@ export async function joinGroupExternal(
 
   return { publicMessage: msg, newState: state }
 }
-export function filterNewLeaves(resolution: number[], excludeNodes: number[]): number[] {
+export function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): NodeIndex[] {
   const set = new Set(excludeNodes)
   return resolution.filter((i) => !set.has(i))
 }

@@ -21,7 +21,16 @@ import { RatchetTree } from "./ratchetTree"
 import { createSecretTree, SecretTree } from "./secretTree"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash"
 import { treeHashRoot } from "./treeHash"
-import { directPath, isLeaf, leafToNodeIndex, leafWidth, nodeToLeafIndex } from "./treemath"
+import {
+  directPath,
+  isLeaf,
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  nodeToLeafIndex,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath"
 import { firstCommonAncestor } from "./updatePath"
 import { bytesToBase64 } from "./util/byteArray"
 import { constantTimeEqual } from "./util/constantTimeCompare"
@@ -193,7 +202,7 @@ async function validateProposals(
         node !== undefined &&
         node.nodeType === "leaf" &&
         config.compareKeyPackageToLeafNode(proposal.add.keyPackage, node.leaf) &&
-        p.remove.every((r) => r.proposal.remove.removed !== nodeToLeafIndex(nodeIndex)),
+        p.remove.every((r) => r.proposal.remove.removed !== nodeToLeafIndex(toNodeIndex(nodeIndex))),
     ),
   )
 
@@ -279,7 +288,7 @@ export async function validateRatchetTree(
   cs: CiphersuiteImpl,
 ): Promise<MlsError | undefined> {
   const treeIsStructurallySound = tree.every((n, index) =>
-    isLeaf(index) ? n === undefined || n.nodeType === "leaf" : n === undefined || n.nodeType === "parent",
+    isLeaf(toNodeIndex(index)) ? n === undefined || n.nodeType === "leaf" : n === undefined || n.nodeType === "parent",
   )
 
   if (!treeIsStructurallySound) return new ValidationError("Received Ratchet Tree is not structurally sound")
@@ -296,9 +305,10 @@ export async function validateRatchetTree(
     if (n?.nodeType === "parent") {
       // verify unmerged leaves
       for (const unmergedLeaf of n.parent.unmergedLeaves) {
-        const dp = directPath(leafToNodeIndex(unmergedLeaf), leafWidth(tree.length))
-        const nodeIndex = leafToNodeIndex(unmergedLeaf)
-        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(parentIndex))
+        const leafIndex = toLeafIndex(unmergedLeaf)
+        const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
+        const nodeIndex = leafToNodeIndex(leafIndex)
+        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(parentIndex)))
           return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node")
 
         for (const parentIdx of dp) {
@@ -333,12 +343,12 @@ export async function validateRatchetTree(
               false,
               config,
               authService,
-              nodeToLeafIndex(index),
+              nodeToLeafIndex(toNodeIndex(index)),
               cs.signature,
             )
           : await validateLeafNodeUpdateOrCommit(
               n.leaf,
-              nodeToLeafIndex(index),
+              nodeToLeafIndex(toNodeIndex(index)),
               groupContext,
               tree,
               authService,
@@ -429,7 +439,7 @@ async function validateLeafNodeCommon(
       node.nodeType === "leaf" &&
       (constantTimeEqual(node.leaf.hpkePublicKey, leafNode.hpkePublicKey) ||
         constantTimeEqual(node.leaf.signaturePublicKey, leafNode.signaturePublicKey)) &&
-      leafIndex !== nodeToLeafIndex(nodeIndex),
+      leafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)),
   )
 
   if (keysAreNotUnique) return new ValidationError("hpke and signature keys not unique")
@@ -521,7 +531,8 @@ function validateExternalInit(grouped: Proposals): ValidationError | undefined {
 }
 
 function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(remove.removed)] === undefined) return new ValidationError("Tried to remove empty leaf node")
+  if (tree[leafToNodeIndex(toLeafIndex(remove.removed))] === undefined)
+    return new ValidationError("Tried to remove empty leaf node")
 }
 
 export type ApplyProposalsResult = {
@@ -535,14 +546,14 @@ export type ApplyProposalsResult = {
 }
 
 export type ApplyProposalsData =
-  | { kind: "memberCommit"; addedLeafNodes: [number, KeyPackage][]; extensions: Extension[] }
-  | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: number }
+  | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: Extension[] }
+  | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: LeafIndex }
   | { kind: "reinit"; reinit: Reinit }
 
 export async function applyProposals(
   state: ClientState,
   proposals: ProposalOrRef[],
-  committerLeafIndex: number | undefined,
+  committerLeafIndex: LeafIndex | undefined,
   pskSearch: PskIndex,
   sentByClient: boolean,
   cs: CiphersuiteImpl,
@@ -617,7 +628,7 @@ export async function applyProposals(
       zeroes,
     )
 
-    const selfRemoved = mutatedTree[leafToNodeIndex(state.privatePath.leafIndex)] === undefined
+    const selfRemoved = mutatedTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
 
     const needsUpdatePath =
       allProposals.length === 0 || Object.values(grouped.update).length > 1 || Object.values(grouped.remove).length > 1
@@ -639,7 +650,7 @@ export async function applyProposals(
     throwIfDefined(validateExternalInit(grouped))
 
     const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
-      return removeLeafNode(acc, proposal.remove.removed)
+      return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
     }, state.ratchetTree)
 
     const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
@@ -774,7 +785,7 @@ export async function joinGroup(
 
   if (tree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
 
-  const signerNode = tree[leafToNodeIndex(gi.signer)]
+  const signerNode = tree[leafToNodeIndex(toLeafIndex(gi.signer))]
 
   if (signerNode === undefined) {
     throw new ValidationError("Could not find signer leafNode")
@@ -815,7 +826,7 @@ export async function joinGroup(
     privateKeys: { [leafToNodeIndex(newLeaf)]: privateKeys.hpkePrivateKey },
   }
 
-  const ancestorNodeIndex = firstCommonAncestor(tree, newLeaf, gi.signer)
+  const ancestorNodeIndex = firstCommonAncestor(tree, newLeaf, toLeafIndex(gi.signer))
 
   const updatedPkp =
     groupSecrets.pathSecret === undefined
@@ -934,20 +945,20 @@ async function applyTreeMutations(
   authService: AuthenticationService,
   lifetimeConfig: LifetimeConfig,
   s: Signature,
-): Promise<[RatchetTree, [number, KeyPackage][]]> {
+): Promise<[RatchetTree, [LeafIndex, KeyPackage][]]> {
   const treeAfterUpdate = await grouped.update.reduce(async (acc, { senderLeafIndex, proposal }) => {
     if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
 
     throwIfDefined(
       await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, ratchetTree, authService, s),
     )
-    return updateLeafNode(await acc, proposal.update.leafNode, senderLeafIndex)
+    return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
   }, Promise.resolve(ratchetTree))
 
   const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
     throwIfDefined(validateRemove(proposal.remove, ratchetTree))
 
-    return removeLeafNode(acc, proposal.remove.removed)
+    return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
   }, treeAfterUpdate)
 
   const [treeAfterAdd, addedLeafNodes] = await grouped.add.reduce(
@@ -966,9 +977,12 @@ async function applyTreeMutations(
 
       const [tree, ws] = await acc
       const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
-      return [updatedTree, [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [number, KeyPackage]]]
+      return [
+        updatedTree,
+        [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [LeafIndex, KeyPackage]],
+      ]
     },
-    Promise.resolve([treeAfterRemove, []] as [RatchetTree, [number, KeyPackage][]]),
+    Promise.resolve([treeAfterRemove, []] as [RatchetTree, [LeafIndex, KeyPackage][]]),
   )
 
   return [treeAfterAdd, addedLeafNodes]

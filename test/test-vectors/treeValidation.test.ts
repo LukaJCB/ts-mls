@@ -4,7 +4,7 @@ import { hexToBytes } from "@noble/ciphers/utils"
 import json from "../../test_vectors/tree-validation.json"
 import { treeHash } from "../../src/treeHash"
 import { verifyLeafNodeSignature } from "../../src/leafNode"
-import { nodeToLeafIndex } from "../../src/treemath"
+import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath"
 import { verifyParentHashes } from "../../src/parentHash"
 
 for (const [index, x] of json.entries()) {
@@ -27,12 +27,12 @@ async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImp
   if (tree === undefined) throw new Error("could not decode tree")
 
   for (const [i, h] of data.tree_hashes.entries()) {
-    const hash = await treeHash(tree[0], i, impl.hash)
+    const hash = await treeHash(tree[0], toNodeIndex(i), impl.hash)
     expect(hash).toStrictEqual(hexToBytes(h))
   }
 
   for (const [i, r] of data.resolutions.entries()) {
-    const reso = resolution(tree[0], i)
+    const reso = resolution(tree[0], toNodeIndex(i))
     expect(reso).toStrictEqual(r)
   }
 
@@ -42,7 +42,12 @@ async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImp
     if (n !== undefined) {
       if (n.nodeType === "leaf") {
         expect(
-          await verifyLeafNodeSignature(n.leaf, hexToBytes(data.group_id), nodeToLeafIndex(i), impl.signature),
+          await verifyLeafNodeSignature(
+            n.leaf,
+            hexToBytes(data.group_id),
+            nodeToLeafIndex(toNodeIndex(i)),
+            impl.signature,
+          ),
         ).toBe(true)
       }
     }

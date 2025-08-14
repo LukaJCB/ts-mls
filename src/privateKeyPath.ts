@@ -1,7 +1,7 @@
 import { CiphersuiteImpl } from "./crypto/ciphersuite"
 import { deriveSecret } from "./crypto/kdf"
 import { PathSecrets } from "./pathSecrets"
-import { leafToNodeIndex } from "./treemath"
+import { leafToNodeIndex, toLeafIndex } from "./treemath"
 
 export type PrivateKeyPath = {
   leafIndex: number
@@ -14,7 +14,7 @@ export function mergePrivateKeyPaths(a: PrivateKeyPath, b: PrivateKeyPath): Priv
   return { ...a, privateKeys: { ...a.privateKeys, ...b.privateKeys } }
 }
 export function updateLeafKey(path: PrivateKeyPath, newKey: Uint8Array): PrivateKeyPath {
-  return { ...path, privateKeys: { ...path.privateKeys, [leafToNodeIndex(path.leafIndex)]: newKey } }
+  return { ...path, privateKeys: { ...path.privateKeys, [leafToNodeIndex(toLeafIndex(path.leafIndex))]: newKey } }
 }
 
 export async function toPrivateKeyPath(

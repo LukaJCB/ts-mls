@@ -9,7 +9,7 @@ import { InternalError } from "./mlsError"
 import { encodeNodeType, decodeNodeType } from "./nodeType"
 import { ParentNode, encodeParentNode, decodeParentNode } from "./parentNode"
 import { RatchetTree } from "./ratchetTree"
-import { rootFromNodeWidth, isLeaf, nodeToLeafIndex, left, right } from "./treemath"
+import { rootFromNodeWidth, isLeaf, nodeToLeafIndex, left, right, NodeIndex } from "./treemath"
 
 export type TreeHashInput = LeafNodeHashInput | ParentNodeHashInput
 type LeafNodeHashInput = {
@@ -77,7 +77,7 @@ export async function treeHashRoot(tree: RatchetTree, h: Hash): Promise<Uint8Arr
   return treeHash(tree, rootFromNodeWidth(tree.length), h)
 }
 
-export async function treeHash(tree: RatchetTree, subtreeIndex: number, h: Hash): Promise<Uint8Array> {
+export async function treeHash(tree: RatchetTree, subtreeIndex: NodeIndex, h: Hash): Promise<Uint8Array> {
   if (isLeaf(subtreeIndex)) {
     const leafNode = tree[subtreeIndex]
     if (leafNode?.nodeType === "parent") throw new InternalError("Somehow found parent node in leaf position")

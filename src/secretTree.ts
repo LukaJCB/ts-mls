@@ -4,7 +4,7 @@ import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf"
 import { KeyRetentionConfig } from "./keyRetentionConfig"
 import { InternalError, ValidationError } from "./mlsError"
 import { ReuseGuard, SenderData } from "./sender"
-import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex } from "./treemath"
+import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath"
 import { updateArray } from "./util/array"
 import { repeatAsync } from "./util/repeat"
 
@@ -43,7 +43,7 @@ export async function createSecretTree(leafWidth: number, encryptionSecret: Uint
   )
 }
 
-async function deriveChildren(tree: Uint8Array[], nodeIndex: number, kdf: Kdf): Promise<Uint8Array[]> {
+async function deriveChildren(tree: Uint8Array[], nodeIndex: NodeIndex, kdf: Kdf): Promise<Uint8Array[]> {
   if (isLeaf(nodeIndex)) return tree
   const l = left(nodeIndex)
 
@@ -141,7 +141,7 @@ export async function ratchetToGeneration(
   config: KeyRetentionConfig,
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
-  const index = leafToNodeIndex(senderData.leafIndex)
+  const index = leafToNodeIndex(toLeafIndex(senderData.leafIndex))
   const node = tree[index]
   if (node === undefined) throw new InternalError("Bad node index for secret tree")
 

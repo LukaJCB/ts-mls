@@ -15,6 +15,7 @@ import { GroupContext } from "./groupContext"
 import { CodecError, ValidationError } from "./mlsError"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
 import { SenderTypeName } from "./sender"
+import { toLeafIndex } from "./treemath"
 
 type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
 type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }
@@ -72,7 +73,7 @@ export function findSignaturePublicKey(
 ): Uint8Array {
   switch (framedContent.sender.senderType) {
     case "member":
-      return getSignaturePublicKeyFromLeafIndex(ratchetTree, framedContent.sender.leafIndex)
+      return getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(framedContent.sender.leafIndex))
     case "external":
       const sender = senderFromExtension(groupContext.extensions, framedContent.sender.senderIndex)
       if (sender === undefined) throw new ValidationError("Received external but no external_sender extension")

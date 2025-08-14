@@ -16,7 +16,7 @@ import {
   RatchetTree,
 } from "./ratchetTree"
 import { treeHashRoot } from "./treeHash"
-import { isAncestor, leafToNodeIndex } from "./treemath"
+import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath"
 import { updateArray } from "./util/array"
 import { constantTimeEqual } from "./util/constantTimeCompare"
 import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext"
@@ -56,7 +56,7 @@ export type PathSecret = { nodeIndex: number; secret: Uint8Array; sendTo: number
 
 export async function createUpdatePath(
   originalTree: RatchetTree,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   groupContext: GroupContext,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
@@ -152,7 +152,7 @@ function encryptSecretsForPath(
 }
 
 async function insertParentHashes(
-  fdp: { resolution: number[]; nodeIndex: number }[],
+  fdp: { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
   updatedTree: RatchetTree,
   cs: CiphersuiteImpl,
 ) {
@@ -178,7 +178,7 @@ async function insertParentHashes(
 async function applyInitialTreeUpdate(
   fdp: { resolution: number[]; nodeIndex: number }[],
   pathSecret: Uint8Array,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   tree: RatchetTree,
   cs: CiphersuiteImpl,
 ): Promise<[PathSecret[], RatchetTree]> {
@@ -210,7 +210,7 @@ async function applyInitialTreeUpdate(
 
 export async function applyUpdatePath(
   tree: RatchetTree,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   path: UpdatePath,
   h: Hash,
   isExternal: boolean = false,
@@ -269,7 +269,7 @@ export async function applyUpdatePath(
   return copy
 }
 
-export function firstCommonAncestor(tree: RatchetTree, leafIndex: number, senderLeafIndex: number): number {
+export function firstCommonAncestor(tree: RatchetTree, leafIndex: LeafIndex, senderLeafIndex: LeafIndex): NodeIndex {
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, tree)
 
   for (const { nodeIndex } of fdp) {
@@ -283,10 +283,10 @@ export function firstCommonAncestor(tree: RatchetTree, leafIndex: number, sender
 
 export function firstMatchAncestor(
   tree: RatchetTree,
-  leafIndex: number,
-  senderLeafIndex: number,
+  leafIndex: LeafIndex,
+  senderLeafIndex: LeafIndex,
   path: UpdatePath,
-): { nodeIndex: number; resolution: number[]; updateNode: UpdatePathNode | undefined } {
+): { nodeIndex: NodeIndex; resolution: NodeIndex[]; updateNode: UpdatePathNode | undefined } {
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, tree)
 
   for (const [n, { nodeIndex, resolution }] of fdp.entries()) {

@@ -29,7 +29,16 @@ import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree"
 import { createSecretTree } from "./secretTree"
 import { getSenderLeafNodeIndex, Sender } from "./sender"
 import { treeHashRoot } from "./treeHash"
-import { leafToNodeIndex, leafWidth, nodeToLeafIndex, root } from "./treemath"
+import {
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  NodeIndex,
+  nodeToLeafIndex,
+  root,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath"
 import { UpdatePath, applyUpdatePath } from "./updatePath"
 import { addToMap } from "./util/addToMap"
 import { WireformatName } from "./wireformat"
@@ -186,7 +195,8 @@ async function processCommit(
 ): Promise<NewStateWithActionTaken> {
   if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
 
-  const senderLeafIndex = content.content.sender.senderType === "member" ? content.content.sender.leafIndex : undefined
+  const senderLeafIndex =
+    content.content.sender.senderType === "member" ? toLeafIndex(content.content.sender.leafIndex) : undefined
 
   const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, false, cs)
 
@@ -232,8 +242,8 @@ async function processCommit(
     state,
     groupContextWithExtensions,
     result.additionalResult.kind === "memberCommit"
-      ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(l[0]))
-      : [findBlankLeafNodeIndex(result.tree) ?? result.tree.length + 1],
+      ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(toLeafIndex(l[0])))
+      : [findBlankLeafNodeIndex(result.tree) ?? toNodeIndex(result.tree.length + 1)],
     cs.kdf,
   )
 
@@ -300,17 +310,17 @@ async function applyTreeUpdate(
   cs: CiphersuiteImpl,
   state: ClientState,
   groupContext: GroupContext,
-  excludeNodes: number[],
+  excludeNodes: NodeIndex[],
   kdf: Kdf,
 ): Promise<[PrivateKeyPath, Uint8Array, RatchetTree]> {
   if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree] as const
   if (sender.senderType === "member") {
-    const updatedTree = await applyUpdatePath(tree, sender.leafIndex, path, cs.hash)
+    const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       updatedTree,
       state,
-      sender.leafIndex,
+      toLeafIndex(sender.leafIndex),
       { ...groupContext, treeHash: await treeHashRoot(updatedTree, cs.hash), epoch: groupContext.epoch + 1n },
       path,
       excludeNodes,
@@ -339,10 +349,10 @@ async function applyTreeUpdate(
 async function updatePrivateKeyPath(
   tree: RatchetTree,
   state: ClientState,
-  leafNodeIndex: number,
+  leafNodeIndex: LeafIndex,
   groupContext: GroupContext,
   path: UpdatePath,
-  excludeNodes: number[],
+  excludeNodes: NodeIndex[],
   cs: CiphersuiteImpl,
 ): Promise<[PrivateKeyPath, Uint8Array]> {
   const secret = await applyUpdatePathSecret(
@@ -354,7 +364,7 @@ async function updatePrivateKeyPath(
     excludeNodes,
     cs,
   )
-  const pathSecrets = await pathToRoot(tree, secret.nodeIndex, secret.pathSecret, cs.kdf)
+  const pathSecrets = await pathToRoot(tree, toNodeIndex(secret.nodeIndex), secret.pathSecret, cs.kdf)
   const newPkp = mergePrivateKeyPaths(
     state.privatePath,
     await toPrivateKeyPath(pathSecrets, state.privatePath.leafIndex, cs),
