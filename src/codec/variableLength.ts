@@ -72,12 +72,26 @@ export const decodeVarLenData: Decoder<Uint8Array> = (buf, offset) => {
 
 export function encodeVarLenType<T>(enc: Encoder<T>): Encoder<T[]> {
   return (data) => {
-    let x = new Uint8Array()
-    for (const t of data) {
-      x = new Uint8Array([...x, ...enc(t)])
+    const encodedParts: Uint8Array[] = new Array(data.length)
+    let dataLength = 0
+
+    for (let i = 0; i < data.length; i++) {
+      const encoded = enc(data[i]!)
+      dataLength += encoded.byteLength
+      encodedParts[i] = encoded
     }
 
-    return encodeVarLenData(x)
+    const lengthHeader: Uint8Array = encodeLength(dataLength)
+
+    const result = new Uint8Array(lengthHeader.length + dataLength)
+    result.set(lengthHeader, 0)
+    let offset = lengthHeader.length
+
+    for (const arr of encodedParts) {
+      result.set(arr, offset)
+      offset += arr.length
+    }
+    return result
   }
 }
 

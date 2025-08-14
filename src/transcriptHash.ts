@@ -3,6 +3,7 @@ import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
 import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
 import { Hash } from "./crypto/hash"
 import { decodeFramedContent, encodeFramedContent, FramedContentCommit } from "./framedContent"
+import { concatUint8Arrays } from "./util/byteArray"
 import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
 
 export type ConfirmedTranscriptHashInput = {
@@ -34,7 +35,7 @@ export function createConfirmedHash(
   input: ConfirmedTranscriptHashInput,
   hash: Hash,
 ): Promise<Uint8Array> {
-  return hash.digest(new Uint8Array([...interimTranscriptHash, ...encodeConfirmedTranscriptHashInput(input)]))
+  return hash.digest(concatUint8Arrays(interimTranscriptHash, encodeConfirmedTranscriptHashInput(input)))
 }
 
 export function createInterimHash(
@@ -42,5 +43,5 @@ export function createInterimHash(
   confirmationTag: Uint8Array,
   hash: Hash,
 ): Promise<Uint8Array> {
-  return hash.digest(new Uint8Array([...confirmedHash, ...encodeVarLenData(confirmationTag)]))
+  return hash.digest(concatUint8Arrays(confirmedHash, encodeVarLenData(confirmationTag)))
 }

@@ -3,7 +3,7 @@ import { AeadAlgorithm, makeAead } from "./aead"
 import { KdfAlgorithm, makeKdf } from "./kdf"
 import { KemAlgorithm, makeDhKem } from "./kem"
 import { encodeVarLenData } from "../codec/variableLength"
-import { bytesToBuffer } from "../util/byteArray"
+import { bytesToBuffer, concatUint8Arrays } from "../util/byteArray"
 import { CryptoError } from "../mlsError"
 
 export type PublicKey = CryptoKey & { type: "public" }
@@ -26,7 +26,7 @@ export function encryptWithLabel(
   return hpke.seal(
     publicKey,
     plaintext,
-    new Uint8Array([...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), ...encodeVarLenData(context)]),
+    concatUint8Arrays(encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), encodeVarLenData(context)),
     new Uint8Array(),
   )
 }
@@ -43,7 +43,7 @@ export function decryptWithLabel(
     privateKey,
     kemOutput,
     ciphertext,
-    new Uint8Array([...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), ...encodeVarLenData(context)]),
+    concatUint8Arrays(encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), encodeVarLenData(context)),
   )
 }
 
@@ -194,5 +194,5 @@ export interface Hpke {
 
 function prepadPrivateKeyP521(k: Uint8Array) {
   const lengthDifference = 66 - k.byteLength
-  return new Uint8Array([...new Uint8Array(lengthDifference), ...k])
+  return concatUint8Arrays(new Uint8Array(lengthDifference), k)
 }

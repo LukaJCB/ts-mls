@@ -1,5 +1,6 @@
 import { encodeVarLenData } from "../codec/variableLength"
 import { DependencyError } from "../mlsError"
+import { concatUint8Arrays } from "../util/byteArray"
 
 export interface Signature {
   sign(signKey: Uint8Array, message: Uint8Array): Promise<Uint8Array>
@@ -17,7 +18,7 @@ export async function signWithLabel(
 ): Promise<Uint8Array> {
   return s.sign(
     signKey,
-    new Uint8Array([...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), ...encodeVarLenData(content)]),
+    concatUint8Arrays(encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), encodeVarLenData(content)),
   )
 }
 
@@ -30,7 +31,7 @@ export async function verifyWithLabel(
 ): Promise<boolean> {
   return s.verify(
     publicKey,
-    new Uint8Array([...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), ...encodeVarLenData(content)]),
+    concatUint8Arrays(encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), encodeVarLenData(content)),
     signature,
   )
 }

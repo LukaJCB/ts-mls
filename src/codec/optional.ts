@@ -1,3 +1,4 @@
+import { concatUint8Arrays } from "../util/byteArray"
 import { decodeUint8, encodeUint8 } from "./number"
 import { Decoder } from "./tlsDecoder"
 import { Encoder } from "./tlsEncoder"
@@ -19,5 +20,5 @@ export function decodeOptional<T>(decodeT: Decoder<T>): Decoder<T | undefined> {
 }
 
 function prependPresenceOctet(v: Uint8Array): Uint8Array {
-  return new Uint8Array([...encodeUint8(0x1), ...v])
+  return concatUint8Arrays(encodeUint8(0x1), v)
 }

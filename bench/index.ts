@@ -111,25 +111,35 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
   return { bob, result }
 }
 
-async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, members: number) {
+async function generateKeyPackages(impl: CiphersuiteImpl, members: number): Promise<KeyPackage[]> {
+  const kps: KeyPackage[] = []
+  for (let i = 0; i < members; i++) {
+    const cred: Credential = {
+      credentialType: "basic",
+      identity: new TextEncoder().encode(i.toString()),
+    }
+
+    const member = await generateKeyPackage(cred, defaultCapabilities(), defaultLifetime, [], impl)
+    kps.push(member.publicPackage)
+  }
+
+  return kps
+}
+
+async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps: KeyPackage[]) {
   const chunkSize = 100
   let state = initialState
-  for (let i = 0; i < members; i += chunkSize) {
-    const chunkEnd = Math.min(i + chunkSize, members)
+  for (let i = 0; i < kps.length; i += chunkSize) {
+    const chunkEnd = Math.min(i + chunkSize, kps.length)
     const proposals: Proposal[] = []
 
     for (let x = i; x < chunkEnd; x++) {
-      const cred: Credential = {
-        credentialType: "basic",
-        identity: new TextEncoder().encode(x.toString()),
-      }
-
-      const member = await generateKeyPackage(cred, defaultCapabilities(), defaultLifetime, [], impl)
+      const member = kps[x]!
 
       proposals.push({
         proposalType: "add",
         add: {
-          keyPackage: member.publicPackage,
+          keyPackage: member,
         },
       })
     }
@@ -170,7 +180,8 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cs))
 
   const createResult = await initGroup(impl)
-  const addMembersResult = await addMembers(impl, createResult.result, groupSize - 1)
+  const kps = await generateKeyPackages(impl, groupSize - 1)
+  const addMembersResult = await addMembers(impl, createResult.result, kps)
   const initResult = await addMember(impl, addMembersResult)
 
   const joinResult = await joinGroup(
@@ -193,7 +204,7 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
   const removeMemberResult = await removeMember(impl, initResult.result.newState)
 
   bench
-    .add(`Add ${groupSize - 1} group members`, async () => await addMembers(impl, createResult.result, groupSize - 1))
+    .add(`Add ${groupSize - 1} group members`, async () => await addMembers(impl, createResult.result, kps))
     .add(
       "Join group",
       async () =>

@@ -1,6 +1,6 @@
 import { utf8ToBytes } from "@noble/ciphers/utils"
 import { encodeVarLenData } from "../codec/variableLength"
-import { bytesToBuffer } from "../util/byteArray"
+import { bytesToBuffer, concatUint8Arrays } from "../util/byteArray"
 
 export type HashAlgorithm = "SHA-512" | "SHA-384" | "SHA-256"
 
@@ -43,7 +43,7 @@ export function refhash(label: string, value: Uint8Array, h: Hash) {
   return h.digest(encodeRefHash(label, value))
 }
 
-function encodeRefHash(label: string, value: Uint8Array) {
+function encodeRefHash(label: string, value: Uint8Array): Uint8Array {
   const labelBytes = utf8ToBytes(label)
-  return new Uint8Array([...encodeVarLenData(labelBytes), ...encodeVarLenData(value)])
+  return concatUint8Arrays(encodeVarLenData(labelBytes), encodeVarLenData(value))
 }

@@ -7,14 +7,20 @@ export function contramapEncoders<T extends unknown[], R>(
   return (value: R) => {
     const values = toTuple(value)
 
-    const encodedParts = encoders.map((encoder, i) => encoder(values[i]))
-    const totalLength = encodedParts.reduce((sum, part) => sum + part.length, 0)
+    const encodedParts: Uint8Array[] = new Array(values.length)
+    let totalLength = 0
+    for (let i = 0; i < values.length; i++) {
+      const encoded = encoders[i]!(values[i]!)
+      totalLength += encoded.byteLength
+      encodedParts[i] = encoded
+    }
 
     const result = new Uint8Array(totalLength)
-    encodedParts.reduce((offset, part) => {
-      result.set(part, offset)
-      return offset + part.length
-    }, 0)
+    let offset = 0
+    for (const arr of encodedParts) {
+      result.set(arr, offset)
+      offset += arr.length
+    }
 
     return result
   }

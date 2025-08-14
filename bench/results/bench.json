@@ -3,80 +3,80 @@
     "name": "Add 200 group members",
     "avg": 1,
     "med": 1,
-    "latencyAvg": 1849626279,
-    "latencyMed": 1839848125,
+    "latencyAvg": 695411533,
+    "latencyMed": 695845583,
     "samples": 10
   },
   {
     "name": "Join group",
     "avg": 3,
     "med": 3,
-    "latencyAvg": 358989175,
-    "latencyMed": 358471417,
+    "latencyAvg": 344300550,
+    "latencyMed": 343314500,
     "samples": 10
   },
   {
     "name": "Create empty commit",
-    "avg": 6,
-    "med": 6,
-    "latencyAvg": 164247184,
-    "latencyMed": 164657271,
+    "avg": 9,
+    "med": 9,
+    "latencyAvg": 108688179,
+    "latencyMed": 107818396,
     "samples": 10
   },
   {
     "name": "Process empty commit",
-    "avg": 8,
-    "med": 9,
-    "latencyAvg": 136171079,
-    "latencyMed": 117574500,
-    "samples": 10
+    "avg": 14,
+    "med": 14,
+    "latencyAvg": 70688531,
+    "latencyMed": 70299792,
+    "samples": 15
   },
   {
     "name": "Send application message",
-    "avg": 1938,
-    "med": 2005,
-    "latencyAvg": 526293,
-    "latencyMed": 498667,
-    "samples": 1901
+    "avg": 1785,
+    "med": 1890,
+    "latencyAvg": 619674,
+    "latencyMed": 529021,
+    "samples": 1614
   },
   {
     "name": "Receive application message",
-    "avg": 645,
-    "med": 652,
-    "latencyAvg": 1554671,
-    "latencyMed": 1534417,
-    "samples": 644
+    "avg": 617,
+    "med": 625,
+    "latencyAvg": 1629298,
+    "latencyMed": 1600000,
+    "samples": 614
   },
   {
     "name": "Add member",
-    "avg": 3,
-    "med": 3,
-    "latencyAvg": 383402167,
-    "latencyMed": 382599500,
-    "samples": 10
+    "avg": 18,
+    "med": 19,
+    "latencyAvg": 54818147,
+    "latencyMed": 53531292,
+    "samples": 19
   },
   {
     "name": "Receive add member commit",
-    "avg": 20,
-    "med": 20,
-    "latencyAvg": 49571218,
-    "latencyMed": 49430833,
+    "avg": 21,
+    "med": 21,
+    "latencyAvg": 47876883,
+    "latencyMed": 47383167,
     "samples": 21
   },
   {
     "name": "Remove member",
-    "avg": 3,
-    "med": 2,
-    "latencyAvg": 400488008,
-    "latencyMed": 400246021,
-    "samples": 10
+    "avg": 22,
+    "med": 22,
+    "latencyAvg": 46223220,
+    "latencyMed": 45696375,
+    "samples": 22
   },
   {
     "name": "Receive remove member commit",
-    "avg": 20,
-    "med": 21,
-    "latencyAvg": 49754936,
-    "latencyMed": 48614625,
-    "samples": 21
+    "avg": 23,
+    "med": 23,
+    "latencyAvg": 44208674,
+    "latencyMed": 43624041,
+    "samples": 23
   }
 ]
