@@ -55,7 +55,7 @@
     "@types/jest": "^30.0.0",
     "madge": "^8.0.0",
     "prettier": "3.6.2",
-    "tinybench": "^4.0.1",
+    "tinybench": "^5.0.0",
     "ts-jest": "^29.2.5",
     "tsx": "^4.20.3",
     "typescript": "~5.9.2",
