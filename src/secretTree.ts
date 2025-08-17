@@ -92,7 +92,7 @@ export async function ratchetUntil(
       return {
         secret: nextSecret,
         generation: s.generation + 1,
-        unusedGenerations: newFunction(s, config.retainKeysForGenerations),
+        unusedGenerations: updateUnusedGenerations(s, config.retainKeysForGenerations),
       }
     },
     current,
@@ -100,7 +100,7 @@ export async function ratchetUntil(
   )
 }
 
-function newFunction(s: GenerationSecret, retainGenerationsMax: number): Record<number, Uint8Array> {
+function updateUnusedGenerations(s: GenerationSecret, retainGenerationsMax: number): Record<number, Uint8Array> {
   const withNew = { ...s.unusedGenerations, [s.generation]: s.secret }
 
   const generations = Object.keys(withNew)
