@@ -56,7 +56,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, impl)
+  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, [], impl)
 
   const charlieJoinGroupCommitResult = await joinGroupExternal(
     groupInfo,

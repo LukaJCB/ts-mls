@@ -68,7 +68,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
   )
 
   // external pub not really necessary here
-  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, impl)
+  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
   const addCharlieProposal = await proposeAddExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, impl)
 

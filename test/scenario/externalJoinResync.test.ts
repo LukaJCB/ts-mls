@@ -79,7 +79,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
 
   expect(charlieGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(charlieGroup, impl)
+  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(charlieGroup, [], impl)
 
   const charlieResyncCommitResult = await joinGroupExternal(
     groupInfo,

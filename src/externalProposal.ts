@@ -51,9 +51,8 @@ export async function proposeExternal(
   signaturePublicKey: Uint8Array,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
+  authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MLSMessage> {
-  const authenticatedData: Uint8Array = new Uint8Array()
-
   const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
     if (ex.extensionType !== "external_senders") return false
     const decoded = decodeExternalSender(ex.extensionData, 0)

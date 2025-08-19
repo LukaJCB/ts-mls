@@ -1,5 +1,5 @@
 import { ClientState, createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
+import { createCommit, createGroupInfoWithExternalPub } from "../../src/createCommit"
 import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
@@ -15,6 +15,7 @@ import { constantTimeEqual } from "../../src/util/constantTimeCompare"
 import { createCustomCredential } from "../../src/customCredential"
 import { Extension } from "../../src/extension"
 import { LeafNode } from "../../src/leafNode"
+import { proposeExternal } from "../../src"
 
 for (const cs of Object.keys(ciphersuites)) {
   test(`Proposal Validation ${cs}`, async () => {
@@ -349,6 +350,37 @@ async function remove(cipherSuite: CiphersuiteName) {
       emptyPskIndex,
       false,
       [groupContextExtensionsProposal, groupContextExtensionsProposal],
+      impl,
+    ),
+  ).rejects.toThrow(ValidationError)
+
+  // external pub not really necessary here
+  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
+
+  // can't use proposeExternal on a group without external_senders
+  await expect(
+    proposeExternal(
+      groupInfo,
+      removeBobProposal,
+      charlie.publicPackage.leafNode.signaturePublicKey,
+      charlie.privatePackage.signaturePrivateKey,
+      impl,
+    ),
+  ).rejects.toThrow(ValidationError)
+
+  // can't use proposeExternal on a group with malformed external_senders
+  await expect(
+    proposeExternal(
+      {
+        ...groupInfo,
+        groupContext: {
+          ...groupInfo.groupContext,
+          extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2, 3]) }],
+        },
+      },
+      removeBobProposal,
+      charlie.publicPackage.leafNode.signaturePublicKey,
+      charlie.privatePackage.signaturePrivateKey,
       impl,
     ),
   ).rejects.toThrow(ValidationError)

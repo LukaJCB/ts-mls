@@ -62,6 +62,7 @@ export async function createCommit(
   cs: CiphersuiteImpl,
   ratchetTreeExtension: boolean = false,
   authenticatedData: Uint8Array = new Uint8Array(),
+  groupInfoExtensions: Extension[] = [],
 ): Promise<CreateCommitResult> {
   checkCanSendHandshakeMessages(state)
 
@@ -160,6 +161,7 @@ export async function createCommit(
     epochSecrets,
     res,
     pathSecrets,
+    groupInfoExtensions,
   )
 
   const groupActiveState: GroupActiveState = res.selfRemoved
@@ -206,10 +208,11 @@ async function createWelcome(
   epochSecrets: EpochSecrets,
   res: ApplyProposalsResult,
   pathSecrets: PathSecret[],
+  extensions: Extension[],
 ): Promise<Welcome | undefined> {
   const groupInfo = ratchetTreeExtension
-    ? await createGroupInfoWithRatchetTree(groupContext, confirmationTag, state, tree, cs)
-    : await createGroupInfo(groupContext, confirmationTag, state, [], cs)
+    ? await createGroupInfoWithRatchetTree(groupContext, confirmationTag, state, tree, extensions, cs)
+    : await createGroupInfo(groupContext, confirmationTag, state, extensions, cs)
 
   const encryptedGroupInfo = await encryptGroupInfo(groupInfo, epochSecrets.welcomeSecret, cs)
 
@@ -289,6 +292,7 @@ export async function createGroupInfoWithRatchetTree(
   confirmationTag: Uint8Array,
   state: ClientState,
   tree: RatchetTree,
+  extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const encodedTree = encodeRatchetTree(tree)
@@ -297,14 +301,18 @@ export async function createGroupInfoWithRatchetTree(
     groupContext,
     confirmationTag,
     state,
-    [{ extensionType: "ratchet_tree", extensionData: encodedTree }],
+    [...extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }],
     cs,
   )
 
   return gi
 }
 
-export async function createGroupInfoWithExternalPub(state: ClientState, cs: CiphersuiteImpl): Promise<GroupInfo> {
+export async function createGroupInfoWithExternalPub(
+  state: ClientState,
+  extensions: Extension[],
+  cs: CiphersuiteImpl,
+): Promise<GroupInfo> {
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
 
@@ -312,7 +320,7 @@ export async function createGroupInfoWithExternalPub(state: ClientState, cs: Cip
     state.groupContext,
     state.confirmationTag,
     state,
-    [{ extensionType: "external_pub", extensionData: externalPub }],
+    [...extensions, { extensionType: "external_pub", extensionData: externalPub }],
     cs,
   )
 
@@ -321,6 +329,7 @@ export async function createGroupInfoWithExternalPub(state: ClientState, cs: Cip
 
 export async function createGroupInfoWithExternalPubAndRatchetTree(
   state: ClientState,
+  extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const encodedTree = encodeRatchetTree(state.ratchetTree)
@@ -333,6 +342,7 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
     state.confirmationTag,
     state,
     [
+      ...extensions,
       { extensionType: "external_pub", extensionData: externalPub },
       { extensionType: "ratchet_tree", extensionData: encodedTree },
     ],
