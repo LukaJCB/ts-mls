@@ -799,7 +799,11 @@ export async function joinGroup(
 
   if (!credentialVerified) throw new ValidationError("Could not validate credential")
 
-  const groupInfoSignatureVerified = verifyGroupInfoSignature(gi, signerNode.leaf.signaturePublicKey, cs.signature)
+  const groupInfoSignatureVerified = await verifyGroupInfoSignature(
+    gi,
+    signerNode.leaf.signaturePublicKey,
+    cs.signature,
+  )
 
   if (!groupInfoSignatureVerified) throw new CryptoVerificationError("Could not verify groupInfo signature")
 

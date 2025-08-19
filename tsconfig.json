@@ -20,6 +20,8 @@
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,

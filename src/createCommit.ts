@@ -46,7 +46,7 @@ import { base64ToBytes } from "./util/byteArray"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError"
 import { ClientConfig, defaultClientConfig } from "./clientConfig"
-import { extensionsSupportedByCapabilities } from "./extension"
+import { Extension, extensionsSupportedByCapabilities } from "./extension"
 
 export interface CreateCommitResult {
   newState: ClientState
@@ -209,7 +209,7 @@ async function createWelcome(
 ): Promise<Welcome | undefined> {
   const groupInfo = ratchetTreeExtension
     ? await createGroupInfoWithRatchetTree(groupContext, confirmationTag, state, tree, cs)
-    : await createGroupInfo(groupContext, confirmationTag, state, cs)
+    : await createGroupInfo(groupContext, confirmationTag, state, [], cs)
 
   const encryptedGroupInfo = await encryptGroupInfo(groupInfo, epochSecrets.welcomeSecret, cs)
 
@@ -271,11 +271,12 @@ export async function createGroupInfo(
   groupContext: GroupContext,
   confirmationTag: Uint8Array,
   state: ClientState,
+  extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const groupInfoTbs: GroupInfoTBS = {
     groupContext: groupContext,
-    extensions: groupContext.extensions,
+    extensions: extensions,
     confirmationTag,
     signer: state.privatePath.leafIndex,
   }
@@ -290,41 +291,55 @@ export async function createGroupInfoWithRatchetTree(
   tree: RatchetTree,
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const gi = await createGroupInfo(groupContext, confirmationTag, state, cs)
-
   const encodedTree = encodeRatchetTree(tree)
 
-  return { ...gi, extensions: [...gi.extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }] }
+  const gi = await createGroupInfo(
+    groupContext,
+    confirmationTag,
+    state,
+    [{ extensionType: "ratchet_tree", extensionData: encodedTree }],
+    cs,
+  )
+
+  return gi
 }
 
 export async function createGroupInfoWithExternalPub(state: ClientState, cs: CiphersuiteImpl): Promise<GroupInfo> {
-  const gi = await createGroupInfo(state.groupContext, state.confirmationTag, state, cs)
-
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
 
-  return { ...gi, extensions: [...gi.extensions, { extensionType: "external_pub", extensionData: externalPub }] }
+  const gi = await createGroupInfo(
+    state.groupContext,
+    state.confirmationTag,
+    state,
+    [{ extensionType: "external_pub", extensionData: externalPub }],
+    cs,
+  )
+
+  return gi
 }
 
 export async function createGroupInfoWithExternalPubAndRatchetTree(
   state: ClientState,
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const gi = await createGroupInfo(state.groupContext, state.confirmationTag, state, cs)
-
   const encodedTree = encodeRatchetTree(state.ratchetTree)
 
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
 
-  return {
-    ...gi,
-    extensions: [
-      ...gi.extensions,
+  const gi = await createGroupInfo(
+    state.groupContext,
+    state.confirmationTag,
+    state,
+    [
       { extensionType: "external_pub", extensionData: externalPub },
       { extensionType: "ratchet_tree", extensionData: encodedTree },
     ],
-  }
+    cs,
+  )
+
+  return gi
 }
 
 async function protectCommit(
@@ -448,7 +463,7 @@ export async function joinGroupExternal(
 
   if (!credentialVerified) throw new ValidationError("Could not validate credential")
 
-  const groupInfoSignatureVerified = verifyGroupInfoSignature(groupInfo, signaturePublicKey, cs.signature)
+  const groupInfoSignatureVerified = await verifyGroupInfoSignature(groupInfo, signaturePublicKey, cs.signature)
 
   if (!groupInfoSignatureVerified) throw new CryptoVerificationError("Could not verify groupInfo Signature")
 
