@@ -5,9 +5,9 @@ import {
   CiphersuiteId,
   CiphersuiteImpl,
   getCiphersuiteFromId,
-  getCiphersuiteImpl,
   getCiphersuiteNameFromId,
 } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { decodeMlsMessage } from "../../src/message"
 import { protect, unprotectPrivateMessage } from "../../src/messageProtection"
 import { createContentCommitSignature } from "../../src/framedContent"

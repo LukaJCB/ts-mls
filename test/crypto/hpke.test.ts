@@ -1,4 +1,4 @@
-import { makeHpke } from "../../src/crypto/hpke"
+import { makeHpke } from "../../src/crypto/implementation/default/makeHpke"
 import { CryptoError } from "../../src/mlsError"
 
 describe("hpke error handling", () => {

@@ -2,13 +2,8 @@ import { createGroup, joinGroup, ClientState, makePskIndex } from "../../src/cli
 import { createCommit } from "../../src/createCommit"
 import { processPrivateMessage } from "../../src/processMessages"
 import { emptyPskIndex } from "../../src/pskIndex"
-import {
-  getCiphersuiteImpl,
-  getCiphersuiteFromName,
-  CiphersuiteName,
-  ciphersuites,
-  CiphersuiteImpl,
-} from "../../src/crypto/ciphersuite"
+import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
 import { Credential } from "../../src/credential"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal"

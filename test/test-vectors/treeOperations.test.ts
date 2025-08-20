@@ -1,4 +1,5 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import {
   addLeafNode,
   decodeRatchetTree,

@@ -71,13 +71,9 @@ export { type ClientConfig } from "./clientConfig"
 
 export { type Welcome } from "./welcome"
 
-export {
-  type CiphersuiteName,
-  type CiphersuiteImpl,
-  ciphersuites,
-  getCiphersuiteFromName,
-  getCiphersuiteImpl,
-} from "./crypto/ciphersuite"
+export { type CiphersuiteName, type CiphersuiteImpl, ciphersuites, getCiphersuiteFromName } from "./crypto/ciphersuite"
+
+export { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl"
 
 export { bytesToBase64 } from "./util/byteArray"
 

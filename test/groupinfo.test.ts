@@ -1,4 +1,5 @@
-import { getCiphersuiteFromId, getCiphersuiteImpl } from "../src/crypto/ciphersuite"
+import { getCiphersuiteFromId } from "../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl"
 import { GroupContext } from "../src/groupContext"
 import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo"
 import { ed25519 } from "@noble/curves/ed25519"

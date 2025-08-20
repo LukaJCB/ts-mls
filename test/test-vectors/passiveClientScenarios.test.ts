@@ -1,4 +1,5 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
 import { hexToBytes } from "@noble/ciphers/utils"
 import jsonCommit from "../../test_vectors/passive-client-handling-commit.json"

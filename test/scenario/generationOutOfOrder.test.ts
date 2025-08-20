@@ -4,13 +4,8 @@ import { createApplicationMessage } from "../../src/createMessage"
 import { processPrivateMessage } from "../../src/processMessages"
 import { emptyPskIndex } from "../../src/pskIndex"
 import { Credential } from "../../src/credential"
-import {
-  CiphersuiteImpl,
-  CiphersuiteName,
-  ciphersuites,
-  getCiphersuiteFromName,
-  getCiphersuiteImpl,
-} from "../../src/crypto/ciphersuite"
+import { CiphersuiteImpl, CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd } from "../../src/proposal"
 import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"

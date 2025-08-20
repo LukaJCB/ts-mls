@@ -1,5 +1,6 @@
 import json from "../../test_vectors/crypto-basics.json"
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { bytesToHex, hexToBytes } from "@noble/ciphers/utils"
 import { signWithLabel, verifyWithLabel } from "../../src/crypto/signature"
 import { refhash } from "../../src/crypto/hash"

@@ -1,6 +1,9 @@
 import { ClientState, makePskIndex, createGroup, joinGroup } from "./clientState"
 import { CreateCommitResult, createCommit } from "./createCommit"
-import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite"
+import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite"
+import { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl"
+import { defaultCryptoProvider } from "./crypto/implementation/default/provider"
+import { CryptoProvider } from "./crypto/provider"
 import { Extension } from "./extension"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage"
 import { UsageError } from "./mlsError"
@@ -39,8 +42,9 @@ export async function reinitCreateNewGroup(
   groupId: Uint8Array,
   cipherSuite: CiphersuiteName,
   extensions: Extension[],
+  provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<CreateCommitResult> {
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider)
   const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, cs)
 
   const addProposals: Proposal[] = memberKeyPackages.map((kp) => ({
@@ -130,12 +134,16 @@ export async function joinGroupFromReinit(
   keyPackage: KeyPackage,
   privateKeyPackage: PrivateKeyPackage,
   ratchetTree: RatchetTree | undefined,
+  provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<ClientState> {
   const pskSearch = makePskIndex(suspendedState, {})
   if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
     throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite))
+  const cs = await getCiphersuiteImpl(
+    getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite),
+    provider,
+  )
 
   return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, suspendedState)
 }

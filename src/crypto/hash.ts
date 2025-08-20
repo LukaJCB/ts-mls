@@ -1,37 +1,8 @@
 import { utf8ToBytes } from "@noble/ciphers/utils"
 import { encodeVarLenData } from "../codec/variableLength"
-import { bytesToBuffer, concatUint8Arrays } from "../util/byteArray"
+import { concatUint8Arrays } from "../util/byteArray"
 
 export type HashAlgorithm = "SHA-512" | "SHA-384" | "SHA-256"
-
-export function makeHashImpl(sc: SubtleCrypto, h: HashAlgorithm): Hash {
-  return {
-    async digest(data) {
-      const result = await sc.digest(h, bytesToBuffer(data))
-      return new Uint8Array(result)
-    },
-    async mac(key, data) {
-      const result = await sc.sign("HMAC", await importMacKey(key, h), bytesToBuffer(data))
-      return new Uint8Array(result)
-    },
-    async verifyMac(key, mac, data) {
-      return sc.verify("HMAC", await importMacKey(key, h), bytesToBuffer(mac), bytesToBuffer(data))
-    },
-  }
-}
-
-function importMacKey(rawKey: Uint8Array, h: HashAlgorithm): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    "raw",
-    bytesToBuffer(rawKey),
-    {
-      name: "HMAC",
-      hash: { name: h },
-    },
-    false,
-    ["sign", "verify"],
-  )
-}
 
 export interface Hash {
   digest(data: Uint8Array): Promise<Uint8Array>

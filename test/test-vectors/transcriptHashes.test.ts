@@ -1,4 +1,5 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { hexToBytes } from "@noble/ciphers/utils"
 import json from "../../test_vectors/transcript-hashes.json"
 import { decodeAuthenticatedContent } from "../../src/authenticatedContent"

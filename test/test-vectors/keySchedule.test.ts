@@ -2,9 +2,9 @@ import {
   CiphersuiteId,
   CiphersuiteImpl,
   getCiphersuiteFromId,
-  getCiphersuiteImpl,
   getCiphersuiteNameFromId,
 } from "../../src/crypto/ciphersuite"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { encodeGroupContext, GroupContext } from "../../src/groupContext"
 import { hexToBytes } from "@noble/ciphers/utils"
 import json from "../../test_vectors/key-schedule.json"
