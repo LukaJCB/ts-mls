@@ -72,7 +72,7 @@ export const decodeVarLenData: Decoder<Uint8Array> = (buf, offset) => {
 
 export function encodeVarLenType<T>(enc: Encoder<T>): Encoder<T[]> {
   return (data) => {
-    const encodedParts: Uint8Array[] = new Array(data.length)
+    const encodedParts = new Array<Uint8Array>(data.length)
     let dataLength = 0
 
     for (let i = 0; i < data.length; i++) {

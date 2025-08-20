@@ -410,8 +410,8 @@ export async function applyUpdatePathSecret(
 
   for (const [i, nodeIndex] of filterNewLeaves(resolution, excludeNodes).entries()) {
     if (privatePath.privateKeys[nodeIndex] !== undefined) {
-      const key = await cs.hpke.importPrivateKey(privatePath.privateKeys[nodeIndex]!)
-      const ct = updateNode?.encryptedPathSecret[i]!
+      const key = await cs.hpke.importPrivateKey(privatePath.privateKeys[nodeIndex])
+      const ct = updateNode!.encryptedPathSecret[i]!
 
       const pathSecret = await decryptWithLabel(
         key,

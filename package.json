@@ -46,6 +46,7 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.33.0",
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
     "@hpke/ml-kem": "0.2.1",
@@ -53,13 +54,15 @@
     "@noble/curves": "^1.9.2",
     "@noble/post-quantum": "0.4.1",
     "@types/jest": "^30.0.0",
+    "eslint": "^9.33.0",
     "madge": "^8.0.0",
     "prettier": "3.6.2",
     "tinybench": "^5.0.0",
     "ts-jest": "^29.2.5",
     "tsx": "^4.20.3",
     "typescript": "~5.9.2",
-    "typescript-docs-verifier": "^3.0.1"
+    "typescript-docs-verifier": "^3.0.1",
+    "typescript-eslint": "^8.40.0"
   },
   "repository": {
     "type": "git",
@@ -72,11 +75,12 @@
     "build": "tsc",
     "benchmark": "tsx bench/index.ts",
     "test": "jest --coverage",
+    "lint": "eslint src/",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
     "verify-docs": "typescript-docs-verifier --project tsconfig.docs.json --input-files README.md docs/*.md",
     "verify-madge": "madge --extensions ts --circular src",
-    "verify": "npm run build && npm run format:check && npm run verify-docs && npm run verify-madge && npm run test"
+    "verify": "npm run build && npm run format:check && npm run verify-docs && npm run verify-madge && npm run lint && npm run test"
   },
   "keywords": [
     "mls",

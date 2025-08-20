@@ -30,7 +30,7 @@ export interface ConsumeRatchetResult {
 }
 
 function scaffoldSecretTree(leafWidth: number, encryptionSecret: Uint8Array, kdf: Kdf): Promise<Uint8Array[]> {
-  const tree = new Array(nodeWidth(leafWidth))
+  const tree = new Array<Uint8Array>(nodeWidth(leafWidth))
   const rootIndex = root(leafWidth)
 
   const parentInhabited = updateArray(tree, rootIndex, encryptionSecret)

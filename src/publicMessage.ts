@@ -74,10 +74,11 @@ export function findSignaturePublicKey(
   switch (framedContent.sender.senderType) {
     case "member":
       return getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(framedContent.sender.leafIndex))
-    case "external":
+    case "external": {
       const sender = senderFromExtension(groupContext.extensions, framedContent.sender.senderIndex)
       if (sender === undefined) throw new ValidationError("Received external but no external_sender extension")
       return sender.signaturePublicKey
+    }
     case "new_member_proposal":
       if (framedContent.contentType !== "proposal")
         throw new ValidationError("Received new_member_proposal but contentType is not proposal")

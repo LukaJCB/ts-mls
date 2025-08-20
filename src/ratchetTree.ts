@@ -134,7 +134,12 @@ export function findBlankLeafNodeIndexOrExtend(tree: RatchetTree): NodeIndex {
 export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, NodeIndex] {
   const newRoot = undefined
   const insertedNodeIndex = toNodeIndex(tree.length + 1)
-  const newTree: RatchetTree = [...tree, newRoot, { nodeType: "leaf", leaf: leafNode }, ...new Array(tree.length - 1)]
+  const newTree: RatchetTree = [
+    ...tree,
+    newRoot,
+    { nodeType: "leaf", leaf: leafNode },
+    ...new Array<Node | undefined>(tree.length - 1),
+  ]
   return [newTree, insertedNodeIndex]
 }
 
