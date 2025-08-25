@@ -29,7 +29,7 @@ import { pathToPathSecrets } from "./pathSecrets"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath"
 import { Proposal, ProposalExternalInit } from "./proposal"
 import { ProposalOrRef } from "./proposalOrRefType"
-import { PskIndex } from "./pskIndex"
+import { emptyPskIndex, PskIndex } from "./pskIndex"
 import {
   RatchetTree,
   addLeafNode,
@@ -48,29 +48,50 @@ import { CryptoVerificationError, InternalError, UsageError, ValidationError } f
 import { ClientConfig, defaultClientConfig } from "./clientConfig"
 import { Extension, extensionsSupportedByCapabilities } from "./extension"
 
+export interface MLSContext {
+  state: ClientState
+  cipherSuite: CiphersuiteImpl
+  pskIndex?: PskIndex
+}
+
 export interface CreateCommitResult {
   newState: ClientState
   welcome: Welcome | undefined
   commit: MLSMessage
 }
 
-export async function createCommit(
-  state: ClientState,
-  pskSearch: PskIndex,
-  publicMessage: boolean,
-  extraProposals: Proposal[],
-  cs: CiphersuiteImpl,
-  ratchetTreeExtension: boolean = false,
-  authenticatedData: Uint8Array = new Uint8Array(),
-  groupInfoExtensions: Extension[] = [],
-): Promise<CreateCommitResult> {
+export interface CreateCommitOptions {
+  wireAsPublicMessage?: boolean
+  extraProposals?: Proposal[]
+  ratchetTreeExtension?: boolean
+  groupInfoExtensions?: Extension[]
+  authenticatedData?: Uint8Array
+}
+
+export async function createCommit(context: MLSContext, options?: CreateCommitOptions): Promise<CreateCommitResult> {
+  const { state, pskIndex = emptyPskIndex, cipherSuite } = context
+  const {
+    wireAsPublicMessage,
+    extraProposals = [],
+    ratchetTreeExtension = false,
+    authenticatedData = new Uint8Array(),
+    groupInfoExtensions = [],
+  } = options ?? {}
+
   checkCanSendHandshakeMessages(state)
 
-  const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
+  const wireformat = wireAsPublicMessage ? "mls_public_message" : "mls_private_message"
 
   const allProposals = bundleAllProposals(state, extraProposals)
 
-  const res = await applyProposals(state, allProposals, toLeafIndex(state.privatePath.leafIndex), pskSearch, true, cs)
+  const res = await applyProposals(
+    state,
+    allProposals,
+    toLeafIndex(state.privatePath.leafIndex),
+    pskIndex,
+    true,
+    cipherSuite,
+  )
 
   if (res.additionalResult.kind === "externalCommit") throw new UsageError("Cannot create externalCommit as a member")
 
@@ -82,7 +103,7 @@ export async function createCommit(
         toLeafIndex(state.privatePath.leafIndex),
         state.groupContext,
         state.signaturePrivateKey,
-        cs,
+        cipherSuite,
       )
     : [res.tree, undefined, [] as PathSecret[], undefined]
 
@@ -95,17 +116,17 @@ export async function createCommit(
 
   const privateKeys = mergePrivateKeyPaths(
     newPrivateKey !== undefined
-      ? updateLeafKey(state.privatePath, await cs.hpke.exportPrivateKey(newPrivateKey))
+      ? updateLeafKey(state.privatePath, await cipherSuite.hpke.exportPrivateKey(newPrivateKey))
       : state.privatePath,
-    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), state.privatePath.leafIndex, cs),
+    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), state.privatePath.leafIndex, cipherSuite),
   )
 
   const lastPathSecret = pathSecrets.at(-1)
 
   const commitSecret =
     lastPathSecret === undefined
-      ? new Uint8Array(cs.kdf.size)
-      : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
+      ? new Uint8Array(cipherSuite.kdf.size)
+      : await deriveSecret(lastPathSecret.secret, "path", cipherSuite.kdf)
 
   const { signature, framedContent } = await createContentCommitSignature(
     state.groupContext,
@@ -114,10 +135,10 @@ export async function createCommit(
     { senderType: "member", leafIndex: state.privatePath.leafIndex },
     authenticatedData,
     state.signaturePrivateKey,
-    cs.signature,
+    cipherSuite.signature,
   )
 
-  const treeHash = await treeHashRoot(tree, cs.hash)
+  const treeHash = await treeHashRoot(tree, cipherSuite.hash)
 
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
@@ -126,7 +147,7 @@ export async function createCommit(
     signature,
     treeHash,
     state.confirmationTag,
-    cs.hash,
+    cipherSuite.hash,
   )
 
   const epochSecrets = await initializeEpoch(
@@ -134,13 +155,13 @@ export async function createCommit(
     commitSecret,
     updatedGroupContext,
     res.pskSecret,
-    cs.kdf,
+    cipherSuite.kdf,
   )
 
   const confirmationTag = await createConfirmationTag(
     epochSecrets.keySchedule.confirmationKey,
     updatedGroupContext.confirmedTranscriptHash,
-    cs.hash,
+    cipherSuite.hash,
   )
 
   const authData: FramedContentAuthDataCommit = {
@@ -149,7 +170,14 @@ export async function createCommit(
     confirmationTag,
   }
 
-  const [commit] = await protectCommit(publicMessage, state, authenticatedData, framedContent, authData, cs)
+  const [commit] = await protectCommit(
+    !!wireAsPublicMessage,
+    state,
+    authenticatedData,
+    framedContent,
+    authData,
+    cipherSuite,
+  )
 
   const welcome: Welcome | undefined = await createWelcome(
     ratchetTreeExtension,
@@ -157,7 +185,7 @@ export async function createCommit(
     confirmationTag,
     state,
     tree,
-    cs,
+    cipherSuite,
     epochSecrets,
     res,
     pathSecrets,
@@ -173,7 +201,11 @@ export async function createCommit(
   const newState: ClientState = {
     groupContext: updatedGroupContext,
     ratchetTree: tree,
-    secretTree: await createSecretTree(leafWidth(tree.length), epochSecrets.keySchedule.encryptionSecret, cs.kdf),
+    secretTree: await createSecretTree(
+      leafWidth(tree.length),
+      epochSecrets.keySchedule.encryptionSecret,
+      cipherSuite.kdf,
+    ),
     keySchedule: epochSecrets.keySchedule,
     privatePath: privateKeys,
     unappliedProposals: {},

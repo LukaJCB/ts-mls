@@ -64,7 +64,16 @@ async function setupTestParticipants(
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+      ratchetTreeExtension: true,
+    },
+  )
   aliceGroup = addBobCommitResult.newState
 
   const bobGroup = await joinGroup(
@@ -139,7 +148,7 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     aliceGroup = createMessageResult.newState
@@ -169,7 +178,7 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages + 1; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     aliceGroup = createMessageResult.newState

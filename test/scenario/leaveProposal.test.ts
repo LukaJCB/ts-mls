@@ -54,12 +54,15 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    publicMessage,
-    [addBobProposal, addCharlieProposal],
-    impl,
-    true,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+      extraProposals: [addBobProposal, addCharlieProposal],
+      ratchetTreeExtension: true,
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
@@ -117,7 +120,16 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   charlieGroup = charlieProcessProposalResult.newState
 
   //bob commits to alice leaving
-  const bobCommitResult = await createCommit(bobGroup, emptyPskIndex, publicMessage, [], impl, false)
+  const bobCommitResult = await createCommit(
+    {
+      state: bobGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+      ratchetTreeExtension: false,
+    },
+  )
 
   bobGroup = bobCommitResult.newState
 

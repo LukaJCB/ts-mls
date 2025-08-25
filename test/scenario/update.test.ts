@@ -38,7 +38,15 @@ async function update(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -53,7 +61,10 @@ async function update(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const emptyCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult = await createCommit({
+    state: aliceGroup,
+    cipherSuite: impl,
+  })
 
   if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 
@@ -68,7 +79,10 @@ async function update(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCommitResult.newState
 
-  const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult3 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
 
   if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 

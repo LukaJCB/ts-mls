@@ -58,16 +58,19 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const sharedPsks = { [base64PskId]: pskSecret }
 
   const commitResult = await createCommit(
-    aliceGroup,
-    makePskIndex(aliceGroup, sharedPsks),
-    false,
-    [addBobProposal, pskProposal],
-    impl,
+    {
+      state: aliceGroup,
+      pskIndex: makePskIndex(aliceGroup, sharedPsks),
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, pskProposal],
+    },
   )
 
   aliceGroup = commitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     commitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,

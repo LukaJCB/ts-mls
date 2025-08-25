@@ -55,7 +55,13 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    { extraProposals: [addBobProposal] },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -93,7 +99,10 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCharlieProposalResult.newState
 
-  const addCharlieCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const addCharlieCommitResult = await createCommit({
+    state: aliceGroup,
+    cipherSuite: impl,
+  })
 
   aliceGroup = addCharlieCommitResult.newState
 
@@ -110,7 +119,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
+  const charlieGroup = await joinGroup(
     addCharlieCommitResult.welcome!,
     charlie.publicPackage,
     charlie.privatePackage,

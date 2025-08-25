@@ -41,7 +41,13 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    { extraProposals: [addBobProposal] },
+  )
 
   aliceGroup = commitResult.newState
 
@@ -54,7 +60,10 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     aliceGroup.ratchetTree,
   )
 
-  const bobCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const bobCommitResult = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
 
   bobGroup = bobCommitResult.newState
 

@@ -41,7 +41,16 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, publicMessage, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -90,7 +99,15 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   expect(aliceGroup.unappliedProposals).toStrictEqual({})
 
   // alice commits without the proposal
-  const aliceCommitResult = await createCommit(aliceGroup, emptyPskIndex, publicMessage, [], impl)
+  const aliceCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+    },
+  )
 
   aliceGroup = aliceCommitResult.newState
 

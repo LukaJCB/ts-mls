@@ -40,7 +40,15 @@ async function reinit(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = commitResult.newState
 
@@ -76,7 +84,12 @@ async function reinit(cipherSuite: CiphersuiteName) {
   expect(aliceGroup.groupActiveState.kind).toBe("suspendedPendingReinit")
 
   //creating a message will fail now
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [], impl)).rejects.toThrow(UsageError)
+  await expect(
+    createCommit({
+      state: aliceGroup,
+      cipherSuite: impl,
+    }),
+  ).rejects.toThrow(UsageError)
 
   const newImpl = await getCiphersuiteImpl(getCiphersuiteFromName(newCiphersuite))
 

@@ -50,12 +50,14 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    false,
-    [addBobProposal, addCharlieProposal],
-    impl,
-    true,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+      ratchetTreeExtension: true,
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState

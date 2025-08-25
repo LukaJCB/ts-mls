@@ -42,7 +42,15 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -67,7 +75,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     impl,
   )
 
-  let charlieGroup = charlieJoinGroupCommitResult.newState
+  const charlieGroup = charlieJoinGroupCommitResult.newState
 
   const aliceProcessCharlieJoinResult = await processPublicMessage(
     aliceGroup,
