@@ -48,17 +48,19 @@ async function ratchetTreeExtension(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    false,
-    [addBobProposal, addCharlieProposal],
-    impl,
-    true,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+      ratchetTreeExtension: true,
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobAndCharlieCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,
@@ -68,7 +70,7 @@ async function ratchetTreeExtension(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
+  const charlieGroup = await joinGroup(
     addBobAndCharlieCommitResult.welcome!,
     charlie.publicPackage,
     charlie.privatePackage,

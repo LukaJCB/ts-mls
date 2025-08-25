@@ -123,7 +123,7 @@ const addBobProposal: Proposal = {
 }
 
 // alice commits
-const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
 
 aliceGroup = commitResult.newState
 

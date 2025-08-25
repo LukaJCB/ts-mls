@@ -55,11 +55,19 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,
@@ -83,7 +91,13 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [addCharlieProposal], impl)).rejects.toThrow(
-    ValidationError,
-  )
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      { extraProposals: [addCharlieProposal] },
+    ),
+  ).rejects.toThrow(ValidationError)
 }

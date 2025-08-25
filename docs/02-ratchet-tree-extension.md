@@ -51,7 +51,13 @@ const addBobProposal: Proposal = {
 }
 
 // Alice adds Bob with the ratchetTreeExtension = true
-const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
+const commitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  {
+    extraProposals: [addBobProposal],
+    ratchetTreeExtension: true,
+  },
+)
 aliceGroup = commitResult.newState
 
 // Bob joins using the welcome message and does not need to provide a ratchetTree

@@ -53,7 +53,10 @@ const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const addBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group (epoch 1)
@@ -86,7 +89,14 @@ const base64PskId = bytesToBase64(pskId)
 const sharedPsks = { [base64PskId]: pskSecret }
 
 // Alice commits with the PSK proposal (epoch 2)
-const pskCommitResult = await createCommit(aliceGroup, makePskIndex(aliceGroup, sharedPsks), false, [pskProposal], impl)
+const pskCommitResult = await createCommit(
+  {
+    state: aliceGroup,
+    cipherSuite: impl,
+    pskIndex: makePskIndex(aliceGroup, sharedPsks),
+  },
+  { extraProposals: [pskProposal] },
+)
 aliceGroup = pskCommitResult.newState
 
 if (pskCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -180,11 +190,12 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit(
-  aliceGroup,
-  makePskIndex(aliceGroup, sharedPsks),
-  false,
-  [addBobProposal, pskProposal],
-  impl,
+  {
+    state: aliceGroup,
+    cipherSuite: impl,
+    pskIndex: makePskIndex(aliceGroup, sharedPsks),
+  },
+  { extraProposals: [addBobProposal, pskProposal] },
 )
 aliceGroup = commitResult.newState
 

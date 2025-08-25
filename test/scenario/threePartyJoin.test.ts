@@ -41,7 +41,15 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -63,7 +71,15 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addCharlieCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addCharlieProposal], impl)
+  const addCharlieCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addCharlieProposal],
+    },
+  )
 
   aliceGroup = addCharlieCommitResult.newState
 
@@ -80,7 +96,7 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
+  const charlieGroup = await joinGroup(
     addCharlieCommitResult.welcome!,
     charlie.publicPackage,
     charlie.privatePackage,

@@ -92,7 +92,15 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       },
     }
 
-    const commitResult = await createCommit(remover.state, emptyPskIndex, false, [removeProposal], impl)
+    const commitResult = await createCommit(
+      {
+        state: remover.state,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [removeProposal],
+      },
+    )
 
     if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
     remover.state = commitResult.newState
@@ -135,7 +143,15 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     add: { keyPackage: newKP.publicPackage },
   }
 
-  const commitResult = await createCommit(adder.state, emptyPskIndex, false, [addProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: adder.state,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addProposal],
+    },
+  )
 
   if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 
@@ -171,7 +187,10 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
 async function update(memberStates: MemberState[], updateIndex: number, impl: CiphersuiteImpl) {
   const updater = memberStates[updateIndex]!
 
-  const emptyCommitResult = await createCommit(updater.state, emptyPskIndex, false, [], impl)
+  const emptyCommitResult = await createCommit({
+    state: updater.state,
+    cipherSuite: impl,
+  })
 
   updater.state = emptyCommitResult.newState
 

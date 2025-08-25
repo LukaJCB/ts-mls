@@ -55,16 +55,18 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    false,
-    [addBobProposal, addCharlieProposal],
-    impl,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobAndCharlieCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,
@@ -75,7 +77,7 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
+  const charlieGroup = await joinGroup(
     addBobAndCharlieCommitResult.welcome!,
     charlie.publicPackage,
     charlie.privatePackage,
@@ -102,11 +104,29 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   // can't remove same leaf node twice
   await expect(
-    createCommit(aliceGroup, emptyPskIndex, false, [removeBobProposal, removeBobProposal2], impl),
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [removeBobProposal, removeBobProposal2],
+      },
+    ),
   ).rejects.toThrow(ValidationError)
 
   // can't add someone already in the group
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)).rejects.toThrow(ValidationError)
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [addBobProposal],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const proposalInvalidRequiredCapabilities: Proposal = {
     proposalType: "group_context_extensions",
@@ -117,7 +137,15 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   //can't add groupContextExtensions with invalid requiredCapabilities
   await expect(
-    createCommit(aliceGroup, emptyPskIndex, false, [proposalInvalidRequiredCapabilities], impl),
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [proposalInvalidRequiredCapabilities],
+      },
+    ),
   ).rejects.toThrow(CodecError)
 
   const proposalRequiredCapabilities: Proposal = {
@@ -133,9 +161,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   //can't add groupContextExtensions with requiredCapabilities that members don't support
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [proposalRequiredCapabilities], impl)).rejects.toThrow(
-    ValidationError,
-  )
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [proposalRequiredCapabilities],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const dianaCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("diana") }
   const diana = await generateKeyPackage(
@@ -171,7 +207,15 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   //can't add groupContextExtensions with requiredCapabilities that newly added member doesn't support
   await expect(
-    createCommit(aliceGroup, emptyPskIndex, false, [addDiana, proposalRequiredCapabilitiesX509], impl),
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [addDiana, proposalRequiredCapabilitiesX509],
+      },
+    ),
   ).rejects.toThrow(ValidationError)
 
   const proposalInvalidExternalSenders: Proposal = {
@@ -182,9 +226,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   //can't add groupContextExtensions with invalid requiredCapabilities
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [proposalInvalidExternalSenders], impl)).rejects.toThrow(
-    CodecError,
-  )
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [proposalInvalidExternalSenders],
+      },
+    ),
+  ).rejects.toThrow(CodecError)
 
   const badCredential = { credentialType: "basic" as const, identity: new TextEncoder().encode("NOT GOOD") }
 
@@ -210,11 +262,13 @@ async function remove(cipherSuite: CiphersuiteName) {
   //can't add groupContextExtensions with external senders that can't be auth'd
   await expect(
     createCommit(
-      withAuthService(aliceGroup, authService),
-      emptyPskIndex,
-      false,
-      [proposalUnauthenticatedExternalSenders],
-      impl,
+      {
+        state: withAuthService(aliceGroup, authService),
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [proposalUnauthenticatedExternalSenders],
+      },
     ),
   ).rejects.toThrow(ValidationError)
 
@@ -243,7 +297,15 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   //can't add a member with invalid credentials
   await expect(
-    createCommit(withAuthService(aliceGroup, authServiceEdward), emptyPskIndex, false, [addEdward], impl),
+    createCommit(
+      {
+        state: withAuthService(aliceGroup, authServiceEdward),
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [addEdward],
+      },
+    ),
   ).rejects.toThrow(ValidationError)
 
   const frankCredential: Credential = createCustomCredential(5, new Uint8Array([1, 2]))
@@ -255,7 +317,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   //can't add leafNode with an unsupported credentialType
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [addFrank], impl)).rejects.toThrow(ValidationError)
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [addFrank],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const georgeCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("george") }
   const georgeExtension: Extension = { extensionType: 8545, extensionData: new Uint8Array() }
@@ -273,7 +345,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   //can't add leafNode with an unsupported extension
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [addGeorge], impl)).rejects.toThrow(ValidationError)
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [addGeorge],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const updateLeafNode: LeafNode = {
     leafNodeSource: "update",
@@ -293,7 +375,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   // commiter can't update themselves
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [updateProposal], impl)).rejects.toThrow(ValidationError)
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [updateProposal],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const removeProposal: ProposalRemove = {
     proposalType: "remove",
@@ -303,7 +395,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   // committer can't remove themselves
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [removeProposal], impl)).rejects.toThrow(ValidationError)
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [removeProposal],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const hannahCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const hannah = await generateKeyPackage(hannahCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -317,7 +419,15 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   // can't add the same  keypackage twice
   await expect(
-    createCommit(aliceGroup, emptyPskIndex, false, [addHannahProposal, addHannahProposal], impl),
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [addHannahProposal, addHannahProposal],
+      },
+    ),
   ).rejects.toThrow(ValidationError)
 
   const pskId = new Uint8Array([1, 2, 3, 4])
@@ -333,9 +443,17 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   // can't reference the same psk in multiple proposals
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [pskProposal, pskProposal], impl)).rejects.toThrow(
-    ValidationError,
-  )
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [pskProposal, pskProposal],
+      },
+    ),
+  ).rejects.toThrow(ValidationError)
 
   const groupContextExtensionsProposal: Proposal = {
     proposalType: "group_context_extensions",
@@ -347,11 +465,13 @@ async function remove(cipherSuite: CiphersuiteName) {
   // can't use multiple group_context_extensions proposals
   await expect(
     createCommit(
-      aliceGroup,
-      emptyPskIndex,
-      false,
-      [groupContextExtensionsProposal, groupContextExtensionsProposal],
-      impl,
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [groupContextExtensionsProposal, groupContextExtensionsProposal],
+      },
     ),
   ).rejects.toThrow(ValidationError)
 

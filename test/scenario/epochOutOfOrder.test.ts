@@ -70,7 +70,16 @@ async function setupTestParticipants(
   }
 
   // alice adds bob and initiates epoch 1
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+      ratchetTreeExtension: true,
+    },
+  )
   aliceGroup = addBobCommitResult.newState
 
   // bob joins at epoch 1
@@ -112,7 +121,10 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateFirstProposalResult.newState
 
   // bob creates an empty commit and goes to epoch 2
-  const emptyCommitResult1 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult1 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
   bobGroup = emptyCommitResult1.newState
 
   if (emptyCommitResult1.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -131,7 +143,10 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateSecondMessageResult.newState
 
   // bob creates an empty commit and goes to epoch 3
-  const emptyCommitResult2 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult2 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
   bobGroup = emptyCommitResult2.newState
 
   if (emptyCommitResult2.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -150,7 +165,10 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateThirdMessageResult.newState
 
   // bob creates an empty commit and goes to epoch 4
-  const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult3 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
   bobGroup = emptyCommitResult3.newState
 
   if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -196,7 +214,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   if (aliceCreateFirstProposalResult.message.wireformat !== "mls_private_message")
     throw new Error("Expected private message")
 
-  expect(
+  await expect(
     processPrivateMessage(bobGroup, aliceCreateFirstProposalResult.message.privateMessage, emptyPskIndex, impl),
   ).rejects.toThrow(ValidationError)
 
@@ -211,14 +229,17 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     // alice sends the first message in current epoch
     aliceGroup = createMessageResult.newState
 
     // bob creates an empty commit and goes to next epoch
-    const emptyCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+    const emptyCommitResult = await createCommit({
+      state: bobGroup,
+      cipherSuite: impl,
+    })
     bobGroup = emptyCommitResult.newState
 
     if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -257,14 +278,17 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     // alice sends the first message in current epoch
     aliceGroup = createMessageResult.newState
 
     // bob creates an empty commit and goes to next epoch
-    const emptyCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+    const emptyCommitResult = await createCommit({
+      state: bobGroup,
+      cipherSuite: impl,
+    })
     bobGroup = emptyCommitResult.newState
 
     if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")

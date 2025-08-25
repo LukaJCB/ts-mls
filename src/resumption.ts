@@ -31,7 +31,16 @@ export async function reinitGroup(
     },
   }
 
-  return createCommit(state, makePskIndex(state, {}), false, [reinitProposal], cs)
+  return createCommit(
+    {
+      state,
+      pskIndex: makePskIndex(state, {}),
+      cipherSuite: cs,
+    },
+    {
+      extraProposals: [reinitProposal],
+    },
+  )
 }
 
 export async function reinitCreateNewGroup(
@@ -61,7 +70,16 @@ export async function reinitCreateNewGroup(
     },
   }
 
-  return createCommit(newGroup, makePskIndex(state, {}), false, [...addProposals, resumptionPsk], cs)
+  return createCommit(
+    {
+      state: newGroup,
+      pskIndex: makePskIndex(state, {}),
+      cipherSuite: cs,
+    },
+    {
+      extraProposals: [...addProposals, resumptionPsk],
+    },
+  )
 }
 
 export function makeResumptionPsk(
@@ -112,7 +130,16 @@ export async function branchGroup(
     },
   }
 
-  return createCommit(newGroup, pskSearch, false, [...addMemberProposals, branchPskProposal], cs)
+  return createCommit(
+    {
+      state: newGroup,
+      pskIndex: pskSearch,
+      cipherSuite: cs,
+    },
+    {
+      extraProposals: [...addMemberProposals, branchPskProposal],
+    },
+  )
 }
 
 export async function joinGroupFromBranch(

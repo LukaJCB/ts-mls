@@ -31,7 +31,7 @@ function parseTable(row: Record<string, string | number | undefined> | null): {
   med: number
   latencyAvg: number
   latencyMed: number
-  samples: any
+  samples: unknown
 } {
   return {
     name: row!["Task name"]! as string,
@@ -64,7 +64,11 @@ async function joinGroupBench(
 }
 
 async function createCommitBench(impl: CiphersuiteImpl, aliceGroup: ClientState) {
-  await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  await createCommit({
+    state: aliceGroup,
+    pskIndex: emptyPskIndex,
+    cipherSuite: impl,
+  })
 }
 
 async function processCommitBench(impl: CiphersuiteImpl, bobGroup: ClientState, result: CreateCommitResult) {
@@ -90,7 +94,17 @@ async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
     },
   }
 
-  const result = await createCommit(state, emptyPskIndex, false, [removeBobProposal], impl, true)
+  const result = await createCommit(
+    {
+      state,
+      pskIndex: emptyPskIndex,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [removeBobProposal],
+      ratchetTreeExtension: true,
+    },
+  )
 
   return result
 }
@@ -106,7 +120,17 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
     },
   }
 
-  const result = await createCommit(state, emptyPskIndex, false, [addBobProposal], impl, true)
+  const result = await createCommit(
+    {
+      state,
+      pskIndex: emptyPskIndex,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+      ratchetTreeExtension: true,
+    },
+  )
 
   return { bob, result }
 }
@@ -144,7 +168,17 @@ async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps:
       })
     }
 
-    const result = await createCommit(state, emptyPskIndex, false, proposals, impl, true)
+    const result = await createCommit(
+      {
+        state,
+        pskIndex: emptyPskIndex,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: proposals,
+        ratchetTreeExtension: true,
+      },
+    )
 
     state = result.newState
   }
@@ -171,7 +205,7 @@ async function runBenchBasic(outputPath: string, cs: CiphersuiteName) {
     .add("Generate KeyPackage", async () => await createKeyPackageBench(impl))
     .add("Create group & welcome", async () => await createGroupBench(impl))
 
-  runBenchmark(outputPath, bench)
+  await runBenchmark(outputPath, bench)
 }
 
 async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: number) {
@@ -192,7 +226,11 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
     impl,
   )
 
-  const commitResult = await createCommit(initResult.result.newState, emptyPskIndex, false, [], impl)
+  const commitResult = await createCommit({
+    state: initResult.result.newState,
+    pskIndex: emptyPskIndex,
+    cipherSuite: impl,
+  })
 
   const sendMessageResult = await createApplicationMessage(
     initResult.result.newState,

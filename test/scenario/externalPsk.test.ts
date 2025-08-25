@@ -39,7 +39,15 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = commitResult.newState
 
@@ -89,11 +97,14 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
   const sharedPsks = { [base64PskId1]: pskSecret1, [base64PskId2]: pskSecret2 }
 
   const pskCommitResult = await createCommit(
-    aliceGroup,
-    makePskIndex(aliceGroup, sharedPsks),
-    false,
-    [pskProposal1, pskProposal2],
-    impl,
+    {
+      state: aliceGroup,
+      pskIndex: makePskIndex(aliceGroup, sharedPsks),
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [pskProposal1, pskProposal2],
+    },
   )
 
   aliceGroup = pskCommitResult.newState

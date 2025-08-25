@@ -56,7 +56,10 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 // Alice adds Bob and commits, this is epoch 1
-const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const addBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal] },
+)
 
 if (addBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 
@@ -77,7 +80,10 @@ const addCharlieProposal: Proposal = {
   add: { keyPackage: charlie.publicPackage },
 }
 // Alice adds Charlie, transitioning into epoch 2
-const addCharlieCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addCharlieProposal], impl)
+const addCharlieCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addCharlieProposal] },
+)
 aliceGroup = addCharlieCommitResult.newState
 if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 

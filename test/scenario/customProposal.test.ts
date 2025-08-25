@@ -48,7 +48,13 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    { extraProposals: [addBobProposal] },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -89,9 +95,13 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
   aliceGroup = processProposalResult.newState
 
   //creating an application message will fail now
-  expect(createApplicationMessage(aliceGroup, new Uint8Array([1, 2, 3]), impl)).rejects.toThrow(UsageError)
+  await expect(createApplicationMessage(aliceGroup, new Uint8Array([1, 2, 3]), impl)).rejects.toThrow(UsageError)
 
-  const createCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const createCommitResult = await createCommit({
+    state: aliceGroup,
+
+    cipherSuite: impl,
+  })
 
   aliceGroup = createCommitResult.newState
 

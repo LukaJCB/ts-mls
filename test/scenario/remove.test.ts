@@ -50,11 +50,13 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    false,
-    [addBobProposal, addCharlieProposal],
-    impl,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
@@ -88,7 +90,15 @@ async function remove(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const removeBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [removeBobProposal], impl)
+  const removeBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [removeBobProposal],
+    },
+  )
 
   aliceGroup = removeBobCommitResult.newState
 
@@ -116,7 +126,12 @@ async function remove(cipherSuite: CiphersuiteName) {
   expect(bobGroup.groupActiveState).toStrictEqual({ kind: "removedFromGroup" })
 
   //creating a message will fail now
-  expect(createCommit(bobGroup, emptyPskIndex, false, [], impl)).rejects.toThrow(UsageError)
+  await expect(
+    createCommit({
+      state: bobGroup,
+      cipherSuite: impl,
+    }),
+  ).rejects.toThrow(UsageError)
 
   await cannotMessageAnymore(bobGroup, impl)
 

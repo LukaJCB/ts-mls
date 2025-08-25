@@ -57,7 +57,7 @@ const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
 aliceGroup = commitResult.newState
 
 // Bob joins the group (epoch 1)
