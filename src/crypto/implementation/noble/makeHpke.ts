@@ -1,5 +1,6 @@
 import { CipherSuite } from "@hpke/core"
-import { Hpke, HpkeAlgorithm, makeGenericHpke } from "../../hpke"
+import { Hpke, HpkeAlgorithm } from "../../hpke"
+import { makeGenericHpke } from "../hpke"
 import { makeAead } from "./makeAead"
 import { makeKdf } from "./makeKdfImpl"
 import { makeDhKem } from "./makeDhKem"
