@@ -58,6 +58,16 @@ describe("Default hpke happy path", () => {
     expect(new TextDecoder().decode(decrypted)).toBe("hello world")
   })
 
+  test("can seal and open a message with aad", async () => {
+    const { publicKey, privateKey } = await hpke.generateKeyPair()
+    const plaintext = new TextEncoder().encode("hello world")
+    const info = new TextEncoder().encode("test info")
+    const aad = new TextEncoder().encode("additional data")
+    const { ct, enc } = await hpke.seal(publicKey, plaintext, info, aad)
+    const decrypted = await hpke.open(privateKey, enc, ct, info, aad)
+    expect(new TextDecoder().decode(decrypted)).toBe("hello world")
+  })
+
   test("can encrypt and decrypt with AEAD", async () => {
     const key = new Uint8Array(hpke.keyLength)
     const nonce = new Uint8Array(hpke.nonceLength)
@@ -125,5 +135,15 @@ describe("Noble hpke happy path", () => {
     const ciphertext = await hpke.encryptAead(key, nonce, aad, plaintext)
     const decrypted = await hpke.decryptAead(key, nonce, aad, ciphertext)
     expect(new TextDecoder().decode(decrypted)).toBe("secret")
+  })
+
+  test("can seal and open a message with aad", async () => {
+    const { publicKey, privateKey } = await hpke.generateKeyPair()
+    const plaintext = new TextEncoder().encode("hello world")
+    const info = new TextEncoder().encode("test info")
+    const aad = new TextEncoder().encode("additional data")
+    const { ct, enc } = await hpke.seal(publicKey, plaintext, info, aad)
+    const decrypted = await hpke.open(privateKey, enc, ct, info, aad)
+    expect(new TextDecoder().decode(decrypted)).toBe("hello world")
   })
 })
