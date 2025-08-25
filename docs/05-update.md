@@ -52,7 +52,10 @@ const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const addBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
@@ -66,7 +69,7 @@ let bobGroup = await joinGroup(
 )
 
 // Alice updates her key with an empty commit, transitioning to epoch 2
-const emptyCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+const emptyCommitResult = await createCommit({ state: aliceGroup, cipherSuite: impl })
 if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
 
@@ -80,7 +83,7 @@ const bobProcessCommitResult = await processPrivateMessage(
 bobGroup = bobProcessCommitResult.newState
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
-const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+const emptyCommitResult3 = await createCommit({ state: aliceGroup, cipherSuite: impl })
 if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
 

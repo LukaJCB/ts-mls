@@ -55,7 +55,10 @@ const addCharlieProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: charlie.publicPackage },
 }
-const addCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal, addCharlieProposal], impl)
+const addCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal, addCharlieProposal] },
+)
 aliceGroup = addCommitResult.newState
 if (addCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 

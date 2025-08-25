@@ -51,7 +51,10 @@ const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const addBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
@@ -69,7 +72,10 @@ const removeBobProposal: Proposal = {
   proposalType: "remove",
   remove: { removed: 1 }, // Bob's leaf index
 }
-const removeBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [removeBobProposal], impl)
+const removeBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [removeBobProposal] },
+)
 aliceGroup = removeBobCommitResult.newState
 if (removeBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 
