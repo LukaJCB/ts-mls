@@ -1,4 +1,3 @@
-import { utf8ToBytes } from "@noble/ciphers/utils"
 import { encodeVarLenData } from "../codec/variableLength"
 import { concatUint8Arrays } from "../util/byteArray"
 
@@ -15,6 +14,6 @@ export function refhash(label: string, value: Uint8Array, h: Hash) {
 }
 
 function encodeRefHash(label: string, value: Uint8Array): Uint8Array {
-  const labelBytes = utf8ToBytes(label)
+  const labelBytes = new TextEncoder().encode(label)
   return concatUint8Arrays(encodeVarLenData(labelBytes), encodeVarLenData(value))
 }
