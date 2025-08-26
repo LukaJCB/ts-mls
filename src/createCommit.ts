@@ -1,4 +1,4 @@
-import { addHistoricalReceiverData, throwIfDefined, validateRatchetTree } from "./clientState"
+import { addHistoricalReceiverData, makePskIndex, throwIfDefined, validateRatchetTree } from "./clientState"
 import { AuthenticatedContentCommit } from "./authenticatedContent"
 import {
   ClientState,
@@ -29,7 +29,7 @@ import { pathToPathSecrets } from "./pathSecrets"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath"
 import { Proposal, ProposalExternalInit } from "./proposal"
 import { ProposalOrRef } from "./proposalOrRefType"
-import { emptyPskIndex, PskIndex } from "./pskIndex"
+import { PskIndex } from "./pskIndex"
 import {
   RatchetTree,
   addLeafNode,
@@ -69,9 +69,9 @@ export interface CreateCommitOptions {
 }
 
 export async function createCommit(context: MLSContext, options?: CreateCommitOptions): Promise<CreateCommitResult> {
-  const { state, pskIndex = emptyPskIndex, cipherSuite } = context
+  const { state, pskIndex = makePskIndex(state, {}), cipherSuite } = context
   const {
-    wireAsPublicMessage,
+    wireAsPublicMessage = false,
     extraProposals = [],
     ratchetTreeExtension = false,
     authenticatedData = new Uint8Array(),
@@ -171,7 +171,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
   }
 
   const [commit] = await protectCommit(
-    !!wireAsPublicMessage,
+    wireAsPublicMessage,
     state,
     authenticatedData,
     framedContent,
