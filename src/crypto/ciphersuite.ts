@@ -1,12 +1,12 @@
-import { Signature, SignatureAlgorithm } from "./signature"
-import { Hash, HashAlgorithm } from "./hash"
-import { Kdf } from "./kdf"
-import { Hpke, HpkeAlgorithm } from "./hpke"
+import { Signature, SignatureAlgorithm } from "./signature.js"
+import { Hash, HashAlgorithm } from "./hash.js"
+import { Kdf } from "./kdf.js"
+import { Hpke, HpkeAlgorithm } from "./hpke.js"
 import { contramapEncoder, Encoder } from "../codec/tlsEncoder"
 import { decodeUint16, encodeUint16 } from "../codec/number"
 import { Decoder, mapDecoderOption } from "../codec/tlsDecoder"
 import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers"
-import { Rng } from "./rng"
+import { Rng } from "./rng.js"
 
 export interface CiphersuiteImpl {
   hash: Hash

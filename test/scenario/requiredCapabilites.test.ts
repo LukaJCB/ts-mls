@@ -12,11 +12,9 @@ import { Extension } from "../../src/extension"
 import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requiredCapabilities"
 import { ValidationError } from "../../src/mlsError"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Required Capabilities extension ${cs}`, async () => {
-    await requiredCapatabilitiesTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
+  await requiredCapatabilitiesTest(cs as CiphersuiteName)
+})
 
 async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

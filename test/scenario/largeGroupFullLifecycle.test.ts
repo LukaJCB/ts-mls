@@ -7,17 +7,19 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
 import { Credential } from "../../src/credential"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
+import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
 import { randomInt } from "crypto"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Large Group, Full Lifecycle ${cs}`, async () => {
+test.concurrent.each(Object.keys(ciphersuites))(
+  "Large Group, Full Lifecycle %s",
+  async (cs) => {
     await largeGroupFullLifecycle(cs as CiphersuiteName, 5, 8)
-  }, 60000)
-}
+  },
+  160000,
+)
 
 type MemberState = { id: string; state: ClientState; public: KeyPackage; private: PrivateKeyPackage }
 

@@ -7,17 +7,15 @@ import { refhash } from "../../src/crypto/hash"
 import { deriveSecret, deriveTreeSecret, expandWithLabel } from "../../src/crypto/kdf"
 import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke"
 
-for (const [index, x] of json.entries()) {
-  test(`crypto-basics test vectors ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await testRefHash(impl, x.ref_hash)
-    await testDeriveSecret(impl, x.derive_secret)
-    await testDeriveTreeSecret(impl, x.derive_tree_secret)
-    await testExpandWithLabel(impl, x.expand_with_label)
-    await testEncryptWithLabel(impl, x.encrypt_with_label)
-    await testSignWithLabel(impl, x.sign_with_label)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`crypto-basics test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await testRefHash(impl, x.ref_hash)
+  await testDeriveSecret(impl, x.derive_secret)
+  await testDeriveTreeSecret(impl, x.derive_tree_secret)
+  await testExpandWithLabel(impl, x.expand_with_label)
+  await testEncryptWithLabel(impl, x.encrypt_with_label)
+  await testSignWithLabel(impl, x.sign_with_label)
+})
 
 async function testDeriveSecret(impl: CiphersuiteImpl, o: { label: string; secret: string; out: string }) {
   //out == DeriveSecret(secret, label)

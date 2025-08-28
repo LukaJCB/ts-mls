@@ -1,10 +1,10 @@
-import { Decoder, mapDecodersOption } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Hash } from "./crypto/hash"
-import { decodeFramedContent, encodeFramedContent, FramedContentCommit } from "./framedContent"
-import { concatUint8Arrays } from "./util/byteArray"
-import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
+import { Decoder, mapDecodersOption } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { Hash } from "./crypto/hash.js"
+import { decodeFramedContent, encodeFramedContent, FramedContentCommit } from "./framedContent.js"
+import { concatUint8Arrays } from "./util/byteArray.js"
+import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat.js"
 
 export interface ConfirmedTranscriptHashInput {
   wireformat: WireformatName

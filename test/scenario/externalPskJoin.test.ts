@@ -7,15 +7,13 @@ import { generateKeyPackage } from "../../src/keyPackage"
 import { Proposal, ProposalAdd } from "../../src/proposal"
 import { bytesToBase64 } from "../../src/util/byteArray"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
+import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`External PSK Join ${cs}`, async () => {
-    await externalPskJoin(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
+  await externalPskJoin(cs as CiphersuiteName)
+})
 
 async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

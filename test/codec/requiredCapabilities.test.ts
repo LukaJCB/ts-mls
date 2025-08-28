@@ -3,7 +3,7 @@ import {
   decodeRequiredCapabilities,
   RequiredCapabilities,
 } from "../../src/requiredCapabilities"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("RequiredCapabilities roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeRequiredCapabilities, decodeRequiredCapabilities)

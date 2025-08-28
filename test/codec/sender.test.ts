@@ -1,5 +1,5 @@
 import { encodeSender, decodeSender } from "../../src/sender"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Sender roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeSender, decodeSender)

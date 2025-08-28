@@ -1,13 +1,13 @@
-import { decodeUint64, encodeUint64 } from "./codec/number"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite"
+import { decodeUint64, encodeUint64 } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
 
-import { expandWithLabel, Kdf } from "./crypto/kdf"
-import { decodeExtension, encodeExtension, Extension } from "./extension"
+import { expandWithLabel, Kdf } from "./crypto/kdf.js"
+import { decodeExtension, encodeExtension, Extension } from "./extension.js"
 
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
+import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
 
 export interface GroupContext {
   version: ProtocolVersionName

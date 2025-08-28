@@ -8,11 +8,9 @@ import { defaultLifetime } from "../../src/lifetime"
 import { Capabilities } from "../../src/capabilities"
 import { Extension, ExtensionType } from "../../src/extension"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`GroupInfo Custom Extensions ${cs}`, async () => {
-    await customExtensionTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`, async (cs) => {
+  await customExtensionTest(cs as CiphersuiteName)
+})
 
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

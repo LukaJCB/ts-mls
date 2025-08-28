@@ -1,6 +1,6 @@
-import { CodecError } from "../mlsError"
-import { Decoder } from "./tlsDecoder"
-import { Encoder } from "./tlsEncoder"
+import { CodecError } from "../mlsError.js"
+import { Decoder } from "./tlsDecoder.js"
+import { Encoder } from "./tlsEncoder.js"
 
 export const encodeVarLenData: Encoder<Uint8Array> = (data) => {
   const lenBytes: Uint8Array = encodeLength(data.length)

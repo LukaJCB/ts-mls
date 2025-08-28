@@ -3,19 +3,14 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "skipLibCheck": true,
-
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "Bundler",
     "noEmit": false,
     "outDir": "dist",
     "declaration": true,
-    "incremental": false,
+    "incremental": true,
     "sourceMap": true,
     "resolveJsonModule": true,
+    "types": ["vitest/globals"],
 
     /* Linting */
     "strict": true,

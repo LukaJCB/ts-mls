@@ -1,4 +1,4 @@
-import { Credential } from "./credential"
+import { Credential } from "./credential.js"
 
 export interface AuthenticationService {
   validateCredential(credential: Credential, signaturePublicKey: Uint8Array): Promise<boolean>

@@ -1,13 +1,13 @@
-import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Hash } from "./crypto/hash"
-import { Extension, extensionsEqual, extensionsSupportedByCapabilities } from "./extension"
-import { createConfirmationTag, FramedContentCommit } from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo"
-import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage"
-import { deriveKeySchedule, initializeKeySchedule, KeySchedule } from "./keySchedule"
-import { encodePskId, PreSharedKeyID } from "./presharedkey"
+import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Hash } from "./crypto/hash.js"
+import { Extension, extensionsEqual, extensionsSupportedByCapabilities } from "./extension.js"
+import { createConfirmationTag, FramedContentCommit } from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo.js"
+import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage.js"
+import { deriveKeySchedule, initializeKeySchedule, KeySchedule } from "./keySchedule.js"
+import { encodePskId, PreSharedKeyID } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -16,11 +16,11 @@ import {
   getHpkePublicKey,
   removeLeafNode,
   updateLeafNode,
-} from "./ratchetTree"
-import { RatchetTree } from "./ratchetTree"
-import { createSecretTree, SecretTree } from "./secretTree"
-import { createConfirmedHash, createInterimHash } from "./transcriptHash"
-import { treeHashRoot } from "./treeHash"
+} from "./ratchetTree.js"
+import { RatchetTree } from "./ratchetTree.js"
+import { createSecretTree, SecretTree } from "./secretTree.js"
+import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
+import { treeHashRoot } from "./treeHash.js"
 import {
   directPath,
   isLeaf,
@@ -30,13 +30,13 @@ import {
   nodeToLeafIndex,
   toLeafIndex,
   toNodeIndex,
-} from "./treemath"
-import { firstCommonAncestor } from "./updatePath"
-import { bytesToBase64 } from "./util/byteArray"
-import { constantTimeEqual } from "./util/constantTimeCompare"
-import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome"
-import { WireformatName } from "./wireformat"
-import { ProposalOrRef } from "./proposalOrRefType"
+} from "./treemath.js"
+import { firstCommonAncestor } from "./updatePath.js"
+import { bytesToBase64 } from "./util/byteArray.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
+import { WireformatName } from "./wireformat.js"
+import { ProposalOrRef } from "./proposalOrRefType.js"
 import {
   Proposal,
   ProposalAdd,
@@ -48,15 +48,22 @@ import {
   ProposalUpdate,
   Reinit,
   Remove,
-} from "./proposal"
-import { pathToRoot } from "./pathSecrets"
-import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath"
-import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals"
-import { accumulatePskSecret, PskIndex } from "./pskIndex"
-import { getSenderLeafNodeIndex } from "./sender"
-import { addToMap } from "./util/addToMap"
-import { CryptoVerificationError, CodecError, InternalError, UsageError, ValidationError, MlsError } from "./mlsError"
-import { Signature } from "./crypto/signature"
+} from "./proposal.js"
+import { pathToRoot } from "./pathSecrets.js"
+import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
+import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals.js"
+import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
+import { getSenderLeafNodeIndex } from "./sender.js"
+import { addToMap } from "./util/addToMap.js"
+import {
+  CryptoVerificationError,
+  CodecError,
+  InternalError,
+  UsageError,
+  ValidationError,
+  MlsError,
+} from "./mlsError.js"
+import { Signature } from "./crypto/signature.js"
 import {
   LeafNode,
   LeafNodeCommit,
@@ -64,17 +71,17 @@ import {
   LeafNodeUpdate,
   verifyLeafNodeSignature,
   verifyLeafNodeSignatureKeyPackage,
-} from "./leafNode"
-import { protocolVersions } from "./protocolVersion"
-import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities"
-import { Capabilities } from "./capabilities"
-import { verifyParentHashes } from "./parentHash"
-import { AuthenticationService } from "./authenticationService"
-import { LifetimeConfig } from "./lifetimeConfig"
-import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig"
-import { ClientConfig, defaultClientConfig } from "./clientConfig"
-import { decodeExternalSender } from "./externalSender"
-import { arraysEqual } from "./util/array"
+} from "./leafNode.js"
+import { protocolVersions } from "./protocolVersion.js"
+import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities.js"
+import { Capabilities } from "./capabilities.js"
+import { verifyParentHashes } from "./parentHash.js"
+import { AuthenticationService } from "./authenticationService.js"
+import { LifetimeConfig } from "./lifetimeConfig.js"
+import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
+import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { decodeExternalSender } from "./externalSender.js"
+import { arraysEqual } from "./util/array.js"
 
 export interface ClientState {
   groupContext: GroupContext

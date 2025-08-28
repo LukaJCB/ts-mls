@@ -1,8 +1,8 @@
-import { decodeOptional, encodeOptional } from "./codec/optional"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { decodePskId, encodePskId, PreSharedKeyID } from "./presharedkey"
+import { decodeOptional, encodeOptional } from "./codec/optional.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { decodePskId, encodePskId, PreSharedKeyID } from "./presharedkey.js"
 
 export interface GroupSecrets {
   joinerSecret: Uint8Array

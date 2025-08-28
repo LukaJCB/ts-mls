@@ -9,12 +9,10 @@ import { verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "../../
 import { decryptGroupInfo, decryptGroupSecrets } from "../../src/welcome"
 import { PrivateKey } from "../../src/crypto/hpke"
 
-for (const [index, x] of json.entries()) {
-  test(`welcome test vectors ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await testWelcome(x.init_priv, x.key_package, x.signer_pub, x.welcome, impl)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`welcome test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await testWelcome(x.init_priv, x.key_package, x.signer_pub, x.welcome, impl)
+})
 
 async function testWelcome(
   init_priv: string,

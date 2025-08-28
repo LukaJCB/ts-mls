@@ -1,5 +1,5 @@
-import { addHistoricalReceiverData, makePskIndex, throwIfDefined, validateRatchetTree } from "./clientState"
-import { AuthenticatedContentCommit } from "./authenticatedContent"
+import { addHistoricalReceiverData, makePskIndex, throwIfDefined, validateRatchetTree } from "./clientState.js"
+import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
   applyProposals,
@@ -8,28 +8,34 @@ import {
   exportSecret,
   checkCanSendHandshakeMessages,
   GroupActiveState,
-} from "./clientState"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { decryptWithLabel } from "./crypto/hpke"
-import { deriveSecret } from "./crypto/kdf"
+} from "./clientState.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { decryptWithLabel } from "./crypto/hpke.js"
+import { deriveSecret } from "./crypto/kdf.js"
 import {
   createContentCommitSignature,
   createConfirmationTag,
   FramedContentAuthDataCommit,
   FramedContentCommit,
-} from "./framedContent"
-import { GroupContext, encodeGroupContext } from "./groupContext"
-import { GroupInfo, GroupInfoTBS, ratchetTreeFromExtension, signGroupInfo, verifyGroupInfoSignature } from "./groupInfo"
-import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage"
-import { initializeEpoch, EpochSecrets } from "./keySchedule"
-import { MLSMessage } from "./message"
-import { protect } from "./messageProtection"
-import { protectPublicMessage } from "./messageProtectionPublic"
-import { pathToPathSecrets } from "./pathSecrets"
-import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath"
-import { Proposal, ProposalExternalInit } from "./proposal"
-import { ProposalOrRef } from "./proposalOrRefType"
-import { PskIndex } from "./pskIndex"
+} from "./framedContent.js"
+import { GroupContext, encodeGroupContext } from "./groupContext.js"
+import {
+  GroupInfo,
+  GroupInfoTBS,
+  ratchetTreeFromExtension,
+  signGroupInfo,
+  verifyGroupInfoSignature,
+} from "./groupInfo.js"
+import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage.js"
+import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
+import { MLSMessage } from "./message.js"
+import { protect } from "./messageProtection.js"
+import { protectPublicMessage } from "./messageProtectionPublic.js"
+import { pathToPathSecrets } from "./pathSecrets.js"
+import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
+import { Proposal, ProposalExternalInit } from "./proposal.js"
+import { ProposalOrRef } from "./proposalOrRefType.js"
+import { PskIndex } from "./pskIndex.js"
 import {
   RatchetTree,
   addLeafNode,
@@ -37,16 +43,16 @@ import {
   getCredentialFromLeafIndex,
   getSignaturePublicKeyFromLeafIndex,
   removeLeafNode,
-} from "./ratchetTree"
-import { createSecretTree, SecretTree } from "./secretTree"
-import { treeHashRoot } from "./treeHash"
-import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath"
-import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath"
-import { base64ToBytes } from "./util/byteArray"
-import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome"
-import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError"
-import { ClientConfig, defaultClientConfig } from "./clientConfig"
-import { Extension, extensionsSupportedByCapabilities } from "./extension"
+} from "./ratchetTree.js"
+import { createSecretTree, SecretTree } from "./secretTree.js"
+import { treeHashRoot } from "./treeHash.js"
+import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath.js"
+import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath.js"
+import { base64ToBytes } from "./util/byteArray.js"
+import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
+import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
+import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
 
 export interface MLSContext {
   state: ClientState

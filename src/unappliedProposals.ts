@@ -1,5 +1,5 @@
-import { Proposal } from "./proposal"
-import { bytesToBase64 } from "./util/byteArray"
+import { Proposal } from "./proposal.js"
+import { bytesToBase64 } from "./util/byteArray.js"
 
 export interface ProposalWithSender {
   proposal: Proposal

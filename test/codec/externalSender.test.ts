@@ -1,5 +1,5 @@
 import { encodeExternalSender, decodeExternalSender, ExternalSender } from "../../src/externalSender"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 const basic: ExternalSender = {
   signaturePublicKey: new Uint8Array([1, 2, 3]),

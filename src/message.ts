@@ -1,12 +1,12 @@
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeGroupInfo, encodeGroupInfo, GroupInfo } from "./groupInfo"
-import { decodeKeyPackage, encodeKeyPackage, KeyPackage } from "./keyPackage"
-import { decodePrivateMessage, encodePrivateMessage, PrivateMessage } from "./privateMessage"
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
-import { decodePublicMessage, encodePublicMessage, PublicMessage } from "./publicMessage"
-import { decodeWelcome, encodeWelcome, Welcome } from "./welcome"
-import { decodeWireformat, encodeWireformat } from "./wireformat"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeGroupInfo, encodeGroupInfo, GroupInfo } from "./groupInfo.js"
+import { decodeKeyPackage, encodeKeyPackage, KeyPackage } from "./keyPackage.js"
+import { decodePrivateMessage, encodePrivateMessage, PrivateMessage } from "./privateMessage.js"
+import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
+import { decodePublicMessage, encodePublicMessage, PublicMessage } from "./publicMessage.js"
+import { decodeWelcome, encodeWelcome, Welcome } from "./welcome.js"
+import { decodeWireformat, encodeWireformat } from "./wireformat.js"
 
 export interface MlsMessageProtocol {
   version: ProtocolVersionName

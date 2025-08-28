@@ -1,6 +1,6 @@
-import { encodeUint64, decodeUint64 } from "./codec/number"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
+import { encodeUint64, decodeUint64 } from "./codec/number.js"
+import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 
 export interface Lifetime {
   notBefore: bigint

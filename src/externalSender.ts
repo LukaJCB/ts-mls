@@ -1,7 +1,7 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Credential, decodeCredential, encodeCredential } from "./credential"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { Credential, decodeCredential, encodeCredential } from "./credential.js"
 
 export interface ExternalSender {
   signaturePublicKey: Uint8Array

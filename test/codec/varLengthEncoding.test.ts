@@ -7,7 +7,7 @@ import {
   encodeVarLenData,
   encodeVarLenType,
 } from "../../src/codec/variableLength"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 import { Encoder } from "../../src/codec/tlsEncoder"
 import { Decoder } from "../../src/codec/tlsDecoder"
 import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number"

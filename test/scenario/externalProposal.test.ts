@@ -15,11 +15,9 @@ import { encodeExternalSender, ExternalSender } from "../../src/externalSender"
 import { Extension } from "../../src/extension"
 import { proposeExternal } from "../../src/externalProposal"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`External Proposal ${cs}`, async () => {
-    await externalProposalTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
+  await externalProposalTest(cs as CiphersuiteName)
+})
 
 async function externalProposalTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

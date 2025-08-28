@@ -1,7 +1,7 @@
-import { encodeUint32, decodeUint32 } from "./codec/number"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
-import { encodeVarLenData, encodeVarLenType, decodeVarLenData, decodeVarLenType } from "./codec/variableLength"
+import { encodeUint32, decodeUint32 } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { encodeVarLenData, encodeVarLenType, decodeVarLenData, decodeVarLenType } from "./codec/variableLength.js"
 
 export interface ParentNode {
   hpkePublicKey: Uint8Array

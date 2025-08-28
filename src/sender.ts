@@ -1,11 +1,11 @@
-import { decodeUint32, decodeUint64, decodeUint8, encodeUint32, encodeUint64, encodeUint8 } from "./codec/number"
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { expandWithLabel } from "./crypto/kdf"
-import { enumNumberToKey } from "./util/enumHelpers"
+import { decodeUint32, decodeUint64, decodeUint8, encodeUint32, encodeUint64, encodeUint8 } from "./codec/number.js"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { expandWithLabel } from "./crypto/kdf.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 const senderTypes = {
   member: 1,

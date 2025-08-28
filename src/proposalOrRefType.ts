@@ -1,9 +1,9 @@
-import { decodeUint8, encodeUint8 } from "./codec/number"
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { decodeProposal, encodeProposal, Proposal } from "./proposal"
-import { enumNumberToKey } from "./util/enumHelpers"
+import { decodeUint8, encodeUint8 } from "./codec/number.js"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder.js"
+import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { decodeProposal, encodeProposal, Proposal } from "./proposal.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 const proposalOrRefTypes = {
   proposal: 1,

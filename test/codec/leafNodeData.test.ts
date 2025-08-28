@@ -1,5 +1,5 @@
 import { encodeLeafNodeData, decodeLeafNodeData, LeafNodeData } from "../../src/leafNode"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("LeafNodeData roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeLeafNodeData, decodeLeafNodeData)

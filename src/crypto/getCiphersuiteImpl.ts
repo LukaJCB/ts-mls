@@ -1,6 +1,6 @@
-import { Ciphersuite, CiphersuiteImpl } from "./ciphersuite"
-import { CryptoProvider } from "./provider"
-import { defaultCryptoProvider } from "./implementation/default/provider"
+import { Ciphersuite, CiphersuiteImpl } from "./ciphersuite.js"
+import { CryptoProvider } from "./provider.js"
+import { defaultCryptoProvider } from "./implementation/default/provider.js"
 
 export async function getCiphersuiteImpl(
   cs: Ciphersuite,

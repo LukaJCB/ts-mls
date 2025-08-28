@@ -13,11 +13,9 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`1:1 join ${cs}`, async () => {
-    await oneToOne(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
+  await oneToOne(cs as CiphersuiteName)
+})
 
 async function oneToOne(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

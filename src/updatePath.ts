@@ -1,26 +1,32 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Hash } from "./crypto/hash"
-import { encryptWithLabel, PrivateKey } from "./crypto/hpke"
-import { deriveSecret } from "./crypto/kdf"
-import { encodeGroupContext, GroupContext } from "./groupContext"
-import { decodeLeafNodeCommit, encodeLeafNode, LeafNodeCommit, LeafNodeTBSCommit, signLeafNodeCommit } from "./leafNode"
-import { calculateParentHash } from "./parentHash"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Hash } from "./crypto/hash.js"
+import { encryptWithLabel, PrivateKey } from "./crypto/hpke.js"
+import { deriveSecret } from "./crypto/kdf.js"
+import { encodeGroupContext, GroupContext } from "./groupContext.js"
+import {
+  decodeLeafNodeCommit,
+  encodeLeafNode,
+  LeafNodeCommit,
+  LeafNodeTBSCommit,
+  signLeafNodeCommit,
+} from "./leafNode.js"
+import { calculateParentHash } from "./parentHash.js"
 import {
   filteredDirectPath,
   filteredDirectPathAndCopathResolution,
   getHpkePublicKey,
   Node,
   RatchetTree,
-} from "./ratchetTree"
-import { treeHashRoot } from "./treeHash"
-import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath"
-import { updateArray } from "./util/array"
-import { constantTimeEqual } from "./util/constantTimeCompare"
-import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext"
-import { InternalError, ValidationError } from "./mlsError"
+} from "./ratchetTree.js"
+import { treeHashRoot } from "./treeHash.js"
+import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath.js"
+import { updateArray } from "./util/array.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext.js"
+import { InternalError, ValidationError } from "./mlsError.js"
 
 export interface UpdatePathNode {
   hpkePublicKey: Uint8Array

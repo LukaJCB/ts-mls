@@ -1,8 +1,8 @@
-import { CredentialTypeName, encodeCredentialType, decodeCredentialType } from "./credentialType"
-import { encodeVarLenType, decodeVarLenType } from "./codec/variableLength"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { decodeUint16, encodeUint16 } from "./codec/number"
+import { CredentialTypeName, encodeCredentialType, decodeCredentialType } from "./credentialType.js"
+import { encodeVarLenType, decodeVarLenType } from "./codec/variableLength.js"
+import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { decodeUint16, encodeUint16 } from "./codec/number.js"
 
 export interface RequiredCapabilities {
   extensionTypes: number[]

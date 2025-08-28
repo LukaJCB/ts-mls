@@ -1,10 +1,10 @@
-import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType"
-import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite"
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength"
-import { decodeUint16, encodeUint16 } from "./codec/number"
+import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType.js"
+import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
+import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
+import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength.js"
+import { decodeUint16, encodeUint16 } from "./codec/number.js"
 
 export interface Capabilities {
   versions: ProtocolVersionName[]

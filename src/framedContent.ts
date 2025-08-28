@@ -1,16 +1,16 @@
-import { decodeUint64, encodeUint64 } from "./codec/number"
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Commit, decodeCommit, encodeCommit } from "./commit"
-import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Hash } from "./crypto/hash"
-import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature"
-import { encodeGroupContext, GroupContext } from "./groupContext"
-import { encodeWireformat, WireformatName } from "./wireformat"
-import { decodeProposal, encodeProposal, Proposal } from "./proposal"
-import { encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
+import { decodeUint64, encodeUint64 } from "./codec/number.js"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { Commit, decodeCommit, encodeCommit } from "./commit.js"
+import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Hash } from "./crypto/hash.js"
+import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
+import { encodeGroupContext, GroupContext } from "./groupContext.js"
+import { encodeWireformat, WireformatName } from "./wireformat.js"
+import { decodeProposal, encodeProposal, Proposal } from "./proposal.js"
+import { encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
 import {
   decodeSender,
   encodeSender,
@@ -19,7 +19,7 @@ import {
   SenderMember,
   SenderNewMemberCommit,
   SenderNewMemberProposal,
-} from "./sender"
+} from "./sender.js"
 
 export type FramedContentInfo = FramedContentApplicationData | FramedContentProposalData | FramedContentCommitData
 

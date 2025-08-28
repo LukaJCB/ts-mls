@@ -1,11 +1,11 @@
-import { AuthenticatedContent } from "./authenticatedContent"
-import { decodeUint64, encodeUint64 } from "./codec/number"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { decodeCommit, encodeCommit } from "./commit"
-import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
+import { AuthenticatedContent } from "./authenticatedContent.js"
+import { decodeUint64, encodeUint64 } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { decodeCommit, encodeCommit } from "./commit.js"
+import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
   decodeFramedContentAuthDataCommit,
   encodeFramedContentAuthData,
@@ -14,9 +14,9 @@ import {
   FramedContentAuthDataCommit,
   FramedContentCommitData,
   FramedContentProposalData,
-} from "./framedContent"
-import { byteLengthToPad, PaddingConfig } from "./paddingConfig"
-import { decodeProposal, encodeProposal } from "./proposal"
+} from "./framedContent.js"
+import { byteLengthToPad, PaddingConfig } from "./paddingConfig.js"
+import { decodeProposal, encodeProposal } from "./proposal.js"
 import {
   decodeSenderData,
   encodeSenderData,
@@ -25,7 +25,7 @@ import {
   expandSenderDataNonce,
   SenderData,
   SenderDataAAD,
-} from "./sender"
+} from "./sender.js"
 
 export interface PrivateMessage {
   groupId: Uint8Array

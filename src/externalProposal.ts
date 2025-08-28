@@ -1,13 +1,13 @@
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Extension, extensionsSupportedByCapabilities } from "./extension"
-import { decodeExternalSender } from "./externalSender"
-import { GroupInfo } from "./groupInfo"
-import { KeyPackage, PrivateKeyPackage } from "./keyPackage"
-import { MLSMessage } from "./message"
-import { protectExternalProposalPublic } from "./messageProtectionPublic"
-import { UsageError, ValidationError } from "./mlsError"
-import { Proposal } from "./proposal"
-import { constantTimeEqual } from "./util/constantTimeCompare"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
+import { decodeExternalSender } from "./externalSender.js"
+import { GroupInfo } from "./groupInfo.js"
+import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
+import { MLSMessage } from "./message.js"
+import { protectExternalProposalPublic } from "./messageProtectionPublic.js"
+import { UsageError, ValidationError } from "./mlsError.js"
+import { Proposal } from "./proposal.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 export async function proposeAddExternal(
   groupInfo: GroupInfo,

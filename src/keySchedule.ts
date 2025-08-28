@@ -1,7 +1,7 @@
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { deriveSecret, expandWithLabel, Kdf } from "./crypto/kdf"
-import { extractEpochSecret, extractJoinerSecret, GroupContext } from "./groupContext"
-import { extractWelcomeSecret } from "./groupInfo"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { deriveSecret, expandWithLabel, Kdf } from "./crypto/kdf.js"
+import { extractEpochSecret, extractJoinerSecret, GroupContext } from "./groupContext.js"
+import { extractWelcomeSecret } from "./groupInfo.js"
 
 export interface KeySchedule {
   epochSecret: Uint8Array

@@ -1,12 +1,12 @@
-import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
+import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
   FramedContentTBSApplicationOrProposal,
   signFramedContentApplicationOrProposal,
   verifyFramedContentSignature,
-} from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { Proposal } from "./proposal"
+} from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { Proposal } from "./proposal.js"
 import {
   decodePrivateMessageContent,
   decryptSenderData,
@@ -17,14 +17,14 @@ import {
   PrivateMessage,
   PrivateMessageContent,
   toAuthenticatedContent,
-} from "./privateMessage"
-import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree"
-import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
-import { SenderData, SenderDataAAD } from "./sender"
-import { leafToNodeIndex, toLeafIndex } from "./treemath"
-import { KeyRetentionConfig } from "./keyRetentionConfig"
-import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError"
-import { PaddingConfig } from "./paddingConfig"
+} from "./privateMessage.js"
+import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree.js"
+import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
+import { SenderData, SenderDataAAD } from "./sender.js"
+import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
+import { KeyRetentionConfig } from "./keyRetentionConfig.js"
+import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
+import { PaddingConfig } from "./paddingConfig.js"
 
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage

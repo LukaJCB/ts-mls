@@ -1,10 +1,10 @@
-import { checkCanSendApplicationMessages, ClientState, processProposal } from "./clientState"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { MLSMessage } from "./message"
-import { protectProposal, protectApplicationData } from "./messageProtection"
-import { protectProposalPublic } from "./messageProtectionPublic"
-import { Proposal } from "./proposal"
-import { addUnappliedProposal } from "./unappliedProposals"
+import { checkCanSendApplicationMessages, ClientState, processProposal } from "./clientState.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { MLSMessage } from "./message.js"
+import { protectProposal, protectApplicationData } from "./messageProtection.js"
+import { protectProposalPublic } from "./messageProtectionPublic.js"
+import { Proposal } from "./proposal.js"
+import { addUnappliedProposal } from "./unappliedProposals.js"
 
 export async function createProposal(
   state: ClientState,

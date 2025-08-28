@@ -1,5 +1,5 @@
-import { Decoder } from "./tlsDecoder"
-import { Encoder } from "./tlsEncoder"
+import { Decoder } from "./tlsDecoder.js"
+import { Encoder } from "./tlsEncoder.js"
 
 export const encodeUint8: Encoder<number> = (n) => {
   const buffer = new ArrayBuffer(1)

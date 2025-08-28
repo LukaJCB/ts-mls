@@ -11,11 +11,10 @@ import { GroupContext } from "../../src/groupContext"
 import { defaultLifetimeConfig } from "../../src/lifetimeConfig"
 import { defaultAuthenticationService } from "../../src/authenticationService"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test("should reject structurally unsound ratchet tree", async () => {
-    await testStructuralIntegrity(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))("should reject structurally unsound ratchet tree %s", async (cs) => {
+  await testStructuralIntegrity(cs as CiphersuiteName)
+})
+
 async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }

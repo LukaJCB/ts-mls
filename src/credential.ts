@@ -1,7 +1,7 @@
-import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType"
+import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType.js"
 
 export type Credential = CredentialBasic | CredentialX509
 

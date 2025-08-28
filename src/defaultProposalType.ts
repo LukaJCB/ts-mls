@@ -1,7 +1,7 @@
-import { decodeUint16, encodeUint16 } from "./codec/number"
-import { Decoder, mapDecoderOption } from "./codec/tlsDecoder"
-import { contramapEncoder, Encoder } from "./codec/tlsEncoder"
-import { enumNumberToKey } from "./util/enumHelpers"
+import { decodeUint16, encodeUint16 } from "./codec/number.js"
+import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
+import { contramapEncoder, Encoder } from "./codec/tlsEncoder.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 export const defaultProposalTypes = {
   add: 1,

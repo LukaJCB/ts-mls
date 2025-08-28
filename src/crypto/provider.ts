@@ -1,4 +1,4 @@
-import { Ciphersuite, CiphersuiteImpl } from "./ciphersuite"
+import { Ciphersuite, CiphersuiteImpl } from "./ciphersuite.js"
 
 export interface CryptoProvider {
   getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl>

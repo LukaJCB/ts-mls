@@ -1,10 +1,10 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Hash } from "./crypto/hash"
-import { InternalError } from "./mlsError"
-import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree"
-import { treeHash } from "./treeHash"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { Hash } from "./crypto/hash.js"
+import { InternalError } from "./mlsError.js"
+import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
+import { treeHash } from "./treeHash.js"
 import {
   isLeaf,
   LeafIndex,
@@ -16,9 +16,9 @@ import {
   root,
   toLeafIndex,
   toNodeIndex,
-} from "./treemath"
+} from "./treemath.js"
 
-import { constantTimeEqual } from "./util/constantTimeCompare"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 export interface ParentHashInput {
   encryptionKey: Uint8Array

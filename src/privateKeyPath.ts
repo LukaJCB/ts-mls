@@ -1,7 +1,7 @@
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { deriveSecret } from "./crypto/kdf"
-import { PathSecrets } from "./pathSecrets"
-import { leafToNodeIndex, toLeafIndex } from "./treemath"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { deriveSecret } from "./crypto/kdf.js"
+import { PathSecrets } from "./pathSecrets.js"
+import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
 
 export interface PrivateKeyPath {
   leafIndex: number

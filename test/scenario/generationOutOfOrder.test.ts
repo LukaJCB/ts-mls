@@ -8,7 +8,7 @@ import { CiphersuiteImpl, CiphersuiteName, ciphersuites, getCiphersuiteFromName 
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd } from "../../src/proposal"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
+import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { PrivateMessage } from "../../src/privateMessage"
@@ -17,23 +17,17 @@ import { ValidationError } from "../../src/mlsError"
 import { defaultClientConfig } from "../../src/clientConfig"
 
 describe("Out of order message processing by generation", () => {
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation ${cs}`, async () => {
-      await generationOutOfOrder(cs as CiphersuiteName)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation %s`, async (cs) => {
+    await generationOutOfOrder(cs as CiphersuiteName)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation random ${cs}`, async () => {
-      await generationOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForGenerations)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation random %s`, async (cs) => {
+    await generationOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForGenerations)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation limit reached fails ${cs}`, async () => {
-      await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation limit reached fails %s`, async (cs) => {
+    await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
+  })
 })
 
 type TestParticipants = {

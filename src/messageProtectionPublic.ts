@@ -4,20 +4,20 @@ import {
   AuthenticatedContentTBM,
   createMembershipTag,
   verifyMembershipTag,
-} from "./authenticatedContent"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
+} from "./authenticatedContent.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
   FramedContent,
   signFramedContentApplicationOrProposal,
   toTbs,
   verifyFramedContentSignature,
-} from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { CryptoVerificationError, UsageError } from "./mlsError"
-import { Proposal } from "./proposal"
-import { ExternalPublicMessage, findSignaturePublicKey, PublicMessage } from "./publicMessage"
-import { RatchetTree } from "./ratchetTree"
-import { SenderNonMember } from "./sender"
+} from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { CryptoVerificationError, UsageError } from "./mlsError.js"
+import { Proposal } from "./proposal.js"
+import { ExternalPublicMessage, findSignaturePublicKey, PublicMessage } from "./publicMessage.js"
+import { RatchetTree } from "./ratchetTree.js"
+import { SenderNonMember } from "./sender.js"
 
 export interface ProtectProposalPublicResult {
   publicMessage: PublicMessage

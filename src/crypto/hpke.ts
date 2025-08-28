@@ -1,6 +1,6 @@
-import { AeadAlgorithm } from "./aead"
-import { KdfAlgorithm } from "./kdf"
-import { KemAlgorithm } from "./kem"
+import { AeadAlgorithm } from "./aead.js"
+import { KdfAlgorithm } from "./kdf.js"
+import { KemAlgorithm } from "./kem.js"
 import { encodeVarLenData } from "../codec/variableLength"
 import { concatUint8Arrays } from "../util/byteArray"
 

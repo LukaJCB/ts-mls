@@ -2,11 +2,9 @@ import json from "../../test_vectors/tree-math.json"
 import { left, nodeWidth, parent, right, root, sibling, toNodeIndex } from "../../src/treemath"
 import { InternalError } from "../../src/mlsError"
 
-for (const [index, x] of json.entries()) {
-  test(`tree math test vectors ${index}`, () => {
-    treemathTest(x)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`tree math test vectors %i`, (_index, x) => {
+  treemathTest(x)
+})
 
 function treemathTest(t: {
   n_leaves: number

@@ -1,4 +1,4 @@
-import { ProposalWithSender } from "./unappliedProposals"
+import { ProposalWithSender } from "./unappliedProposals.js"
 
 export type IncomingMessageAction = "accept" | "reject"
 

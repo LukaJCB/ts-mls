@@ -1,6 +1,6 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
-import { encodeVarLenData, decodeVarLenData } from "./codec/variableLength"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { encodeVarLenData, decodeVarLenData } from "./codec/variableLength.js"
 
 export interface HPKECiphertext {
   kemOutput: Uint8Array

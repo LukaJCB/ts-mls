@@ -7,18 +7,16 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
+import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { defaultGreaseConfig, greaseExtensions } from "../../src/grease"
 import { Capabilities } from "../../src/capabilities"
 import { extensionTypeToNumber } from "../../src/extension"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Grease ${cs}`, async () => {
-    await greaseTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
+  await greaseTest(cs as CiphersuiteName)
+})
 
 async function greaseTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

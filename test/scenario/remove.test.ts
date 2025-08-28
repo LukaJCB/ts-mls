@@ -8,16 +8,14 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common"
+import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { UsageError } from "../../src/mlsError"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Remove ${cs}`, async () => {
-    await remove(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
+  await remove(cs as CiphersuiteName)
+})
 
 async function remove(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

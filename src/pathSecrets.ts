@@ -1,8 +1,8 @@
-import { Kdf, deriveSecret } from "./crypto/kdf"
-import { InternalError } from "./mlsError"
-import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree"
-import { root, leafWidth, NodeIndex } from "./treemath"
-import { PathSecret } from "./updatePath"
+import { Kdf, deriveSecret } from "./crypto/kdf.js"
+import { InternalError } from "./mlsError.js"
+import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree.js"
+import { root, leafWidth, NodeIndex } from "./treemath.js"
+import { PathSecret } from "./updatePath.js"
 
 /**
  * PathSecrets is a record with nodeIndex as keys and the path secret as values

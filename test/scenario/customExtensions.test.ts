@@ -12,11 +12,9 @@ import { Capabilities } from "../../src/capabilities"
 import { Extension, ExtensionType } from "../../src/extension"
 import { ValidationError } from "../../src/mlsError"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Custom Extensions ${cs}`, async () => {
-    await customExtensionTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
+  await customExtensionTest(cs as CiphersuiteName)
+})
 
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

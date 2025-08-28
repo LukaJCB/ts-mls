@@ -8,7 +8,7 @@ import {
   encodePskType,
   encodeResumptionPSKUsage,
 } from "../../src/presharedkey"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 test("PSKType roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePskType, decodePskType)

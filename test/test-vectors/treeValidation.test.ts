@@ -8,12 +8,10 @@ import { verifyLeafNodeSignature } from "../../src/leafNode"
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath"
 import { verifyParentHashes } from "../../src/parentHash"
 
-for (const [index, x] of json.entries()) {
-  test(`tree-validation test vectors" ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await treeOperationsTest(x, impl)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`tree-validation test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await treeOperationsTest(x, impl)
+})
 
 type TreeValidationData = {
   tree: string

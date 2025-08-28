@@ -1,8 +1,8 @@
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Extension } from "./extension"
-import { decodeExternalSender, ExternalSender } from "./externalSender"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { Extension } from "./extension.js"
+import { decodeExternalSender, ExternalSender } from "./externalSender.js"
 import {
   decodeFramedContent,
   decodeFramedContentAuthData,
@@ -10,12 +10,12 @@ import {
   encodeFramedContentAuthData,
   FramedContent,
   FramedContentAuthData,
-} from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { CodecError, ValidationError } from "./mlsError"
-import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
-import { SenderTypeName } from "./sender"
-import { toLeafIndex } from "./treemath"
+} from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { CodecError, ValidationError } from "./mlsError.js"
+import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
+import { SenderTypeName } from "./sender.js"
+import { toLeafIndex } from "./treemath.js"
 
 type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
 type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }

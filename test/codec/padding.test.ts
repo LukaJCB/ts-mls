@@ -4,7 +4,7 @@ import {
   decodePrivateMessageContent,
   PrivateMessageContent,
 } from "../../src/privateMessage"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PrivateMessageContent roundtrip with padding", () => {
   const roundtrip = (config: PaddingConfig) =>

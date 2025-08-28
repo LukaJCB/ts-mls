@@ -1,5 +1,5 @@
 import { encodeHpkeCiphertext, decodeHpkeCiphertext, HPKECiphertext } from "../../src/hpkeCiphertext"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 const dummy: HPKECiphertext = {
   kemOutput: new Uint8Array([1, 2, 3]),

@@ -1,5 +1,5 @@
-import { Credential, CredentialCustom } from "./credential"
-import { CredentialTypeName } from "./credentialType"
+import { Credential, CredentialCustom } from "./credential.js"
+import { CredentialTypeName } from "./credentialType.js"
 
 function createCustomCredentialType(credentialId: number): CredentialTypeName {
   return credentialId.toString() as CredentialTypeName

@@ -1,9 +1,9 @@
-import { decodeOptional, encodeOptional } from "./codec/optional"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength"
-import { decodeProposalOrRef, encodeProposalOrRef, ProposalOrRef } from "./proposalOrRefType"
-import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "./updatePath"
+import { decodeOptional, encodeOptional } from "./codec/optional.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength.js"
+import { decodeProposalOrRef, encodeProposalOrRef, ProposalOrRef } from "./proposalOrRefType.js"
+import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "./updatePath.js"
 
 export interface Commit {
   proposals: ProposalOrRef[]

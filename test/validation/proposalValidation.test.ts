@@ -18,11 +18,9 @@ import { Extension } from "../../src/extension"
 import { LeafNode } from "../../src/leafNode"
 import { proposeExternal } from "../../src"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Proposal Validation ${cs}`, async () => {
-    await remove(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Proposal Validation %s`, async (cs) => {
+  await remove(cs as CiphersuiteName)
+})
 
 async function remove(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

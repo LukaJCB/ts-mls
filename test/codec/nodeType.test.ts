@@ -1,5 +1,5 @@
 import { encodeNodeType, decodeNodeType, NodeTypeName } from "../../src/nodeType"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("NodeTypeName roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeNodeType, decodeNodeType)

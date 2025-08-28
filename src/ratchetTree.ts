@@ -1,10 +1,10 @@
-import { Encoder, contramapEncoder, contramapEncoders } from "./codec/tlsEncoder"
-import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder"
+import { Encoder, contramapEncoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
-import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength"
-import { decodeNodeType, encodeNodeType } from "./nodeType"
-import { decodeOptional, encodeOptional } from "./codec/optional"
-import { ParentNode, encodeParentNode, decodeParentNode } from "./parentNode"
+import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength.js"
+import { decodeNodeType, encodeNodeType } from "./nodeType.js"
+import { decodeOptional, encodeOptional } from "./codec/optional.js"
+import { ParentNode, encodeParentNode, decodeParentNode } from "./parentNode.js"
 import {
   copath,
   directPath,
@@ -20,10 +20,10 @@ import {
   root,
   toLeafIndex,
   toNodeIndex,
-} from "./treemath"
-import { LeafNode, encodeLeafNode, decodeLeafNode } from "./leafNode"
-import { constantTimeEqual } from "./util/constantTimeCompare"
-import { InternalError, ValidationError } from "./mlsError"
+} from "./treemath.js"
+import { LeafNode, encodeLeafNode, decodeLeafNode } from "./leafNode.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { InternalError, ValidationError } from "./mlsError.js"
 
 export type Node = NodeParent | NodeLeaf
 type NodeParent = { nodeType: "parent"; parent: ParentNode }

@@ -1,5 +1,5 @@
 import { encodeKeyPackageTBS, decodeKeyPackageTBS } from "../../src/keyPackage"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("KeyPackageTBS roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeKeyPackageTBS, decodeKeyPackageTBS)

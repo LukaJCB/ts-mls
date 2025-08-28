@@ -8,19 +8,17 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { Proposal, ProposalAdd } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common"
+import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { WireformatName } from "../../src/wireformat"
 import { processMessage } from "../../src/processMessages"
-import { acceptAll } from "../../src/IncomingMessageAction"
+import { acceptAll } from "../../src/incomingMessageAction"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Leave Proposal ${cs}`, async () => {
-    await leaveProposal(cs as CiphersuiteName, true)
-    await leaveProposal(cs as CiphersuiteName, false)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
+  await leaveProposal(cs as CiphersuiteName, true)
+  await leaveProposal(cs as CiphersuiteName, false)
+})
 
 async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

@@ -1,13 +1,20 @@
-import { Capabilities, decodeCapabilities, encodeCapabilities } from "./capabilities"
-import { encodeUint32 } from "./codec/number"
-import { Decoder, mapDecoders, mapDecoder, flatMapDecoder, succeedDecoder, mapDecoderOption } from "./codec/tlsDecoder"
-import { Encoder, contramapEncoders, contramapEncoder } from "./codec/tlsEncoder"
-import { encodeVarLenData, decodeVarLenData, encodeVarLenType, decodeVarLenType } from "./codec/variableLength"
-import { encodeCredential, decodeCredential, Credential } from "./credential"
-import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature"
-import { Extension, encodeExtension, decodeExtension } from "./extension"
-import { encodeLeafNodeSource, decodeLeafNodeSource, LeafNodeSourceName } from "./leafNodeSource"
-import { Lifetime, encodeLifetime, decodeLifetime } from "./lifetime"
+import { Capabilities, decodeCapabilities, encodeCapabilities } from "./capabilities.js"
+import { encodeUint32 } from "./codec/number.js"
+import {
+  Decoder,
+  mapDecoders,
+  mapDecoder,
+  flatMapDecoder,
+  succeedDecoder,
+  mapDecoderOption,
+} from "./codec/tlsDecoder.js"
+import { Encoder, contramapEncoders, contramapEncoder } from "./codec/tlsEncoder.js"
+import { encodeVarLenData, decodeVarLenData, encodeVarLenType, decodeVarLenType } from "./codec/variableLength.js"
+import { encodeCredential, decodeCredential, Credential } from "./credential.js"
+import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
+import { Extension, encodeExtension, decodeExtension } from "./extension.js"
+import { encodeLeafNodeSource, decodeLeafNodeSource, LeafNodeSourceName } from "./leafNodeSource.js"
+import { Lifetime, encodeLifetime, decodeLifetime } from "./lifetime.js"
 
 export interface LeafNodeData {
   hpkePublicKey: Uint8Array

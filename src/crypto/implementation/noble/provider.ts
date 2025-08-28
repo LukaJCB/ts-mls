@@ -1,10 +1,10 @@
 import { Ciphersuite, CiphersuiteImpl } from "../../ciphersuite"
 
-import { makeHashImpl } from "./makeHashImpl"
-import { makeNobleSignatureImpl } from "./makeNobleSignatureImpl"
-import { makeHpke } from "./makeHpke"
-import { makeKdfImpl, makeKdf } from "./makeKdfImpl"
-import { rng } from "./rng"
+import { makeHashImpl } from "./makeHashImpl.js"
+import { makeNobleSignatureImpl } from "./makeNobleSignatureImpl.js"
+import { makeHpke } from "./makeHpke.js"
+import { makeKdfImpl, makeKdf } from "./makeKdfImpl.js"
+import { rng } from "./rng.js"
 
 export const nobleCryptoProvider = {
   async getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl> {

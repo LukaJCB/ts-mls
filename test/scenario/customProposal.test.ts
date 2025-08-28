@@ -6,17 +6,15 @@ import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { Proposal, ProposalAdd } from "../../src/proposal"
-import { testEveryoneCanMessageEveryone } from "./common"
+import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { Capabilities } from "../../src/capabilities"
 import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src"
 import { UsageError } from "../../src/mlsError"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Custom Proposals ${cs}`, async () => {
-    await customProposalTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
+  await customProposalTest(cs as CiphersuiteName)
+})
 
 async function customProposalTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

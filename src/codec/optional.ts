@@ -1,7 +1,7 @@
-import { concatUint8Arrays } from "../util/byteArray"
-import { decodeUint8, encodeUint8 } from "./number"
-import { Decoder } from "./tlsDecoder"
-import { Encoder } from "./tlsEncoder"
+import { concatUint8Arrays } from "../util/byteArray.js"
+import { decodeUint8, encodeUint8 } from "./number.js"
+import { Decoder } from "./tlsDecoder.js"
+import { Encoder } from "./tlsEncoder.js"
 
 export function encodeOptional<T>(encodeT: Encoder<T>): Encoder<T | undefined> {
   return (t) => (t ? prependPresenceOctet(encodeT(t)) : new Uint8Array([0x0]))

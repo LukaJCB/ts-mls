@@ -8,7 +8,7 @@ import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd } from "../../src/proposal"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
+import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { PrivateMessage } from "../../src/privateMessage"
@@ -20,23 +20,17 @@ import { ValidationError } from "../../src/mlsError"
 import { defaultClientConfig } from "../../src/clientConfig"
 
 describe("Out of order message processing by epoch", () => {
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order epoch ${cs}`, async () => {
-      await epochOutOfOrder(cs as CiphersuiteName)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
+    await epochOutOfOrder(cs as CiphersuiteName)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order epoch random ${cs}`, async () => {
-      await epochOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForEpochs)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch random %s`, async (cs) => {
+    await epochOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForEpochs)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order epoch limit reached fails ${cs}`, async () => {
-      await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch limit reached fails %s`, async (cs) => {
+    await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
+  })
 })
 
 type TestParticipants = {

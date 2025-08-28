@@ -10,16 +10,14 @@ import { ProposalAdd } from "../../src/proposal"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { processMessage } from "../../src/processMessages"
-import { acceptAll } from "../../src/IncomingMessageAction"
+import { acceptAll } from "../../src/incomingMessageAction"
 
 import { ProtocolVersionName } from "../../src/protocolVersion"
 import { ValidationError } from "../../src/mlsError"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Reinit Validation ${cs}`, async () => {
-    await reinitValidation(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
+  await reinitValidation(cs as CiphersuiteName)
+})
 
 async function reinitValidation(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

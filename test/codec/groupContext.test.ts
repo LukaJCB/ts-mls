@@ -1,5 +1,5 @@
 import { encodeGroupContext, decodeGroupContext, GroupContext } from "../../src/groupContext"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalGroupContext: GroupContext = {
   version: "mls10",

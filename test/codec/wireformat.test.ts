@@ -1,5 +1,5 @@
 import { encodeWireformat, decodeWireformat, WireformatName } from "../../src/wireformat"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("WireformatName roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeWireformat, decodeWireformat)

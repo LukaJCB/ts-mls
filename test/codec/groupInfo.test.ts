@@ -6,7 +6,7 @@ import {
   decodeGroupInfo,
   GroupInfo,
 } from "../../src/groupInfo"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 import { GroupContext } from "../../src/groupContext"
 
 const dummyGroupContext: GroupContext = {

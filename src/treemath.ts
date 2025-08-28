@@ -1,5 +1,5 @@
-import { InternalError } from "./mlsError"
-import { Brand } from "./util/brand"
+import { InternalError } from "./mlsError.js"
+import { Brand } from "./util/brand.js"
 
 export type NodeIndex = Brand<number, "NodeIndex">
 

@@ -1,5 +1,5 @@
 import { encodePrivateContentAAD, decodePrivateContentAAD } from "../../src/privateMessage"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PrivateContentAAD roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePrivateContentAAD, decodePrivateContentAAD)

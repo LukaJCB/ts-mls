@@ -1,12 +1,12 @@
-import { ContentTypeName } from "./contentType"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf"
-import { KeyRetentionConfig } from "./keyRetentionConfig"
-import { InternalError, ValidationError } from "./mlsError"
-import { ReuseGuard, SenderData } from "./sender"
-import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath"
-import { updateArray } from "./util/array"
-import { repeatAsync } from "./util/repeat"
+import { ContentTypeName } from "./contentType.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
+import { KeyRetentionConfig } from "./keyRetentionConfig.js"
+import { InternalError, ValidationError } from "./mlsError.js"
+import { ReuseGuard, SenderData } from "./sender.js"
+import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath.js"
+import { updateArray } from "./util/array.js"
+import { repeatAsync } from "./util/repeat.js"
 
 export interface GenerationSecret {
   secret: Uint8Array

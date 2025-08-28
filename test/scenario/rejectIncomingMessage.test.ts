@@ -13,12 +13,10 @@ import { processMessage } from "../../src/processMessages"
 import { encodeExternalSender } from "../../src/externalSender"
 import { WireformatName } from "../../src/wireformat"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Reject incoming message ${cs}`, async () => {
-    await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
-    await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
+  await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
+  await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
+})
 
 async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

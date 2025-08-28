@@ -7,15 +7,13 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { generateKeyPackage } from "../../src/keyPackage"
 import { ProposalAdd } from "../../src/proposal"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
+import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`RatchetTree extension ${cs}`, async () => {
-    await ratchetTreeExtension(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`RatchetTree extension %s`, async (cs) => {
+  await ratchetTreeExtension(cs as CiphersuiteName)
+})
 
 async function ratchetTreeExtension(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))

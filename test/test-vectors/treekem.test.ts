@@ -19,12 +19,14 @@ import { PrivateKeyPath, toPrivateKeyPath } from "../../src/privateKeyPath"
 import { PathSecrets } from "../../src/pathSecrets"
 import { hpkeKeysMatch } from "../crypto/keyMatch"
 
-for (const [index, x] of json.entries()) {
-  test(`treekem test vectors ${index}`, async () => {
+test.concurrent.each(json.map((x, index) => [index, x]))(
+  `treekem test vectors %i`,
+  async (_index, x) => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
     await treekemTest(x, impl)
-  }, 10000)
-}
+  },
+  20000,
+)
 
 interface TreeKEMState {
   cipher_suite: number

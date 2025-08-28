@@ -1,4 +1,4 @@
-import { AuthenticatedContentCommit } from "./authenticatedContent"
+import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
   GroupActiveState,
@@ -8,27 +8,27 @@ import {
   processProposal,
   throwIfDefined,
   validateLeafNodeUpdateOrCommit,
-} from "./clientState"
-import { applyUpdatePathSecret } from "./createCommit"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Kdf, deriveSecret } from "./crypto/kdf"
-import { verifyConfirmationTag } from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./IncomingMessageAction"
-import { initializeEpoch } from "./keySchedule"
-import { MlsPrivateMessage, MlsPublicMessage } from "./message"
-import { unprotectPrivateMessage } from "./messageProtection"
-import { unprotectPublicMessage } from "./messageProtectionPublic"
-import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError"
-import { pathToRoot } from "./pathSecrets"
-import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath"
-import { PrivateMessage } from "./privateMessage"
-import { emptyPskIndex, PskIndex } from "./pskIndex"
-import { PublicMessage } from "./publicMessage"
-import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree"
-import { createSecretTree } from "./secretTree"
-import { getSenderLeafNodeIndex, Sender } from "./sender"
-import { treeHashRoot } from "./treeHash"
+} from "./clientState.js"
+import { applyUpdatePathSecret } from "./createCommit.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Kdf, deriveSecret } from "./crypto/kdf.js"
+import { verifyConfirmationTag } from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./incomingMessageAction.js"
+import { initializeEpoch } from "./keySchedule.js"
+import { MlsPrivateMessage, MlsPublicMessage } from "./message.js"
+import { unprotectPrivateMessage } from "./messageProtection.js"
+import { unprotectPublicMessage } from "./messageProtectionPublic.js"
+import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError.js"
+import { pathToRoot } from "./pathSecrets.js"
+import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
+import { PrivateMessage } from "./privateMessage.js"
+import { emptyPskIndex, PskIndex } from "./pskIndex.js"
+import { PublicMessage } from "./publicMessage.js"
+import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree.js"
+import { createSecretTree } from "./secretTree.js"
+import { getSenderLeafNodeIndex, Sender } from "./sender.js"
+import { treeHashRoot } from "./treeHash.js"
 import {
   LeafIndex,
   leafToNodeIndex,
@@ -38,10 +38,10 @@ import {
   root,
   toLeafIndex,
   toNodeIndex,
-} from "./treemath"
-import { UpdatePath, applyUpdatePath } from "./updatePath"
-import { addToMap } from "./util/addToMap"
-import { WireformatName } from "./wireformat"
+} from "./treemath.js"
+import { UpdatePath, applyUpdatePath } from "./updatePath.js"
+import { addToMap } from "./util/addToMap.js"
+import { WireformatName } from "./wireformat.js"
 
 export type ProcessMessageResult =
   | {

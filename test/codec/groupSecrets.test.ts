@@ -1,5 +1,5 @@
 import { encodeGroupSecrets, decodeGroupSecrets } from "../../src/groupSecrets"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("GroupSecrets roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeGroupSecrets, decodeGroupSecrets)

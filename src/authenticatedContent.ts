@@ -1,6 +1,6 @@
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { Hash, refhash } from "./crypto/hash"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { Hash, refhash } from "./crypto/hash.js"
 import {
   decodeFramedContent,
   decodeFramedContentAuthData,
@@ -14,8 +14,8 @@ import {
   FramedContentData,
   FramedContentProposalData,
   FramedContentTBS,
-} from "./framedContent"
-import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
+} from "./framedContent.js"
+import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat.js"
 
 export interface AuthenticatedContent {
   wireformat: WireformatName

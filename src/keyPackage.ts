@@ -1,21 +1,21 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CiphersuiteImpl, CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite"
-import { Hash, refhash } from "./crypto/hash"
-import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature"
-import { decodeExtension, encodeExtension, Extension } from "./extension"
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { CiphersuiteImpl, CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
+import { Hash, refhash } from "./crypto/hash.js"
+import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
+import { decodeExtension, encodeExtension, Extension } from "./extension.js"
+import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
 import {
   decodeLeafNodeKeyPackage,
   encodeLeafNode,
   LeafNodeKeyPackage,
   LeafNodeTBSKeyPackage,
   signLeafNodeKeyPackage,
-} from "./leafNode"
-import { Capabilities } from "./capabilities"
-import { Lifetime } from "./lifetime"
-import { Credential } from "./credential"
+} from "./leafNode.js"
+import { Capabilities } from "./capabilities.js"
+import { Lifetime } from "./lifetime.js"
+import { Credential } from "./credential.js"
 
 type KeyPackageTBS = {
   version: ProtocolVersionName

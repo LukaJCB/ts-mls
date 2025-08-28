@@ -24,11 +24,9 @@ import {
 import { decodeRatchetTree, encodeRatchetTree } from "../../src/ratchetTree"
 import { decodeGroupSecrets, encodeGroupSecrets } from "../../src/groupSecrets"
 
-for (const [index, x] of json.entries()) {
-  test(`messages test vectors ${index}`, () => {
-    codecRoundtrip(x)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
+  codecRoundtrip(x)
+})
 
 type Messages = {
   mls_welcome: string

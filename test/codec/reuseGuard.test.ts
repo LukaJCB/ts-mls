@@ -1,5 +1,5 @@
 import { encodeReuseGuard, decodeReuseGuard, ReuseGuard } from "../../src/sender"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ReuseGuard roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeReuseGuard, decodeReuseGuard)

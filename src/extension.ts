@@ -1,14 +1,14 @@
-import { decodeUint16, encodeUint16 } from "./codec/number"
-import { Decoder, mapDecoders, orDecoder } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
+import { decodeUint16, encodeUint16 } from "./codec/number.js"
+import { Decoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
+import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
 import {
   decodeDefaultExtensionType,
   encodeDefaultExtensionType,
   DefaultExtensionTypeName,
   defaultExtensionTypes,
-} from "./defaultExtensionType"
-import { constantTimeEqual } from "./util/constantTimeCompare"
+} from "./defaultExtensionType.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 export type ExtensionType = DefaultExtensionTypeName | number
 

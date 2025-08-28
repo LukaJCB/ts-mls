@@ -1,5 +1,5 @@
 import { decodeConfirmedTranscriptHashInput, encodeConfirmedTranscriptHashInput } from "../../src/transcriptHash"
-import { createRoundtripTest } from "./roundtrip"
+import { createRoundtripTest } from "./roundtrip.js"
 import { FramedContentCommit } from "../../src/framedContent"
 
 const minimalContent: FramedContentCommit = {
