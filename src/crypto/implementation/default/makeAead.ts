@@ -32,7 +32,7 @@ export async function makeAead(aeadAlg: AeadAlgorithm): Promise<[Aead, AeadInter
     case "CHACHA20POLY1305":
       try {
         const { Chacha20Poly1305 } = await import("@hpke/chacha20poly1305")
-        const { chacha20poly1305 } = await import("@noble/ciphers/chacha")
+        const { chacha20poly1305 } = await import("@noble/ciphers/chacha.js")
         return [
           {
             async encrypt(key, nonce, aad, plaintext) {

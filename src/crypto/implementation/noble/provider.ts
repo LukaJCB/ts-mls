@@ -4,7 +4,7 @@ import { makeHashImpl } from "./makeHashImpl.js"
 import { makeNobleSignatureImpl } from "./makeNobleSignatureImpl.js"
 import { makeHpke } from "./makeHpke.js"
 import { makeKdfImpl, makeKdf } from "./makeKdfImpl.js"
-import { rng } from "./rng.js"
+import { defaultRng } from "./rng.js"
 
 export const nobleCryptoProvider = {
   async getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl> {
@@ -13,7 +13,7 @@ export const nobleCryptoProvider = {
       hash: makeHashImpl(cs.hash),
       signature: await makeNobleSignatureImpl(cs.signature),
       hpke: await makeHpke(cs.hpke),
-      rng: rng,
+      rng: defaultRng,
       name: cs.name,
     }
   },

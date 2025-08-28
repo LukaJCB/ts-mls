@@ -1,6 +1,6 @@
 import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number"
 import { decodeOptional, encodeOptional } from "../../src/codec/optional"
-import { randomBytes } from "@noble/ciphers/webcrypto"
+import { randomBytes } from "@noble/hashes/utils.js"
 import { Decoder } from "../../src/codec/tlsDecoder"
 import { Encoder } from "../../src/codec/tlsEncoder"
 import { decodeVarLenData, encodeVarLenData } from "../../src/codec/variableLength"

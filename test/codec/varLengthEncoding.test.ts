@@ -1,4 +1,4 @@
-import { randomBytes } from "@noble/ciphers/webcrypto"
+import { randomBytes } from "@noble/hashes/utils.js"
 import {
   decodeVarLenData,
   decodeVarLenType,

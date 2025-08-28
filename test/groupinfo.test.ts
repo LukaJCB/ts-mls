@@ -5,7 +5,7 @@ import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/gr
 import { ed25519 } from "@noble/curves/ed25519"
 
 describe("GroupInfo signing and verification", () => {
-  const privateKey = ed25519.utils.randomPrivateKey()
+  const privateKey = ed25519.utils.randomSecretKey()
   const publicKey = ed25519.getPublicKey(privateKey)
 
   const groupContext: GroupContext = {
