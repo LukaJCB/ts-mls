@@ -98,7 +98,7 @@ const groupId = new TextEncoder().encode("group1")
 // alice creates a new group
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-// bob generates her key package
+// bob generates his key package
 const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
