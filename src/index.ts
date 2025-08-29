@@ -59,6 +59,8 @@ export {
   type ProcessMessageResult,
 } from "./processMessages.js"
 
+export { type PrivateMessage } from "./privateMessage.js"
+
 export { type PskIndex, emptyPskIndex } from "./pskIndex.js"
 
 export {
@@ -78,6 +80,7 @@ export { type ClientConfig } from "./clientConfig.js"
 export { type Welcome } from "./welcome.js"
 
 export {
+  type Ciphersuite,
   type CiphersuiteName,
   type CiphersuiteImpl,
   ciphersuites,
@@ -86,9 +89,13 @@ export {
 
 export { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
 
+export { type CryptoProvider } from "./crypto/provider.js"
+export { nobleCryptoProvider } from "./crypto/implementation/noble/provider.js"
+export { defaultCryptoProvider } from "./crypto/implementation/default/provider.js"
+
 export { bytesToBase64 } from "./util/byteArray.js"
 
-export { decodeMlsMessage, encodeMlsMessage } from "./message.js"
+export { decodeMlsMessage, encodeMlsMessage, type MlsPublicMessage, type MlsPrivateMessage } from "./message.js"
 export { type Lifetime, defaultLifetime } from "./lifetime.js"
 export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
