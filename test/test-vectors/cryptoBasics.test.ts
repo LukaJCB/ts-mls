@@ -7,7 +7,7 @@ import { refhash } from "../../src/crypto/hash"
 import { deriveSecret, deriveTreeSecret, expandWithLabel } from "../../src/crypto/kdf"
 import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(`crypto-basics test vectors %i`, async (_index, x) => {
+test.each(json.map((x, index) => [index, x]))(`crypto-basics test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
   await testRefHash(impl, x.ref_hash)
   await testDeriveSecret(impl, x.derive_secret)

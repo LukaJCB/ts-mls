@@ -16,7 +16,7 @@ import { toLeafIndex } from "../../src/treemath"
 
 // How can there be a proposal with leaf_node_source = key_package in the test vectors?
 // https://github.com/mlswg/mls-implementations/issues/195
-test.concurrent.each(json.filter((_n, idx) => idx !== 2).map((x, index) => [index, x]))(
+test.each(json.filter((_n, idx) => idx !== 2).map((x, index) => [index, x]))(
   `tree-operations test vectors %i`,
   async (_index, x) => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

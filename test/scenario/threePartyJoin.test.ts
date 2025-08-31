@@ -12,7 +12,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-test.concurrent.each(Object.keys(ciphersuites))(`3-party join %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`3-party join %s`, async (cs) => {
   await threePartyJoin(cs as CiphersuiteName)
 })
 

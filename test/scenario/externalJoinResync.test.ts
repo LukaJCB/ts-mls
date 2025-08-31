@@ -13,7 +13,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-test.concurrent.each(Object.keys(ciphersuites))(`External join Resync %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`External join Resync %s`, async (cs) => {
   await externalJoinResyncTest(cs as CiphersuiteName)
 })
 

@@ -20,15 +20,15 @@ import { ValidationError } from "../../src/mlsError"
 import { defaultClientConfig } from "../../src/clientConfig"
 
 describe("Out of order message processing by epoch", () => {
-  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
+  test.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
     await epochOutOfOrder(cs as CiphersuiteName)
   })
 
-  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch random %s`, async (cs) => {
+  test.each(Object.keys(ciphersuites))(`Out of order epoch random %s`, async (cs) => {
     await epochOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForEpochs)
   })
 
-  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch limit reached fails %s`, async (cs) => {
+  test.each(Object.keys(ciphersuites))(`Out of order epoch limit reached fails %s`, async (cs) => {
     await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
   })
 })

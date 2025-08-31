@@ -15,7 +15,7 @@ import { WireformatName } from "../../src/wireformat"
 import { processMessage } from "../../src/processMessages"
 import { acceptAll } from "../../src/incomingMessageAction"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
   await leaveProposal(cs as CiphersuiteName, true)
   await leaveProposal(cs as CiphersuiteName, false)
 })

@@ -14,7 +14,7 @@ import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { UsageError } from "../../src/mlsError"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
   await reinit(cs as CiphersuiteName)
 })
 
