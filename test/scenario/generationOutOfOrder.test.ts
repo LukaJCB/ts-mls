@@ -17,15 +17,15 @@ import { ValidationError } from "../../src/mlsError"
 import { defaultClientConfig } from "../../src/clientConfig"
 
 describe("Out of order message processing by generation", () => {
-  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation %s`, async (cs) => {
+  test.each(Object.keys(ciphersuites))(`Out of order generation %s`, async (cs) => {
     await generationOutOfOrder(cs as CiphersuiteName)
   })
 
-  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation random %s`, async (cs) => {
+  test.each(Object.keys(ciphersuites))(`Out of order generation random %s`, async (cs) => {
     await generationOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForGenerations)
   })
 
-  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation limit reached fails %s`, async (cs) => {
+  test.each(Object.keys(ciphersuites))(`Out of order generation limit reached fails %s`, async (cs) => {
     await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
   })
 })

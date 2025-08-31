@@ -12,7 +12,7 @@ import { Extension } from "../../src/extension"
 import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requiredCapabilities"
 import { ValidationError } from "../../src/mlsError"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
 })
 

@@ -11,7 +11,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
   await externalPskJoin(cs as CiphersuiteName)
 })
 

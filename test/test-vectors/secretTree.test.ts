@@ -7,7 +7,7 @@ import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../sr
 import { leafToNodeIndex, toLeafIndex } from "../../src/treemath"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
+test.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
   await testSecretTree(
     x.sender_data.sender_data_secret,

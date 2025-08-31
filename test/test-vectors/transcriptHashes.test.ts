@@ -5,7 +5,7 @@ import json from "../../test_vectors/transcript-hashes.json"
 import { decodeAuthenticatedContent } from "../../src/authenticatedContent"
 import { createConfirmedHash, createInterimHash } from "../../src/transcriptHash"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(`transcript-hashes test vectors %i`, async (_index, x) => {
+test.each(json.map((x, index) => [index, x]))(`transcript-hashes test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
   await testTranscriptHash(
     x.authenticated_content,

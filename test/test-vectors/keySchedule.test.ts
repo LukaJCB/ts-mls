@@ -11,7 +11,7 @@ import json from "../../test_vectors/key-schedule.json"
 
 import { initializeEpoch, mlsExporter } from "../../src/keySchedule"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(`key-schedule test vectors %i`, async (_index, x) => {
+test.each(json.map((x, index) => [index, x]))(`key-schedule test vectors %i`, async (_index, x) => {
   const cipherSuite = x.cipher_suite as CiphersuiteId
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(cipherSuite))
   await testKeySchedule(x.group_id, x.initial_init_secret, x.epochs, cipherSuite, impl)

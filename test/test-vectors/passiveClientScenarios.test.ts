@@ -13,7 +13,7 @@ import { joinGroup, makePskIndex } from "../../src/clientState"
 import { processPrivateMessage, processPublicMessage } from "../../src/processMessages"
 import { bytesToBase64 } from "../../src/util/byteArray"
 
-test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
+test.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,
   async (_index, x) => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -21,7 +21,7 @@ test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   },
 )
 
-test.concurrent.each(jsonRandom.map((x, index) => [index, x]))(
+test.each(jsonRandom.map((x, index) => [index, x]))(
   `passive-client-random test vectors %i`,
   async (_index, x) => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -30,13 +30,10 @@ test.concurrent.each(jsonRandom.map((x, index) => [index, x]))(
   60000,
 )
 
-test.concurrent.each(jsonWelcome.map((x, index) => [index, x]))(
-  `passive-client-welcome test vectors %i`,
-  async (_index, x) => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await testPassiveClientScenario(x, impl)
-  },
-)
+test.each(jsonWelcome.map((x, index) => [index, x]))(`passive-client-welcome test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await testPassiveClientScenario(x, impl)
+})
 
 async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteImpl) {
   const kp = decodeMlsMessage(hexToBytes(data.key_package), 0)

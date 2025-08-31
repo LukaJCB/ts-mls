@@ -19,7 +19,7 @@ import { PrivateKeyPath, toPrivateKeyPath } from "../../src/privateKeyPath"
 import { PathSecrets } from "../../src/pathSecrets"
 import { hpkeKeysMatch } from "../crypto/keyMatch"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(
+test.each(json.map((x, index) => [index, x]))(
   `treekem test vectors %i`,
   async (_index, x) => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

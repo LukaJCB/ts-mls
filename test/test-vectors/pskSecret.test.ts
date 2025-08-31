@@ -4,7 +4,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { computePskSecret, PreSharedKeyIdExternal } from "../../src/presharedkey"
 import { bytesToHex, hexToBytes } from "@noble/ciphers/utils"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(`psk_secret test vectors %i`, async (_index, x) => {
+test.each(json.map((x, index) => [index, x]))(`psk_secret test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
   await testPskSecret(x.psk_secret, x.psks, impl)
 })

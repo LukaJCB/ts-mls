@@ -11,7 +11,7 @@ import { GroupContext } from "../../src/groupContext"
 import { defaultLifetimeConfig } from "../../src/lifetimeConfig"
 import { defaultAuthenticationService } from "../../src/authenticationService"
 
-test.concurrent.each(Object.keys(ciphersuites))("should reject structurally unsound ratchet tree %s", async (cs) => {
+test.each(Object.keys(ciphersuites))("should reject structurally unsound ratchet tree %s", async (cs) => {
   await testStructuralIntegrity(cs as CiphersuiteName)
 })
 

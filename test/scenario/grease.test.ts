@@ -14,7 +14,7 @@ import { defaultGreaseConfig, greaseExtensions } from "../../src/grease"
 import { Capabilities } from "../../src/capabilities"
 import { extensionTypeToNumber } from "../../src/extension"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
   await greaseTest(cs as CiphersuiteName)
 })
 

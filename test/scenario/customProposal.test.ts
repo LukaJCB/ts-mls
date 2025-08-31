@@ -12,7 +12,7 @@ import { Capabilities } from "../../src/capabilities"
 import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src"
 import { UsageError } from "../../src/mlsError"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
   await customProposalTest(cs as CiphersuiteName)
 })
 

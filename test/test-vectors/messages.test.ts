@@ -24,7 +24,7 @@ import {
 import { decodeRatchetTree, encodeRatchetTree } from "../../src/ratchetTree"
 import { decodeGroupSecrets, encodeGroupSecrets } from "../../src/groupSecrets"
 
-test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
+test.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
   codecRoundtrip(x)
 })
 
