@@ -13,7 +13,7 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch"
 import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 
-test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
   await oneToOne(cs as CiphersuiteName)
 })
 

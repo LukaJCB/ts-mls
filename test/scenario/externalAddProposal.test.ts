@@ -16,7 +16,7 @@ import { encodeExternalSender, ExternalSender } from "../../src/externalSender"
 import { Extension } from "../../src/extension"
 import { proposeAddExternal } from "../../src/externalProposal"
 
-test.concurrent.each(Object.keys(ciphersuites))(`External Add Proposal %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`External Add Proposal %s`, async (cs) => {
   await externalAddProposalTest(cs as CiphersuiteName)
 })
 

@@ -13,7 +13,7 @@ import { defaultLifetime } from "../../src/lifetime"
 import { defaultCapabilities } from "../../src/defaultCapabilities"
 import { UsageError } from "../../src/mlsError"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
 

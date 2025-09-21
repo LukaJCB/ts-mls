@@ -13,7 +13,7 @@ import { processMessage } from "../../src/processMessages"
 import { encodeExternalSender } from "../../src/externalSender"
 import { WireformatName } from "../../src/wireformat"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
   await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
 })

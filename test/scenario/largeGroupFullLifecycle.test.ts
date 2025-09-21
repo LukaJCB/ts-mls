@@ -13,7 +13,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities"
 
 import { randomInt } from "crypto"
 
-test.concurrent.each(Object.keys(ciphersuites))(
+test.each(Object.keys(ciphersuites))(
   "Large Group, Full Lifecycle %s",
   async (cs) => {
     await largeGroupFullLifecycle(cs as CiphersuiteName, 5, 8)

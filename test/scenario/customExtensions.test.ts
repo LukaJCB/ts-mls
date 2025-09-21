@@ -12,7 +12,7 @@ import { Capabilities } from "../../src/capabilities"
 import { Extension, ExtensionType } from "../../src/extension"
 import { ValidationError } from "../../src/mlsError"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
 })
 

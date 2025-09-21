@@ -18,7 +18,7 @@ import { Extension } from "../../src/extension"
 import { LeafNode } from "../../src/leafNode"
 import { proposeExternal } from "../../src"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Proposal Validation %s`, async (cs) => {
+test.each(Object.keys(ciphersuites))(`Proposal Validation %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
 
