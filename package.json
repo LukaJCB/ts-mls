@@ -6,14 +6,9 @@
   "bugs": {
     "url": "https://github.com/LukaJCB/ts-mls/issues"
   },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/src/index.js",
-      "require": "./dist/src/index.js"
-    }
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": "./dist/index.js",
   "files": [
     "dist"
   ],
@@ -74,14 +69,15 @@
   "author": "lukajcb",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc",
     "benchmark": "tsx bench/index.ts",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
-    "verify-docs": "typescript-docs-verifier --project tsconfig.docs.json --input-files README.md docs/*.md",
+    "verify-docs": "typescript-docs-verifier -p tsconfig.docs.json --input-files README.md docs/*.md",
     "verify-madge": "madge --extensions ts --circular src",
     "verify": "npm run build && npm run format:check && npm run verify-docs && npm run verify-madge && npm run lint && npm run coverage"
   },
