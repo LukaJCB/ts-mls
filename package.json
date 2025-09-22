@@ -21,7 +21,7 @@
     "@hpke/ml-kem": "0.2.1",
     "@noble/curves": "^2.0.0",
     "@noble/ciphers": "^2.0.0",
-    "@noble/post-quantum": "0.5.1"
+    "@noble/post-quantum": "0.5.2"
   },
   "peerDependenciesMeta": {
     "@hpke/chacha20poly1305": {
@@ -48,7 +48,7 @@
     "@noble/ciphers": "^2.0.0",
     "@noble/hashes": "^2.0.0",
     "@noble/curves": "^2.0.0",
-    "@noble/post-quantum": "0.5.1",
+    "@noble/post-quantum": "0.5.2",
     "@types/jest": "^30.0.0",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.33.0",
