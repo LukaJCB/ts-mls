@@ -1,6 +1,6 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/welcome.json"
 import { decodeMlsMessage } from "../../src/message"
 import { makeKeyPackageRef } from "../../src/keyPackage"

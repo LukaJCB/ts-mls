@@ -6,7 +6,7 @@ import {
 } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { encodeGroupContext, GroupContext } from "../../src/groupContext"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/key-schedule.json"
 
 import { initializeEpoch, mlsExporter } from "../../src/keySchedule"

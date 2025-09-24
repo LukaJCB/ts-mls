@@ -1,6 +1,6 @@
 import json from "../../test_vectors/messages.json"
 
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import { decodeMlsMessage, encodeMlsMessage } from "../../src/message"
 import { decodeCommit, encodeCommit } from "../../src/commit"
 import { Encoder } from "../../src/codec/tlsEncoder"

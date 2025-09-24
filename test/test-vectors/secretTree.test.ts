@@ -1,6 +1,6 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/secret-tree.json"
 import { expandSenderDataKey, expandSenderDataNonce } from "../../src/sender"
 import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../src/secretTree"

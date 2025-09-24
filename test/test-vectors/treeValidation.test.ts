@@ -1,7 +1,7 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { decodeRatchetTree, resolution } from "../../src/ratchetTree"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-validation.json"
 import { treeHash } from "../../src/treeHash"
 import { verifyLeafNodeSignature } from "../../src/leafNode"

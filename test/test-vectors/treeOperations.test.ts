@@ -8,7 +8,7 @@ import {
   removeLeafNode,
   updateLeafNode,
 } from "../../src/ratchetTree"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-operations.json"
 import { decodeProposal, Proposal } from "../../src/proposal"
 import { treeHashRoot } from "../../src/treeHash"

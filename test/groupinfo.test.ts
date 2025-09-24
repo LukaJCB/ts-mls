@@ -2,7 +2,7 @@ import { getCiphersuiteFromId } from "../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl"
 import { GroupContext } from "../src/groupContext"
 import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo"
-import { ed25519 } from "@noble/curves/ed25519"
+import { ed25519 } from "@noble/curves/ed25519.js"
 
 describe("GroupInfo signing and verification", () => {
   const privateKey = ed25519.utils.randomSecretKey()

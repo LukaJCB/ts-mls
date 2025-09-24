@@ -1,5 +1,5 @@
 import json from "../../test_vectors/message-protection.json"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import { GroupContext } from "../../src/groupContext"
 import {
   CiphersuiteId,

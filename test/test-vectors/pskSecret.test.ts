@@ -2,7 +2,7 @@ import json from "../../test_vectors/psk_secret.json"
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { computePskSecret, PreSharedKeyIdExternal } from "../../src/presharedkey"
-import { bytesToHex, hexToBytes } from "@noble/ciphers/utils"
+import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`psk_secret test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

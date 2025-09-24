@@ -1,7 +1,7 @@
 import json from "../../test_vectors/crypto-basics.json"
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { bytesToHex, hexToBytes } from "@noble/ciphers/utils"
+import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 import { signWithLabel, verifyWithLabel } from "../../src/crypto/signature"
 import { refhash } from "../../src/crypto/hash"
 import { deriveSecret, deriveTreeSecret, expandWithLabel } from "../../src/crypto/kdf"

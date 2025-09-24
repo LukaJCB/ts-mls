@@ -6,7 +6,7 @@ import {
 } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { decodeRatchetTree, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/treekem.json"
 import { applyUpdatePath, createUpdatePath, decodeUpdatePath, UpdatePath } from "../../src/updatePath"
 import { GroupContext } from "../../src/groupContext"

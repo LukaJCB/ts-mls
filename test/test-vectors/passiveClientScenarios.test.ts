@@ -1,7 +1,7 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
 import { KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import jsonCommit from "../../test_vectors/passive-client-handling-commit.json"
 import jsonRandom from "../../test_vectors/passive-client-random.json"
 import jsonWelcome from "../../test_vectors/passive-client-welcome.json"
