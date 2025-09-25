@@ -6,11 +6,11 @@ import {
   encodeUint16,
   encodeUint32,
   encodeUint8,
-} from "../../src/codec/number"
-import { Decoder, mapDecoders } from "../../src/codec/tlsDecoder"
-import { Encoder, composeEncoders } from "../../src/codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "../../src/codec/variableLength"
-import { decodeOptional, encodeOptional } from "../../src/codec/optional"
+} from "../../src/codec/number.js"
+import { Decoder, mapDecoders } from "../../src/codec/tlsDecoder.js"
+import { Encoder, composeEncoders } from "../../src/codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "../../src/codec/variableLength.js"
+import { decodeOptional, encodeOptional } from "../../src/codec/optional.js"
 
 test("composite codec roundtrip [uint8(0), uint32(48948430)]", () => {
   compositeRoundTrip(0, 48948430, encodeUint8, decodeUint8, encodeUint32, decodeUint32)

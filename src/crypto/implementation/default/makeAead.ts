@@ -1,7 +1,7 @@
 import { AeadInterface, Aes128Gcm, Aes256Gcm } from "@hpke/core"
-import { DependencyError } from "../../../mlsError"
-import { bytesToBuffer } from "../../../util/byteArray"
-import { AeadAlgorithm, Aead } from "../../aead"
+import { DependencyError } from "../../../mlsError.js"
+import { bytesToBuffer } from "../../../util/byteArray.js"
+import { AeadAlgorithm, Aead } from "../../aead.js"
 
 export async function makeAead(aeadAlg: AeadAlgorithm): Promise<[Aead, AeadInterface]> {
   switch (aeadAlg) {

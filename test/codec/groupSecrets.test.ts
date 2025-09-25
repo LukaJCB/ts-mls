@@ -1,4 +1,4 @@
-import { encodeGroupSecrets, decodeGroupSecrets } from "../../src/groupSecrets"
+import { encodeGroupSecrets, decodeGroupSecrets } from "../../src/groupSecrets.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("GroupSecrets roundtrip", () => {

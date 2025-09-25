@@ -1,4 +1,4 @@
-import { encodeReuseGuard, decodeReuseGuard, ReuseGuard } from "../../src/sender"
+import { encodeReuseGuard, decodeReuseGuard, ReuseGuard } from "../../src/sender.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ReuseGuard roundtrip", () => {

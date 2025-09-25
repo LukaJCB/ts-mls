@@ -1,11 +1,11 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/secret-tree.json"
-import { expandSenderDataKey, expandSenderDataNonce } from "../../src/sender"
-import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../src/secretTree"
-import { leafToNodeIndex, toLeafIndex } from "../../src/treemath"
-import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
+import { expandSenderDataKey, expandSenderDataNonce } from "../../src/sender.js"
+import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../src/secretTree.js"
+import { leafToNodeIndex, toLeafIndex } from "../../src/treemath.js"
+import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

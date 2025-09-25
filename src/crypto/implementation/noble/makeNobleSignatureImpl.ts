@@ -1,1 +1,1 @@
-export * from "../default/makeNobleSignatureImpl"
+export * from "../default/makeNobleSignatureImpl.js"

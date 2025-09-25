@@ -1,4 +1,4 @@
-import { encodeCommit, decodeCommit } from "../../src/commit"
+import { encodeCommit, decodeCommit } from "../../src/commit.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Commit roundtrip", () => {

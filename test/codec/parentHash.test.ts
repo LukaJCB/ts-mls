@@ -1,4 +1,4 @@
-import { encodeParentHashInput, decodeParentHashInput } from "../../src/parentHash"
+import { encodeParentHashInput, decodeParentHashInput } from "../../src/parentHash.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ParentHashInput roundtrip", () => {

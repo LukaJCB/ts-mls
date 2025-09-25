@@ -1,4 +1,4 @@
-import { encodeLeafNodeData, decodeLeafNodeData, LeafNodeData } from "../../src/leafNode"
+import { encodeLeafNodeData, decodeLeafNodeData, LeafNodeData } from "../../src/leafNode.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("LeafNodeData roundtrip", () => {

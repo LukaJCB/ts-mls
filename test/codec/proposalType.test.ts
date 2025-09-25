@@ -2,7 +2,7 @@ import {
   encodeDefaultProposalType,
   decodeDefaultProposalType,
   DefaultProposalTypeName,
-} from "../../src/defaultProposalType"
+} from "../../src/defaultProposalType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ProposalTypeName roundtrip", () => {

@@ -1,4 +1,4 @@
-import { encodeContentType, decodeContentType, ContentTypeName } from "../../src/contentType"
+import { encodeContentType, decodeContentType, ContentTypeName } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ContentTypeName roundtrip", () => {

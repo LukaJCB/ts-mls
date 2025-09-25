@@ -3,21 +3,21 @@ import {
   CiphersuiteImpl,
   getCiphersuiteFromId,
   getCiphersuiteNameFromId,
-} from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { decodeRatchetTree, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree"
+} from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { decodeRatchetTree, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/treekem.json"
-import { applyUpdatePath, createUpdatePath, decodeUpdatePath, UpdatePath } from "../../src/updatePath"
-import { GroupContext } from "../../src/groupContext"
-import { treeHashRoot } from "../../src/treeHash"
-import { deriveSecret } from "../../src/crypto/kdf"
-import { leafToNodeIndex, toLeafIndex } from "../../src/treemath"
-import { applyUpdatePathSecret } from "../../src/createCommit"
-import { getCommitSecret } from "../../src/pathSecrets"
-import { PrivateKeyPath, toPrivateKeyPath } from "../../src/privateKeyPath"
-import { PathSecrets } from "../../src/pathSecrets"
-import { hpkeKeysMatch } from "../crypto/keyMatch"
+import { applyUpdatePath, createUpdatePath, decodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
+import { GroupContext } from "../../src/groupContext.js"
+import { treeHashRoot } from "../../src/treeHash.js"
+import { deriveSecret } from "../../src/crypto/kdf.js"
+import { leafToNodeIndex, toLeafIndex } from "../../src/treemath.js"
+import { applyUpdatePathSecret } from "../../src/createCommit.js"
+import { getCommitSecret } from "../../src/pathSecrets.js"
+import { PrivateKeyPath, toPrivateKeyPath } from "../../src/privateKeyPath.js"
+import { PathSecrets } from "../../src/pathSecrets.js"
+import { hpkeKeysMatch } from "../crypto/keyMatch.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(
   `treekem test vectors %i`,

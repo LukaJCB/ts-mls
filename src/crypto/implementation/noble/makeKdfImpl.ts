@@ -1,1 +1,1 @@
-export * from "../default/makeKdfImpl"
+export * from "../default/makeKdfImpl.js"

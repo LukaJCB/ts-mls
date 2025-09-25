@@ -1,4 +1,4 @@
-import { encodeFramedContent, decodeFramedContent } from "../../src/framedContent"
+import { encodeFramedContent, decodeFramedContent } from "../../src/framedContent.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("FramedContent roundtrip", () => {

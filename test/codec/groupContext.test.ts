@@ -1,4 +1,4 @@
-import { encodeGroupContext, decodeGroupContext, GroupContext } from "../../src/groupContext"
+import { encodeGroupContext, decodeGroupContext, GroupContext } from "../../src/groupContext.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalGroupContext: GroupContext = {

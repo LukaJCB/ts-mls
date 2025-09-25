@@ -1,11 +1,11 @@
 import json from "../../test_vectors/crypto-basics.json"
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
-import { signWithLabel, verifyWithLabel } from "../../src/crypto/signature"
-import { refhash } from "../../src/crypto/hash"
-import { deriveSecret, deriveTreeSecret, expandWithLabel } from "../../src/crypto/kdf"
-import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke"
+import { signWithLabel, verifyWithLabel } from "../../src/crypto/signature.js"
+import { refhash } from "../../src/crypto/hash.js"
+import { deriveSecret, deriveTreeSecret, expandWithLabel } from "../../src/crypto/kdf.js"
+import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`crypto-basics test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

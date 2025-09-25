@@ -1,4 +1,4 @@
-import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage"
+import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalKeyPackage: KeyPackage = {

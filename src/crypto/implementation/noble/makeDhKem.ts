@@ -1,1 +1,1 @@
-export * from "../default/makeDhKem"
+export * from "../default/makeDhKem.js"

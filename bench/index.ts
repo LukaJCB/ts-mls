@@ -22,8 +22,8 @@ import {
   createApplicationMessage,
   processMessage,
   acceptAll,
-} from "../src/index"
-import { MlsPrivateMessage } from "../src/message"
+} from "../src/index.js"
+import { MlsPrivateMessage } from "../src/message.js"
 
 function parseTable(row: Record<string, string | number | undefined> | null): {
   name: string

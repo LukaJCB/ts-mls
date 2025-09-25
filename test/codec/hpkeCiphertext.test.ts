@@ -1,4 +1,4 @@
-import { encodeHpkeCiphertext, decodeHpkeCiphertext, HPKECiphertext } from "../../src/hpkeCiphertext"
+import { encodeHpkeCiphertext, decodeHpkeCiphertext, HPKECiphertext } from "../../src/hpkeCiphertext.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const dummy: HPKECiphertext = {

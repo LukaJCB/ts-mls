@@ -1,27 +1,31 @@
 import json from "../../test_vectors/message-protection.json"
 import { hexToBytes } from "@noble/ciphers/utils.js"
-import { GroupContext } from "../../src/groupContext"
+import { GroupContext } from "../../src/groupContext.js"
 import {
   CiphersuiteId,
   CiphersuiteImpl,
   getCiphersuiteFromId,
   getCiphersuiteNameFromId,
-} from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { decodeMlsMessage } from "../../src/message"
-import { protect, unprotectPrivateMessage } from "../../src/messageProtection"
-import { createContentCommitSignature } from "../../src/framedContent"
-import { decodeProposal, encodeProposal } from "../../src/proposal"
-import { decodeCommit, encodeCommit } from "../../src/commit"
-import { AuthenticatedContent } from "../../src/authenticatedContent"
-import { createSecretTree } from "../../src/secretTree"
-import { protectApplicationData, protectProposal } from "../../src/messageProtection"
-import { protectProposalPublic, protectPublicMessage, unprotectPublicMessage } from "../../src/messageProtectionPublic"
-import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { RatchetTree } from "../../src/ratchetTree"
-import { UsageError } from "../../src/mlsError"
-import { defaultPaddingConfig } from "../../src/paddingConfig"
+} from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { decodeMlsMessage } from "../../src/message.js"
+import { protect, unprotectPrivateMessage } from "../../src/messageProtection.js"
+import { createContentCommitSignature } from "../../src/framedContent.js"
+import { decodeProposal, encodeProposal } from "../../src/proposal.js"
+import { decodeCommit, encodeCommit } from "../../src/commit.js"
+import { AuthenticatedContent } from "../../src/authenticatedContent.js"
+import { createSecretTree } from "../../src/secretTree.js"
+import { protectApplicationData, protectProposal } from "../../src/messageProtection.js"
+import {
+  protectProposalPublic,
+  protectPublicMessage,
+  unprotectPublicMessage,
+} from "../../src/messageProtectionPublic.js"
+import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { RatchetTree } from "../../src/ratchetTree.js"
+import { UsageError } from "../../src/mlsError.js"
+import { defaultPaddingConfig } from "../../src/paddingConfig.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

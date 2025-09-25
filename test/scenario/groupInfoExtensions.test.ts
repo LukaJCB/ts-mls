@@ -1,12 +1,12 @@
-import { createGroup } from "../../src/clientState"
-import { createGroupInfoWithExternalPub } from "../../src/createCommit"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { defaultLifetime } from "../../src/lifetime"
-import { Capabilities } from "../../src/capabilities"
-import { Extension, ExtensionType } from "../../src/extension"
+import { createGroup } from "../../src/clientState.js"
+import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { Capabilities } from "../../src/capabilities.js"
+import { Extension, ExtensionType } from "../../src/extension.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)

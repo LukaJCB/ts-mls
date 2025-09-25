@@ -1,6 +1,6 @@
 import { AeadInterface, Aes128Gcm, Aes256Gcm } from "@hpke/core"
-import { DependencyError } from "../../../mlsError"
-import { Aead, AeadAlgorithm } from "../../aead"
+import { DependencyError } from "../../../mlsError.js"
+import { Aead, AeadAlgorithm } from "../../aead.js"
 import { gcm } from "@noble/ciphers/aes.js"
 
 export async function makeAead(aeadAlg: AeadAlgorithm): Promise<[Aead, AeadInterface]> {

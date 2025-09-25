@@ -1,5 +1,5 @@
-import { encodeVarLenData } from "../codec/variableLength"
-import { encodeUint16, encodeUint32 } from "../codec/number"
+import { encodeVarLenData } from "../codec/variableLength.js"
+import { encodeUint16, encodeUint32 } from "../codec/number.js"
 
 export interface Kdf {
   extract(salt: Uint8Array, ikm: Uint8Array): Promise<Uint8Array>

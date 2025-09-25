@@ -1,4 +1,4 @@
-import { encodePublicMessage, decodePublicMessage } from "../../src/publicMessage"
+import { encodePublicMessage, decodePublicMessage } from "../../src/publicMessage.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PublicMessage roundtrip", () => {

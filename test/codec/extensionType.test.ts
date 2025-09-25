@@ -2,7 +2,7 @@ import {
   encodeDefaultExtensionType,
   decodeDefaultExtensionType,
   DefaultExtensionTypeName,
-} from "../../src/defaultExtensionType"
+} from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("DefaultExtensionTypeName roundtrip", () => {

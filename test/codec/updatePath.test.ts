@@ -1,4 +1,4 @@
-import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath"
+import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {

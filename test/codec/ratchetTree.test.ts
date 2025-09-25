@@ -1,4 +1,4 @@
-import { encodeRatchetTree, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree"
+import { encodeRatchetTree, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
 
 describe("RatchetTree roundtrip", () => {
   test("roundtrips single leaf", () => {

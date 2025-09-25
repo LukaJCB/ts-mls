@@ -1,4 +1,4 @@
-import { encodePskId, decodePskId } from "../../src/presharedkey"
+import { encodePskId, decodePskId } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PreSharedKeyID roundtrip", () => {

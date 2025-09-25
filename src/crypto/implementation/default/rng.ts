@@ -1,4 +1,4 @@
-import { Rng } from "../../rng"
+import { Rng } from "../../rng.js"
 
 export const defaultRng: Rng = {
   randomBytes(n) {

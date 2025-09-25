@@ -1,6 +1,6 @@
 import json from "../../test_vectors/tree-math.json"
-import { left, nodeWidth, parent, right, root, sibling, toNodeIndex } from "../../src/treemath"
-import { InternalError } from "../../src/mlsError"
+import { left, nodeWidth, parent, right, root, sibling, toNodeIndex } from "../../src/treemath.js"
+import { InternalError } from "../../src/mlsError.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`tree math test vectors %i`, (_index, x) => {
   treemathTest(x)

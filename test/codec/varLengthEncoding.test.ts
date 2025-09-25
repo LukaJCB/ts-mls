@@ -6,13 +6,13 @@ import {
   encodeLength,
   encodeVarLenData,
   encodeVarLenType,
-} from "../../src/codec/variableLength"
+} from "../../src/codec/variableLength.js"
 import { createRoundtripTest } from "./roundtrip.js"
-import { Encoder } from "../../src/codec/tlsEncoder"
-import { Decoder } from "../../src/codec/tlsDecoder"
-import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number"
-import { decodeOptional, encodeOptional } from "../../src/codec/optional"
-import { CodecError } from "../../src/mlsError"
+import { Encoder } from "../../src/codec/tlsEncoder.js"
+import { Decoder } from "../../src/codec/tlsDecoder.js"
+import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number.js"
+import { decodeOptional, encodeOptional } from "../../src/codec/optional.js"
+import { CodecError } from "../../src/mlsError.js"
 
 test("encode and decode works for 1 random byte", () => {
   varLenRoundtrip(randomBytes(1))

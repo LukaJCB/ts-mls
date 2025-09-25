@@ -1,6 +1,6 @@
 import { CipherSuite } from "@hpke/core"
-import { Hpke, HpkeAlgorithm } from "../../hpke"
-import { makeGenericHpke } from "../hpke"
+import { Hpke, HpkeAlgorithm } from "../../hpke.js"
+import { makeGenericHpke } from "../hpke.js"
 import { makeAead } from "./makeAead.js"
 import { makeKdf } from "./makeKdfImpl.js"
 import { makeDhKem } from "./makeDhKem.js"

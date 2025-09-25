@@ -1,4 +1,4 @@
-import { encodeResumptionPSKUsage, decodeResumptionPSKUsage, ResumptionPSKUsageName } from "../../src/presharedkey"
+import { encodeResumptionPSKUsage, decodeResumptionPSKUsage, ResumptionPSKUsageName } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ResumptionPSKUsageName roundtrip", () => {

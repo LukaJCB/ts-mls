@@ -1,5 +1,5 @@
-import { DependencyError } from "../../../mlsError"
-import { SignatureAlgorithm, Signature } from "../../signature"
+import { DependencyError } from "../../../mlsError.js"
+import { SignatureAlgorithm, Signature } from "../../signature.js"
 
 export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<Signature> {
   switch (alg) {

@@ -1,4 +1,4 @@
-import { encodeProtocolVersion, decodeProtocolVersion, ProtocolVersionName } from "../../src/protocolVersion"
+import { encodeProtocolVersion, decodeProtocolVersion, ProtocolVersionName } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ProtocolVersionName roundtrip", () => {

@@ -1,5 +1,5 @@
-import { makeAead as defaultMakeAead } from "../../src/crypto/implementation/default/makeAead"
-import { makeAead as nobleMakeAead } from "../../src/crypto/implementation/noble/makeAead"
+import { makeAead as defaultMakeAead } from "../../src/crypto/implementation/default/makeAead.js"
+import { makeAead as nobleMakeAead } from "../../src/crypto/implementation/noble/makeAead.js"
 import { randomBytes } from "crypto"
 
 const key128 = randomBytes(16)

@@ -1,4 +1,4 @@
-import { encodeMlsMessage, decodeMlsMessage } from "../../src/message"
+import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("MLSMessage roundtrip", () => {

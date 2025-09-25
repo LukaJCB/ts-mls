@@ -1,4 +1,4 @@
-import { encodeSenderDataAAD, decodeSenderDataAAD } from "../../src/sender"
+import { encodeSenderDataAAD, decodeSenderDataAAD } from "../../src/sender.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("SenderDataAAD roundtrip", () => {

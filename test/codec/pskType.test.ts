@@ -1,4 +1,4 @@
-import { encodePskType, decodePskType, PSKTypeName } from "../../src/presharedkey"
+import { encodePskType, decodePskType, PSKTypeName } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PSKTypeName roundtrip", () => {

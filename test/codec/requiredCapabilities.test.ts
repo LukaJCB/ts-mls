@@ -2,7 +2,7 @@ import {
   encodeRequiredCapabilities,
   decodeRequiredCapabilities,
   RequiredCapabilities,
-} from "../../src/requiredCapabilities"
+} from "../../src/requiredCapabilities.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("RequiredCapabilities roundtrip", () => {

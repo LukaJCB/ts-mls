@@ -1,5 +1,5 @@
-import { encodeVarLenData } from "../codec/variableLength"
-import { concatUint8Arrays } from "../util/byteArray"
+import { encodeVarLenData } from "../codec/variableLength.js"
+import { concatUint8Arrays } from "../util/byteArray.js"
 
 export type HashAlgorithm = "SHA-512" | "SHA-384" | "SHA-256"
 

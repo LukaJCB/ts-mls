@@ -1,8 +1,8 @@
 import { CipherSuite } from "@hpke/core"
-import { Aead } from "../../crypto/aead"
-import { HpkeAlgorithm, Hpke, PrivateKey, PublicKey } from "../../crypto/hpke"
-import { bytesToBuffer, concatUint8Arrays } from "../../util/byteArray"
-import { CryptoError } from "../../mlsError"
+import { Aead } from "../../crypto/aead.js"
+import { HpkeAlgorithm, Hpke, PrivateKey, PublicKey } from "../../crypto/hpke.js"
+import { bytesToBuffer, concatUint8Arrays } from "../../util/byteArray.js"
+import { CryptoError } from "../../mlsError.js"
 
 export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: CipherSuite): Promise<Hpke> {
   return {

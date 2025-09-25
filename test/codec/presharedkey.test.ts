@@ -7,7 +7,7 @@ import {
   encodePskLabel,
   encodePskType,
   encodeResumptionPSKUsage,
-} from "../../src/presharedkey"
+} from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 test("PSKType roundtrip", () => {

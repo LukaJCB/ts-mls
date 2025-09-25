@@ -1,4 +1,4 @@
-import { Ciphersuite, CiphersuiteImpl } from "../../ciphersuite"
+import { Ciphersuite, CiphersuiteImpl } from "../../ciphersuite.js"
 
 import { makeHashImpl } from "./makeHashImpl.js"
 import { makeHpke } from "./makeHpke.js"

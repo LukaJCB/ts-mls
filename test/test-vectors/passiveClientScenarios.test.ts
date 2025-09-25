@@ -1,17 +1,17 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import jsonCommit from "../../test_vectors/passive-client-handling-commit.json"
 import jsonRandom from "../../test_vectors/passive-client-random.json"
 import jsonWelcome from "../../test_vectors/passive-client-welcome.json"
-import { hpkeKeysMatch, signatureKeysMatch } from "../crypto/keyMatch"
-import { decodeMlsMessage } from "../../src/message"
-import { decodeRatchetTree } from "../../src/ratchetTree"
+import { hpkeKeysMatch, signatureKeysMatch } from "../crypto/keyMatch.js"
+import { decodeMlsMessage } from "../../src/message.js"
+import { decodeRatchetTree } from "../../src/ratchetTree.js"
 
-import { joinGroup, makePskIndex } from "../../src/clientState"
-import { processPrivateMessage, processPublicMessage } from "../../src/processMessages"
-import { bytesToBase64 } from "../../src/util/byteArray"
+import { joinGroup, makePskIndex } from "../../src/clientState.js"
+import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
+import { bytesToBase64 } from "../../src/util/byteArray.js"
 
 test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,

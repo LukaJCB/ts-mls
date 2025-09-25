@@ -1,6 +1,6 @@
 import { HkdfSha256, HkdfSha384, HkdfSha512, KdfInterface } from "@hpke/core"
-import { bytesToBuffer } from "../../../util/byteArray"
-import { Kdf, KdfAlgorithm } from "../../kdf"
+import { bytesToBuffer } from "../../../util/byteArray.js"
+import { Kdf, KdfAlgorithm } from "../../kdf.js"
 
 export function makeKdfImpl(k: KdfInterface): Kdf {
   return {

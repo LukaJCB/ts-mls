@@ -1,5 +1,5 @@
-import { encodeVarLenData } from "../codec/variableLength"
-import { concatUint8Arrays } from "../util/byteArray"
+import { encodeVarLenData } from "../codec/variableLength.js"
+import { concatUint8Arrays } from "../util/byteArray.js"
 
 export interface Signature {
   sign(signKey: Uint8Array, message: Uint8Array): Promise<Uint8Array>

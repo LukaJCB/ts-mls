@@ -1,4 +1,4 @@
-import { encodePrivateContentAAD, decodePrivateContentAAD } from "../../src/privateMessage"
+import { encodePrivateContentAAD, decodePrivateContentAAD } from "../../src/privateMessage.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PrivateContentAAD roundtrip", () => {

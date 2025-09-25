@@ -1,12 +1,12 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { decodeRatchetTree, resolution } from "../../src/ratchetTree"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { decodeRatchetTree, resolution } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-validation.json"
-import { treeHash } from "../../src/treeHash"
-import { verifyLeafNodeSignature } from "../../src/leafNode"
-import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath"
-import { verifyParentHashes } from "../../src/parentHash"
+import { treeHash } from "../../src/treeHash.js"
+import { verifyLeafNodeSignature } from "../../src/leafNode.js"
+import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
+import { verifyParentHashes } from "../../src/parentHash.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`tree-validation test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

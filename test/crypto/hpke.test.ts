@@ -1,7 +1,7 @@
-import { Hpke } from "../../src/crypto/hpke"
-import { makeHpke as defaultMakeHpke } from "../../src/crypto/implementation/default/makeHpke"
-import { makeHpke as nobleMakeHpke } from "../../src/crypto/implementation/noble/makeHpke"
-import { CryptoError } from "../../src/mlsError"
+import { Hpke } from "../../src/crypto/hpke.js"
+import { makeHpke as defaultMakeHpke } from "../../src/crypto/implementation/default/makeHpke.js"
+import { makeHpke as nobleMakeHpke } from "../../src/crypto/implementation/noble/makeHpke.js"
+import { CryptoError } from "../../src/mlsError.js"
 
 // Use a minimal valid algorithm config (using a likely supported one)
 const hpkeAlg = {

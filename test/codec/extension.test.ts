@@ -1,4 +1,4 @@
-import { encodeExtension, decodeExtension, Extension } from "../../src/extension"
+import { encodeExtension, decodeExtension, Extension } from "../../src/extension.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Extension roundtrip", () => {

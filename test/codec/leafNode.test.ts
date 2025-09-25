@@ -1,4 +1,4 @@
-import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode"
+import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalLeafNode: LeafNode = {

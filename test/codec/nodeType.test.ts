@@ -1,4 +1,4 @@
-import { encodeNodeType, decodeNodeType, NodeTypeName } from "../../src/nodeType"
+import { encodeNodeType, decodeNodeType, NodeTypeName } from "../../src/nodeType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("NodeTypeName roundtrip", () => {

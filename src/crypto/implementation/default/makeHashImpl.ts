@@ -1,5 +1,5 @@
-import { bytesToBuffer } from "../../../util/byteArray"
-import { HashAlgorithm, Hash } from "../../hash"
+import { bytesToBuffer } from "../../../util/byteArray.js"
+import { HashAlgorithm, Hash } from "../../hash.js"
 
 export function makeHashImpl(sc: SubtleCrypto, h: HashAlgorithm): Hash {
   return {

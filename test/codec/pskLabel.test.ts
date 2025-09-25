@@ -1,4 +1,4 @@
-import { encodePskLabel, decodePskLabel } from "../../src/presharedkey"
+import { encodePskLabel, decodePskLabel } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PSKLabel roundtrip", () => {

@@ -3,13 +3,13 @@ import {
   CiphersuiteImpl,
   getCiphersuiteFromId,
   getCiphersuiteNameFromId,
-} from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
-import { encodeGroupContext, GroupContext } from "../../src/groupContext"
+} from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { encodeGroupContext, GroupContext } from "../../src/groupContext.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/key-schedule.json"
 
-import { initializeEpoch, mlsExporter } from "../../src/keySchedule"
+import { initializeEpoch, mlsExporter } from "../../src/keySchedule.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`key-schedule test vectors %i`, async (_index, x) => {
   const cipherSuite = x.cipher_suite as CiphersuiteId

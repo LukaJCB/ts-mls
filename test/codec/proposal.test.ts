@@ -1,4 +1,4 @@
-import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal"
+import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const dummyProposalAdd: Proposal = {

@@ -1,9 +1,9 @@
-import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number"
-import { decodeOptional, encodeOptional } from "../../src/codec/optional"
+import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number.js"
+import { decodeOptional, encodeOptional } from "../../src/codec/optional.js"
 import { randomBytes } from "@noble/hashes/utils.js"
-import { Decoder } from "../../src/codec/tlsDecoder"
-import { Encoder } from "../../src/codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "../../src/codec/variableLength"
+import { Decoder } from "../../src/codec/tlsDecoder.js"
+import { Encoder } from "../../src/codec/tlsEncoder.js"
+import { decodeVarLenData, encodeVarLenData } from "../../src/codec/variableLength.js"
 
 test("optional codec should return single 0 byte", () => {
   const e = encodeOptional(encodeUint8)(undefined)

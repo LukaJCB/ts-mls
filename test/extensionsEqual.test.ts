@@ -1,4 +1,4 @@
-import { Extension, extensionsEqual } from "../src/extension"
+import { Extension, extensionsEqual } from "../src/extension.js"
 
 describe("extensionsEqual", () => {
   test("should return true for identical extensions", () => {

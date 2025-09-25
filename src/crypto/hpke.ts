@@ -1,8 +1,8 @@
 import { AeadAlgorithm } from "./aead.js"
 import { KdfAlgorithm } from "./kdf.js"
 import { KemAlgorithm } from "./kem.js"
-import { encodeVarLenData } from "../codec/variableLength"
-import { concatUint8Arrays } from "../util/byteArray"
+import { encodeVarLenData } from "../codec/variableLength.js"
+import { concatUint8Arrays } from "../util/byteArray.js"
 
 export type PublicKey = CryptoKey & { type: "public" }
 export type SecretKey = CryptoKey & { type: "secret" }

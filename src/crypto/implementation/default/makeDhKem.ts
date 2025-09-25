@@ -6,8 +6,8 @@ import {
   DhkemP521HkdfSha512,
   DhkemP384HkdfSha384,
 } from "@hpke/core"
-import { DependencyError } from "../../../mlsError"
-import { KemAlgorithm } from "../../kem"
+import { DependencyError } from "../../../mlsError.js"
+import { KemAlgorithm } from "../../kem.js"
 
 export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
   switch (kemAlg) {

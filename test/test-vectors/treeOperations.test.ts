@@ -1,5 +1,5 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import {
   addLeafNode,
   decodeRatchetTree,
@@ -7,12 +7,12 @@ import {
   RatchetTree,
   removeLeafNode,
   updateLeafNode,
-} from "../../src/ratchetTree"
+} from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-operations.json"
-import { decodeProposal, Proposal } from "../../src/proposal"
-import { treeHashRoot } from "../../src/treeHash"
-import { toLeafIndex } from "../../src/treemath"
+import { decodeProposal, Proposal } from "../../src/proposal.js"
+import { treeHashRoot } from "../../src/treeHash.js"
+import { toLeafIndex } from "../../src/treemath.js"
 
 // How can there be a proposal with leaf_node_source = key_package in the test vectors?
 // https://github.com/mlswg/mls-implementations/issues/195

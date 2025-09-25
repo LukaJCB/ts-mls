@@ -1,4 +1,4 @@
-import { encodeParentNode, decodeParentNode, ParentNode } from "../../src/parentNode"
+import { encodeParentNode, decodeParentNode, ParentNode } from "../../src/parentNode.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ParentNode roundtrip", () => {

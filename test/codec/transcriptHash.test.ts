@@ -1,6 +1,6 @@
-import { decodeConfirmedTranscriptHashInput, encodeConfirmedTranscriptHashInput } from "../../src/transcriptHash"
+import { decodeConfirmedTranscriptHashInput, encodeConfirmedTranscriptHashInput } from "../../src/transcriptHash.js"
 import { createRoundtripTest } from "./roundtrip.js"
-import { FramedContentCommit } from "../../src/framedContent"
+import { FramedContentCommit } from "../../src/framedContent.js"
 
 const minimalContent: FramedContentCommit = {
   groupId: new Uint8Array([1]),

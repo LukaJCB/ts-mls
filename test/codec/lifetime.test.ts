@@ -1,4 +1,4 @@
-import { encodeLifetime, decodeLifetime } from "../../src/lifetime"
+import { encodeLifetime, decodeLifetime } from "../../src/lifetime.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Lifetime roundtrip", () => {

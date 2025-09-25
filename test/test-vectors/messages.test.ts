@@ -1,10 +1,10 @@
 import json from "../../test_vectors/messages.json"
 
 import { hexToBytes } from "@noble/ciphers/utils.js"
-import { decodeMlsMessage, encodeMlsMessage } from "../../src/message"
-import { decodeCommit, encodeCommit } from "../../src/commit"
-import { Encoder } from "../../src/codec/tlsEncoder"
-import { Decoder } from "../../src/codec/tlsDecoder"
+import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
+import { decodeCommit, encodeCommit } from "../../src/commit.js"
+import { Encoder } from "../../src/codec/tlsEncoder.js"
+import { Decoder } from "../../src/codec/tlsDecoder.js"
 import {
   decodeAdd,
   decodeExternalInit,
@@ -20,9 +20,9 @@ import {
   encodeReinit,
   encodeRemove,
   encodeUpdate,
-} from "../../src/proposal"
-import { decodeRatchetTree, encodeRatchetTree } from "../../src/ratchetTree"
-import { decodeGroupSecrets, encodeGroupSecrets } from "../../src/groupSecrets"
+} from "../../src/proposal.js"
+import { decodeRatchetTree, encodeRatchetTree } from "../../src/ratchetTree.js"
+import { decodeGroupSecrets, encodeGroupSecrets } from "../../src/groupSecrets.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
   codecRoundtrip(x)

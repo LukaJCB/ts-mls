@@ -1,4 +1,4 @@
-import { encodeCapabilities, decodeCapabilities, Capabilities } from "../../src/capabilities"
+import { encodeCapabilities, decodeCapabilities, Capabilities } from "../../src/capabilities.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Capabilities roundtrip", () => {

@@ -1,4 +1,4 @@
-import { encodeCredentialType, decodeCredentialType, CredentialTypeName } from "../../src/credentialType"
+import { encodeCredentialType, decodeCredentialType, CredentialTypeName } from "../../src/credentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("CredentialTypeName roundtrip", () => {

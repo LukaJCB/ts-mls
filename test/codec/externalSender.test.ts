@@ -1,4 +1,4 @@
-import { encodeExternalSender, decodeExternalSender, ExternalSender } from "../../src/externalSender"
+import { encodeExternalSender, decodeExternalSender, ExternalSender } from "../../src/externalSender.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const basic: ExternalSender = {
