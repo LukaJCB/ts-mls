@@ -740,6 +740,30 @@ export async function joinGroup(
   resumingFromState?: ClientState,
   clientConfig: ClientConfig = defaultClientConfig,
 ): Promise<ClientState> {
+  const res = await joinGroupWithExtensions(
+    welcome,
+    keyPackage,
+    privateKeys,
+    pskSearch,
+    cs,
+    ratchetTree,
+    resumingFromState,
+    clientConfig,
+  )
+
+  return res[0]
+}
+
+export async function joinGroupWithExtensions(
+  welcome: Welcome,
+  keyPackage: KeyPackage,
+  privateKeys: PrivateKeyPackage,
+  pskSearch: PskIndex,
+  cs: CiphersuiteImpl,
+  ratchetTree?: RatchetTree,
+  resumingFromState?: ClientState,
+  clientConfig: ClientConfig = defaultClientConfig,
+): Promise<[ClientState, Extension[]]> {
   const keyPackageRef = await makeKeyPackageRef(keyPackage, cs.hash)
   const privKey = await cs.hpke.importPrivateKey(privateKeys.initPrivateKey)
   const groupSecrets = await decryptGroupSecrets(privKey, keyPackageRef, welcome, cs.hpke)
@@ -859,19 +883,22 @@ export async function joinGroup(
 
   const secretTree = await createSecretTree(leafWidth(tree.length), keySchedule.encryptionSecret, cs.kdf)
 
-  return {
-    groupContext: gi.groupContext,
-    ratchetTree: tree,
-    privatePath: updatedPkp,
-    signaturePrivateKey: privateKeys.signaturePrivateKey,
-    confirmationTag: gi.confirmationTag,
-    unappliedProposals: {},
-    keySchedule,
-    secretTree,
-    historicalReceiverData: new Map(),
-    groupActiveState: { kind: "active" },
-    clientConfig,
-  }
+  return [
+    {
+      groupContext: gi.groupContext,
+      ratchetTree: tree,
+      privatePath: updatedPkp,
+      signaturePrivateKey: privateKeys.signaturePrivateKey,
+      confirmationTag: gi.confirmationTag,
+      unappliedProposals: {},
+      keySchedule,
+      secretTree,
+      historicalReceiverData: new Map(),
+      groupActiveState: { kind: "active" },
+      clientConfig,
+    },
+    gi.extensions,
+  ]
 }
 
 export async function createGroup(
