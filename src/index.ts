@@ -37,6 +37,7 @@ export {
   createGroup,
   makePskIndex,
   joinGroup,
+  joinGroupWithExtensions,
   type ClientState,
   type GroupActiveState,
   type EpochReceiverData,
