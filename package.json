@@ -55,7 +55,7 @@
     "eslint-plugin-import": "2.32.0",
     "madge": "8.0.0",
     "prettier": "3.6.2",
-    "tinybench": "5.0.1",
+    "tinybench": "5.1.0",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "typescript-docs-verifier": "3.0.1",
