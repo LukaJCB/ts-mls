@@ -34,17 +34,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const externalSender: ExternalSender = {
-    credential: charlieCredential,
-    signaturePublicKey: charlie.publicPackage.leafNode.signaturePublicKey,
-  }
-
-  const extension: Extension = {
-    extensionType: "external_senders",
-    extensionData: encodeExternalSender(externalSender),
-  }
-
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [extension], impl)
+  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const addBobProposal: ProposalAdd = {
     proposalType: "add",
