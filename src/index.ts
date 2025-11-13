@@ -30,7 +30,7 @@ export { defaultKeyPackageEqualityConfig, type KeyPackageEqualityConfig } from "
 
 export { type LifetimeConfig, defaultLifetimeConfig } from "./lifetimeConfig.js"
 
-export { type PrivateKeyPackage, type KeyPackage, generateKeyPackage } from "./keyPackage.js"
+export { type PrivateKeyPackage, type KeyPackage, generateKeyPackage, generateKeyPackageWithKey } from "./keyPackage.js"
 export { type KeyRetentionConfig, defaultKeyRetentionConfig } from "./keyRetentionConfig.js"
 
 export {

@@ -77,7 +77,7 @@ export async function verifyKeyPackage(kp: KeyPackage, s: Signature): Promise<bo
   return verifyWithLabel(kp.leafNode.signaturePublicKey, "KeyPackageTBS", encodeKeyPackageTBS(kp), kp.signature, s)
 }
 
-export function makeKeyPackageRef(value: KeyPackage, h: Hash) {
+export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Array> {
   return refhash("MLS 1.0 KeyPackage Reference", encodeKeyPackage(value), h)
 }
 
@@ -87,27 +87,27 @@ export interface PrivateKeyPackage {
   signaturePrivateKey: Uint8Array
 }
 
-export async function generateKeyPackage(
+export async function generateKeyPackageWithKey(
   credential: Credential,
   capabilities: Capabilities,
   lifetime: Lifetime,
   extensions: Extension[],
+  signatrueKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
   cs: CiphersuiteImpl,
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
-  const sigKeys = await cs.signature.keygen()
   const initKeys = await cs.hpke.generateKeyPair()
   const hpkeKeys = await cs.hpke.generateKeyPair()
 
   const privatePackage = {
     initPrivateKey: await cs.hpke.exportPrivateKey(initKeys.privateKey),
     hpkePrivateKey: await cs.hpke.exportPrivateKey(hpkeKeys.privateKey),
-    signaturePrivateKey: sigKeys.signKey,
+    signaturePrivateKey: signatrueKeyPair.signKey,
   }
 
   const leafNodeTbs: LeafNodeTBSKeyPackage = {
     leafNodeSource: "key_package",
     hpkePublicKey: await cs.hpke.exportPublicKey(hpkeKeys.publicKey),
-    signaturePublicKey: sigKeys.publicKey,
+    signaturePublicKey: signatrueKeyPair.publicKey,
     info: { leafNodeSource: "key_package" },
     extensions,
     credential,
@@ -119,9 +119,20 @@ export async function generateKeyPackage(
     version: "mls10",
     cipherSuite: cs.name,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
-    leafNode: await signLeafNodeKeyPackage(leafNodeTbs, sigKeys.signKey, cs.signature),
+    leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatrueKeyPair.signKey, cs.signature),
     extensions,
   }
 
-  return { publicPackage: await signKeyPackage(tbs, sigKeys.signKey, cs.signature), privatePackage }
+  return { publicPackage: await signKeyPackage(tbs, signatrueKeyPair.signKey, cs.signature), privatePackage }
+}
+
+export async function generateKeyPackage(
+  credential: Credential,
+  capabilities: Capabilities,
+  lifetime: Lifetime,
+  extensions: Extension[],
+  cs: CiphersuiteImpl,
+): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
+  const sigKeys = await cs.signature.keygen()
+  return generateKeyPackageWithKey(credential, capabilities, lifetime, extensions, sigKeys, cs)
 }
