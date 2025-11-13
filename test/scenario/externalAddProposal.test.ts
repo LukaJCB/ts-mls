@@ -12,8 +12,6 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { encodeExternalSender, ExternalSender } from "../../src/externalSender.js"
-import { Extension } from "../../src/extension.js"
 import { proposeAddExternal } from "../../src/externalProposal.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Add Proposal %s`, async (cs) => {
