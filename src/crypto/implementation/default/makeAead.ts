@@ -1,6 +1,6 @@
 import { AeadInterface, Aes128Gcm, Aes256Gcm } from "@hpke/core"
 import { DependencyError } from "../../../mlsError.js"
-import { bytesToBuffer } from "../../../util/byteArray.js"
+import { toBufferSource } from "../../../util/byteArray.js"
 import { AeadAlgorithm, Aead } from "../../aead.js"
 
 export async function makeAead(aeadAlg: AeadAlgorithm): Promise<[Aead, AeadInterface]> {
@@ -58,15 +58,15 @@ async function encryptAesGcm(
   aad: Uint8Array,
   plaintext: Uint8Array,
 ): Promise<Uint8Array> {
-  const cryptoKey = await crypto.subtle.importKey("raw", bytesToBuffer(key), { name: "AES-GCM" }, false, ["encrypt"])
+  const cryptoKey = await crypto.subtle.importKey("raw", toBufferSource(key), { name: "AES-GCM" }, false, ["encrypt"])
   const result = await crypto.subtle.encrypt(
     {
       name: "AES-GCM",
-      iv: bytesToBuffer(nonce),
-      additionalData: aad.length > 0 ? bytesToBuffer(aad) : undefined,
+      iv: toBufferSource(nonce),
+      additionalData: aad.length > 0 ? toBufferSource(aad) : undefined,
     },
     cryptoKey,
-    bytesToBuffer(plaintext),
+    toBufferSource(plaintext),
   )
   return new Uint8Array(result)
 }
@@ -77,15 +77,15 @@ async function decryptAesGcm(
   aad: Uint8Array,
   ciphertext: Uint8Array,
 ): Promise<Uint8Array> {
-  const cryptoKey = await crypto.subtle.importKey("raw", bytesToBuffer(key), { name: "AES-GCM" }, false, ["decrypt"])
+  const cryptoKey = await crypto.subtle.importKey("raw", toBufferSource(key), { name: "AES-GCM" }, false, ["decrypt"])
   const result = await crypto.subtle.decrypt(
     {
       name: "AES-GCM",
-      iv: bytesToBuffer(nonce),
-      additionalData: aad.length > 0 ? bytesToBuffer(aad) : undefined,
+      iv: toBufferSource(nonce),
+      additionalData: aad.length > 0 ? toBufferSource(aad) : undefined,
     },
     cryptoKey,
-    bytesToBuffer(ciphertext),
+    toBufferSource(ciphertext),
   )
   return new Uint8Array(result)
 }

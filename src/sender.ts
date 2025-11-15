@@ -141,7 +141,7 @@ export const decodeSenderDataAAD: Decoder<SenderDataAAD> = mapDecoders(
 )
 
 export function sampleCiphertext(cs: CiphersuiteImpl, ciphertext: Uint8Array): Uint8Array {
-  return ciphertext.length < cs.kdf.size ? ciphertext : ciphertext.slice(0, cs.kdf.size)
+  return ciphertext.length < cs.kdf.size ? ciphertext : ciphertext.subarray(0, cs.kdf.size)
 }
 
 export async function expandSenderDataKey(

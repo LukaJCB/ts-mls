@@ -1,7 +1,7 @@
 import { CipherSuite } from "@hpke/core"
 import { Aead } from "../../crypto/aead.js"
 import { HpkeAlgorithm, Hpke, PrivateKey, PublicKey } from "../../crypto/hpke.js"
-import { bytesToBuffer, concatUint8Arrays } from "../../util/byteArray.js"
+import { concatUint8Arrays, bytesToArrayBuffer } from "../../util/byteArray.js"
 import { CryptoError } from "../../mlsError.js"
 
 export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: CipherSuite): Promise<Hpke> {
@@ -9,9 +9,9 @@ export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: Ci
     async open(privateKey, kemOutput, ciphertext, info, aad) {
       try {
         const result = await cs.open(
-          { recipientKey: privateKey, enc: bytesToBuffer(kemOutput), info: bytesToBuffer(info) },
-          bytesToBuffer(ciphertext),
-          aad ? bytesToBuffer(aad) : new ArrayBuffer(),
+          { recipientKey: privateKey, enc: bytesToArrayBuffer(kemOutput), info: bytesToArrayBuffer(info) },
+          bytesToArrayBuffer(ciphertext),
+          aad ? bytesToArrayBuffer(aad) : new ArrayBuffer(),
         )
         return new Uint8Array(result)
       } catch (e) {
@@ -20,9 +20,9 @@ export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: Ci
     },
     async seal(publicKey, plaintext, info, aad) {
       const result = await cs.seal(
-        { recipientPublicKey: publicKey, info: bytesToBuffer(info) },
-        bytesToBuffer(plaintext),
-        aad ? bytesToBuffer(aad) : new ArrayBuffer(),
+        { recipientPublicKey: publicKey, info: bytesToArrayBuffer(info) },
+        bytesToArrayBuffer(plaintext),
+        aad ? bytesToArrayBuffer(aad) : new ArrayBuffer(),
       )
       return {
         ct: new Uint8Array(result.ct),
@@ -30,20 +30,20 @@ export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: Ci
       }
     },
     async exportSecret(publicKey, exporterContext, length, info) {
-      const context = await cs.createSenderContext({ recipientPublicKey: publicKey, info: bytesToBuffer(info) })
+      const context = await cs.createSenderContext({ recipientPublicKey: publicKey, info: bytesToArrayBuffer(info) })
       return {
         enc: new Uint8Array(context.enc),
-        secret: new Uint8Array(await context.export(bytesToBuffer(exporterContext), length)),
+        secret: new Uint8Array(await context.export(bytesToArrayBuffer(exporterContext), length)),
       }
     },
     async importSecret(privateKey, exporterContext, kemOutput, length, info) {
       try {
         const context = await cs.createRecipientContext({
           recipientKey: privateKey,
-          info: bytesToBuffer(info),
-          enc: bytesToBuffer(kemOutput),
+          info: bytesToArrayBuffer(info),
+          enc: bytesToArrayBuffer(kemOutput),
         })
-        return new Uint8Array(await context.export(bytesToBuffer(exporterContext), length))
+        return new Uint8Array(await context.export(bytesToArrayBuffer(exporterContext), length))
       } catch (e) {
         throw new CryptoError(`${e}`)
       }
@@ -52,14 +52,14 @@ export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: Ci
       try {
         // See https://github.com/mlswg/mls-implementations/issues/176#issuecomment-1817043142
         const key = hpkealg.kem === "DHKEM-P521-HKDF-SHA512" ? prepadPrivateKeyP521(k) : k
-        return (await cs.kem.deserializePrivateKey(bytesToBuffer(key))) as PrivateKey
+        return (await cs.kem.deserializePrivateKey(bytesToArrayBuffer(key))) as PrivateKey
       } catch (e) {
         throw new CryptoError(`${e}`)
       }
     },
     async importPublicKey(k) {
       try {
-        return (await cs.kem.deserializePublicKey(bytesToBuffer(k))) as PublicKey
+        return (await cs.kem.deserializePublicKey(bytesToArrayBuffer(k))) as PublicKey
       } catch (e) {
         throw new CryptoError(`${e}`)
       }
@@ -81,7 +81,7 @@ export async function makeGenericHpke(hpkealg: HpkeAlgorithm, aead: Aead, cs: Ci
       }
     },
     async deriveKeyPair(ikm) {
-      const kp = await cs.kem.deriveKeyPair(bytesToBuffer(ikm))
+      const kp = await cs.kem.deriveKeyPair(bytesToArrayBuffer(ikm))
       return { privateKey: kp.privateKey as PrivateKey, publicKey: kp.publicKey as PublicKey }
     },
     async generateKeyPair() {

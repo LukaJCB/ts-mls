@@ -1,5 +1,23 @@
-export function bytesToBuffer(b: Uint8Array): ArrayBuffer {
-  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer
+export function bytesToArrayBuffer(b: Uint8Array): ArrayBuffer {
+  if (b.buffer instanceof ArrayBuffer) {
+    if (b.byteOffset === 0 && b.byteLength === b.buffer.byteLength) {
+      return b.buffer
+    }
+    return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)
+  } else {
+    const ab = new ArrayBuffer(b.byteLength)
+    const arr = new Uint8Array(ab)
+    arr.set(b, 0)
+    return ab
+  }
+}
+
+export function toBufferSource(b: Uint8Array): BufferSource {
+  if (b.buffer instanceof ArrayBuffer) return b as Uint8Array<ArrayBuffer>
+  const ab = new ArrayBuffer(b.byteLength)
+  const arr = new Uint8Array(ab)
+  arr.set(b, 0)
+  return ab
 }
 
 export function bytesToBase64(bytes: Uint8Array): string {
@@ -29,5 +47,13 @@ export function concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
   const result = new Uint8Array(a.length + b.length)
   result.set(a, 0)
   result.set(b, a.length)
+  return result
+}
+
+export function concat3Uint8Arrays(a: Uint8Array, b: Uint8Array, c: Uint8Array): Uint8Array {
+  const result = new Uint8Array(a.length + b.length + c.length)
+  result.set(a, 0)
+  result.set(b, a.length)
+  result.set(c, a.length + b.length)
   return result
 }
