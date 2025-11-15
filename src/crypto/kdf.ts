@@ -1,5 +1,6 @@
 import { encodeVarLenData } from "../codec/variableLength.js"
 import { encodeUint16, encodeUint32 } from "../codec/number.js"
+import { concat3Uint8Arrays } from "../util/byteArray.js"
 
 export interface Kdf {
   extract(salt: Uint8Array, ikm: Uint8Array): Promise<Uint8Array>
@@ -18,11 +19,11 @@ export function expandWithLabel(
 ): Promise<Uint8Array> {
   return kdf.expand(
     secret,
-    new Uint8Array([
-      ...encodeUint16(length),
-      ...encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)),
-      ...encodeVarLenData(context),
-    ]),
+    concat3Uint8Arrays(
+      encodeUint16(length),
+      encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)),
+      encodeVarLenData(context),
+    ),
     length,
   )
 }
