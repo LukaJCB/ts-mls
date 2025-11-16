@@ -1,7 +1,7 @@
-import { encodeUint32, decodeUint32 } from "./codec/number.js"
+import { encUint32, decodeUint32 } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
-import { encodeVarLenData, encodeVarLenType, decodeVarLenData, decodeVarLenType } from "./codec/variableLength.js"
+import { Enc, contramapEncs } from "./codec/tlsEncoder.js"
+import { encVarLenData, encVarLenType, decodeVarLenData, decodeVarLenType } from "./codec/variableLength.js"
 
 export interface ParentNode {
   hpkePublicKey: Uint8Array
@@ -9,8 +9,8 @@ export interface ParentNode {
   unmergedLeaves: number[]
 }
 
-export const encodeParentNode: Encoder<ParentNode> = contramapEncoders(
-  [encodeVarLenData, encodeVarLenData, encodeVarLenType(encodeUint32)],
+export const encodeParentNode: Enc<ParentNode> = contramapEncs(
+  [encVarLenData, encVarLenData, encVarLenType(encUint32)],
   (node) => [node.hpkePublicKey, node.parentHash, node.unmergedLeaves] as const,
 )
 

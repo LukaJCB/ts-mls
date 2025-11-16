@@ -1,7 +1,7 @@
-import { decodeUint64, encodeUint64 } from "./codec/number.js"
+import { decodeUint64, encUint64 } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { contramapEncs, Enc, encode } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encVarLenData, encVarLenType } from "./codec/variableLength.js"
 import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
 
 import { expandWithLabel, Kdf } from "./crypto/kdf.js"
@@ -19,15 +19,15 @@ export interface GroupContext {
   extensions: Extension[]
 }
 
-export const encodeGroupContext: Encoder<GroupContext> = contramapEncoders(
+export const encodeGroupContext: Enc<GroupContext> = contramapEncs(
   [
     encodeProtocolVersion,
     encodeCiphersuite,
-    encodeVarLenData, // groupId
-    encodeUint64, // epoch
-    encodeVarLenData, // treeHash
-    encodeVarLenData, // confirmedTranscriptHash
-    encodeVarLenType(encodeExtension),
+    encVarLenData, // groupId
+    encUint64, // epoch
+    encVarLenData, // treeHash
+    encVarLenData, // confirmedTranscriptHash
+    encVarLenType(encodeExtension),
   ],
   (gc) =>
     [gc.version, gc.cipherSuite, gc.groupId, gc.epoch, gc.treeHash, gc.confirmedTranscriptHash, gc.extensions] as const,
@@ -63,7 +63,7 @@ export async function extractEpochSecret(
   const psk = pskSecret === undefined ? new Uint8Array(kdf.size) : pskSecret
   const extracted = await kdf.extract(joinerSecret, psk)
 
-  return expandWithLabel(extracted, "epoch", encodeGroupContext(context), kdf.size, kdf)
+  return expandWithLabel(extracted, "epoch", encode(encodeGroupContext)(context), kdf.size, kdf)
 }
 
 export async function extractJoinerSecret(
@@ -74,5 +74,5 @@ export async function extractJoinerSecret(
 ) {
   const extracted = await kdf.extract(previousInitSecret, commitSecret)
 
-  return expandWithLabel(extracted, "joiner", encodeGroupContext(context), kdf.size, kdf)
+  return expandWithLabel(extracted, "joiner", encode(encodeGroupContext)(context), kdf.size, kdf)
 }

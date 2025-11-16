@@ -1,5 +1,5 @@
-import { encodeVarLenData } from "../codec/variableLength.js"
-import { concatUint8Arrays } from "../util/byteArray.js"
+import { composeEncs, encode } from "../codec/tlsEncoder.js"
+import { encVarLenData } from "../codec/variableLength.js"
 
 export interface Signature {
   sign(signKey: Uint8Array, message: Uint8Array): Promise<Uint8Array>
@@ -17,7 +17,7 @@ export async function signWithLabel(
 ): Promise<Uint8Array> {
   return s.sign(
     signKey,
-    concatUint8Arrays(encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), encodeVarLenData(content)),
+    encode(composeEncs([encVarLenData, encVarLenData]))([new TextEncoder().encode(`MLS 1.0 ${label}`), content])
   )
 }
 
@@ -30,7 +30,7 @@ export async function verifyWithLabel(
 ): Promise<boolean> {
   return s.verify(
     publicKey,
-    concatUint8Arrays(encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)), encodeVarLenData(content)),
+    encode(composeEncs([encVarLenData, encVarLenData]))([new TextEncoder().encode(`MLS 1.0 ${label}`), content]),
     signature,
   )
 }

@@ -1,6 +1,6 @@
-import { decodeUint16, encodeUint16 } from "./codec/number.js"
+import { decodeUint16, encUint16 } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapEncoder, Encoder } from "./codec/tlsEncoder.js"
+import { contramapEnc, Enc } from "./codec/tlsEncoder.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
 export const protocolVersions = {
@@ -10,8 +10,8 @@ export const protocolVersions = {
 export type ProtocolVersionName = keyof typeof protocolVersions
 export type ProtocolVersionValue = (typeof protocolVersions)[ProtocolVersionName]
 
-export const encodeProtocolVersion: Encoder<ProtocolVersionName> = contramapEncoder(
-  encodeUint16,
+export const encodeProtocolVersion: Enc<ProtocolVersionName> = contramapEnc(
+  encUint16,
   (t) => protocolVersions[t],
 )
 

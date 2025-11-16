@@ -1,5 +1,5 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { contramapEncs, Enc, encode } from "./codec/tlsEncoder.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import {
   decodeFramedContent,
@@ -38,7 +38,7 @@ export type AuthenticatedContentProposal = AuthenticatedContent & {
 export type AuthenticatedContentProposalOrCommit = AuthenticatedContent & {
   content: (FramedContentProposalData | FramedContentCommitData) & FramedContentData
 }
-export const encodeAuthenticatedContent: Encoder<AuthenticatedContent> = contramapEncoders(
+export const encodeAuthenticatedContent: Enc<AuthenticatedContent> = contramapEncs(
   [encodeWireformat, encodeFramedContent, encodeFramedContentAuthData],
   (a) => [a.wireformat, a.content, a.auth] as const,
 )
@@ -61,7 +61,7 @@ export interface AuthenticatedContentTBM {
   auth: FramedContentAuthData
 }
 
-export const encodeAuthenticatedContentTBM: Encoder<AuthenticatedContentTBM> = contramapEncoders(
+export const encodeAuthenticatedContentTBM: Enc<AuthenticatedContentTBM> = contramapEncs(
   [encodeFramedContentTBS, encodeFramedContentAuthData],
   (t) => [t.contentTbs, t.auth] as const,
 )
@@ -71,7 +71,7 @@ export function createMembershipTag(
   tbm: AuthenticatedContentTBM,
   h: Hash,
 ): Promise<Uint8Array> {
-  return h.mac(membershipKey, encodeAuthenticatedContentTBM(tbm))
+  return h.mac(membershipKey, encode(encodeAuthenticatedContentTBM)(tbm))
 }
 
 export function verifyMembershipTag(
@@ -80,9 +80,9 @@ export function verifyMembershipTag(
   tag: Uint8Array,
   h: Hash,
 ): Promise<boolean> {
-  return h.verifyMac(membershipKey, tag, encodeAuthenticatedContentTBM(tbm))
+  return h.verifyMac(membershipKey, tag, encode(encodeAuthenticatedContentTBM)(tbm))
 }
 
 export function makeProposalRef(proposal: AuthenticatedContent, h: Hash): Promise<Uint8Array> {
-  return refhash("MLS 1.0 Proposal Reference", encodeAuthenticatedContent(proposal), h)
+  return refhash("MLS 1.0 Proposal Reference", encode(encodeAuthenticatedContent)(proposal), h)
 }

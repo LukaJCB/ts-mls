@@ -1,5 +1,5 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { contramapEncs, Enc } from "./codec/tlsEncoder.js"
 import { decodeGroupInfo, encodeGroupInfo, GroupInfo } from "./groupInfo.js"
 import { decodeKeyPackage, encodeKeyPackage, KeyPackage } from "./keyPackage.js"
 import { decodePrivateMessage, encodePrivateMessage, PrivateMessage } from "./privateMessage.js"
@@ -36,7 +36,7 @@ export interface MlsPublicMessage {
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
 export type MLSMessage = MlsMessageProtocol & MlsMessageContent
 
-export const encodeMlsMessageContent: Encoder<MlsMessageContent> = (mc) => {
+export const encodeMlsMessageContent: Enc<MlsMessageContent> = (mc) => {
   switch (mc.wireformat) {
     case "mls_public_message":
       return encodeMlsPublicMessage(mc)
@@ -51,27 +51,27 @@ export const encodeMlsMessageContent: Encoder<MlsMessageContent> = (mc) => {
   }
 }
 
-export const encodeMlsPublicMessage: Encoder<MlsPublicMessage> = contramapEncoders(
+export const encodeMlsPublicMessage: Enc<MlsPublicMessage> = contramapEncs(
   [encodeWireformat, encodePublicMessage],
   (msg) => [msg.wireformat, msg.publicMessage] as const,
 )
 
-export const encodeMlsWelcome: Encoder<MlsWelcome> = contramapEncoders(
+export const encodeMlsWelcome: Enc<MlsWelcome> = contramapEncs(
   [encodeWireformat, encodeWelcome],
   (wm) => [wm.wireformat, wm.welcome] as const,
 )
 
-export const encodeMlsPrivateMessage: Encoder<MlsPrivateMessage> = contramapEncoders(
+export const encodeMlsPrivateMessage: Enc<MlsPrivateMessage> = contramapEncs(
   [encodeWireformat, encodePrivateMessage],
   (pm) => [pm.wireformat, pm.privateMessage] as const,
 )
 
-export const encodeMlsGroupInfo: Encoder<MlsGroupInfo> = contramapEncoders(
+export const encodeMlsGroupInfo: Enc<MlsGroupInfo> = contramapEncs(
   [encodeWireformat, encodeGroupInfo],
   (gi) => [gi.wireformat, gi.groupInfo] as const,
 )
 
-export const encodeMlsKeyPackage: Encoder<MlsKeyPackage> = contramapEncoders(
+export const encodeMlsKeyPackage: Enc<MlsKeyPackage> = contramapEncs(
   [encodeWireformat, encodeKeyPackage],
   (kp) => [kp.wireformat, kp.keyPackage] as const,
 )
@@ -94,7 +94,7 @@ export const decodeMlsMessageContent: Decoder<MlsMessageContent> = flatMapDecode
   },
 )
 
-export const encodeMlsMessage: Encoder<MLSMessage> = contramapEncoders(
+export const encodeMlsMessage: Enc<MLSMessage> = contramapEncs(
   [encodeProtocolVersion, encodeMlsMessageContent],
   (w) => [w.version, w] as const,
 )

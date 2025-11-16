@@ -7,7 +7,11 @@ import {
   decodeUint32,
   encodeUint64,
   decodeUint64,
+  encUint8,
+  encUint16,
 } from "../../src/codec/number.js"
+import { mapDecoders } from "../../src/codec/tlsDecoder.js"
+import { composeEnc, contramapEncs, encode } from "../../src/codec/tlsEncoder.js"
 
 test("encode and decode works for uint8: 0", () => {
   uint8RoundTrip(0)

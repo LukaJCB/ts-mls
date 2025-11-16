@@ -82,6 +82,7 @@ import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
+import { encode } from "./codec/tlsEncoder.js"
 
 export interface ClientState {
   groupContext: GroupContext
@@ -226,7 +227,7 @@ async function validateProposals(
   const multiplePskWithSamePskId = p.psk.some((a, indexA) =>
     p.psk.some(
       (b, indexB) =>
-        constantTimeEqual(encodePskId(a.proposal.psk.preSharedKeyId), encodePskId(b.proposal.psk.preSharedKeyId)) &&
+        constantTimeEqual(encode(encodePskId)(a.proposal.psk.preSharedKeyId), encode(encodePskId)(b.proposal.psk.preSharedKeyId)) &&
         indexA !== indexB,
     ),
   )

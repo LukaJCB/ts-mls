@@ -1,7 +1,7 @@
-import { decodeUint32, decodeUint64, decodeUint8, encodeUint32, encodeUint64, encodeUint8 } from "./codec/number.js"
+import { decodeUint32, decodeUint64, decodeUint8, encUint32, encUint64 , encUint8} from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { contramapEnc, contramapEncs, Enc } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encVarLenData } from "./codec/variableLength.js"
 import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
@@ -17,7 +17,7 @@ const senderTypes = {
 export type SenderTypeName = keyof typeof senderTypes
 export type SenderTypeValue = (typeof senderTypes)[SenderTypeName]
 
-export const encodeSenderType: Encoder<SenderTypeName> = contramapEncoder(encodeUint8, (t) => senderTypes[t])
+export const encodeSenderType: Enc<SenderTypeName> = contramapEnc(encUint8, (t) => senderTypes[t])
 
 export const decodeSenderType: Decoder<SenderTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(senderTypes))
 
@@ -41,16 +41,16 @@ export interface SenderNewMemberCommit {
 
 export type Sender = SenderMember | SenderNonMember
 
-export const encodeSender: Encoder<Sender> = (s) => {
+export const encodeSender: Enc<Sender> = (s) => {
   switch (s.senderType) {
     case "member":
-      return contramapEncoders(
-        [encodeSenderType, encodeUint32],
+      return contramapEncs(
+        [encodeSenderType, encUint32],
         (s: SenderMember) => [s.senderType, s.leafIndex] as const,
       )(s)
     case "external":
-      return contramapEncoders(
-        [encodeSenderType, encodeUint32],
+      return contramapEncs(
+        [encodeSenderType, encUint32],
         (s: SenderExternal) => [s.senderType, s.senderIndex] as const,
       )(s)
     case "new_member_proposal":
@@ -100,14 +100,17 @@ export interface SenderData {
 
 export type ReuseGuard = Uint8Array & { length: 4 }
 
-export const encodeReuseGuard: Encoder<ReuseGuard> = (g) => g
+export const encodeReuseGuard: Enc<ReuseGuard> = (g) => [4, (offset, buffer) => {
+  const view = new Uint8Array(buffer, offset, length)
+  view.set(g, 0)
+}]
 
 export const decodeReuseGuard: Decoder<ReuseGuard> = (b, offset) => {
   return [b.subarray(offset, offset + 4) as ReuseGuard, 4]
 }
 
-export const encodeSenderData: Encoder<SenderData> = contramapEncoders(
-  [encodeUint32, encodeUint32, encodeReuseGuard],
+export const encodeSenderData: Enc<SenderData> = contramapEncs(
+  [encUint32, encUint32, encodeReuseGuard],
   (s) => [s.leafIndex, s.generation, s.reuseGuard] as const,
 )
 
@@ -126,8 +129,8 @@ export interface SenderDataAAD {
   contentType: ContentTypeName
 }
 
-export const encodeSenderDataAAD: Encoder<SenderDataAAD> = contramapEncoders(
-  [encodeVarLenData, encodeUint64, encodeContentType],
+export const encodeSenderDataAAD: Enc<SenderDataAAD> = contramapEncs(
+  [encVarLenData, encUint64, encodeContentType],
   (aad) => [aad.groupId, aad.epoch, aad.contentType] as const,
 )
 

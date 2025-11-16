@@ -1,6 +1,6 @@
-import { decodeUint16, encodeUint16 } from "./codec/number.js"
+import { decodeUint16, encUint16 } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapEncoder, Encoder } from "./codec/tlsEncoder.js"
+import { contramapEnc, Enc } from "./codec/tlsEncoder.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
 export const defaultProposalTypes = {
@@ -16,8 +16,8 @@ export const defaultProposalTypes = {
 export type DefaultProposalTypeName = keyof typeof defaultProposalTypes
 export type DefaultProposalTypeValue = (typeof defaultProposalTypes)[DefaultProposalTypeName]
 
-export const encodeDefaultProposalType: Encoder<DefaultProposalTypeName> = contramapEncoder(
-  encodeUint16,
+export const encodeDefaultProposalType: Enc<DefaultProposalTypeName> = contramapEnc(
+  encUint16,
   (n) => defaultProposalTypes[n],
 )
 

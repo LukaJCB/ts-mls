@@ -1,6 +1,6 @@
-import { decodeUint16, encodeUint16 } from "./codec/number.js"
+import { decodeUint16, encUint16 } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapEncoder, Encoder } from "./codec/tlsEncoder.js"
+import { contramapEnc, Enc } from "./codec/tlsEncoder.js"
 import { openEnumNumberEncoder, openEnumNumberToKey } from "./util/enumHelpers.js"
 
 const credentialTypes = {
@@ -11,8 +11,8 @@ const credentialTypes = {
 export type CredentialTypeName = keyof typeof credentialTypes
 export type CredentialTypeValue = (typeof credentialTypes)[CredentialTypeName]
 
-export const encodeCredentialType: Encoder<CredentialTypeName> = contramapEncoder(
-  encodeUint16,
+export const encodeCredentialType: Enc<CredentialTypeName> = contramapEnc(
+  encUint16,
   openEnumNumberEncoder(credentialTypes),
 )
 

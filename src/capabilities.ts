@@ -1,10 +1,10 @@
 import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType.js"
 import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { Enc, contramapEncs } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength.js"
-import { decodeUint16, encodeUint16 } from "./codec/number.js"
+import { decodeVarLenType, encVarLenType } from "./codec/variableLength.js"
+import { decodeUint16, encUint16 } from "./codec/number.js"
 
 export interface Capabilities {
   versions: ProtocolVersionName[]
@@ -14,13 +14,13 @@ export interface Capabilities {
   credentials: CredentialTypeName[]
 }
 
-export const encodeCapabilities: Encoder<Capabilities> = contramapEncoders(
+export const encodeCapabilities: Enc<Capabilities> = contramapEncs(
   [
-    encodeVarLenType(encodeProtocolVersion),
-    encodeVarLenType(encodeCiphersuite),
-    encodeVarLenType(encodeUint16),
-    encodeVarLenType(encodeUint16),
-    encodeVarLenType(encodeCredentialType),
+    encVarLenType(encodeProtocolVersion),
+    encVarLenType(encodeCiphersuite),
+    encVarLenType(encUint16),
+    encVarLenType(encUint16),
+    encVarLenType(encodeCredentialType),
   ],
   (cap) => [cap.versions, cap.ciphersuites, cap.extensions, cap.proposals, cap.credentials] as const,
 )

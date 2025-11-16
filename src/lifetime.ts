@@ -1,5 +1,5 @@
-import { encodeUint64, decodeUint64 } from "./codec/number.js"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { encUint64, decodeUint64 } from "./codec/number.js"
+import { Enc, contramapEncs } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 
 export interface Lifetime {
@@ -7,8 +7,8 @@ export interface Lifetime {
   notAfter: bigint
 }
 
-export const encodeLifetime: Encoder<Lifetime> = contramapEncoders(
-  [encodeUint64, encodeUint64],
+export const encodeLifetime: Enc<Lifetime> = contramapEncs(
+  [encUint64, encUint64],
   (lt) => [lt.notBefore, lt.notAfter] as const,
 )
 

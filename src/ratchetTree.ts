@@ -1,9 +1,9 @@
-import { Encoder, contramapEncoder, contramapEncoders } from "./codec/tlsEncoder.js"
+import { Enc, contramapEnc, contramapEncs, encode } from "./codec/tlsEncoder.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
-import { decodeVarLenType, encodeVarLenType } from "./codec/variableLength.js"
+import { decodeVarLenType, encVarLenType } from "./codec/variableLength.js"
 import { decodeNodeType, encodeNodeType } from "./nodeType.js"
-import { decodeOptional, encodeOptional } from "./codec/optional.js"
+import { decodeOptional, encOptional } from "./codec/optional.js"
 import { ParentNode, encodeParentNode, decodeParentNode } from "./parentNode.js"
 import {
   copath,
@@ -29,15 +29,15 @@ export type Node = NodeParent | NodeLeaf
 type NodeParent = { nodeType: "parent"; parent: ParentNode }
 type NodeLeaf = { nodeType: "leaf"; leaf: LeafNode }
 
-export const encodeNode: Encoder<Node> = (node) => {
+export const encodeNode: Enc<Node> = (node) => {
   switch (node.nodeType) {
     case "parent":
-      return contramapEncoders(
+      return contramapEncs(
         [encodeNodeType, encodeParentNode],
         (n: NodeParent) => [n.nodeType, n.parent] as const,
       )(node)
     case "leaf":
-      return contramapEncoders([encodeNodeType, encodeLeafNode], (n: NodeLeaf) => [n.nodeType, n.leaf] as const)(node)
+      return contramapEncs([encodeNodeType, encodeLeafNode], (n: NodeLeaf) => [n.nodeType, n.leaf] as const)(node)
   }
 }
 
@@ -110,8 +110,8 @@ export function stripBlankNodes(tree: RatchetTree): RatchetTree {
   return tree.slice(0, lastNonBlank + 1)
 }
 
-export const encodeRatchetTree: Encoder<RatchetTree> = contramapEncoder(
-  encodeVarLenType(encodeOptional(encodeNode)),
+export const encodeRatchetTree: Enc<RatchetTree> = contramapEnc(
+  encVarLenType(encOptional(encodeNode)),
   stripBlankNodes,
 )
 
@@ -320,7 +320,7 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | un
     if (isLeaf(toNodeIndex(nodeIndex)) && node !== undefined) {
       if (node.nodeType === "parent") throw new InternalError("Found parent node in leaf node position")
       //todo is there a better (faster) comparison method?
-      return constantTimeEqual(encodeLeafNode(node.leaf), encodeLeafNode(leaf))
+      return constantTimeEqual(encode(encodeLeafNode)(node.leaf), encode(encodeLeafNode)(leaf))
     }
 
     return false

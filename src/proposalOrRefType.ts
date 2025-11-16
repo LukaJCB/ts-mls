@@ -1,7 +1,7 @@
-import { decodeUint8, encodeUint8 } from "./codec/number.js"
+import { decodeUint8, encUint8 } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { contramapEnc, contramapEncs, Enc } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encVarLenData } from "./codec/variableLength.js"
 import { decodeProposal, encodeProposal, Proposal } from "./proposal.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
@@ -13,8 +13,8 @@ const proposalOrRefTypes = {
 export type ProposalOrRefTypeName = keyof typeof proposalOrRefTypes
 export type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTypeName]
 
-export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeName> = contramapEncoder(
-  encodeUint8,
+export const encodeProposalOrRefType: Enc<ProposalOrRefTypeName> = contramapEnc(
+  encUint8,
   (t) => proposalOrRefTypes[t],
 )
 
@@ -34,17 +34,17 @@ export interface ProposalOrRefProposalRef {
 
 export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef
 
-export const encodeProposalOrRefProposal: Encoder<ProposalOrRefProposal> = contramapEncoders(
+export const encodeProposalOrRefProposal: Enc<ProposalOrRefProposal> = contramapEncs(
   [encodeProposalOrRefType, encodeProposal],
   (p) => [p.proposalOrRefType, p.proposal] as const,
 )
 
-export const encodeProposalOrRefProposalRef: Encoder<ProposalOrRefProposalRef> = contramapEncoders(
-  [encodeProposalOrRefType, encodeVarLenData],
+export const encodeProposalOrRefProposalRef: Enc<ProposalOrRefProposalRef> = contramapEncs(
+  [encodeProposalOrRefType, encVarLenData],
   (r) => [r.proposalOrRefType, r.reference] as const,
 )
 
-export const encodeProposalOrRef: Encoder<ProposalOrRef> = (input) => {
+export const encodeProposalOrRef: Enc<ProposalOrRef> = (input) => {
   switch (input.proposalOrRefType) {
     case "proposal":
       return encodeProposalOrRefProposal(input)

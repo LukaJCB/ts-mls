@@ -1,6 +1,7 @@
-import { encodeVarLenData } from "../codec/variableLength.js"
-import { encodeUint16, encodeUint32 } from "../codec/number.js"
+import { encVarLenData } from "../codec/variableLength.js"
+import { encUint16, encUint32 } from "../codec/number.js"
 import { concat3Uint8Arrays } from "../util/byteArray.js"
+import { encode } from "../codec/tlsEncoder.js"
 
 export interface Kdf {
   extract(salt: Uint8Array, ikm: Uint8Array): Promise<Uint8Array>
@@ -20,10 +21,10 @@ export function expandWithLabel(
   return kdf.expand(
     secret,
     concat3Uint8Arrays(
-      encodeUint16(length),
-      encodeVarLenData(new TextEncoder().encode(`MLS 1.0 ${label}`)),
-      encodeVarLenData(context),
-    ),
+      encode(encUint16)(length),
+      encode(encVarLenData)(new TextEncoder().encode(`MLS 1.0 ${label}`)),
+      encode(encVarLenData)(context),
+    ), //todo
     length,
   )
 }
@@ -39,5 +40,5 @@ export async function deriveTreeSecret(
   length: number,
   kdf: Kdf,
 ): Promise<Uint8Array> {
-  return expandWithLabel(secret, label, encodeUint32(generation), length, kdf)
+  return expandWithLabel(secret, label, encode(encUint32)(generation), length, kdf)
 }

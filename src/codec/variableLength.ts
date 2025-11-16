@@ -1,6 +1,6 @@
 import { CodecError } from "../mlsError.js"
 import { Decoder } from "./tlsDecoder.js"
-import { Encoder } from "./tlsEncoder.js"
+import { Enc, Encoder } from "./tlsEncoder.js"
 
 export const encodeVarLenData: Encoder<Uint8Array> = (data) => {
   const lenBytes: Uint8Array = encodeLength(data.length)
@@ -9,6 +9,17 @@ export const encodeVarLenData: Encoder<Uint8Array> = (data) => {
   result.set(lenBytes, 0)
   result.set(data, lenBytes.length)
   return result
+}
+
+
+export const encVarLenData: Enc<Uint8Array> = (data) => {
+  const [len, write] = encLength(data.length)
+
+  return [len + data.length, (offset, buffer) => {
+    write(offset, buffer)
+    const view = new Uint8Array(buffer)
+    view.set(data, offset + len)
+  }]
 }
 
 export function encodeLength(len: number): Uint8Array {
@@ -21,6 +32,35 @@ export function encodeLength(len: number): Uint8Array {
   } else if (len < 0x40000000) {
     // 4-byte length: 10xxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
     return new Uint8Array([((len >> 24) & 0b00111111) | 0b10000000, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff])
+  } else {
+    throw new CodecError("Length too large to encode (max is 2^30 - 1)")
+  }
+}
+
+export function encLength(len: number): [number, (offset: number, buffer: ArrayBuffer) => void] {
+  
+  if (len < 64) {
+    return [1, (offset, buffer) => {
+    // 1-byte length: 00xxxxxx
+    const view = new DataView(buffer)
+    view.setUint8(offset, len & 0b00111111)
+    }]
+  } else if (len < 16384) {
+    return [2, (offset, buffer) => {
+    // 2-byte length: 01xxxxxx xxxxxxxx
+    const view = new DataView(buffer)
+    view.setUint8(offset, ((len >> 8) & 0b00111111) | 0b01000000)
+    view.setUint8(offset + 1, len & 0xff)
+    }]
+  } else if (len < 0x40000000) {
+    return [4, (offset, buffer) => {
+    // 4-byte length: 10xxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+    const view = new DataView(buffer)
+    view.setUint8(offset, ((len >> 24) & 0b00111111) | 0b10000000)
+    view.setUint8(offset + 1, (len >> 16) & 0xff)
+    view.setUint8(offset + 2,  (len >> 8) & 0xff)
+    view.setUint8(offset + 3,  len & 0xff)
+    }]
   } else {
     throw new CodecError("Length too large to encode (max is 2^30 - 1)")
   }
@@ -92,6 +132,28 @@ export function encodeVarLenType<T>(enc: Encoder<T>): Encoder<T[]> {
       offset += arr.length
     }
     return result
+  }
+}
+
+export function encVarLenType<T>(enc: Enc<T>): Enc<T[]> {
+  return (data) => {
+    let totalLength = 0
+    let writeTotal = (_offset: number, _buffer: ArrayBuffer) => {}
+    for (let i = 0; i < data.length; i++){
+      const [len, write] = enc(data[i]!)
+      const oldFunc = writeTotal
+      const currentLen = totalLength
+      writeTotal = (offset: number, buffer: ArrayBuffer) => {
+        oldFunc(offset, buffer)
+        write(offset + currentLen, buffer)
+      }
+      totalLength += len
+    }
+    const [headerLength, writeLength] = encLength(totalLength)
+    return [headerLength + totalLength, (offset, buffer) => {
+      writeLength(offset, buffer)
+      writeTotal(offset + headerLength, buffer)
+    }]
   }
 }
 

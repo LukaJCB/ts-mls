@@ -1,7 +1,7 @@
-import { decodeUint64, encodeUint64 } from "./codec/number.js"
+import { decodeUint64, encUint64 } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { contramapEnc, contramapEncs, Enc, encode, encVoid } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, encVarLenData } from "./codec/variableLength.js"
 import { Commit, decodeCommit, encodeCommit } from "./commit.js"
 import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
@@ -36,22 +36,22 @@ export interface FramedContentCommitData {
   commit: Commit
 }
 
-export const encodeFramedContentApplicationData: Encoder<FramedContentApplicationData> = contramapEncoders(
-  [encodeContentType, encodeVarLenData],
+export const encodeFramedContentApplicationData: Enc<FramedContentApplicationData> = contramapEncs(
+  [encodeContentType, encVarLenData],
   (f) => [f.contentType, f.applicationData] as const,
 )
 
-export const encodeFramedContentProposalData: Encoder<FramedContentProposalData> = contramapEncoders(
+export const encodeFramedContentProposalData: Enc<FramedContentProposalData> = contramapEncs(
   [encodeContentType, encodeProposal],
   (f) => [f.contentType, f.proposal] as const,
 )
 
-export const encodeFramedContentCommitData: Encoder<FramedContentCommitData> = contramapEncoders(
+export const encodeFramedContentCommitData: Enc<FramedContentCommitData> = contramapEncs(
   [encodeContentType, encodeCommit],
   (f) => [f.contentType, f.commit] as const,
 )
 
-export const encodeFramedContentInfo: Encoder<FramedContentInfo> = (fc) => {
+export const encodeFramedContentInfo: Enc<FramedContentInfo> = (fc) => {
   switch (fc.contentType) {
     case "application":
       return encodeFramedContentApplicationData(fc)
@@ -113,8 +113,8 @@ export type FramedContentCommit = FramedContentData & FramedContentCommitData
 export type FramedContentApplicationOrProposal = FramedContentData &
   (FramedContentApplicationData | FramedContentProposalData)
 
-export const encodeFramedContent: Encoder<FramedContent> = contramapEncoders(
-  [encodeVarLenData, encodeUint64, encodeSender, encodeVarLenData, encodeFramedContentInfo],
+export const encodeFramedContent: Enc<FramedContent> = contramapEncs(
+  [encVarLenData, encUint64, encodeSender, encVarLenData, encodeFramedContentInfo],
   (fc) => [fc.groupId, fc.epoch, fc.sender, fc.authenticatedData, fc] as const,
 )
 
@@ -135,14 +135,14 @@ type SenderInfoNewMemberCommit = { senderType: "new_member_commit"; context: Gro
 type SenderInfoExternal = { senderType: "external" }
 type SenderInfoNewMemberProposal = { senderType: "new_member_proposal" }
 
-export const encodeSenderInfo: Encoder<SenderInfo> = (info) => {
+export const encodeSenderInfo: Enc<SenderInfo> = (info) => {
   switch (info.senderType) {
     case "member":
     case "new_member_commit":
       return encodeGroupContext(info.context)
     case "external":
     case "new_member_proposal":
-      return new Uint8Array()
+      return encVoid<SenderInfo>()(info) //todo?
   }
 }
 
@@ -157,7 +157,7 @@ export type FramedContentTBSApplicationOrProposal = FramedContentTBS & { content
 export type FramedContentTBSExternal = FramedContentTBS &
   (SenderInfoExternal | SenderInfoNewMemberCommit | SenderInfoNewMemberProposal)
 
-export const encodeFramedContentTBS: Encoder<FramedContentTBS> = contramapEncoders(
+export const encodeFramedContentTBS: Enc<FramedContentTBS> = contramapEncs(
   [encodeProtocolVersion, encodeWireformat, encodeFramedContent, encodeSenderInfo],
   (f) => [f.protocolVersion, f.wireformat, f.content, f] as const,
 )
@@ -173,23 +173,23 @@ type FramedContentAuthDataContent =
 type FramedContentAuthDataContentCommit = { contentType: "commit"; confirmationTag: Uint8Array }
 type FramedContentAuthDataContentApplicationOrProposal = { contentType: Exclude<ContentTypeName, "commit"> }
 
-const encodeFramedContentAuthDataContent: Encoder<FramedContentAuthDataContent> = (authData) => {
+const encodeFramedContentAuthDataContent: Enc<FramedContentAuthDataContent> = (authData) => {
   switch (authData.contentType) {
     case "commit":
       return encodeFramedContentAuthDataCommit(authData)
     case "application":
     case "proposal":
-      return new Uint8Array()
+      return encVoid<FramedContentAuthDataContent>()(authData) //todo?
   }
 }
 
-const encodeFramedContentAuthDataCommit: Encoder<FramedContentAuthDataContentCommit> = contramapEncoder(
-  encodeVarLenData,
+const encodeFramedContentAuthDataCommit: Enc<FramedContentAuthDataContentCommit> = contramapEnc(
+  encVarLenData,
   (data) => data.confirmationTag,
 )
 
-export const encodeFramedContentAuthData: Encoder<FramedContentAuthData> = contramapEncoders(
-  [encodeVarLenData, encodeFramedContentAuthDataContent],
+export const encodeFramedContentAuthData: Enc<FramedContentAuthData> = contramapEncs(
+  [encVarLenData, encodeFramedContentAuthDataContent],
   (d) => [d.signature, d] as const,
 )
 
@@ -228,14 +228,14 @@ export async function verifyFramedContentSignature(
   return verifyWithLabel(
     signKey,
     "FramedContentTBS",
-    encodeFramedContentTBS(toTbs(content, wireformat, context)),
+    encode(encodeFramedContentTBS)(toTbs(content, wireformat, context)),
     auth.signature,
     s,
   )
 }
 
 export function signFramedContentTBS(signKey: Uint8Array, tbs: FramedContentTBS, s: Signature): Promise<Uint8Array> {
-  return signWithLabel(signKey, "FramedContentTBS", encodeFramedContentTBS(tbs), s)
+  return signWithLabel(signKey, "FramedContentTBS", encode(encodeFramedContentTBS)(tbs), s)
 }
 
 export async function signFramedContentApplicationOrProposal(

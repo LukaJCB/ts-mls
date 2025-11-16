@@ -1,7 +1,7 @@
-import { decodeUint16, decodeUint32, encodeUint16, encodeUint32 } from "./codec/number.js"
+import { decodeUint16, decodeUint32, encUint16, encUint32 } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
+import { contramapEnc, contramapEncs, Enc } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, encVarLenData, encVarLenType } from "./codec/variableLength.js"
 import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeExtension, encodeExtension, Extension } from "./extension.js"
 import { decodeKeyPackage, encodeKeyPackage, KeyPackage } from "./keyPackage.js"
@@ -14,28 +14,28 @@ export interface Add {
   keyPackage: KeyPackage
 }
 
-export const encodeAdd: Encoder<Add> = contramapEncoder(encodeKeyPackage, (a) => a.keyPackage)
+export const encodeAdd: Enc<Add> = contramapEnc(encodeKeyPackage, (a) => a.keyPackage)
 export const decodeAdd: Decoder<Add> = mapDecoder(decodeKeyPackage, (keyPackage) => ({ keyPackage }))
 
 export interface Update {
   leafNode: LeafNodeUpdate
 }
 
-export const encodeUpdate: Encoder<Update> = contramapEncoder(encodeLeafNode, (u) => u.leafNode)
+export const encodeUpdate: Enc<Update> = contramapEnc(encodeLeafNode, (u) => u.leafNode)
 export const decodeUpdate: Decoder<Update> = mapDecoder(decodeLeafNodeUpdate, (leafNode) => ({ leafNode }))
 
 export interface Remove {
   removed: number
 }
 
-export const encodeRemove: Encoder<Remove> = contramapEncoder(encodeUint32, (r) => r.removed)
+export const Encemove: Enc<Remove> = contramapEnc(encUint32, (r) => r.removed)
 export const decodeRemove: Decoder<Remove> = mapDecoder(decodeUint32, (removed) => ({ removed }))
 
 export interface PSK {
   preSharedKeyId: PreSharedKeyID
 }
 
-export const encodePSK: Encoder<PSK> = contramapEncoder(encodePskId, (p) => p.preSharedKeyId)
+export const encodePSK: Enc<PSK> = contramapEnc(encodePskId, (p) => p.preSharedKeyId)
 export const decodePSK: Decoder<PSK> = mapDecoder(decodePskId, (preSharedKeyId) => ({ preSharedKeyId }))
 
 export interface Reinit {
@@ -45,8 +45,8 @@ export interface Reinit {
   extensions: Extension[]
 }
 
-export const encodeReinit: Encoder<Reinit> = contramapEncoders(
-  [encodeVarLenData, encodeProtocolVersion, encodeCiphersuite, encodeVarLenType(encodeExtension)],
+export const Enceinit: Enc<Reinit> = contramapEncs(
+  [encVarLenData, encodeProtocolVersion, encodeCiphersuite, encVarLenType(encodeExtension)],
   (r) => [r.groupId, r.version, r.cipherSuite, r.extensions] as const,
 )
 
@@ -59,15 +59,15 @@ export interface ExternalInit {
   kemOutput: Uint8Array
 }
 
-export const encodeExternalInit: Encoder<ExternalInit> = contramapEncoder(encodeVarLenData, (e) => e.kemOutput)
+export const encodeExternalInit: Enc<ExternalInit> = contramapEnc(encVarLenData, (e) => e.kemOutput)
 export const decodeExternalInit: Decoder<ExternalInit> = mapDecoder(decodeVarLenData, (kemOutput) => ({ kemOutput }))
 
 export interface GroupContextExtensions {
   extensions: Extension[]
 }
 
-export const encodeGroupContextExtensions: Encoder<GroupContextExtensions> = contramapEncoder(
-  encodeVarLenType(encodeExtension),
+export const encodeGroupContextExtensions: Enc<GroupContextExtensions> = contramapEnc(
+  encVarLenType(encodeExtension),
   (g) => g.extensions,
 )
 
@@ -126,47 +126,47 @@ export type Proposal =
   | ProposalGroupContextExtensions
   | ProposalCustom
 
-export const encodeProposalAdd: Encoder<ProposalAdd> = contramapEncoders(
+export const encodeProposalAdd: Enc<ProposalAdd> = contramapEncs(
   [encodeDefaultProposalType, encodeAdd],
   (p) => [p.proposalType, p.add] as const,
 )
 
-export const encodeProposalUpdate: Encoder<ProposalUpdate> = contramapEncoders(
+export const encodeProposalUpdate: Enc<ProposalUpdate> = contramapEncs(
   [encodeDefaultProposalType, encodeUpdate],
   (p) => [p.proposalType, p.update] as const,
 )
 
-export const encodeProposalRemove: Encoder<ProposalRemove> = contramapEncoders(
-  [encodeDefaultProposalType, encodeRemove],
+export const encodeProposalRemove: Enc<ProposalRemove> = contramapEncs(
+  [encodeDefaultProposalType, Encemove],
   (p) => [p.proposalType, p.remove] as const,
 )
 
-export const encodeProposalPSK: Encoder<ProposalPSK> = contramapEncoders(
+export const encodeProposalPSK: Enc<ProposalPSK> = contramapEncs(
   [encodeDefaultProposalType, encodePSK],
   (p) => [p.proposalType, p.psk] as const,
 )
 
-export const encodeProposalReinit: Encoder<ProposalReinit> = contramapEncoders(
-  [encodeDefaultProposalType, encodeReinit],
+export const encodeProposalReinit: Enc<ProposalReinit> = contramapEncs(
+  [encodeDefaultProposalType, Enceinit],
   (p) => [p.proposalType, p.reinit] as const,
 )
 
-export const encodeProposalExternalInit: Encoder<ProposalExternalInit> = contramapEncoders(
+export const encodeProposalExternalInit: Enc<ProposalExternalInit> = contramapEncs(
   [encodeDefaultProposalType, encodeExternalInit],
   (p) => [p.proposalType, p.externalInit] as const,
 )
 
-export const encodeProposalGroupContextExtensions: Encoder<ProposalGroupContextExtensions> = contramapEncoders(
+export const encodeProposalGroupContextExtensions: Enc<ProposalGroupContextExtensions> = contramapEncs(
   [encodeDefaultProposalType, encodeGroupContextExtensions],
   (p) => [p.proposalType, p.groupContextExtensions] as const,
 )
 
-export const encodeProposalCustom: Encoder<ProposalCustom> = contramapEncoders(
-  [encodeUint16, encodeVarLenData],
+export const encodeProposalCustom: Enc<ProposalCustom> = contramapEncs(
+  [encUint16, encVarLenData],
   (p) => [p.proposalType, p.proposalData] as const,
 )
 
-export const encodeProposal: Encoder<Proposal> = (p) => {
+export const encodeProposal: Enc<Proposal> = (p) => {
   switch (p.proposalType) {
     case "add":
       return encodeProposalAdd(p)
