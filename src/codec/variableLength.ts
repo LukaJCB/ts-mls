@@ -1,26 +1,52 @@
 import { CodecError } from "../mlsError.js"
 import { Decoder } from "./tlsDecoder.js"
-import { Encoder } from "./tlsEncoder.js"
+import { BufferEncoder } from "./tlsEncoder.js"
 
-export const encodeVarLenData: Encoder<Uint8Array> = (data) => {
-  const lenBytes: Uint8Array = encodeLength(data.length)
+export const varLenDataEncoder: BufferEncoder<Uint8Array> = (data) => {
+  const [len, write] = lengthEncoder(data.length)
 
-  const result = new Uint8Array(lenBytes.length + data.length)
-  result.set(lenBytes, 0)
-  result.set(data, lenBytes.length)
-  return result
+  return [
+    len + data.length,
+    (offset, buffer) => {
+      write(offset, buffer)
+      const view = new Uint8Array(buffer)
+      view.set(data, offset + len)
+    },
+  ]
 }
 
-export function encodeLength(len: number): Uint8Array {
+export function lengthEncoder(len: number): [number, (offset: number, buffer: ArrayBuffer) => void] {
   if (len < 64) {
-    // 1-byte length: 00xxxxxx
-    return new Uint8Array([len & 0b00111111])
+    return [
+      1,
+      (offset, buffer) => {
+        // 1-byte length: 00xxxxxx
+        const view = new DataView(buffer)
+        view.setUint8(offset, len & 0b00111111)
+      },
+    ]
   } else if (len < 16384) {
-    // 2-byte length: 01xxxxxx xxxxxxxx
-    return new Uint8Array([((len >> 8) & 0b00111111) | 0b01000000, len & 0xff])
+    return [
+      2,
+      (offset, buffer) => {
+        // 2-byte length: 01xxxxxx xxxxxxxx
+        const view = new DataView(buffer)
+        view.setUint8(offset, ((len >> 8) & 0b00111111) | 0b01000000)
+        view.setUint8(offset + 1, len & 0xff)
+      },
+    ]
   } else if (len < 0x40000000) {
-    // 4-byte length: 10xxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-    return new Uint8Array([((len >> 24) & 0b00111111) | 0b10000000, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff])
+    return [
+      4,
+      (offset, buffer) => {
+        // 4-byte length: 10xxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+        const view = new DataView(buffer)
+        view.setUint8(offset, ((len >> 24) & 0b00111111) | 0b10000000)
+        view.setUint8(offset + 1, (len >> 16) & 0xff)
+        view.setUint8(offset + 2, (len >> 8) & 0xff)
+        view.setUint8(offset + 3, len & 0xff)
+      },
+    ]
   } else {
     throw new CodecError("Length too large to encode (max is 2^30 - 1)")
   }
@@ -70,28 +96,28 @@ export const decodeVarLenData: Decoder<Uint8Array> = (buf, offset) => {
   return [data, totalBytes]
 }
 
-export function encodeVarLenType<T>(enc: Encoder<T>): Encoder<T[]> {
+export function varLenTypeEncoder<T>(enc: BufferEncoder<T>): BufferEncoder<T[]> {
   return (data) => {
-    const encodedParts = new Array<Uint8Array>(data.length)
-    let dataLength = 0
-
+    let totalLength = 0
+    let writeTotal = (_offset: number, _buffer: ArrayBuffer) => {}
     for (let i = 0; i < data.length; i++) {
-      const encoded = enc(data[i]!)
-      dataLength += encoded.byteLength
-      encodedParts[i] = encoded
+      const [len, write] = enc(data[i]!)
+      const oldFunc = writeTotal
+      const currentLen = totalLength
+      writeTotal = (offset: number, buffer: ArrayBuffer) => {
+        oldFunc(offset, buffer)
+        write(offset + currentLen, buffer)
+      }
+      totalLength += len
     }
-
-    const lengthHeader: Uint8Array = encodeLength(dataLength)
-
-    const result = new Uint8Array(lengthHeader.length + dataLength)
-    result.set(lengthHeader, 0)
-    let offset = lengthHeader.length
-
-    for (const arr of encodedParts) {
-      result.set(arr, offset)
-      offset += arr.length
-    }
-    return result
+    const [headerLength, writeLength] = lengthEncoder(totalLength)
+    return [
+      headerLength + totalLength,
+      (offset, buffer) => {
+        writeLength(offset, buffer)
+        writeTotal(offset + headerLength, buffer)
+      },
+    ]
   }
 }
 

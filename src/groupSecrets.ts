@@ -1,8 +1,8 @@
-import { decodeOptional, encodeOptional } from "./codec/optional.js"
+import { decodeOptional, optionalEncoder } from "./codec/optional.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength.js"
-import { decodePskId, encodePskId, PreSharedKeyID } from "./presharedkey.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { decodePskId, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 
 export interface GroupSecrets {
   joinerSecret: Uint8Array
@@ -10,10 +10,12 @@ export interface GroupSecrets {
   psks: PreSharedKeyID[]
 }
 
-export const encodeGroupSecrets: Encoder<GroupSecrets> = contramapEncoders(
-  [encodeVarLenData, encodeOptional(encodeVarLenData), encodeVarLenType(encodePskId)],
+export const groupSecretsEncoder: BufferEncoder<GroupSecrets> = contramapBufferEncoders(
+  [varLenDataEncoder, optionalEncoder(varLenDataEncoder), varLenTypeEncoder(pskIdEncoder)],
   (gs) => [gs.joinerSecret, gs.pathSecret, gs.psks] as const,
 )
+
+export const encodeGroupSecrets: Encoder<GroupSecrets> = encode(groupSecretsEncoder)
 
 export const decodeGroupSecrets: Decoder<GroupSecrets> = mapDecoders(
   [decodeVarLenData, decodeOptional(decodeVarLenData), decodeVarLenType(decodePskId)],

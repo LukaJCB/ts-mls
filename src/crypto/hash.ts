@@ -1,5 +1,5 @@
-import { encodeVarLenData } from "../codec/variableLength.js"
-import { concatUint8Arrays } from "../util/byteArray.js"
+import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
+import { varLenDataEncoder } from "../codec/variableLength.js"
 
 export type HashAlgorithm = "SHA-512" | "SHA-384" | "SHA-256"
 
@@ -15,5 +15,6 @@ export function refhash(label: string, value: Uint8Array, h: Hash) {
 
 function encodeRefHash(label: string, value: Uint8Array): Uint8Array {
   const labelBytes = new TextEncoder().encode(label)
-  return concatUint8Arrays(encodeVarLenData(labelBytes), encodeVarLenData(value))
+  const enc = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
+  return encode(enc)([labelBytes, value])
 }

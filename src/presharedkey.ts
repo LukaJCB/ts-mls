@@ -1,7 +1,7 @@
-import { decodeUint16, decodeUint64, decodeUint8, encodeUint16, encodeUint64, encodeUint8 } from "./codec/number.js"
+import { decodeUint16, decodeUint64, decodeUint8, uint16Encoder, uint64Encoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
+import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 
@@ -15,7 +15,9 @@ export const pskTypes = {
 export type PSKTypeName = keyof typeof pskTypes
 export type PSKType = (typeof pskTypes)[PSKTypeName]
 
-export const encodePskType: Encoder<PSKTypeName> = contramapEncoder(encodeUint8, (t) => pskTypes[t])
+export const pskTypeEncoder: BufferEncoder<PSKTypeName> = contramapBufferEncoder(uint8Encoder, (t) => pskTypes[t])
+
+export const encodePskType: Encoder<PSKTypeName> = encode(pskTypeEncoder)
 export const decodePskType: Decoder<PSKTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(pskTypes))
 
 const resumptionPSKUsages = {
@@ -27,10 +29,12 @@ const resumptionPSKUsages = {
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages
 export type ResumptionPSKUsage = (typeof resumptionPSKUsages)[ResumptionPSKUsageName]
 
-export const encodeResumptionPSKUsage: Encoder<ResumptionPSKUsageName> = contramapEncoder(
-  encodeUint8,
+export const resumptionPSKUsageEncoder: BufferEncoder<ResumptionPSKUsageName> = contramapBufferEncoder(
+  uint8Encoder,
   (u) => resumptionPSKUsages[u],
 )
+
+export const encodeResumptionPSKUsage: Encoder<ResumptionPSKUsageName> = encode(resumptionPSKUsageEncoder)
 
 export const decodeResumptionPSKUsage: Decoder<ResumptionPSKUsageName> = mapDecoderOption(
   decodeUint8,
@@ -49,13 +53,13 @@ export interface PSKInfoResumption {
 }
 export type PSKInfo = PSKInfoExternal | PSKInfoResumption
 
-const encodePskInfoExternal: Encoder<PSKInfoExternal> = contramapEncoders(
-  [encodePskType, encodeVarLenData],
+const encodePskInfoExternal: BufferEncoder<PSKInfoExternal> = contramapBufferEncoders(
+  [pskTypeEncoder, varLenDataEncoder],
   (i) => [i.psktype, i.pskId] as const,
 )
 
-const encodePskInfoResumption: Encoder<PSKInfoResumption> = contramapEncoders(
-  [encodePskType, encodeResumptionPSKUsage, encodeVarLenData, encodeUint64],
+const encodePskInfoResumption: BufferEncoder<PSKInfoResumption> = contramapBufferEncoders(
+  [pskTypeEncoder, resumptionPSKUsageEncoder, varLenDataEncoder, uint64Encoder],
   (info) => [info.psktype, info.usage, info.pskGroupId, info.pskEpoch] as const,
 )
 
@@ -66,7 +70,7 @@ const decodePskInfoResumption = mapDecoders(
   },
 )
 
-export const encodePskInfo: Encoder<PSKInfo> = (info) => {
+export const pskInfoEncoder: BufferEncoder<PSKInfo> = (info) => {
   switch (info.psktype) {
     case "external":
       return encodePskInfoExternal(info)
@@ -74,6 +78,8 @@ export const encodePskInfo: Encoder<PSKInfo> = (info) => {
       return encodePskInfoResumption(info)
   }
 }
+
+export const encodePskInfo: Encoder<PSKInfo> = encode(pskInfoEncoder)
 
 export const decodePskInfo: Decoder<PSKInfo> = flatMapDecoder(decodePskType, (psktype): Decoder<PSKInfo> => {
   switch (psktype) {
@@ -94,10 +100,12 @@ type PSKNonce = { pskNonce: Uint8Array }
 
 export type PreSharedKeyID = PSKInfo & PSKNonce
 
-export const encodePskId: Encoder<PreSharedKeyID> = contramapEncoders(
-  [encodePskInfo, encodeVarLenData],
+export const pskIdEncoder: BufferEncoder<PreSharedKeyID> = contramapBufferEncoders(
+  [pskInfoEncoder, varLenDataEncoder],
   (pskid) => [pskid, pskid.pskNonce] as const,
 )
+
+export const encodePskId: Encoder<PreSharedKeyID> = encode(pskIdEncoder)
 
 export const decodePskId: Decoder<PreSharedKeyID> = mapDecoders(
   [decodePskInfo, decodeVarLenData],
@@ -110,10 +118,12 @@ type PSKLabel = {
   count: number
 }
 
-export const encodePskLabel: Encoder<PSKLabel> = contramapEncoders(
-  [encodePskId, encodeUint16, encodeUint16],
+export const pskLabelEncoder: BufferEncoder<PSKLabel> = contramapBufferEncoders(
+  [pskIdEncoder, uint16Encoder, uint16Encoder],
   (label) => [label.id, label.index, label.count] as const,
 )
+
+export const encodePskLabel: Encoder<PSKLabel> = encode(pskLabelEncoder)
 
 export const decodePskLabel: Decoder<PSKLabel> = mapDecoders(
   [decodePskId, decodeUint16, decodeUint16],
@@ -145,7 +155,7 @@ export async function updatePskSecret(
     await expandWithLabel(
       await impl.kdf.extract(zeroes, psk),
       "derived psk",
-      encodePskLabel({ id: pskId, index, count }),
+      encode(pskLabelEncoder)({ id: pskId, index, count }),
       impl.kdf.size,
       impl.kdf,
     ),

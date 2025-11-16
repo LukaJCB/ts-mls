@@ -2,8 +2,8 @@ import { Signature, SignatureAlgorithm } from "./signature.js"
 import { Hash, HashAlgorithm } from "./hash.js"
 import { Kdf } from "./kdf.js"
 import { Hpke, HpkeAlgorithm } from "./hpke.js"
-import { contramapEncoder, Encoder } from "../codec/tlsEncoder.js"
-import { decodeUint16, encodeUint16 } from "../codec/number.js"
+import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "../codec/tlsEncoder.js"
+import { decodeUint16, uint16Encoder } from "../codec/number.js"
 import { Decoder, mapDecoderOption } from "../codec/tlsDecoder.js"
 import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers.js"
 import { Rng } from "./rng.js"
@@ -42,10 +42,12 @@ export const ciphersuites = {
 export type CiphersuiteName = keyof typeof ciphersuites
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
-export const encodeCiphersuite: Encoder<CiphersuiteName> = contramapEncoder(
-  encodeUint16,
+export const ciphersuiteEncoder: BufferEncoder<CiphersuiteName> = contramapBufferEncoder(
+  uint16Encoder,
   openEnumNumberEncoder(ciphersuites),
 )
+
+export const encodeCiphersuite: Encoder<CiphersuiteName> = encode(ciphersuiteEncoder)
 
 export const decodeCiphersuite: Decoder<CiphersuiteName> = mapDecoderOption(
   decodeUint16,

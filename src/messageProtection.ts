@@ -10,10 +10,10 @@ import { Proposal } from "./proposal.js"
 import {
   decodePrivateMessageContent,
   decryptSenderData,
-  encodePrivateContentAAD,
   encodePrivateMessageContent,
   encryptSenderData,
   PrivateContentAAD,
+  privateContentAADEncoder,
   PrivateMessage,
   PrivateMessageContent,
   toAuthenticatedContent,
@@ -25,6 +25,7 @@ import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
 import { PaddingConfig } from "./paddingConfig.js"
+import { encode } from "./codec/tlsEncoder.js"
 
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -177,7 +178,7 @@ export async function protect(
   const ciphertext = await cs.hpke.encryptAead(
     key,
     nonce,
-    encodePrivateContentAAD(aad),
+    encode(privateContentAADEncoder)(aad),
     encodePrivateMessageContent(config)(content),
   )
 
@@ -238,7 +239,7 @@ export async function unprotectPrivateMessage(
     authenticatedData: msg.authenticatedData,
   }
 
-  const decrypted = await cs.hpke.decryptAead(key, nonce, encodePrivateContentAAD(aad), msg.ciphertext)
+  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(privateContentAADEncoder)(aad), msg.ciphertext)
 
   const pmc = decodePrivateMessageContent(msg.contentType)(decrypted, 0)?.[0]
 

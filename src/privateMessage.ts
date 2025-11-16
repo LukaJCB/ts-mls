@@ -1,14 +1,14 @@
 import { AuthenticatedContent } from "./authenticatedContent.js"
-import { decodeUint64, encodeUint64 } from "./codec/number.js"
+import { decodeUint64, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength.js"
-import { decodeCommit, encodeCommit } from "./commit.js"
-import { ContentTypeName, decodeContentType, encodeContentType } from "./contentType.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { decodeCommit, commitEncoder } from "./commit.js"
+import { ContentTypeName, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
   decodeFramedContentAuthDataCommit,
-  encodeFramedContentAuthData,
+  framedContentAuthDataEncoder,
   FramedContentApplicationData,
   FramedContentAuthDataApplicationOrProposal,
   FramedContentAuthDataCommit,
@@ -16,11 +16,11 @@ import {
   FramedContentProposalData,
 } from "./framedContent.js"
 import { byteLengthToPad, PaddingConfig } from "./paddingConfig.js"
-import { decodeProposal, encodeProposal } from "./proposal.js"
+import { decodeProposal, proposalEncoder } from "./proposal.js"
 import {
   decodeSenderData,
-  encodeSenderData,
-  encodeSenderDataAAD,
+  senderDataEncoder,
+  senderDataAADEncoder,
   expandSenderDataKey,
   expandSenderDataNonce,
   SenderData,
@@ -36,11 +36,13 @@ export interface PrivateMessage {
   ciphertext: Uint8Array
 }
 
-export const encodePrivateMessage: Encoder<PrivateMessage> = contramapEncoders(
-  [encodeVarLenData, encodeUint64, encodeContentType, encodeVarLenData, encodeVarLenData, encodeVarLenData],
+export const privateMessageEncoder: BufferEncoder<PrivateMessage> = contramapBufferEncoders(
+  [varLenDataEncoder, uint64Encoder, contentTypeEncoder, varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
   (msg) =>
     [msg.groupId, msg.epoch, msg.contentType, msg.authenticatedData, msg.encryptedSenderData, msg.ciphertext] as const,
 )
+
+export const encodePrivateMessage: Encoder<PrivateMessage> = encode(privateMessageEncoder)
 
 export const decodePrivateMessage: Decoder<PrivateMessage> = mapDecoders(
   [decodeVarLenData, decodeUint64, decodeContentType, decodeVarLenData, decodeVarLenData, decodeVarLenData],
@@ -61,10 +63,12 @@ export interface PrivateContentAAD {
   authenticatedData: Uint8Array
 }
 
-export const encodePrivateContentAAD: Encoder<PrivateContentAAD> = contramapEncoders(
-  [encodeVarLenData, encodeUint64, encodeContentType, encodeVarLenData],
+export const privateContentAADEncoder: BufferEncoder<PrivateContentAAD> = contramapBufferEncoders(
+  [varLenDataEncoder, uint64Encoder, contentTypeEncoder, varLenDataEncoder],
   (aad) => [aad.groupId, aad.epoch, aad.contentType, aad.authenticatedData] as const,
 )
+
+export const encodePrivateContentAAD: Encoder<PrivateContentAAD> = encode(privateContentAADEncoder)
 
 export const decodePrivateContentAAD: Decoder<PrivateContentAAD> = mapDecoders(
   [decodeVarLenData, decodeUint64, decodeContentType, decodeVarLenData],
@@ -118,13 +122,13 @@ export function decodePrivateMessageContent(contentType: ContentTypeName): Decod
   }
 }
 
-export function encodePrivateMessageContent(config: PaddingConfig): Encoder<PrivateMessageContent> {
+export function privateMessageContentEncoder(config: PaddingConfig): BufferEncoder<PrivateMessageContent> {
   return (msg) => {
     switch (msg.contentType) {
       case "application":
         return encoderWithPadding(
-          contramapEncoders(
-            [encodeVarLenData, encodeFramedContentAuthData],
+          contramapBufferEncoders(
+            [varLenDataEncoder, framedContentAuthDataEncoder],
             (m: PrivateMessageContentApplication) => [m.applicationData, m.auth] as const,
           ),
           config,
@@ -132,8 +136,8 @@ export function encodePrivateMessageContent(config: PaddingConfig): Encoder<Priv
 
       case "proposal":
         return encoderWithPadding(
-          contramapEncoders(
-            [encodeProposal, encodeFramedContentAuthData],
+          contramapBufferEncoders(
+            [proposalEncoder, framedContentAuthDataEncoder],
             (m: PrivateMessageContentProposal) => [m.proposal, m.auth] as const,
           ),
           config,
@@ -141,14 +145,18 @@ export function encodePrivateMessageContent(config: PaddingConfig): Encoder<Priv
 
       case "commit":
         return encoderWithPadding(
-          contramapEncoders(
-            [encodeCommit, encodeFramedContentAuthData],
+          contramapBufferEncoders(
+            [commitEncoder, framedContentAuthDataEncoder],
             (m: PrivateMessageContentCommit) => [m.commit, m.auth] as const,
           ),
           config,
         )(msg)
     }
   }
+}
+
+export function encodePrivateMessageContent(config: PaddingConfig): Encoder<PrivateMessageContent> {
+  return encode(privateMessageContentEncoder(config))
 }
 
 export async function decryptSenderData(
@@ -165,7 +173,7 @@ export async function decryptSenderData(
     contentType: msg.contentType,
   }
 
-  const decrypted = await cs.hpke.decryptAead(key, nonce, encodeSenderDataAAD(aad), msg.encryptedSenderData)
+  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(senderDataAADEncoder)(aad), msg.encryptedSenderData)
   return decodeSenderData(decrypted, 0)?.[0]
 }
 
@@ -179,7 +187,7 @@ export async function encryptSenderData(
   const key = await expandSenderDataKey(cs, senderDataSecret, ciphertext)
   const nonce = await expandSenderDataNonce(cs, senderDataSecret, ciphertext)
 
-  return await cs.hpke.encryptAead(key, nonce, encodeSenderDataAAD(aad), encodeSenderData(senderData))
+  return await cs.hpke.encryptAead(key, nonce, encode(senderDataAADEncoder)(aad), encode(senderDataEncoder)(senderData))
 }
 
 export function toAuthenticatedContent(
@@ -203,13 +211,16 @@ export function toAuthenticatedContent(
   }
 }
 
-function encoderWithPadding<T>(encoder: Encoder<T>, config: PaddingConfig): Encoder<T> {
+function encoderWithPadding<T>(encoder: BufferEncoder<T>, config: PaddingConfig): BufferEncoder<T> {
   return (t) => {
-    const encoded = encoder(t)
-    const result = new Uint8Array(encoded.length + byteLengthToPad(encoded.length, config))
-    result.set(encoded, 0)
-
-    return result
+    const [len, write] = encoder(t)
+    const totalLength = len + byteLengthToPad(len, config)
+    return [
+      totalLength,
+      (offset, buffer) => {
+        write(offset, buffer)
+      },
+    ]
   }
 }
 
