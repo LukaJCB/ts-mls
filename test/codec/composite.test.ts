@@ -3,30 +3,30 @@ import {
   decodeUint16,
   decodeUint32,
   decodeUint8,
-  encodeUint16,
-  encodeUint32,
-  encodeUint8,
+  uint16Encoder,
+  uint32Encoder,
+  uint8Encoder,
 } from "../../src/codec/number.js"
 import { Decoder, mapDecoders } from "../../src/codec/tlsDecoder.js"
-import { Encoder, composeEncoders } from "../../src/codec/tlsEncoder.js"
-import { decodeVarLenData, encodeVarLenData } from "../../src/codec/variableLength.js"
-import { decodeOptional, encodeOptional } from "../../src/codec/optional.js"
+import { BufferEncoder, composeBufferEncoders, encode } from "../../src/codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "../../src/codec/variableLength.js"
+import { decodeOptional, optionalEncoder } from "../../src/codec/optional.js"
 
 test("composite codec roundtrip [uint8(0), uint32(48948430)]", () => {
-  compositeRoundTrip(0, 48948430, encodeUint8, decodeUint8, encodeUint32, decodeUint32)
+  compositeRoundTrip(0, 48948430, uint8Encoder, decodeUint8, uint32Encoder, decodeUint32)
 })
 
 test("composite codec roundtrip [uint16(256), randombytes(16)]", () => {
-  compositeRoundTrip(256, randomBytes(16), encodeUint16, decodeUint16, encodeVarLenData, decodeVarLenData)
+  compositeRoundTrip(256, randomBytes(16), uint16Encoder, decodeUint16, varLenDataEncoder, decodeVarLenData)
 })
 
 test("composite codec roundtrip [randombytes(100), randombytes(16)]", () => {
   compositeRoundTrip(
     randomBytes(100),
     randomBytes(16),
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
   )
 })
@@ -35,9 +35,9 @@ test("composite codec roundtrip [randombytes(100), optional randombytes(16)]", (
   compositeRoundTrip(
     randomBytes(100),
     randomBytes(16),
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
-    encodeOptional(encodeVarLenData),
+    optionalEncoder(varLenDataEncoder),
     decodeOptional(decodeVarLenData),
   )
 })
@@ -46,9 +46,9 @@ test("composite codec roundtrip [randombytes(100), undefined]", () => {
   compositeRoundTrip(
     randomBytes(100),
     undefined,
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
-    encodeOptional(encodeVarLenData),
+    optionalEncoder(varLenDataEncoder),
     decodeOptional(decodeVarLenData),
   )
 })
@@ -57,9 +57,9 @@ test("composite codec roundtrip [undefined, uint8(0)]", () => {
   compositeRoundTrip(
     undefined,
     0,
-    encodeOptional(encodeVarLenData),
+    optionalEncoder(varLenDataEncoder),
     decodeOptional(decodeVarLenData),
-    encodeUint8,
+    uint8Encoder,
     decodeUint8,
   )
 })
@@ -68,9 +68,9 @@ test("composite codec roundtrip [undefined, uint16(128)]", () => {
   compositeRoundTrip(
     undefined,
     128,
-    encodeOptional(encodeUint32),
+    optionalEncoder(uint32Encoder),
     decodeOptional(decodeUint32),
-    encodeUint16,
+    uint16Encoder,
     decodeUint16,
   )
 })
@@ -80,11 +80,11 @@ test("composite codec roundtrip [randombytes(8), undefined, uint32(99999)]", () 
     randomBytes(8),
     undefined,
     99999,
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
-    encodeOptional(encodeUint32),
+    optionalEncoder(uint32Encoder),
     decodeOptional(decodeUint32),
-    encodeUint32,
+    uint32Encoder,
     decodeUint32,
   )
 })
@@ -95,13 +95,13 @@ test("composite codec roundtrip [uint8(0), undefined, undefined, randomBytes(128
     undefined,
     undefined,
     randomBytes(8),
-    encodeUint8,
+    uint8Encoder,
     decodeUint8,
-    encodeOptional(encodeUint8),
+    optionalEncoder(uint8Encoder),
     decodeOptional(decodeUint8),
-    encodeOptional(encodeUint32),
+    optionalEncoder(uint32Encoder),
     decodeOptional(decodeUint32),
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
   )
 })
@@ -112,13 +112,13 @@ test("composite codec roundtrip [undefined, undefined, undefined, randomBytes(99
     undefined,
     undefined,
     randomBytes(999),
-    encodeOptional(encodeUint8),
+    optionalEncoder(uint8Encoder),
     decodeOptional(decodeUint8),
-    encodeOptional(encodeUint8),
+    optionalEncoder(uint8Encoder),
     decodeOptional(decodeUint8),
-    encodeOptional(encodeUint32),
+    optionalEncoder(uint32Encoder),
     decodeOptional(decodeUint32),
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
   )
 })
@@ -129,21 +129,28 @@ test("composite codec roundtrip [randomBytes(999), randomBytes(999), undefined, 
     randomBytes(999),
     undefined,
     randomBytes(999),
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
-    encodeOptional(encodeUint32),
+    optionalEncoder(uint32Encoder),
     decodeOptional(decodeUint32),
-    encodeVarLenData,
+    varLenDataEncoder,
     decodeVarLenData,
   )
 })
 
-function compositeRoundTrip<T, U>(t: T, u: U, encT: Encoder<T>, decT: Decoder<T>, encU: Encoder<U>, decU: Decoder<U>) {
-  const encoder = composeEncoders([encT, encU])
+function compositeRoundTrip<T, U>(
+  t: T,
+  u: U,
+  encT: BufferEncoder<T>,
+  decT: Decoder<T>,
+  encU: BufferEncoder<U>,
+  decU: Decoder<U>,
+) {
+  const encoder = composeBufferEncoders([encT, encU])
   const decoder = mapDecoders([decT, decU], (t, u) => [t, u] as const)
-  const encoded = encoder([t, u])
+  const encoded = encode(encoder)([t, u])
 
   const decoded = decoder(encoded, 0)
 
@@ -154,16 +161,16 @@ function compositeRoundTrip3<T, U, V>(
   t: T,
   u: U,
   v: V,
-  encT: Encoder<T>,
+  encT: BufferEncoder<T>,
   decT: Decoder<T>,
-  encU: Encoder<U>,
+  encU: BufferEncoder<U>,
   decU: Decoder<U>,
-  encV: Encoder<V>,
+  encV: BufferEncoder<V>,
   decV: Decoder<V>,
 ) {
-  const encoder = composeEncoders([encT, encU, encV])
+  const encoder = composeBufferEncoders([encT, encU, encV])
   const decoder = mapDecoders([decT, decU, decV], (t, u, v) => [t, u, v] as const)
-  const encoded = encoder([t, u, v])
+  const encoded = encode(encoder)([t, u, v])
 
   const decoded = decoder(encoded, 0)
 
@@ -175,18 +182,18 @@ function compositeRoundTrip4<T, U, V, W>(
   u: U,
   v: V,
   w: W,
-  encT: Encoder<T>,
+  encT: BufferEncoder<T>,
   decT: Decoder<T>,
-  encU: Encoder<U>,
+  encU: BufferEncoder<U>,
   decU: Decoder<U>,
-  encV: Encoder<V>,
+  encV: BufferEncoder<V>,
   decV: Decoder<V>,
-  encW: Encoder<W>,
+  encW: BufferEncoder<W>,
   decW: Decoder<W>,
 ) {
-  const encoder = composeEncoders([encT, encU, encV, encW])
+  const encoder = composeBufferEncoders([encT, encU, encV, encW])
   const decoder = mapDecoders([decT, decU, decV, decW], (t, u, v, w) => [t, u, v, w] as const)
-  const encoded = encoder([t, u, v, w])
+  const encoded = encode(encoder)([t, u, v, w])
 
   const decoded = decoder(encoded, 0)
 

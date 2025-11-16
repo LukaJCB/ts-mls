@@ -1,8 +1,8 @@
 import { AeadAlgorithm } from "./aead.js"
 import { KdfAlgorithm } from "./kdf.js"
 import { KemAlgorithm } from "./kem.js"
-import { encVarLenData } from "../codec/variableLength.js"
-import { composeEncs, encode } from "../codec/tlsEncoder.js"
+import { varLenDataEncoder } from "../codec/variableLength.js"
+import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
 
 export type PublicKey = CryptoKey & { type: "public" }
 export type SecretKey = CryptoKey & { type: "secret" }
@@ -24,7 +24,10 @@ export function encryptWithLabel(
   return hpke.seal(
     publicKey,
     plaintext,
-    encode(composeEncs([encVarLenData, encVarLenData]))([new TextEncoder().encode(`MLS 1.0 ${label}`), context]),
+    encode(composeBufferEncoders([varLenDataEncoder, varLenDataEncoder]))([
+      new TextEncoder().encode(`MLS 1.0 ${label}`),
+      context,
+    ]),
     new Uint8Array(),
   )
 }
@@ -41,7 +44,10 @@ export function decryptWithLabel(
     privateKey,
     kemOutput,
     ciphertext,
-    encode(composeEncs([encVarLenData, encVarLenData]))([new TextEncoder().encode(`MLS 1.0 ${label}`), context]),
+    encode(composeBufferEncoders([varLenDataEncoder, varLenDataEncoder]))([
+      new TextEncoder().encode(`MLS 1.0 ${label}`),
+      context,
+    ]),
   )
 }
 

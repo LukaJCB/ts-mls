@@ -1,8 +1,8 @@
-import { CredentialTypeName, encodeCredentialType, decodeCredentialType } from "./credentialType.js"
-import { encVarLenType, decodeVarLenType } from "./codec/variableLength.js"
-import { Enc, contramapEncs } from "./codec/tlsEncoder.js"
+import { CredentialTypeName, credentialTypeEncoder, decodeCredentialType } from "./credentialType.js"
+import { varLenTypeEncoder, decodeVarLenType } from "./codec/variableLength.js"
+import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { decodeUint16, encUint16 } from "./codec/number.js"
+import { decodeUint16, uint16Encoder } from "./codec/number.js"
 
 export interface RequiredCapabilities {
   extensionTypes: number[]
@@ -10,10 +10,12 @@ export interface RequiredCapabilities {
   credentialTypes: CredentialTypeName[]
 }
 
-export const encodeRequiredCapabilities: Enc<RequiredCapabilities> = contramapEncs(
-  [encVarLenType(encUint16), encVarLenType(encUint16), encVarLenType(encodeCredentialType)],
+export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities> = contramapBufferEncoders(
+  [varLenTypeEncoder(uint16Encoder), varLenTypeEncoder(uint16Encoder), varLenTypeEncoder(credentialTypeEncoder)],
   (rc) => [rc.extensionTypes, rc.proposalTypes, rc.credentialTypes] as const,
 )
+
+export const encodeRequiredCapabilities: Encoder<RequiredCapabilities> = encode(requiredCapabilitiesEncoder)
 
 export const decodeRequiredCapabilities: Decoder<RequiredCapabilities> = mapDecoders(
   [decodeVarLenType(decodeUint16), decodeVarLenType(decodeUint16), decodeVarLenType(decodeCredentialType)],

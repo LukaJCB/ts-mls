@@ -10,10 +10,10 @@ import { Proposal } from "./proposal.js"
 import {
   decodePrivateMessageContent,
   decryptSenderData,
-  encodePrivateContentAAD,
   encodePrivateMessageContent,
   encryptSenderData,
   PrivateContentAAD,
+  privateContentAADEncoder,
   PrivateMessage,
   PrivateMessageContent,
   toAuthenticatedContent,
@@ -178,8 +178,8 @@ export async function protect(
   const ciphertext = await cs.hpke.encryptAead(
     key,
     nonce,
-    encode(encodePrivateContentAAD)(aad),
-    encode(encodePrivateMessageContent(config))(content),
+    encode(privateContentAADEncoder)(aad),
+    encodePrivateMessageContent(config)(content),
   )
 
   const senderData: SenderData = {
@@ -239,7 +239,7 @@ export async function unprotectPrivateMessage(
     authenticatedData: msg.authenticatedData,
   }
 
-  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(encodePrivateContentAAD)(aad), msg.ciphertext)
+  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(privateContentAADEncoder)(aad), msg.ciphertext)
 
   const pmc = decodePrivateMessageContent(msg.contentType)(decrypted, 0)?.[0]
 

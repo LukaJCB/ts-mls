@@ -1,12 +1,12 @@
-import { decodeUint32, encUint32 } from "./codec/number.js"
+import { decodeUint32, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncs, Enc, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, encVarLenData, encVarLenType } from "./codec/variableLength.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { decodeExtension, encodeExtension, Extension } from "./extension.js"
-import { decodeGroupContext, encodeGroupContext, extractEpochSecret, GroupContext } from "./groupContext.js"
+import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
+import { decodeGroupContext, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
 import { CodecError } from "./mlsError.js"
 import { decodeRatchetTree, RatchetTree } from "./ratchetTree.js"
 
@@ -17,10 +17,12 @@ export interface GroupInfoTBS {
   signer: number
 }
 
-export const encodeGroupInfoTBS: Enc<GroupInfoTBS> = contramapEncs(
-  [encodeGroupContext, encVarLenType(encodeExtension), encVarLenData, encUint32],
+export const groupInfoTBSEncoder: BufferEncoder<GroupInfoTBS> = contramapBufferEncoders(
+  [groupContextEncoder, varLenTypeEncoder(extensionEncoder), varLenDataEncoder, uint32Encoder],
   (g) => [g.groupContext, g.extensions, g.confirmationTag, g.signer] as const,
 )
+
+export const encodeGroupInfoTBS: Encoder<GroupInfoTBS> = encode(groupInfoTBSEncoder)
 
 export const decodeGroupInfoTBS: Decoder<GroupInfoTBS> = mapDecoders(
   [decodeGroupContext, decodeVarLenType(decodeExtension), decodeVarLenData, decodeUint32],
@@ -36,10 +38,12 @@ export type GroupInfo = GroupInfoTBS & {
   signature: Uint8Array
 }
 
-export const encodeGroupInfo: Enc<GroupInfo> = contramapEncs(
-  [encodeGroupInfoTBS, encVarLenData],
+export const groupInfoEncoder: BufferEncoder<GroupInfo> = contramapBufferEncoders(
+  [groupInfoTBSEncoder, varLenDataEncoder],
   (g) => [g, g.signature] as const,
 )
+
+export const encodeGroupInfo: Encoder<GroupInfo> = encode(groupInfoEncoder)
 
 export const decodeGroupInfo: Decoder<GroupInfo> = mapDecoders(
   [decodeGroupInfoTBS, decodeVarLenData],
@@ -60,12 +64,12 @@ export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefin
 }
 
 export async function signGroupInfo(tbs: GroupInfoTBS, privateKey: Uint8Array, s: Signature): Promise<GroupInfo> {
-  const signature = await signWithLabel(privateKey, "GroupInfoTBS", encode(encodeGroupInfoTBS)(tbs), s)
+  const signature = await signWithLabel(privateKey, "GroupInfoTBS", encode(groupInfoTBSEncoder)(tbs), s)
   return { ...tbs, signature }
 }
 
 export function verifyGroupInfoSignature(gi: GroupInfo, publicKey: Uint8Array, s: Signature): Promise<boolean> {
-  return verifyWithLabel(publicKey, "GroupInfoTBS", encode(encodeGroupInfoTBS)(gi), gi.signature, s)
+  return verifyWithLabel(publicKey, "GroupInfoTBS", encode(groupInfoTBSEncoder)(gi), gi.signature, s)
 }
 
 export async function verifyGroupInfoConfirmationTag(

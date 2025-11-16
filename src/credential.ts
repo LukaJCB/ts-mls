@@ -1,7 +1,7 @@
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
-import { contramapEncs, Enc } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, encVarLenData, encVarLenType } from "./codec/variableLength.js"
-import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CredentialTypeName, decodeCredentialType, credentialTypeEncoder } from "./credentialType.js"
 
 export type Credential = CredentialBasic | CredentialX509
 
@@ -19,31 +19,39 @@ export interface CredentialCustom {
   data: Uint8Array
 }
 
-export const encodeCredentialBasic: Enc<CredentialBasic> = contramapEncs(
-  [encodeCredentialType, encVarLenData],
+export const credentialBasicEncoder: BufferEncoder<CredentialBasic> = contramapBufferEncoders(
+  [credentialTypeEncoder, varLenDataEncoder],
   (c) => [c.credentialType, c.identity] as const,
 )
 
-export const encodeCredentialX509: Enc<CredentialX509> = contramapEncs(
-  [encodeCredentialType, encVarLenType(encVarLenData)],
+export const encodeCredentialBasic: Encoder<CredentialBasic> = encode(credentialBasicEncoder)
+
+export const credentialX509Encoder: BufferEncoder<CredentialX509> = contramapBufferEncoders(
+  [credentialTypeEncoder, varLenTypeEncoder(varLenDataEncoder)],
   (c) => [c.credentialType, c.certificates] as const,
 )
 
-export const encodeCredentialCustom: Enc<CredentialCustom> = contramapEncs(
-  [encodeCredentialType, encVarLenData],
+export const encodeCredentialX509: Encoder<CredentialX509> = encode(credentialX509Encoder)
+
+export const credentialCustomEncoder: BufferEncoder<CredentialCustom> = contramapBufferEncoders(
+  [credentialTypeEncoder, varLenDataEncoder],
   (c) => [c.credentialType, c.data] as const,
 )
 
-export const encodeCredential: Enc<Credential> = (c) => {
+export const encodeCredentialCustom: Encoder<CredentialCustom> = encode(credentialCustomEncoder)
+
+export const credentialEncoder: BufferEncoder<Credential> = (c) => {
   switch (c.credentialType) {
     case "basic":
-      return encodeCredentialBasic(c)
+      return credentialBasicEncoder(c)
     case "x509":
-      return encodeCredentialX509(c)
+      return credentialX509Encoder(c)
     default:
-      return encodeCredentialCustom(c as CredentialCustom)
+      return credentialCustomEncoder(c as CredentialCustom)
   }
 }
+
+export const encodeCredential: Encoder<Credential> = encode(credentialEncoder)
 
 const decodeCredentialBasic: Decoder<CredentialBasic> = mapDecoder(decodeVarLenData, (identity) => ({
   credentialType: "basic",

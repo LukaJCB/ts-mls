@@ -1,12 +1,12 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapEncs, Enc } from "./codec/tlsEncoder.js"
-import { decodeGroupInfo, encodeGroupInfo, GroupInfo } from "./groupInfo.js"
-import { decodeKeyPackage, encodeKeyPackage, KeyPackage } from "./keyPackage.js"
-import { decodePrivateMessage, encodePrivateMessage, PrivateMessage } from "./privateMessage.js"
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
-import { decodePublicMessage, encodePublicMessage, PublicMessage } from "./publicMessage.js"
-import { decodeWelcome, encodeWelcome, Welcome } from "./welcome.js"
-import { decodeWireformat, encodeWireformat } from "./wireformat.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeGroupInfo, groupInfoEncoder, GroupInfo } from "./groupInfo.js"
+import { decodeKeyPackage, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
+import { decodePrivateMessage, privateMessageEncoder, PrivateMessage } from "./privateMessage.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { decodePublicMessage, publicMessageEncoder, PublicMessage } from "./publicMessage.js"
+import { decodeWelcome, Welcome, welcomeEncoder } from "./welcome.js"
+import { decodeWireformat, wireformatEncoder } from "./wireformat.js"
 
 export interface MlsMessageProtocol {
   version: ProtocolVersionName
@@ -36,45 +36,57 @@ export interface MlsPublicMessage {
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
 export type MLSMessage = MlsMessageProtocol & MlsMessageContent
 
-export const encodeMlsMessageContent: Enc<MlsMessageContent> = (mc) => {
-  switch (mc.wireformat) {
-    case "mls_public_message":
-      return encodeMlsPublicMessage(mc)
-    case "mls_welcome":
-      return encodeMlsWelcome(mc)
-    case "mls_private_message":
-      return encodeMlsPrivateMessage(mc)
-    case "mls_group_info":
-      return encodeMlsGroupInfo(mc)
-    case "mls_key_package":
-      return encodeMlsKeyPackage(mc)
-  }
-}
-
-export const encodeMlsPublicMessage: Enc<MlsPublicMessage> = contramapEncs(
-  [encodeWireformat, encodePublicMessage],
+export const mlsPublicMessageEncoder: BufferEncoder<MlsPublicMessage> = contramapBufferEncoders(
+  [wireformatEncoder, publicMessageEncoder],
   (msg) => [msg.wireformat, msg.publicMessage] as const,
 )
 
-export const encodeMlsWelcome: Enc<MlsWelcome> = contramapEncs(
-  [encodeWireformat, encodeWelcome],
+export const encodeMlsPublicMessage: Encoder<MlsPublicMessage> = encode(mlsPublicMessageEncoder)
+
+export const mlsWelcomeEncoder: BufferEncoder<MlsWelcome> = contramapBufferEncoders(
+  [wireformatEncoder, welcomeEncoder],
   (wm) => [wm.wireformat, wm.welcome] as const,
 )
 
-export const encodeMlsPrivateMessage: Enc<MlsPrivateMessage> = contramapEncs(
-  [encodeWireformat, encodePrivateMessage],
+export const encodeMlsWelcome: Encoder<MlsWelcome> = encode(mlsWelcomeEncoder)
+
+export const mlsPrivateMessageEncoder: BufferEncoder<MlsPrivateMessage> = contramapBufferEncoders(
+  [wireformatEncoder, privateMessageEncoder],
   (pm) => [pm.wireformat, pm.privateMessage] as const,
 )
 
-export const encodeMlsGroupInfo: Enc<MlsGroupInfo> = contramapEncs(
-  [encodeWireformat, encodeGroupInfo],
+export const encodeMlsPrivateMessage: Encoder<MlsPrivateMessage> = encode(mlsPrivateMessageEncoder)
+
+export const mlsGroupInfoEncoder: BufferEncoder<MlsGroupInfo> = contramapBufferEncoders(
+  [wireformatEncoder, groupInfoEncoder],
   (gi) => [gi.wireformat, gi.groupInfo] as const,
 )
 
-export const encodeMlsKeyPackage: Enc<MlsKeyPackage> = contramapEncs(
-  [encodeWireformat, encodeKeyPackage],
+export const encodeMlsGroupInfo: Encoder<MlsGroupInfo> = encode(mlsGroupInfoEncoder)
+
+export const mlsKeyPackageEncoder: BufferEncoder<MlsKeyPackage> = contramapBufferEncoders(
+  [wireformatEncoder, keyPackageEncoder],
   (kp) => [kp.wireformat, kp.keyPackage] as const,
 )
+
+export const encodeMlsKeyPackage: Encoder<MlsKeyPackage> = encode(mlsKeyPackageEncoder)
+
+export const mlsMessageContentEncoder: BufferEncoder<MlsMessageContent> = (mc) => {
+  switch (mc.wireformat) {
+    case "mls_public_message":
+      return mlsPublicMessageEncoder(mc)
+    case "mls_welcome":
+      return mlsWelcomeEncoder(mc)
+    case "mls_private_message":
+      return mlsPrivateMessageEncoder(mc)
+    case "mls_group_info":
+      return mlsGroupInfoEncoder(mc)
+    case "mls_key_package":
+      return mlsKeyPackageEncoder(mc)
+  }
+}
+
+export const encodeMlsMessageContent: Encoder<MlsMessageContent> = encode(mlsMessageContentEncoder)
 
 export const decodeMlsMessageContent: Decoder<MlsMessageContent> = flatMapDecoder(
   decodeWireformat,
@@ -94,10 +106,12 @@ export const decodeMlsMessageContent: Decoder<MlsMessageContent> = flatMapDecode
   },
 )
 
-export const encodeMlsMessage: Enc<MLSMessage> = contramapEncs(
-  [encodeProtocolVersion, encodeMlsMessageContent],
+export const mlsMessageEncoder: BufferEncoder<MLSMessage> = contramapBufferEncoders(
+  [protocolVersionEncoder, mlsMessageContentEncoder],
   (w) => [w.version, w] as const,
 )
+
+export const encodeMlsMessage: Encoder<MLSMessage> = encode(mlsMessageEncoder)
 
 export const decodeMlsMessage: Decoder<MLSMessage> = mapDecoders(
   [decodeProtocolVersion, decodeMlsMessageContent],

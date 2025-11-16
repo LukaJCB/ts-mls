@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, joinGroupWithExtensions } from "../../src/clientState.js"
+import { createGroup, joinGroupWithExtensions } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
@@ -7,10 +7,8 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { Extension, ExtensionType } from "../../src/extension.js"
-import { ValidationError } from "../../src/mlsError.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom GroupInfoExtensions %s`, async (cs) => {
   await customGroupInfoExtensionTest(cs as CiphersuiteName)

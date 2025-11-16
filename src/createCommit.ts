@@ -18,7 +18,7 @@ import {
   FramedContentAuthDataCommit,
   FramedContentCommit,
 } from "./framedContent.js"
-import { GroupContext, encodeGroupContext } from "./groupContext.js"
+import { GroupContext, groupContextEncoder } from "./groupContext.js"
 import {
   GroupInfo,
   GroupInfoTBS,
@@ -39,7 +39,7 @@ import { PskIndex } from "./pskIndex.js"
 import {
   RatchetTree,
   addLeafNode,
-  encodeRatchetTree,
+  ratchetTreeEncoder,
   getCredentialFromLeafIndex,
   getSignaturePublicKeyFromLeafIndex,
   removeLeafNode,
@@ -334,7 +334,7 @@ export async function createGroupInfoWithRatchetTree(
   extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const encodedTree = encode(encodeRatchetTree)(tree)
+  const encodedTree = encode(ratchetTreeEncoder)(tree)
 
   const gi = await createGroupInfo(
     groupContext,
@@ -371,7 +371,7 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
   extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const encodedTree = encode(encodeRatchetTree)(state.ratchetTree)
+  const encodedTree = encode(ratchetTreeEncoder)(state.ratchetTree)
 
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
@@ -455,7 +455,7 @@ export async function applyUpdatePathSecret(
       const pathSecret = await decryptWithLabel(
         key,
         "UpdatePathNode",
-        encode(encodeGroupContext)(gc),
+        encode(groupContextEncoder)(gc),
         ct.kemOutput,
         ct.ciphertext,
         cs.hpke,

@@ -1,10 +1,10 @@
-import { decodeUint16, encUint16 } from "./codec/number.js"
+import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
-import { contramapEncs, Enc } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encVarLenData } from "./codec/variableLength.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import {
   decodeDefaultExtensionType,
-  encodeDefaultExtensionType,
+  defaultExtensionTypeEncoder,
   DefaultExtensionTypeName,
   defaultExtensionTypes,
 } from "./defaultExtensionType.js"
@@ -12,8 +12,10 @@ import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 export type ExtensionType = DefaultExtensionTypeName | number
 
-export const encodeExtensionType: Enc<ExtensionType> = (t) =>
-  typeof t === "number" ? encUint16(t) : encodeDefaultExtensionType(t)
+export const extensionTypeEncoder: BufferEncoder<ExtensionType> = (t) =>
+  typeof t === "number" ? uint16Encoder(t) : defaultExtensionTypeEncoder(t)
+
+export const encodeExtensionType: Encoder<ExtensionType> = encode(extensionTypeEncoder)
 
 export const decodeExtensionType: Decoder<ExtensionType> = orDecoder(decodeDefaultExtensionType, decodeUint16)
 
@@ -22,10 +24,12 @@ export interface Extension {
   extensionData: Uint8Array
 }
 
-export const encodeExtension: Enc<Extension> = contramapEncs(
-  [encodeExtensionType, encVarLenData],
+export const extensionEncoder: BufferEncoder<Extension> = contramapBufferEncoders(
+  [extensionTypeEncoder, varLenDataEncoder],
   (e) => [e.extensionType, e.extensionData] as const,
 )
+
+export const encodeExtension: Encoder<Extension> = encode(extensionEncoder)
 
 export const decodeExtension: Decoder<Extension> = mapDecoders(
   [decodeExtensionType, decodeVarLenData],

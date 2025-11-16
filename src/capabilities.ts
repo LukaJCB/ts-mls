@@ -1,10 +1,10 @@
-import { CredentialTypeName, decodeCredentialType, encodeCredentialType } from "./credentialType.js"
-import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite.js"
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion.js"
-import { Enc, contramapEncs } from "./codec/tlsEncoder.js"
+import { CredentialTypeName, decodeCredentialType, credentialTypeEncoder } from "./credentialType.js"
+import { CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { decodeVarLenType, encVarLenType } from "./codec/variableLength.js"
-import { decodeUint16, encUint16 } from "./codec/number.js"
+import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
+import { decodeUint16, uint16Encoder } from "./codec/number.js"
 
 export interface Capabilities {
   versions: ProtocolVersionName[]
@@ -14,16 +14,18 @@ export interface Capabilities {
   credentials: CredentialTypeName[]
 }
 
-export const encodeCapabilities: Enc<Capabilities> = contramapEncs(
+export const capabilitiesEncoder: BufferEncoder<Capabilities> = contramapBufferEncoders(
   [
-    encVarLenType(encodeProtocolVersion),
-    encVarLenType(encodeCiphersuite),
-    encVarLenType(encUint16),
-    encVarLenType(encUint16),
-    encVarLenType(encodeCredentialType),
+    varLenTypeEncoder(protocolVersionEncoder),
+    varLenTypeEncoder(ciphersuiteEncoder),
+    varLenTypeEncoder(uint16Encoder),
+    varLenTypeEncoder(uint16Encoder),
+    varLenTypeEncoder(credentialTypeEncoder),
   ],
   (cap) => [cap.versions, cap.ciphersuites, cap.extensions, cap.proposals, cap.credentials] as const,
 )
+
+export const encodeCapabilities: Encoder<Capabilities> = encode(capabilitiesEncoder)
 
 export const decodeCapabilities: Decoder<Capabilities> = mapDecoders(
   [

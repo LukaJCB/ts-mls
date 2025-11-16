@@ -7,7 +7,7 @@ import { GroupContext } from "./groupContext.js"
 import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage.js"
 import { deriveKeySchedule, initializeKeySchedule, KeySchedule } from "./keySchedule.js"
-import { encodePskId, PreSharedKeyID } from "./presharedkey.js"
+import { pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -227,8 +227,10 @@ async function validateProposals(
   const multiplePskWithSamePskId = p.psk.some((a, indexA) =>
     p.psk.some(
       (b, indexB) =>
-        constantTimeEqual(encode(encodePskId)(a.proposal.psk.preSharedKeyId), encode(encodePskId)(b.proposal.psk.preSharedKeyId)) &&
-        indexA !== indexB,
+        constantTimeEqual(
+          encode(pskIdEncoder)(a.proposal.psk.preSharedKeyId),
+          encode(pskIdEncoder)(b.proposal.psk.preSharedKeyId),
+        ) && indexA !== indexB,
     ),
   )
 

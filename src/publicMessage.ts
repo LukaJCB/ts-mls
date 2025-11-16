@@ -1,13 +1,13 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder.js"
-import { contramapEncs, Enc } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, encVarLenData } from "./codec/variableLength.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder, encVoid } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Extension } from "./extension.js"
 import { decodeExternalSender, ExternalSender } from "./externalSender.js"
 import {
   decodeFramedContent,
   decodeFramedContentAuthData,
-  encodeFramedContent,
-  encodeFramedContentAuthData,
+  framedContentEncoder,
+  framedContentAuthDataEncoder,
   FramedContent,
   FramedContentAuthData,
 } from "./framedContent.js"
@@ -21,16 +21,18 @@ type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
 type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }
 type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeName, "member"> }
 
-export const encodePublicMessageInfo: Enc<PublicMessageInfo> = (info) => {
+export const publicMessageInfoEncoder: BufferEncoder<PublicMessageInfo> = (info) => {
   switch (info.senderType) {
     case "member":
-      return encVarLenData(info.membershipTag)
+      return varLenDataEncoder(info.membershipTag)
     case "external":
     case "new_member_proposal":
     case "new_member_commit":
-      return [0, () => {}]
+      return encVoid
   }
 }
+
+export const encodePublicMessageInfo: Encoder<PublicMessageInfo> = encode(publicMessageInfoEncoder)
 
 export function decodePublicMessageInfo(senderType: SenderTypeName): Decoder<PublicMessageInfo> {
   switch (senderType) {
@@ -50,10 +52,12 @@ export type PublicMessage = { content: FramedContent; auth: FramedContentAuthDat
 export type MemberPublicMessage = PublicMessage & PublicMessageInfoMember
 export type ExternalPublicMessage = PublicMessage & PublicMessageInfoMemberOther
 
-export const encodePublicMessage: Enc<PublicMessage> = contramapEncs(
-  [encodeFramedContent, encodeFramedContentAuthData, encodePublicMessageInfo],
+export const publicMessageEncoder: BufferEncoder<PublicMessage> = contramapBufferEncoders(
+  [framedContentEncoder, framedContentAuthDataEncoder, publicMessageInfoEncoder],
   (msg) => [msg.content, msg.auth, msg] as const,
 )
+
+export const encodePublicMessage: Encoder<PublicMessage> = encode(publicMessageEncoder)
 
 export const decodePublicMessage: Decoder<PublicMessage> = flatMapDecoder(decodeFramedContent, (content) =>
   mapDecoders(
