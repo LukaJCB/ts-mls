@@ -7,5 +7,8 @@ export default defineConfig({
     maxConcurrency: 2,
     isolate: false,
     exclude: ["**/node_modules/**", "**/.git/**", "dist"],
+    coverage: {
+      include: ["src/**/*.ts"],
+    },
   },
 })
