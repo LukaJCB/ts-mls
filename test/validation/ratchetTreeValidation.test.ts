@@ -5,7 +5,7 @@ import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
-import { RatchetTree } from "../../src/ratchetTree.js"
+import { encodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { defaultLifetimeConfig } from "../../src/lifetimeConfig.js"
 import { defaultAuthenticationService } from "../../src/authenticationService.js"
@@ -17,11 +17,13 @@ import {
   joinGroupExternal,
 } from "../../src/createCommit.js"
 import { ratchetTreeFromExtension } from "../../src/groupInfo.js"
+import { treeHashRoot } from "../../src/treeHash.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("should validate ratchet tree %s", async (cs) => {
   await testStructuralIntegrity(cs as CiphersuiteName)
   await testInvalidParentHash(cs as CiphersuiteName)
   await testInvalidTreeHash(cs as CiphersuiteName)
+  await testDuplicatePublicKeys(cs as CiphersuiteName)
 })
 
 async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
@@ -125,6 +127,72 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
   await expect(
     joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
   ).rejects.toThrow(new CryptoVerificationError("Unable to verify parent hash"))
+}
+
+async function testDuplicatePublicKeys(cipherSuite: CiphersuiteName) {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+
+  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+
+  const groupId = new TextEncoder().encode("group1")
+
+  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+
+  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+
+  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+
+  const addBobProposal: Proposal = {
+    proposalType: "add",
+    add: {
+      keyPackage: bob.publicPackage,
+    },
+  }
+
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
+
+  aliceGroup = addBobCommitResult.newState
+
+  const emptyCommitResult = await createCommit({
+    state: aliceGroup,
+    cipherSuite: impl,
+  })
+
+  aliceGroup = emptyCommitResult.newState
+
+  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, [], impl)
+
+  //modify alice's public key
+  const tree = ratchetTreeFromExtension(groupInfo)!
+
+  if (tree[0]!.nodeType === "parent") throw new Error("expected leaf")
+
+  tree[0]!.leaf.hpkePublicKey = bob.publicPackage.leafNode.hpkePublicKey
+
+  if (tree[2]!.nodeType === "parent") throw new Error("expected leaf")
+
+  tree[2]!.leaf.hpkePublicKey = bob.publicPackage.leafNode.hpkePublicKey
+
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+
+  treeExtension!.extensionData = encodeRatchetTree(tree)
+
+  groupInfo.groupContext.treeHash = await treeHashRoot(tree, impl.hash)
+
+  await expect(
+    joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
+  ).rejects.toThrow(new ValidationError("Multiple public keys with the same value"))
 }
 
 async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
