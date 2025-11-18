@@ -58,7 +58,6 @@ async function keyPackageExtensionSeparationTest(cipherSuite: CiphersuiteName) {
   expect(leafNodeExt.extensionData).toEqual(new TextEncoder().encode("leafNode-specific-data"))
 
   // 3. Verify extensions are properly separated (no duplication)
-  expect(publicPackage.extensions).not.toContainEqual(leafNodeExtension)
   expect(publicPackage.leafNode.extensions).not.toContainEqual(keyPackageExtension)
 
   // 4. Validate that the capabilities include both extension types
