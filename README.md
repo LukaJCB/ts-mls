@@ -66,6 +66,30 @@ The following cipher suites are supported:
 
 This library has not undergone a formal security audit. While care has been taken to implement the MLS protocol correctly and securely, it may contain undiscovered vulnerabilities. If you plan to use this library in a production or security-critical context, proceed with caution and consider conducting an independent security review.
 
+## KeyPackage Generation API
+
+The `generateKeyPackage` function now supports an optional `leafNodeExtensions` parameter to properly separate KeyPackage extensions from LeafNode extensions according to MLS specification compliance:
+
+```typescript
+// Function signature
+async function generateKeyPackage(
+  credential: Credential,
+  capabilities: Capabilities,
+  lifetime: Lifetime,
+  extensions: Extension[], // KeyPackage extensions
+  cs: CiphersuiteImpl,
+  leafNodeExtensions?: Extension[], // Optional LeafNode extensions
+): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }>
+```
+
+**Extension Separation:**
+
+- **KeyPackage extensions**: Contain actual extension data (e.g., `last_resort` with empty data field)
+- **LeafNode capabilities**: Signal support for extension types
+- **LeafNode extensions**: Only contain extensions specific to leaf node operations
+
+This change ensures compliance with RFC 9420 and draft-ietf-mls-extensions-08 specifications while maintaining backward compatibility.
+
 ## Basic Usage
 
 ```typescript

@@ -17,6 +17,7 @@ import { createCustomCredential } from "../../src/customCredential.js"
 import { Extension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
+import { Capabilities } from "../../src/capabilities.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Proposal Validation %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
@@ -333,8 +334,9 @@ async function remove(cipherSuite: CiphersuiteName) {
     georgeCredential,
     defaultCapabilities(),
     defaultLifetime,
-    [georgeExtension],
+    [], // KeyPackage extensions - empty for this test
     impl,
+    [georgeExtension], // LeafNode extensions - this should be rejected
   )
 
   const addGeorge: Proposal = {
@@ -354,6 +356,57 @@ async function remove(cipherSuite: CiphersuiteName) {
       },
     ),
   ).rejects.toThrow(ValidationError)
+
+  // Test extension separation in KeyPackage generation
+  const helenCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("helen") }
+  const keyPackageExtension: Extension = {
+    extensionType: 1000,
+    extensionData: new TextEncoder().encode("keyPackageData"),
+  }
+  const leafNodeExtension: Extension = { extensionType: 2000, extensionData: new TextEncoder().encode("leafNodeData") }
+
+  // Create capabilities that include our extension types
+  const helenCapabilities: Capabilities = {
+    ...defaultCapabilities(),
+    extensions: [1000, 2000], // Include both extension types in capabilities
+  }
+
+  const helen = await generateKeyPackage(
+    helenCredential,
+    helenCapabilities,
+    defaultLifetime,
+    [keyPackageExtension], // KeyPackage extensions
+    impl,
+    [leafNodeExtension], // LeafNode extensions
+  )
+
+  // Verify that extensions are correctly separated
+  expect(helen.publicPackage.extensions).toStrictEqual([keyPackageExtension])
+  expect(helen.publicPackage.leafNode.extensions).toStrictEqual([leafNodeExtension])
+
+  // Verify that the KeyPackage can be successfully added to the group
+  const addHelen: Proposal = {
+    proposalType: "add",
+    add: { keyPackage: helen.publicPackage },
+  }
+
+  const addHelenCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addHelen],
+    },
+  )
+
+  aliceGroup = addHelenCommitResult.newState
+
+  // Verify the KeyPackage was added successfully by counting non-blank leaf nodes
+  const leafCount = aliceGroup.ratchetTree.filter(
+    (node, index) => node !== undefined && index % 2 === 0, // Leaf nodes are at even indices in the tree
+  ).length
+  expect(leafCount).toBe(4) // alice, bob, charlie, helen
 
   const updateLeafNode: LeafNode = {
     leafNodeSource: "update",
