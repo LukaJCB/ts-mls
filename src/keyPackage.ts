@@ -104,6 +104,7 @@ export async function generateKeyPackageWithKey(
   extensions: Extension[],
   signatrueKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
   cs: CiphersuiteImpl,
+  leafNodeExtensions?: Extension[],
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
   const initKeys = await cs.hpke.generateKeyPair()
   const hpkeKeys = await cs.hpke.generateKeyPair()
@@ -119,7 +120,7 @@ export async function generateKeyPackageWithKey(
     hpkePublicKey: await cs.hpke.exportPublicKey(hpkeKeys.publicKey),
     signaturePublicKey: signatrueKeyPair.publicKey,
     info: { leafNodeSource: "key_package" },
-    extensions,
+    extensions: leafNodeExtensions ?? [],
     credential,
     capabilities,
     lifetime,
@@ -142,7 +143,8 @@ export async function generateKeyPackage(
   lifetime: Lifetime,
   extensions: Extension[],
   cs: CiphersuiteImpl,
+  leafNodeExtensions?: Extension[],
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
   const sigKeys = await cs.signature.keygen()
-  return generateKeyPackageWithKey(credential, capabilities, lifetime, extensions, sigKeys, cs)
+  return generateKeyPackageWithKey(credential, capabilities, lifetime, extensions, sigKeys, cs, leafNodeExtensions)
 }
