@@ -13,7 +13,6 @@ import {
   addLeafNode,
   findBlankLeafNodeIndexOrExtend,
   findLeafIndex,
-  getHpkePublicKey,
   removeLeafNode,
   updateLeafNode,
 } from "./ratchetTree.js"
@@ -83,6 +82,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
 import { encode } from "./codec/tlsEncoder.js"
+import { CredentialTypeName } from "./credentialType.js"
 
 export interface ClientState {
   groupContext: GroupContext
@@ -297,28 +297,48 @@ export async function validateRatchetTree(
   treeHash: Uint8Array,
   cs: CiphersuiteImpl,
 ): Promise<MlsError | undefined> {
-  const treeIsStructurallySound = tree.every((n, index) =>
-    isLeaf(toNodeIndex(index)) ? n === undefined || n.nodeType === "leaf" : n === undefined || n.nodeType === "parent",
-  )
+  const hpkeKeys = new Set<string>()
+  const signatureKeys = new Set<string>()
+  const credentialTypes = new Set<CredentialTypeName>()
+  for (const [i, n] of tree.entries()) {
+    const nodeIndex = toNodeIndex(i)
+    if (n?.nodeType === "leaf") {
+      if (!isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
-  if (!treeIsStructurallySound) return new ValidationError("Received Ratchet Tree is not structurally sound")
+      const hpkeKey = bytesToBase64(n.leaf.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
 
-  const parentHashesVerified = await verifyParentHashes(tree, cs.hash)
+      const signatureKey = bytesToBase64(n.leaf.signaturePublicKey)
+      if (signatureKeys.has(signatureKey)) return new ValidationError("signature keys not unique")
+      else signatureKeys.add(signatureKey)
 
-  if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
+      credentialTypes.add(n.leaf.credential.credentialType)
 
-  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash)))
-    return new ValidationError("Unable to verify tree hash")
+      const err =
+        n.leaf.leafNodeSource === "key_package"
+          ? await validateLeafNodeKeyPackage(n.leaf, groupContext, false, config, authService, cs.signature)
+          : await validateLeafNodeUpdateOrCommit(
+              n.leaf,
+              nodeToLeafIndex(nodeIndex),
+              groupContext,
+              authService,
+              cs.signature,
+            )
 
-  //validate all parent nodes
-  for (const [parentIndex, n] of tree.entries()) {
-    if (n?.nodeType === "parent") {
-      // verify unmerged leaves
+      if (err !== undefined) return err
+    } else if (n?.nodeType === "parent") {
+      if (isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
+
+      const hpkeKey = bytesToBase64(n.parent.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
+
       for (const unmergedLeaf of n.parent.unmergedLeaves) {
         const leafIndex = toLeafIndex(unmergedLeaf)
         const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
         const nodeIndex = leafToNodeIndex(leafIndex)
-        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(parentIndex)))
+        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(i)))
           return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node")
 
         for (const parentIdx of dp) {
@@ -335,62 +355,27 @@ export async function validateRatchetTree(
     }
   }
 
-  const duplicateHpkeKeys = hasDuplicateUint8Arrays(
-    tree.map((n) => (n !== undefined ? getHpkePublicKey(n) : undefined)),
-  )
-
-  if (duplicateHpkeKeys) return new ValidationError("Multiple public keys with the same value")
-
-  // validate all leaf nodes
-  for (const [index, n] of tree.entries()) {
+  for (const n of tree) {
     if (n?.nodeType === "leaf") {
-      const err =
-        n.leaf.leafNodeSource === "key_package"
-          ? await validateLeafNodeKeyPackage(
-              n.leaf,
-              groupContext,
-              tree,
-              false,
-              config,
-              authService,
-              nodeToLeafIndex(toNodeIndex(index)),
-              cs.signature,
-            )
-          : await validateLeafNodeUpdateOrCommit(
-              n.leaf,
-              nodeToLeafIndex(toNodeIndex(index)),
-              groupContext,
-              tree,
-              authService,
-              cs.signature,
-            )
-
-      if (err !== undefined) return err
+      for (const credentialType of credentialTypes) {
+        if (!n.leaf.capabilities.credentials.includes(credentialType))
+          return new ValidationError("LeafNode has credential that is not supported by member of the group")
+      }
     }
   }
-}
 
-function hasDuplicateUint8Arrays(byteArrays: (Uint8Array | undefined)[]): boolean {
-  const seen = new Set<string>()
+  const parentHashesVerified = await verifyParentHashes(tree, cs.hash)
 
-  for (const data of byteArrays) {
-    if (data === undefined) continue
+  if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
 
-    const key = bytesToBase64(data)
-    if (seen.has(key)) {
-      return true
-    }
-    seen.add(key)
-  }
-
-  return false
+  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash)))
+    return new ValidationError("Unable to verify tree hash")
 }
 
 export async function validateLeafNodeUpdateOrCommit(
   leafNode: LeafNodeCommit | LeafNodeUpdate,
   leafIndex: number,
   groupContext: GroupContext,
-  tree: RatchetTree,
   authService: AuthenticationService,
   s: Signature,
 ): Promise<MlsError | undefined> {
@@ -398,7 +383,7 @@ export async function validateLeafNodeUpdateOrCommit(
 
   if (!signatureValid) return new CryptoVerificationError("Could not verify leaf node signature")
 
-  const commonError = await validateLeafNodeCommon(leafNode, groupContext, tree, authService, leafIndex)
+  const commonError = await validateLeafNodeCommon(leafNode, groupContext, authService)
 
   if (commonError !== undefined) return commonError
 }
@@ -410,9 +395,7 @@ export function throwIfDefined(err: MlsError | undefined): void {
 async function validateLeafNodeCommon(
   leafNode: LeafNode,
   groupContext: GroupContext,
-  tree: RatchetTree,
   authService: AuthenticationService,
-  leafIndex?: number,
 ) {
   const credentialValid = await authService.validateCredential(leafNode.credential, leafNode.signaturePublicKey)
 
@@ -429,40 +412,17 @@ async function validateLeafNodeCommon(
     if (!leafSupportsCapabilities) return new ValidationError("LeafNode does not support required capabilities")
   }
 
-  const credentialUnsupported = tree.some(
-    (node) =>
-      node !== undefined &&
-      node.nodeType === "leaf" &&
-      !node.leaf.capabilities.credentials.includes(leafNode.credential.credentialType),
-  )
-
-  if (credentialUnsupported)
-    return new ValidationError("LeafNode has credential that is not supported by member of the group")
-
   const extensionsSupported = extensionsSupportedByCapabilities(leafNode.extensions, leafNode.capabilities)
 
   if (!extensionsSupported) return new ValidationError("LeafNode contains extension not listed in capabilities")
-
-  const keysAreNotUnique = tree.some(
-    (node, nodeIndex) =>
-      node !== undefined &&
-      node.nodeType === "leaf" &&
-      (constantTimeEqual(node.leaf.hpkePublicKey, leafNode.hpkePublicKey) ||
-        constantTimeEqual(node.leaf.signaturePublicKey, leafNode.signaturePublicKey)) &&
-      leafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)),
-  )
-
-  if (keysAreNotUnique) return new ValidationError("hpke or signature keys not unique")
 }
 
 async function validateLeafNodeKeyPackage(
   leafNode: LeafNodeKeyPackage,
   groupContext: GroupContext,
-  tree: RatchetTree,
   sentByClient: boolean,
   config: LifetimeConfig,
   authService: AuthenticationService,
-  leafIndex: number | undefined,
   s: Signature,
 ): Promise<MlsError | undefined> {
   const signatureValid = await verifyLeafNodeSignatureKeyPackage(leafNode, s)
@@ -477,9 +437,38 @@ async function validateLeafNodeKeyPackage(
     }
   }
 
-  const commonError = await validateLeafNodeCommon(leafNode, groupContext, tree, authService, leafIndex)
+  const commonError = await validateLeafNodeCommon(leafNode, groupContext, authService)
 
   if (commonError !== undefined) return commonError
+}
+
+export async function validateLeafNodeCredentialAndKeyUniqueness(
+  tree: RatchetTree,
+  leafNode: LeafNode,
+  existingLeafIndex?: number,
+): Promise<ValidationError | undefined> {
+  const hpkeKeys = new Set<string>()
+  const signatureKeys = new Set<string>()
+  for (const [nodeIndex, node] of tree.entries()) {
+    if (node?.nodeType === "leaf") {
+      if (!node.leaf.capabilities.credentials.includes(leafNode.credential.credentialType)) {
+        return new ValidationError("LeafNode has credential that is not supported by member of the group")
+      }
+
+      const hpkeKey = bytesToBase64(node.leaf.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
+
+      const signatureKey = bytesToBase64(node.leaf.signaturePublicKey)
+      if (signatureKeys.has(signatureKey) && existingLeafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)))
+        return new ValidationError("signature keys not unique")
+      else signatureKeys.add(signatureKey)
+    } else if (node?.nodeType === "parent") {
+      const hpkeKey = bytesToBase64(node.parent.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
+    }
+  }
 }
 
 async function validateKeyPackage(
@@ -495,14 +484,16 @@ async function validateKeyPackage(
 
   if (kp.version !== groupContext.version) return new ValidationError("Invalid mls version")
 
+  const leafNodeConsistentWithTree = await validateLeafNodeCredentialAndKeyUniqueness(tree, kp.leafNode)
+
+  if (leafNodeConsistentWithTree !== undefined) return leafNodeConsistentWithTree
+
   const leafNodeError = await validateLeafNodeKeyPackage(
     kp.leafNode,
     groupContext,
-    tree,
     sentByClient,
     config,
     authService,
-    undefined,
     s,
   )
   if (leafNodeError !== undefined) return leafNodeError
@@ -990,9 +981,11 @@ async function applyTreeMutations(
   const treeAfterUpdate = await grouped.update.reduce(async (acc, { senderLeafIndex, proposal }) => {
     if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
 
+    throwIfDefined(await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s))
     throwIfDefined(
-      await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, ratchetTree, authService, s),
+      await validateLeafNodeCredentialAndKeyUniqueness(ratchetTree, proposal.update.leafNode, senderLeafIndex),
     )
+
     return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
   }, Promise.resolve(ratchetTree))
 

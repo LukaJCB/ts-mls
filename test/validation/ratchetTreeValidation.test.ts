@@ -1,7 +1,7 @@
 import { createGroup, validateRatchetTree } from "../../src/clientState.js"
 import { generateKeyPackage, generateKeyPackageWithKey } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
-import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
@@ -19,19 +19,21 @@ import {
 import { ratchetTreeFromExtension } from "../../src/groupInfo.js"
 import { treeHashRoot } from "../../src/treeHash.js"
 import { ProtocolVersionName } from "../../src/protocolVersion.js"
+import { signLeafNodeCommit, signLeafNodeKeyPackage } from "../../src/leafNode.js"
+import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("should validate ratchet tree %s", async (cs) => {
   await testStructuralIntegrity(cs as CiphersuiteName)
   await testInvalidParentHash(cs as CiphersuiteName)
   await testInvalidTreeHash(cs as CiphersuiteName)
-  await testDuplicatePublicKeys(cs as CiphersuiteName)
+  await testHpkePublicKeysNotUnique(cs as CiphersuiteName)
+  await testSignatureKeyNotUnique(cs as CiphersuiteName)
   await testInvalidLeafNodeSignature(cs as CiphersuiteName)
   await testInvalidLeafNodeSignatureKeyPackage(cs as CiphersuiteName)
   await testInvalidKeyPackageSignature(cs as CiphersuiteName)
   await testInvalidCipherSuite(cs as CiphersuiteName)
   await testInvalidMlsVersion(cs as CiphersuiteName)
   await testInvalidCredential(cs as CiphersuiteName)
-  await testHpkeAndSignatureNotUnique(cs as CiphersuiteName)
 })
 
 async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
@@ -127,15 +129,52 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
 
   if (tree[0]!.nodeType === "parent" || tree[0]!.leaf.leafNodeSource !== "commit") throw new Error("expected leaf")
 
-  // flip a byte in the tree hash to invalidate it
+  // flip a byte in the parent hash to invalidate it
   tree[0]!.leaf.parentHash[0] = (tree[0]!.leaf.parentHash[0]! + 1) & 0xff
+
+  await resignLeafNode(tree, 0, groupId, alice.privatePackage.signaturePrivateKey, impl)
+
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+
+  treeExtension!.extensionData = encodeRatchetTree(tree)
 
   await expect(
     joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
   ).rejects.toThrow(new CryptoVerificationError("Unable to verify parent hash"))
 }
 
-async function testDuplicatePublicKeys(cipherSuite: CiphersuiteName) {
+async function resignLeafNode(
+  tree: RatchetTree,
+  nodeIndex: number,
+  groupId: Uint8Array,
+  privateKey: Uint8Array,
+  impl: CiphersuiteImpl,
+) {
+  if (tree[nodeIndex]!.nodeType === "parent") throw new Error("expected leaf")
+  if (tree[nodeIndex]?.leaf.leafNodeSource === "commit") {
+    const newLeaf = {
+      ...tree[nodeIndex]!.leaf,
+      info: {
+        leafNodeSource: tree[nodeIndex]!.leaf.leafNodeSource,
+        groupId,
+        leafIndex: nodeToLeafIndex(toNodeIndex(nodeIndex)),
+      },
+    }
+    const signed = await signLeafNodeCommit(newLeaf, privateKey, impl.signature)
+    tree[nodeIndex]!.leaf.signature = signed.signature
+  } else if (tree[nodeIndex]?.leaf.leafNodeSource === "key_package") {
+    const signed = await signLeafNodeKeyPackage(
+      { ...tree[nodeIndex]?.leaf, info: { leafNodeSource: "key_package" } },
+      privateKey,
+      impl.signature,
+    )
+    tree[nodeIndex]!.leaf.signature = signed.signature
+  } else {
+    throw new Error("Couldn't sign")
+  }
+}
+
+async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -182,13 +221,11 @@ async function testDuplicatePublicKeys(cipherSuite: CiphersuiteName) {
   //modify alice's public key
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0]!.nodeType === "parent") throw new Error("expected leaf")
+  if (tree[0]!.nodeType === "parent" || tree[2]!.nodeType === "parent") throw new Error("expected leaf")
 
-  tree[0]!.leaf.hpkePublicKey = bob.publicPackage.leafNode.hpkePublicKey
+  tree[0]!.leaf.hpkePublicKey = tree[2]!.leaf.hpkePublicKey
 
-  if (tree[2]!.nodeType === "parent") throw new Error("expected leaf")
-
-  tree[2]!.leaf.hpkePublicKey = bob.publicPackage.leafNode.hpkePublicKey
+  await resignLeafNode(tree, 0, groupId, alice.privatePackage.signaturePrivateKey, impl)
 
   const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
 
@@ -198,7 +235,7 @@ async function testDuplicatePublicKeys(cipherSuite: CiphersuiteName) {
 
   await expect(
     joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
-  ).rejects.toThrow(new ValidationError("Multiple public keys with the same value"))
+  ).rejects.toThrow(new ValidationError("hpke keys not unique"))
 }
 
 async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
@@ -470,7 +507,7 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
   expect(err?.message).toBe("Could not validate credential")
 }
 
-async function testHpkeAndSignatureNotUnique(cipherSuite: CiphersuiteName) {
+async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const sigKeys = await impl.signature.keygen()
@@ -508,7 +545,7 @@ async function testHpkeAndSignatureNotUnique(cipherSuite: CiphersuiteName) {
 
   await expect(
     joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
-  ).rejects.toThrow(new ValidationError("hpke or signature keys not unique"))
+  ).rejects.toThrow(new ValidationError("signature keys not unique"))
 }
 
 async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
