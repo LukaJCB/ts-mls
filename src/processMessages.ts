@@ -7,6 +7,7 @@ import {
   nextEpochContext,
   processProposal,
   throwIfDefined,
+  validateLeafNodeCredentialAndKeyUniqueness,
   validateLeafNodeUpdateOrCommit,
 } from "./clientState.js"
 import { applyUpdatePathSecret } from "./createCommit.js"
@@ -219,9 +220,15 @@ async function processCommit(
         content.content.commit.path.leafNode,
         committerLeafIndex,
         state.groupContext,
-        result.tree,
         state.clientConfig.authService,
         cs.signature,
+      ),
+    )
+    throwIfDefined(
+      await validateLeafNodeCredentialAndKeyUniqueness(
+        result.tree,
+        content.content.commit.path.leafNode,
+        committerLeafIndex,
       ),
     )
   }
