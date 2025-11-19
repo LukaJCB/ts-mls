@@ -452,7 +452,7 @@ async function validateLeafNodeCommon(
       leafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)),
   )
 
-  if (keysAreNotUnique) return new ValidationError("hpke and signature keys not unique")
+  if (keysAreNotUnique) return new ValidationError("hpke or signature keys not unique")
 }
 
 async function validateLeafNodeKeyPackage(

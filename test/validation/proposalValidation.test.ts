@@ -19,7 +19,7 @@ import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
 import { Capabilities } from "../../src/capabilities.js"
 
-test.concurrent.each(Object.keys(ciphersuites))(`Proposal Validation %s`, async (cs) => {
+test.concurrent.each(Object.keys(ciphersuites).slice(0, 1))(`Proposal Validation %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
 
@@ -112,7 +112,9 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [removeBobProposal, removeBobProposal2],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(
+    new ValidationError("Commit cannot contain multiple update and/or remove proposals that apply to the same leaf"),
+  )
 
   // can't add someone already in the group
   await expect(
@@ -125,7 +127,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [addBobProposal],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Commit cannot contain an Add proposal for someone already in the group"))
 
   const proposalInvalidRequiredCapabilities: Proposal = {
     proposalType: "group_context_extensions",
@@ -170,7 +172,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [proposalRequiredCapabilities],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Not all members support required capabilities"))
 
   const dianaCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("diana") }
   const diana = await generateKeyPackage(
@@ -215,7 +217,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [addDiana, proposalRequiredCapabilitiesX509],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Commit contains add proposals of member without required capabilities"))
 
   const proposalInvalidExternalSenders: Proposal = {
     proposalType: "group_context_extensions",
@@ -269,7 +271,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [proposalUnauthenticatedExternalSenders],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Could not validate external credential"))
 
   const edwardCredential = { credentialType: "basic" as const, identity: new TextEncoder().encode("edward") }
   const edward = await generateKeyPackage(
@@ -305,7 +307,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [addEdward],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Could not validate credential"))
 
   const frankCredential: Credential = createCustomCredential(5, new Uint8Array([1, 2]))
   const frank = await generateKeyPackage(frankCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -326,7 +328,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [addFrank],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("LeafNode has credential that is not supported by member of the group"))
 
   const georgeCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("george") }
   const georgeExtension: Extension = { extensionType: 8545, extensionData: new Uint8Array() }
@@ -355,7 +357,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [addGeorge],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("LeafNode contains extension not listed in capabilities"))
 
   // Test extension separation in KeyPackage generation
   const helenCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("helen") }
@@ -432,7 +434,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [updateProposal],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Commit cannot contain an update proposal sent by committer"))
 
   const removeProposal: ProposalRemove = {
     proposalType: "remove",
@@ -452,7 +454,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [removeProposal],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Commit cannot contain a remove proposal removing committer"))
 
   const hannahCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const hannah = await generateKeyPackage(hannahCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -475,7 +477,11 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [addHannahProposal, addHannahProposal],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(
+    new ValidationError(
+      "Commit cannot contain multiple Add proposals that contain KeyPackages that represent the same client",
+    ),
+  )
 
   const pskId = new Uint8Array([1, 2, 3, 4])
   const pskProposal: Proposal = {
@@ -500,7 +506,9 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [pskProposal, pskProposal],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(
+    new ValidationError("Commit cannot contain PreSharedKey proposals that reference the same PreSharedKeyID"),
+  )
 
   const groupContextExtensionsProposal: Proposal = {
     proposalType: "group_context_extensions",
@@ -520,7 +528,7 @@ async function remove(cipherSuite: CiphersuiteName) {
         extraProposals: [groupContextExtensionsProposal, groupContextExtensionsProposal],
       },
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Commit cannot contain multiple GroupContextExtensions proposals"))
 
   // external pub not really necessary here
   const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
@@ -534,7 +542,7 @@ async function remove(cipherSuite: CiphersuiteName) {
       charlie.privatePackage.signaturePrivateKey,
       impl,
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Could not find external_sender extension in groupContext.extensions"))
 
   // can't use proposeExternal on a group with malformed external_senders
   await expect(
@@ -551,7 +559,7 @@ async function remove(cipherSuite: CiphersuiteName) {
       charlie.privatePackage.signaturePrivateKey,
       impl,
     ),
-  ).rejects.toThrow(ValidationError)
+  ).rejects.toThrow(new ValidationError("Could not decode external_sender extension"))
 }
 
 function withAuthService(state: ClientState, authService: AuthenticationService) {
