@@ -22,18 +22,52 @@ import { ProtocolVersionName } from "../../src/protocolVersion.js"
 import { signLeafNodeCommit, signLeafNodeKeyPackage } from "../../src/leafNode.js"
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 
-test.concurrent.each(Object.keys(ciphersuites))("should validate ratchet tree %s", async (cs) => {
-  await testStructuralIntegrity(cs as CiphersuiteName)
-  await testInvalidParentHash(cs as CiphersuiteName)
-  await testInvalidTreeHash(cs as CiphersuiteName)
-  await testHpkePublicKeysNotUnique(cs as CiphersuiteName)
-  await testSignatureKeyNotUnique(cs as CiphersuiteName)
-  await testInvalidLeafNodeSignature(cs as CiphersuiteName)
-  await testInvalidLeafNodeSignatureKeyPackage(cs as CiphersuiteName)
-  await testInvalidKeyPackageSignature(cs as CiphersuiteName)
-  await testInvalidCipherSuite(cs as CiphersuiteName)
-  await testInvalidMlsVersion(cs as CiphersuiteName)
-  await testInvalidCredential(cs as CiphersuiteName)
+describe("Ratchet Tree Validation", () => {
+  const suites = Object.keys(ciphersuites)
+
+  test.concurrent.each(suites)("structural integrity %s", async (cs) => {
+    await testStructuralIntegrity(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid parent hash %s", async (cs) => {
+    await testInvalidParentHash(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid tree hash %s", async (cs) => {
+    await testInvalidTreeHash(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("hpke public keys not unique %s", async (cs) => {
+    await testHpkePublicKeysNotUnique(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("signature key not unique %s", async (cs) => {
+    await testSignatureKeyNotUnique(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid leaf node signature (commit) %s", async (cs) => {
+    await testInvalidLeafNodeSignature(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid leaf node signature (key package) %s", async (cs) => {
+    await testInvalidLeafNodeSignatureKeyPackage(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid keypackage signature %s", async (cs) => {
+    await testInvalidKeyPackageSignature(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid cipher suite %s", async (cs) => {
+    await testInvalidCipherSuite(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid mls version %s", async (cs) => {
+    await testInvalidMlsVersion(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("invalid credential %s", async (cs) => {
+    await testInvalidCredential(cs as CiphersuiteName)
+  })
 })
 
 async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
