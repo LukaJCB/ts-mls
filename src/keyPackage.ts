@@ -102,7 +102,7 @@ export async function generateKeyPackageWithKey(
   capabilities: Capabilities,
   lifetime: Lifetime,
   extensions: Extension[],
-  signatrueKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
+  signatureKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
   cs: CiphersuiteImpl,
   leafNodeExtensions?: Extension[],
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
@@ -112,13 +112,13 @@ export async function generateKeyPackageWithKey(
   const privatePackage = {
     initPrivateKey: await cs.hpke.exportPrivateKey(initKeys.privateKey),
     hpkePrivateKey: await cs.hpke.exportPrivateKey(hpkeKeys.privateKey),
-    signaturePrivateKey: signatrueKeyPair.signKey,
+    signaturePrivateKey: signatureKeyPair.signKey,
   }
 
   const leafNodeTbs: LeafNodeTBSKeyPackage = {
     leafNodeSource: "key_package",
     hpkePublicKey: await cs.hpke.exportPublicKey(hpkeKeys.publicKey),
-    signaturePublicKey: signatrueKeyPair.publicKey,
+    signaturePublicKey: signatureKeyPair.publicKey,
     info: { leafNodeSource: "key_package" },
     extensions: leafNodeExtensions ?? [],
     credential,
@@ -130,11 +130,11 @@ export async function generateKeyPackageWithKey(
     version: "mls10",
     cipherSuite: cs.name,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
-    leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatrueKeyPair.signKey, cs.signature),
+    leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),
     extensions,
   }
 
-  return { publicPackage: await signKeyPackage(tbs, signatrueKeyPair.signKey, cs.signature), privatePackage }
+  return { publicPackage: await signKeyPackage(tbs, signatureKeyPair.signKey, cs.signature), privatePackage }
 }
 
 export async function generateKeyPackage(
