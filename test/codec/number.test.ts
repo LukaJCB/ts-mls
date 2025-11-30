@@ -7,7 +7,7 @@ import {
   decodeUint32,
   encodeUint64,
   decodeUint64,
-} from "../../src/codec/number"
+} from "../../src/codec/number.js"
 
 test("encode and decode works for uint8: 0", () => {
   uint8RoundTrip(0)

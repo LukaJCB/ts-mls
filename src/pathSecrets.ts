@@ -1,14 +1,15 @@
-import { Kdf, deriveSecret } from "./crypto/kdf"
-import { InternalError } from "./mlsError"
-import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree"
-import { root, leafWidth } from "./treemath"
-import { PathSecret } from "./updatePath"
+import { Kdf, deriveSecret } from "./crypto/kdf.js"
+import { InternalError } from "./mlsError.js"
+import { RatchetTree, findFirstNonBlankAncestor } from "./ratchetTree.js"
+import { root, leafWidth, NodeIndex } from "./treemath.js"
+import { PathSecret } from "./updatePath.js"
 
 /**
  * PathSecrets is a record with nodeIndex as keys and the path secret as values
  */
 
 export type PathSecrets = Record<number, Uint8Array>
+
 export function pathToPathSecrets(pathSecrets: PathSecret[]): PathSecrets {
   return pathSecrets.reduce(
     (acc, cur) => ({
@@ -20,7 +21,7 @@ export function pathToPathSecrets(pathSecrets: PathSecret[]): PathSecrets {
 }
 export async function getCommitSecret(
   tree: RatchetTree,
-  nodeIndex: number,
+  nodeIndex: NodeIndex,
   pathSecret: Uint8Array,
   kdf: Kdf,
 ): Promise<Uint8Array> {
@@ -34,13 +35,13 @@ export async function getCommitSecret(
 
 export async function pathToRoot(
   tree: RatchetTree,
-  nodeIndex: number,
+  nodeIndex: NodeIndex,
   pathSecret: Uint8Array,
   kdf: Kdf,
 ): Promise<PathSecrets> {
   const rootIndex = root(leafWidth(tree.length))
   let currentIndex = nodeIndex
-  let pathSecrets = { [nodeIndex]: pathSecret }
+  const pathSecrets = { [nodeIndex]: pathSecret }
   while (currentIndex != rootIndex) {
     const nextIndex = findFirstNonBlankAncestor(tree, currentIndex)
     const nextSecret = await deriveSecret(pathSecrets[currentIndex]!, "path", kdf)

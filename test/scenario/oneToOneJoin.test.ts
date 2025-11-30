@@ -1,22 +1,21 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { createApplicationMessage } from "../../src/createMessage"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { decodeMlsMessage, encodeMlsMessage } from "../../src/message"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { createApplicationMessage } from "../../src/createMessage.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`1:1 join ${cs}`, async () => {
-    await oneToOne(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
+  await oneToOne(cs as CiphersuiteName)
+})
 
 async function oneToOne(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -52,7 +51,15 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   }
 
   // alice commits
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = commitResult.newState
 

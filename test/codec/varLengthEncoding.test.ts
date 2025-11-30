@@ -1,18 +1,18 @@
-import { randomBytes } from "@noble/ciphers/webcrypto"
+import { randomBytes } from "@noble/hashes/utils.js"
 import {
   decodeVarLenData,
   decodeVarLenType,
   determineLength,
-  encodeLength,
-  encodeVarLenData,
-  encodeVarLenType,
-} from "../../src/codec/variableLength"
-import { createRoundtripTest } from "./roundtrip"
-import { Encoder } from "../../src/codec/tlsEncoder"
-import { Decoder } from "../../src/codec/tlsDecoder"
-import { decodeUint64, decodeUint8, encodeUint64, encodeUint8 } from "../../src/codec/number"
-import { decodeOptional, encodeOptional } from "../../src/codec/optional"
-import { CodecError } from "../../src/mlsError"
+  lengthEncoder,
+  varLenDataEncoder,
+  varLenTypeEncoder,
+} from "../../src/codec/variableLength.js"
+import { createRoundtripTest } from "./roundtrip.js"
+import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
+import { Decoder } from "../../src/codec/tlsDecoder.js"
+import { decodeUint64, decodeUint8, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
+import { decodeOptional, optionalEncoder } from "../../src/codec/optional.js"
+import { CodecError } from "../../src/mlsError.js"
 
 test("encode and decode works for 1 random byte", () => {
   varLenRoundtrip(randomBytes(1))
@@ -59,7 +59,7 @@ test("encode and decode works for 9999 random bytes", () => {
 })
 
 test("encode and decode works for array of random bytes", () => {
-  arrayRoundtrip(encodeVarLenData, decodeVarLenData, [
+  arrayRoundtrip(varLenDataEncoder, decodeVarLenData, [
     randomBytes(9999),
     randomBytes(9999),
     randomBytes(9999),
@@ -68,15 +68,15 @@ test("encode and decode works for array of random bytes", () => {
 })
 
 test("encode and decode works for array of uint8", () => {
-  arrayRoundtrip(encodeUint8, decodeUint8, [1, 2, 3, 4, 5])
+  arrayRoundtrip(uint8Encoder, decodeUint8, [1, 2, 3, 4, 5])
 })
 
 test("encode and decode works for array of uint64", () => {
-  arrayRoundtrip(encodeUint64, decodeUint64, [1n, 2n, 3n, 4n, 5n, 18446744073709551615n])
+  arrayRoundtrip(uint64Encoder, decodeUint64, [1n, 2n, 3n, 4n, 5n, 18446744073709551615n])
 })
 
 test("encode and decode works for array of optional random bytes", () => {
-  arrayRoundtrip(encodeOptional(encodeVarLenData), decodeOptional(decodeVarLenData), [
+  arrayRoundtrip(optionalEncoder(varLenDataEncoder), decodeOptional(decodeVarLenData), [
     randomBytes(99),
     undefined,
     randomBytes(99),
@@ -96,7 +96,7 @@ test("determineLength doesn't work if offset is too large", () => {
 })
 
 test("determineLength doesn't work if prefix is too large", () => {
-  expect(() => determineLength(encodeLength(50000000000), 1)).toThrow(CodecError)
+  expect(() => determineLength(encode(lengthEncoder)(50000000000), 1)).toThrow(CodecError)
 })
 
 test("determineLength doesn't work if offset is ffsd large", () => {
@@ -104,7 +104,7 @@ test("determineLength doesn't work if offset is ffsd large", () => {
 })
 
 test("decode doesn't work if length is too large", () => {
-  const e = encodeVarLenData(randomBytes(64))
+  const e = encode(varLenDataEncoder)(randomBytes(64))
   e[1] = 0xff
   expect(() => decodeVarLenData(e, 0)).toThrow(CodecError)
 })
@@ -112,11 +112,11 @@ test("decode doesn't work if length is too large", () => {
 test("decodeVarLenType doesn't work if underlying decoder doesn't work", () => {
   const brokenDecoder: Decoder<number> = () => undefined
 
-  expect(decodeVarLenType(brokenDecoder)(encodeVarLenData(randomBytes(16)), 0)).toBeUndefined()
+  expect(decodeVarLenType(brokenDecoder)(encode(varLenDataEncoder)(randomBytes(16)), 0)).toBeUndefined()
 })
 
-const varLenRoundtrip = createRoundtripTest(encodeVarLenData, decodeVarLenData)
+const varLenRoundtrip = createRoundtripTest(encode(varLenDataEncoder), decodeVarLenData)
 
-function arrayRoundtrip<T>(enc: Encoder<T>, dec: Decoder<T>, ts: T[]) {
-  return createRoundtripTest(encodeVarLenType(enc), decodeVarLenType(dec))(ts)
+function arrayRoundtrip<T>(enc: BufferEncoder<T>, dec: Decoder<T>, ts: T[]) {
+  return createRoundtripTest(encode(varLenTypeEncoder(enc)), decodeVarLenType(dec))(ts)
 }

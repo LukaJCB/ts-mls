@@ -1,4 +1,4 @@
-import { AuthenticatedContentCommit } from "./authenticatedContent"
+import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
   GroupActiveState,
@@ -7,32 +7,42 @@ import {
   nextEpochContext,
   processProposal,
   throwIfDefined,
+  validateLeafNodeCredentialAndKeyUniqueness,
   validateLeafNodeUpdateOrCommit,
-} from "./clientState"
-import { applyUpdatePathSecret } from "./createCommit"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Kdf, deriveSecret } from "./crypto/kdf"
-import { verifyConfirmationTag } from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./IncomingMessageAction"
-import { initializeEpoch } from "./keySchedule"
-import { MlsPrivateMessage, MlsPublicMessage } from "./message"
-import { unprotectPrivateMessage } from "./messageProtection"
-import { unprotectPublicMessage } from "./messageProtectionPublic"
-import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError"
-import { pathToRoot } from "./pathSecrets"
-import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath"
-import { PrivateMessage } from "./privateMessage"
-import { emptyPskIndex, PskIndex } from "./pskIndex"
-import { PublicMessage } from "./publicMessage"
-import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree"
-import { createSecretTree } from "./secretTree"
-import { getSenderLeafNodeIndex, Sender } from "./sender"
-import { treeHashRoot } from "./treeHash"
-import { leafToNodeIndex, leafWidth, nodeToLeafIndex, root } from "./treemath"
-import { UpdatePath, applyUpdatePath } from "./updatePath"
-import { addToMap } from "./util/addToMap"
-import { WireformatName } from "./wireformat"
+} from "./clientState.js"
+import { applyUpdatePathSecret } from "./createCommit.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Kdf, deriveSecret } from "./crypto/kdf.js"
+import { verifyConfirmationTag } from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./incomingMessageAction.js"
+import { initializeEpoch } from "./keySchedule.js"
+import { MlsPrivateMessage, MlsPublicMessage } from "./message.js"
+import { unprotectPrivateMessage } from "./messageProtection.js"
+import { unprotectPublicMessage } from "./messageProtectionPublic.js"
+import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError.js"
+import { pathToRoot } from "./pathSecrets.js"
+import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
+import { PrivateMessage } from "./privateMessage.js"
+import { emptyPskIndex, PskIndex } from "./pskIndex.js"
+import { PublicMessage } from "./publicMessage.js"
+import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree.js"
+import { createSecretTree } from "./secretTree.js"
+import { getSenderLeafNodeIndex, Sender } from "./sender.js"
+import { treeHashRoot } from "./treeHash.js"
+import {
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  NodeIndex,
+  nodeToLeafIndex,
+  root,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath.js"
+import { UpdatePath, applyUpdatePath } from "./updatePath.js"
+import { addToMap } from "./util/addToMap.js"
+import { WireformatName } from "./wireformat.js"
 
 export type ProcessMessageResult =
   | {
@@ -134,7 +144,7 @@ export async function processPrivateMessage(
   }
 }
 
-export type NewStateWithActionTaken = {
+export interface NewStateWithActionTaken {
   newState: ClientState
   actionTaken: IncomingMessageAction
 }
@@ -186,7 +196,8 @@ async function processCommit(
 ): Promise<NewStateWithActionTaken> {
   if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
 
-  const senderLeafIndex = content.content.sender.senderType === "member" ? content.content.sender.leafIndex : undefined
+  const senderLeafIndex =
+    content.content.sender.senderType === "member" ? toLeafIndex(content.content.sender.leafIndex) : undefined
 
   const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, false, cs)
 
@@ -209,9 +220,15 @@ async function processCommit(
         content.content.commit.path.leafNode,
         committerLeafIndex,
         state.groupContext,
-        result.tree,
         state.clientConfig.authService,
         cs.signature,
+      ),
+    )
+    throwIfDefined(
+      await validateLeafNodeCredentialAndKeyUniqueness(
+        result.tree,
+        content.content.commit.path.leafNode,
+        committerLeafIndex,
       ),
     )
   }
@@ -232,8 +249,8 @@ async function processCommit(
     state,
     groupContextWithExtensions,
     result.additionalResult.kind === "memberCommit"
-      ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(l[0]))
-      : [findBlankLeafNodeIndex(result.tree) ?? result.tree.length + 1],
+      ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(toLeafIndex(l[0])))
+      : [findBlankLeafNodeIndex(result.tree) ?? toNodeIndex(result.tree.length + 1)],
     cs.kdf,
   )
 
@@ -300,17 +317,17 @@ async function applyTreeUpdate(
   cs: CiphersuiteImpl,
   state: ClientState,
   groupContext: GroupContext,
-  excludeNodes: number[],
+  excludeNodes: NodeIndex[],
   kdf: Kdf,
 ): Promise<[PrivateKeyPath, Uint8Array, RatchetTree]> {
   if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree] as const
   if (sender.senderType === "member") {
-    const updatedTree = await applyUpdatePath(tree, sender.leafIndex, path, cs.hash)
+    const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       updatedTree,
       state,
-      sender.leafIndex,
+      toLeafIndex(sender.leafIndex),
       { ...groupContext, treeHash: await treeHashRoot(updatedTree, cs.hash), epoch: groupContext.epoch + 1n },
       path,
       excludeNodes,
@@ -339,10 +356,10 @@ async function applyTreeUpdate(
 async function updatePrivateKeyPath(
   tree: RatchetTree,
   state: ClientState,
-  leafNodeIndex: number,
+  leafNodeIndex: LeafIndex,
   groupContext: GroupContext,
   path: UpdatePath,
-  excludeNodes: number[],
+  excludeNodes: NodeIndex[],
   cs: CiphersuiteImpl,
 ): Promise<[PrivateKeyPath, Uint8Array]> {
   const secret = await applyUpdatePathSecret(
@@ -354,7 +371,7 @@ async function updatePrivateKeyPath(
     excludeNodes,
     cs,
   )
-  const pathSecrets = await pathToRoot(tree, secret.nodeIndex, secret.pathSecret, cs.kdf)
+  const pathSecrets = await pathToRoot(tree, toNodeIndex(secret.nodeIndex), secret.pathSecret, cs.kdf)
   const newPkp = mergePrivateKeyPaths(
     state.privatePath,
     await toPrivateKeyPath(pathSecrets, state.privatePath.leafIndex, cs),

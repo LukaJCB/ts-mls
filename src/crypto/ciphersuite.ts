@@ -1,14 +1,14 @@
-import { makeNobleSignatureImpl, Signature, SignatureAlgorithm } from "./signature"
-import { Hash, HashAlgorithm, makeHashImpl } from "./hash"
-import { Kdf, makeKdf, makeKdfImpl } from "./kdf"
-import { Hpke, HpkeAlgorithm, makeHpke } from "./hpke"
-import { contramapEncoder, Encoder } from "../codec/tlsEncoder"
-import { decodeUint16, encodeUint16 } from "../codec/number"
-import { Decoder, mapDecoderOption } from "../codec/tlsDecoder"
-import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers"
-import { Rng, webCryptoRng } from "./rng"
+import { Signature, SignatureAlgorithm } from "./signature.js"
+import { Hash, HashAlgorithm } from "./hash.js"
+import { Kdf } from "./kdf.js"
+import { Hpke, HpkeAlgorithm } from "./hpke.js"
+import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "../codec/tlsEncoder.js"
+import { decodeUint16, uint16Encoder } from "../codec/number.js"
+import { Decoder, mapDecoderOption } from "../codec/tlsDecoder.js"
+import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers.js"
+import { Rng } from "./rng.js"
 
-export type CiphersuiteImpl = {
+export interface CiphersuiteImpl {
   hash: Hash
   hpke: Hpke
   signature: Signature
@@ -42,10 +42,12 @@ export const ciphersuites = {
 export type CiphersuiteName = keyof typeof ciphersuites
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
-export const encodeCiphersuite: Encoder<CiphersuiteName> = contramapEncoder(
-  encodeUint16,
+export const ciphersuiteEncoder: BufferEncoder<CiphersuiteName> = contramapBufferEncoder(
+  uint16Encoder,
   openEnumNumberEncoder(ciphersuites),
 )
+
+export const encodeCiphersuite: Encoder<CiphersuiteName> = encode(ciphersuiteEncoder)
 
 export const decodeCiphersuite: Decoder<CiphersuiteName> = mapDecoderOption(
   decodeUint16,
@@ -62,18 +64,6 @@ export function getCiphersuiteFromId(id: CiphersuiteId): Ciphersuite {
 
 export function getCiphersuiteFromName(name: CiphersuiteName): Ciphersuite {
   return ciphersuiteValues[ciphersuites[name]]
-}
-
-export async function getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl> {
-  const sc = crypto.subtle
-  return {
-    kdf: makeKdfImpl(makeKdf(cs.hpke.kdf)),
-    hash: makeHashImpl(sc, cs.hash),
-    signature: await makeNobleSignatureImpl(cs.signature),
-    hpke: await makeHpke(cs.hpke),
-    rng: webCryptoRng,
-    name: cs.name,
-  }
 }
 
 const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
@@ -270,7 +260,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
   },
 } as const
 
-type Ciphersuite = {
+export type Ciphersuite = {
   hash: HashAlgorithm
   hpke: HpkeAlgorithm
   signature: SignatureAlgorithm

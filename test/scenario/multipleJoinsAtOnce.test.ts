@@ -1,20 +1,19 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Multiple joins at once ${cs}`, async () => {
-    await multipleJoinsAtOnce(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Multiple joins at once %s`, async (cs) => {
+  await multipleJoinsAtOnce(cs as CiphersuiteName)
+})
 
 async function multipleJoinsAtOnce(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -47,16 +46,18 @@ async function multipleJoinsAtOnce(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    false,
-    [addBobProposal, addCharlieProposal],
-    impl,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobAndCharlieCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,
@@ -67,7 +68,7 @@ async function multipleJoinsAtOnce(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
+  const charlieGroup = await joinGroup(
     addBobAndCharlieCommitResult.welcome!,
     charlie.publicPackage,
     charlie.privatePackage,

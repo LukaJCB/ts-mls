@@ -1,35 +1,38 @@
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Extension } from "./extension"
-import { decodeExternalSender, ExternalSender } from "./externalSender"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder, encVoid } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { Extension } from "./extension.js"
+import { decodeExternalSender, ExternalSender } from "./externalSender.js"
 import {
   decodeFramedContent,
   decodeFramedContentAuthData,
-  encodeFramedContent,
-  encodeFramedContentAuthData,
+  framedContentEncoder,
+  framedContentAuthDataEncoder,
   FramedContent,
   FramedContentAuthData,
-} from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { CodecError, ValidationError } from "./mlsError"
-import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
-import { SenderTypeName } from "./sender"
+} from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { CodecError, ValidationError } from "./mlsError.js"
+import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
+import { SenderTypeName } from "./sender.js"
+import { toLeafIndex } from "./treemath.js"
 
 type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
 type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }
 type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeName, "member"> }
 
-export const encodePublicMessageInfo: Encoder<PublicMessageInfo> = (info) => {
+export const publicMessageInfoEncoder: BufferEncoder<PublicMessageInfo> = (info) => {
   switch (info.senderType) {
     case "member":
-      return encodeVarLenData(info.membershipTag)
+      return varLenDataEncoder(info.membershipTag)
     case "external":
     case "new_member_proposal":
     case "new_member_commit":
-      return new Uint8Array()
+      return encVoid
   }
 }
+
+export const encodePublicMessageInfo: Encoder<PublicMessageInfo> = encode(publicMessageInfoEncoder)
 
 export function decodePublicMessageInfo(senderType: SenderTypeName): Decoder<PublicMessageInfo> {
   switch (senderType) {
@@ -49,10 +52,12 @@ export type PublicMessage = { content: FramedContent; auth: FramedContentAuthDat
 export type MemberPublicMessage = PublicMessage & PublicMessageInfoMember
 export type ExternalPublicMessage = PublicMessage & PublicMessageInfoMemberOther
 
-export const encodePublicMessage: Encoder<PublicMessage> = contramapEncoders(
-  [encodeFramedContent, encodeFramedContentAuthData, encodePublicMessageInfo],
+export const publicMessageEncoder: BufferEncoder<PublicMessage> = contramapBufferEncoders(
+  [framedContentEncoder, framedContentAuthDataEncoder, publicMessageInfoEncoder],
   (msg) => [msg.content, msg.auth, msg] as const,
 )
+
+export const encodePublicMessage: Encoder<PublicMessage> = encode(publicMessageEncoder)
 
 export const decodePublicMessage: Decoder<PublicMessage> = flatMapDecoder(decodeFramedContent, (content) =>
   mapDecoders(
@@ -72,11 +77,12 @@ export function findSignaturePublicKey(
 ): Uint8Array {
   switch (framedContent.sender.senderType) {
     case "member":
-      return getSignaturePublicKeyFromLeafIndex(ratchetTree, framedContent.sender.leafIndex)
-    case "external":
+      return getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(framedContent.sender.leafIndex))
+    case "external": {
       const sender = senderFromExtension(groupContext.extensions, framedContent.sender.senderIndex)
       if (sender === undefined) throw new ValidationError("Received external but no external_sender extension")
       return sender.signaturePublicKey
+    }
     case "new_member_proposal":
       if (framedContent.contentType !== "proposal")
         throw new ValidationError("Received new_member_proposal but contentType is not proposal")

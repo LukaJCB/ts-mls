@@ -1,5 +1,5 @@
-import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 const dummyProposalAdd: Proposal = {
   proposalType: "add",

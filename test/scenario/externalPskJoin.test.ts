@@ -1,20 +1,19 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { Proposal, ProposalAdd } from "../../src/proposal"
-import { bytesToBase64 } from "../../src/util/byteArray"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { Proposal, ProposalAdd } from "../../src/proposal.js"
+import { bytesToBase64 } from "../../src/util/byteArray.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`External PSK Join ${cs}`, async () => {
-    await externalPskJoin(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
+  await externalPskJoin(cs as CiphersuiteName)
+})
 
 async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -57,16 +56,19 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const sharedPsks = { [base64PskId]: pskSecret }
 
   const commitResult = await createCommit(
-    aliceGroup,
-    makePskIndex(aliceGroup, sharedPsks),
-    false,
-    [addBobProposal, pskProposal],
-    impl,
+    {
+      state: aliceGroup,
+      pskIndex: makePskIndex(aliceGroup, sharedPsks),
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, pskProposal],
+    },
   )
 
   aliceGroup = commitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     commitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,

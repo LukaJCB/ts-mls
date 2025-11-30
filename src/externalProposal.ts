@@ -1,13 +1,13 @@
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Extension, extensionsSupportedByCapabilities } from "./extension"
-import { decodeExternalSender } from "./externalSender"
-import { GroupInfo } from "./groupInfo"
-import { KeyPackage, PrivateKeyPackage } from "./keyPackage"
-import { MLSMessage } from "./message"
-import { protectExternalProposalPublic } from "./messageProtectionPublic"
-import { UsageError, ValidationError } from "./mlsError"
-import { Proposal } from "./proposal"
-import { constantTimeEqual } from "./util/constantTimeCompare"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
+import { decodeExternalSender } from "./externalSender.js"
+import { GroupInfo } from "./groupInfo.js"
+import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
+import { MLSMessage } from "./message.js"
+import { protectExternalProposalPublic } from "./messageProtectionPublic.js"
+import { UsageError, ValidationError } from "./mlsError.js"
+import { Proposal } from "./proposal.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 export async function proposeAddExternal(
   groupInfo: GroupInfo,
@@ -51,10 +51,9 @@ export async function proposeExternal(
   signaturePublicKey: Uint8Array,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
+  authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MLSMessage> {
-  const authenticatedData: Uint8Array = new Uint8Array()
-
-  const externalSenderExtensionIndex = groupInfo.extensions.findIndex((ex: Extension): boolean => {
+  const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
     if (ex.extensionType !== "external_senders") return false
     const decoded = decodeExternalSender(ex.extensionData, 0)
 
@@ -62,6 +61,9 @@ export async function proposeExternal(
 
     return constantTimeEqual(decoded[0].signaturePublicKey, signaturePublicKey)
   })
+
+  if (externalSenderExtensionIndex === -1)
+    throw new ValidationError("Could not find external_sender extension in groupContext.extensions")
 
   const result = await protectExternalProposalPublic(
     signaturePrivateKey,

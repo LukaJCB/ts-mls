@@ -1,15 +1,15 @@
-import { decodeUint64, encodeUint64 } from "./codec/number"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite"
+import { decodeUint64, uint64Encoder } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 
-import { expandWithLabel, Kdf } from "./crypto/kdf"
-import { decodeExtension, encodeExtension, Extension } from "./extension"
+import { expandWithLabel, Kdf } from "./crypto/kdf.js"
+import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
 
-export type GroupContext = {
+export interface GroupContext {
   version: ProtocolVersionName
   cipherSuite: CiphersuiteName
   groupId: Uint8Array
@@ -19,19 +19,21 @@ export type GroupContext = {
   extensions: Extension[]
 }
 
-export const encodeGroupContext: Encoder<GroupContext> = contramapEncoders(
+export const groupContextEncoder: BufferEncoder<GroupContext> = contramapBufferEncoders(
   [
-    encodeProtocolVersion,
-    encodeCiphersuite,
-    encodeVarLenData, // groupId
-    encodeUint64, // epoch
-    encodeVarLenData, // treeHash
-    encodeVarLenData, // confirmedTranscriptHash
-    encodeVarLenType(encodeExtension),
+    protocolVersionEncoder,
+    ciphersuiteEncoder,
+    varLenDataEncoder, // groupId
+    uint64Encoder, // epoch
+    varLenDataEncoder, // treeHash
+    varLenDataEncoder, // confirmedTranscriptHash
+    varLenTypeEncoder(extensionEncoder),
   ],
   (gc) =>
     [gc.version, gc.cipherSuite, gc.groupId, gc.epoch, gc.treeHash, gc.confirmedTranscriptHash, gc.extensions] as const,
 )
+
+export const encodeGroupContext: Encoder<GroupContext> = encode(groupContextEncoder)
 
 export const decodeGroupContext: Decoder<GroupContext> = mapDecoders(
   [
@@ -63,7 +65,7 @@ export async function extractEpochSecret(
   const psk = pskSecret === undefined ? new Uint8Array(kdf.size) : pskSecret
   const extracted = await kdf.extract(joinerSecret, psk)
 
-  return expandWithLabel(extracted, "epoch", encodeGroupContext(context), kdf.size, kdf)
+  return expandWithLabel(extracted, "epoch", encode(groupContextEncoder)(context), kdf.size, kdf)
 }
 
 export async function extractJoinerSecret(
@@ -74,5 +76,5 @@ export async function extractJoinerSecret(
 ) {
   const extracted = await kdf.extract(previousInitSecret, commitSecret)
 
-  return expandWithLabel(extracted, "joiner", encodeGroupContext(context), kdf.size, kdf)
+  return expandWithLabel(extracted, "joiner", encode(groupContextEncoder)(context), kdf.size, kdf)
 }

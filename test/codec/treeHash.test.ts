@@ -1,5 +1,5 @@
-import { encodeTreeHashInput, decodeTreeHashInput } from "../../src/treeHash"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeTreeHashInput, decodeTreeHashInput } from "../../src/treeHash.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("TreeHashInput roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeTreeHashInput, decodeTreeHashInput)

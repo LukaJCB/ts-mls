@@ -1,18 +1,17 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { decodeRatchetTree, resolution } from "../../src/ratchetTree"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { decodeRatchetTree, resolution } from "../../src/ratchetTree.js"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-validation.json"
-import { treeHash } from "../../src/treeHash"
-import { verifyLeafNodeSignature } from "../../src/leafNode"
-import { nodeToLeafIndex } from "../../src/treemath"
-import { verifyParentHashes } from "../../src/parentHash"
+import { treeHash } from "../../src/treeHash.js"
+import { verifyLeafNodeSignature } from "../../src/leafNode.js"
+import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
+import { verifyParentHashes } from "../../src/parentHash.js"
 
-for (const [index, x] of json.entries()) {
-  test(`tree-validation test vectors" ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await treeOperationsTest(x, impl)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`tree-validation test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await treeOperationsTest(x, impl)
+})
 
 type TreeValidationData = {
   tree: string
@@ -27,12 +26,12 @@ async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImp
   if (tree === undefined) throw new Error("could not decode tree")
 
   for (const [i, h] of data.tree_hashes.entries()) {
-    const hash = await treeHash(tree[0], i, impl.hash)
+    const hash = await treeHash(tree[0], toNodeIndex(i), impl.hash)
     expect(hash).toStrictEqual(hexToBytes(h))
   }
 
   for (const [i, r] of data.resolutions.entries()) {
-    const reso = resolution(tree[0], i)
+    const reso = resolution(tree[0], toNodeIndex(i))
     expect(reso).toStrictEqual(r)
   }
 
@@ -42,7 +41,12 @@ async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImp
     if (n !== undefined) {
       if (n.nodeType === "leaf") {
         expect(
-          await verifyLeafNodeSignature(n.leaf, hexToBytes(data.group_id), nodeToLeafIndex(i), impl.signature),
+          await verifyLeafNodeSignature(
+            n.leaf,
+            hexToBytes(data.group_id),
+            nodeToLeafIndex(toNodeIndex(i)),
+            impl.signature,
+          ),
         ).toBe(true)
       }
     }

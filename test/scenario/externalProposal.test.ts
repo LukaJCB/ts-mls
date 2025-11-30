@@ -1,24 +1,23 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createGroupInfoWithExternalPub } from "../../src/createCommit"
-import { createCommit } from "../../src/createCommit"
-import { processPrivateMessage, processPublicMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { Proposal, ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { encodeExternalSender, ExternalSender } from "../../src/externalSender"
-import { Extension } from "../../src/extension"
-import { proposeExternal } from "../../src/externalProposal"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { Proposal, ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { encodeExternalSender, ExternalSender } from "../../src/externalSender.js"
+import { Extension } from "../../src/extension.js"
+import { proposeExternal } from "../../src/externalProposal.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`External Proposal ${cs}`, async () => {
-    await externalProposalTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
+  await externalProposalTest(cs as CiphersuiteName)
+})
 
 async function externalProposalTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -53,7 +52,15 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -67,7 +74,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   )
 
   // external pub not really necessary here
-  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, impl)
+  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
   const removeBobProposal: Proposal = {
     proposalType: "remove",
@@ -104,7 +111,10 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCharlieProposalResult.newState
 
-  const removeBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const removeBobCommitResult = await createCommit({
+    state: aliceGroup,
+    cipherSuite: impl,
+  })
 
   aliceGroup = removeBobCommitResult.newState
 

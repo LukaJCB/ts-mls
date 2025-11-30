@@ -1,6 +1,6 @@
-import { Capabilities } from "./capabilities"
-import { ciphersuites, CiphersuiteName } from "./crypto/ciphersuite"
-import { greaseCapabilities, defaultGreaseConfig } from "./grease"
+import { Capabilities } from "./capabilities.js"
+import { ciphersuites, CiphersuiteName } from "./crypto/ciphersuite.js"
+import { greaseCapabilities, defaultGreaseConfig } from "./grease.js"
 
 export function defaultCapabilities(): Capabilities {
   return greaseCapabilities(defaultGreaseConfig, {

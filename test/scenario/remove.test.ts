@@ -1,22 +1,21 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd, ProposalRemove } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { UsageError } from "../../src/mlsError"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { UsageError } from "../../src/mlsError.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Remove ${cs}`, async () => {
-    await remove(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
+  await remove(cs as CiphersuiteName)
+})
 
 async function remove(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -49,11 +48,13 @@ async function remove(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    false,
-    [addBobProposal, addCharlieProposal],
-    impl,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
@@ -87,7 +88,15 @@ async function remove(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const removeBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [removeBobProposal], impl)
+  const removeBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [removeBobProposal],
+    },
+  )
 
   aliceGroup = removeBobCommitResult.newState
 
@@ -115,7 +124,12 @@ async function remove(cipherSuite: CiphersuiteName) {
   expect(bobGroup.groupActiveState).toStrictEqual({ kind: "removedFromGroup" })
 
   //creating a message will fail now
-  expect(createCommit(bobGroup, emptyPskIndex, false, [], impl)).rejects.toThrow(UsageError)
+  await expect(
+    createCommit({
+      state: bobGroup,
+      cipherSuite: impl,
+    }),
+  ).rejects.toThrow(UsageError)
 
   await cannotMessageAnymore(bobGroup, impl)
 

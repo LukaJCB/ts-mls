@@ -2,8 +2,8 @@ import {
   encodeDefaultProposalType,
   decodeDefaultProposalType,
   DefaultProposalTypeName,
-} from "../../src/defaultProposalType"
-import { createRoundtripTest } from "./roundtrip"
+} from "../../src/defaultProposalType.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ProposalTypeName roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeDefaultProposalType, decodeDefaultProposalType)

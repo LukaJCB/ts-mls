@@ -57,7 +57,10 @@ const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const addBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
@@ -71,7 +74,7 @@ let bobGroup = await joinGroup(
 )
 
 // Alice creates GroupInfo with external public key and ratchet tree extensions and sends it to Charlie
-const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, impl)
+const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, [], impl)
 
 // Charlie joins externally using GroupInfo and creates an external commit (epoch 2)
 const charlieJoinGroupCommitResult = await joinGroupExternal(

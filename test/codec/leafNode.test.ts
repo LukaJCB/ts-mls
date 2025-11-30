@@ -1,5 +1,5 @@
-import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalLeafNode: LeafNode = {
   hpkePublicKey: new Uint8Array([]),

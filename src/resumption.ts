@@ -1,14 +1,17 @@
-import { ClientState, makePskIndex, createGroup, joinGroup } from "./clientState"
-import { CreateCommitResult, createCommit } from "./createCommit"
-import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite"
-import { Extension } from "./extension"
-import { KeyPackage, PrivateKeyPackage } from "./keyPackage"
-import { UsageError } from "./mlsError"
-import { ResumptionPSKUsageName, PreSharedKeyID } from "./presharedkey"
-import { Proposal, ProposalAdd, ProposalPSK } from "./proposal"
-import { ProtocolVersionName } from "./protocolVersion"
-import { RatchetTree } from "./ratchetTree"
-import { Welcome } from "./welcome"
+import { ClientState, makePskIndex, createGroup, joinGroup } from "./clientState.js"
+import { CreateCommitResult, createCommit } from "./createCommit.js"
+import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
+import { defaultCryptoProvider } from "./crypto/implementation/default/provider.js"
+import { CryptoProvider } from "./crypto/provider.js"
+import { Extension } from "./extension.js"
+import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
+import { UsageError } from "./mlsError.js"
+import { ResumptionPSKUsageName, PreSharedKeyID } from "./presharedkey.js"
+import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
+import { ProtocolVersionName } from "./protocolVersion.js"
+import { RatchetTree } from "./ratchetTree.js"
+import { Welcome } from "./welcome.js"
 
 export async function reinitGroup(
   state: ClientState,
@@ -28,7 +31,16 @@ export async function reinitGroup(
     },
   }
 
-  return createCommit(state, makePskIndex(state, {}), false, [reinitProposal], cs)
+  return createCommit(
+    {
+      state,
+      pskIndex: makePskIndex(state, {}),
+      cipherSuite: cs,
+    },
+    {
+      extraProposals: [reinitProposal],
+    },
+  )
 }
 
 export async function reinitCreateNewGroup(
@@ -39,8 +51,9 @@ export async function reinitCreateNewGroup(
   groupId: Uint8Array,
   cipherSuite: CiphersuiteName,
   extensions: Extension[],
+  provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<CreateCommitResult> {
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider)
   const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, cs)
 
   const addProposals: Proposal[] = memberKeyPackages.map((kp) => ({
@@ -57,7 +70,16 @@ export async function reinitCreateNewGroup(
     },
   }
 
-  return createCommit(newGroup, makePskIndex(state, {}), false, [...addProposals, resumptionPsk], cs)
+  return createCommit(
+    {
+      state: newGroup,
+      pskIndex: makePskIndex(state, {}),
+      cipherSuite: cs,
+    },
+    {
+      extraProposals: [...addProposals, resumptionPsk],
+    },
+  )
 }
 
 export function makeResumptionPsk(
@@ -108,7 +130,16 @@ export async function branchGroup(
     },
   }
 
-  return createCommit(newGroup, pskSearch, false, [...addMemberProposals, branchPskProposal], cs)
+  return createCommit(
+    {
+      state: newGroup,
+      pskIndex: pskSearch,
+      cipherSuite: cs,
+    },
+    {
+      extraProposals: [...addMemberProposals, branchPskProposal],
+    },
+  )
 }
 
 export async function joinGroupFromBranch(
@@ -130,12 +161,16 @@ export async function joinGroupFromReinit(
   keyPackage: KeyPackage,
   privateKeyPackage: PrivateKeyPackage,
   ratchetTree: RatchetTree | undefined,
+  provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<ClientState> {
   const pskSearch = makePskIndex(suspendedState, {})
   if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
     throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite))
+  const cs = await getCiphersuiteImpl(
+    getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite),
+    provider,
+  )
 
   return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, suspendedState)
 }

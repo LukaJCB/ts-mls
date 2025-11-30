@@ -1,5 +1,5 @@
-import { encodeAuthenticatedContent, decodeAuthenticatedContent } from "../../src/authenticatedContent"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeAuthenticatedContent, decodeAuthenticatedContent } from "../../src/authenticatedContent.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("AuthenticatedContent roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeAuthenticatedContent, decodeAuthenticatedContent)

@@ -1,7 +1,7 @@
-import { decodeUint16, encodeUint16 } from "./codec/number"
-import { Decoder, mapDecoderOption } from "./codec/tlsDecoder"
-import { contramapEncoder, Encoder } from "./codec/tlsEncoder"
-import { enumNumberToKey } from "./util/enumHelpers"
+import { decodeUint16, uint16Encoder } from "./codec/number.js"
+import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 export const defaultExtensionTypes = {
   application_id: 1,
@@ -14,10 +14,12 @@ export const defaultExtensionTypes = {
 export type DefaultExtensionTypeName = keyof typeof defaultExtensionTypes
 export type DefaultExtensionTypeValue = (typeof defaultExtensionTypes)[DefaultExtensionTypeName]
 
-export const encodeDefaultExtensionType: Encoder<DefaultExtensionTypeName> = contramapEncoder(
-  encodeUint16,
+export const defaultExtensionTypeEncoder: BufferEncoder<DefaultExtensionTypeName> = contramapBufferEncoder(
+  uint16Encoder,
   (n) => defaultExtensionTypes[n],
 )
+
+export const encodeDefaultExtensionType: Encoder<DefaultExtensionTypeName> = encode(defaultExtensionTypeEncoder)
 
 export const decodeDefaultExtensionType: Decoder<DefaultExtensionTypeName> = mapDecoderOption(
   decodeUint16,

@@ -1,23 +1,22 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { getRandomElement, testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { UsageError } from "../../src/mlsError"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { getRandomElement, testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { UsageError } from "../../src/mlsError.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Reinit ${cs}`, async () => {
-    await reinit(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
+  await reinit(cs as CiphersuiteName)
+})
 
 async function reinit(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -39,7 +38,15 @@ async function reinit(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = commitResult.newState
 
@@ -75,7 +82,12 @@ async function reinit(cipherSuite: CiphersuiteName) {
   expect(aliceGroup.groupActiveState.kind).toBe("suspendedPendingReinit")
 
   //creating a message will fail now
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [], impl)).rejects.toThrow(UsageError)
+  await expect(
+    createCommit({
+      state: aliceGroup,
+      cipherSuite: impl,
+    }),
+  ).rejects.toThrow(UsageError)
 
   const newImpl = await getCiphersuiteImpl(getCiphersuiteFromName(newCiphersuite))
 

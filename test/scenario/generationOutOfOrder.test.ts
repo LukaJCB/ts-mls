@@ -1,44 +1,33 @@
-import { ClientState, createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { createApplicationMessage } from "../../src/createMessage"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import {
-  CiphersuiteImpl,
-  CiphersuiteName,
-  ciphersuites,
-  getCiphersuiteFromName,
-  getCiphersuiteImpl,
-} from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { PrivateMessage } from "../../src/privateMessage"
-import { defaultKeyRetentionConfig, KeyRetentionConfig } from "../../src/keyRetentionConfig"
-import { ValidationError } from "../../src/mlsError"
-import { defaultClientConfig } from "../../src/clientConfig"
+import { ClientState, createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { createApplicationMessage } from "../../src/createMessage.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteImpl, CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { PrivateMessage } from "../../src/privateMessage.js"
+import { defaultKeyRetentionConfig, KeyRetentionConfig } from "../../src/keyRetentionConfig.js"
+import { ValidationError } from "../../src/mlsError.js"
+import { defaultClientConfig } from "../../src/clientConfig.js"
 
 describe("Out of order message processing by generation", () => {
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation ${cs}`, async () => {
-      await generationOutOfOrder(cs as CiphersuiteName)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation %s`, async (cs) => {
+    await generationOutOfOrder(cs as CiphersuiteName)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation random ${cs}`, async () => {
-      await generationOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForGenerations)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation random %s`, async (cs) => {
+    await generationOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForGenerations)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order generation limit reached fails ${cs}`, async () => {
-      await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation limit reached fails %s`, async (cs) => {
+    await generationOutOfOrderLimitFails(cs as CiphersuiteName, 10)
+  })
 })
 
 type TestParticipants = {
@@ -69,7 +58,16 @@ async function setupTestParticipants(
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+      ratchetTreeExtension: true,
+    },
+  )
   aliceGroup = addBobCommitResult.newState
 
   const bobGroup = await joinGroup(
@@ -144,7 +142,7 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     aliceGroup = createMessageResult.newState
@@ -174,7 +172,7 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages + 1; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     aliceGroup = createMessageResult.newState

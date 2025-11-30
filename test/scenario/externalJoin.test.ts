@@ -1,22 +1,21 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createGroupInfoWithExternalPubAndRatchetTree, joinGroupExternal } from "../../src/createCommit"
-import { createCommit } from "../../src/createCommit"
-import { processPublicMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroupInfoWithExternalPubAndRatchetTree, joinGroupExternal } from "../../src/createCommit.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPublicMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`External join ${cs}`, async () => {
-    await externalJoin(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`External join %s`, async (cs) => {
+  await externalJoin(cs as CiphersuiteName)
+})
 
 async function externalJoin(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -41,7 +40,15 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -56,7 +63,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, impl)
+  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, [], impl)
 
   const charlieJoinGroupCommitResult = await joinGroupExternal(
     groupInfo,
@@ -66,7 +73,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     impl,
   )
 
-  let charlieGroup = charlieJoinGroupCommitResult.newState
+  const charlieGroup = charlieJoinGroupCommitResult.newState
 
   const aliceProcessCharlieJoinResult = await processPublicMessage(
     aliceGroup,

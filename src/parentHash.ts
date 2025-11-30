@@ -1,24 +1,37 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Hash } from "./crypto/hash"
-import { InternalError } from "./mlsError"
-import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree"
-import { treeHash } from "./treeHash"
-import { isLeaf, leafToNodeIndex, leafWidth, left, right, root } from "./treemath"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { Hash } from "./crypto/hash.js"
+import { InternalError } from "./mlsError.js"
+import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
+import { treeHash } from "./treeHash.js"
+import {
+  isLeaf,
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  left,
+  NodeIndex,
+  right,
+  root,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath.js"
 
-import { constantTimeEqual } from "./util/constantTimeCompare"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
-export type ParentHashInput = {
+export interface ParentHashInput {
   encryptionKey: Uint8Array
   parentHash: Uint8Array
   originalSiblingTreeHash: Uint8Array
 }
 
-export const encodeParentHashInput: Encoder<ParentHashInput> = contramapEncoders(
-  [encodeVarLenData, encodeVarLenData, encodeVarLenData],
+export const parentHashInputEncoder: BufferEncoder<ParentHashInput> = contramapBufferEncoders(
+  [varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
   (i) => [i.encryptionKey, i.parentHash, i.originalSiblingTreeHash] as const,
 )
+
+export const encodeParentHashInput: Encoder<ParentHashInput> = encode(parentHashInputEncoder)
 
 export const decodeParentHashInput: Decoder<ParentHashInput> = mapDecoders(
   [decodeVarLenData, decodeVarLenData, decodeVarLenData],
@@ -56,12 +69,12 @@ export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<bo
  * Traverse tree from bottom up, verifying that all non-blank parent nodes are covered by exactly one chain
  */
 function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, number>> {
-  const leaves = tree.filter((_v, i) => isLeaf(i))
+  const leaves = tree.filter((_v, i) => isLeaf(toNodeIndex(i)))
   return leaves.reduce(
     async (acc, leafNode, leafIndex) => {
       if (leafNode === undefined) return acc
 
-      let currentIndex = leafToNodeIndex(leafIndex)
+      let currentIndex = leafToNodeIndex(toLeafIndex(leafIndex))
       let updated = { ...(await acc) }
 
       const rootIndex = root(leafWidth(tree.length))
@@ -110,9 +123,9 @@ function getParentHash(node: Node): Uint8Array | undefined {
  */
 export async function calculateParentHash(
   tree: RatchetTree,
-  nodeIndex: number,
+  nodeIndex: NodeIndex,
   h: Hash,
-): Promise<[Uint8Array, number | undefined]> {
+): Promise<[Uint8Array, NodeIndex | undefined]> {
   const rootIndex = root(leafWidth(tree.length))
   if (nodeIndex === rootIndex) {
     return [new Uint8Array(), undefined]
@@ -131,7 +144,7 @@ export async function calculateParentHash(
   if (parentNode === undefined || parentNode.nodeType === "leaf")
     throw new InternalError("Expected non-blank parent Node")
 
-  const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves)
+  const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves as LeafIndex[])
 
   const originalSiblingTreeHash = await treeHash(removedUnmerged, siblingIndex, h)
 
@@ -141,5 +154,5 @@ export async function calculateParentHash(
     originalSiblingTreeHash,
   }
 
-  return [await h.digest(encodeParentHashInput(input)), parentNodeIndex]
+  return [await h.digest(encode(parentHashInputEncoder)(input)), parentNodeIndex]
 }

@@ -1,5 +1,5 @@
-import { encodeLifetime, decodeLifetime } from "../../src/lifetime"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeLifetime, decodeLifetime } from "../../src/lifetime.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Lifetime roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeLifetime, decodeLifetime)

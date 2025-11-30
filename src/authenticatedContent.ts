@@ -1,12 +1,12 @@
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { Hash, refhash } from "./crypto/hash"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { Hash, refhash } from "./crypto/hash.js"
 import {
   decodeFramedContent,
   decodeFramedContentAuthData,
-  encodeFramedContent,
-  encodeFramedContentAuthData,
-  encodeFramedContentTBS,
+  framedContentEncoder,
+  framedContentAuthDataEncoder,
+  framedContentTBSEncoder,
   FramedContent,
   FramedContentApplicationData,
   FramedContentAuthData,
@@ -14,10 +14,10 @@ import {
   FramedContentData,
   FramedContentProposalData,
   FramedContentTBS,
-} from "./framedContent"
-import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
+} from "./framedContent.js"
+import { decodeWireformat, wireformatEncoder, WireformatName } from "./wireformat.js"
 
-export type AuthenticatedContent = {
+export interface AuthenticatedContent {
   wireformat: WireformatName
   content: FramedContent
   auth: FramedContentAuthData
@@ -38,10 +38,12 @@ export type AuthenticatedContentProposal = AuthenticatedContent & {
 export type AuthenticatedContentProposalOrCommit = AuthenticatedContent & {
   content: (FramedContentProposalData | FramedContentCommitData) & FramedContentData
 }
-export const encodeAuthenticatedContent: Encoder<AuthenticatedContent> = contramapEncoders(
-  [encodeWireformat, encodeFramedContent, encodeFramedContentAuthData],
+export const authenticatedContentEncoder: BufferEncoder<AuthenticatedContent> = contramapBufferEncoders(
+  [wireformatEncoder, framedContentEncoder, framedContentAuthDataEncoder],
   (a) => [a.wireformat, a.content, a.auth] as const,
 )
+
+export const encodeAuthenticatedContent: Encoder<AuthenticatedContent> = encode(authenticatedContentEncoder)
 
 export const decodeAuthenticatedContent: Decoder<AuthenticatedContent> = mapDecoders(
   [
@@ -56,22 +58,24 @@ export const decodeAuthenticatedContent: Decoder<AuthenticatedContent> = mapDeco
   }),
 )
 
-export type AuthenticatedContentTBM = {
+export interface AuthenticatedContentTBM {
   contentTbs: FramedContentTBS
   auth: FramedContentAuthData
 }
 
-export const encodeAuthenticatedContentTBM: Encoder<AuthenticatedContentTBM> = contramapEncoders(
-  [encodeFramedContentTBS, encodeFramedContentAuthData],
+export const authenticatedContentTBMEncoder: BufferEncoder<AuthenticatedContentTBM> = contramapBufferEncoders(
+  [framedContentTBSEncoder, framedContentAuthDataEncoder],
   (t) => [t.contentTbs, t.auth] as const,
 )
+
+export const encodeAuthenticatedContentTBM: Encoder<AuthenticatedContentTBM> = encode(authenticatedContentTBMEncoder)
 
 export function createMembershipTag(
   membershipKey: Uint8Array,
   tbm: AuthenticatedContentTBM,
   h: Hash,
 ): Promise<Uint8Array> {
-  return h.mac(membershipKey, encodeAuthenticatedContentTBM(tbm))
+  return h.mac(membershipKey, encode(authenticatedContentTBMEncoder)(tbm))
 }
 
 export function verifyMembershipTag(
@@ -80,9 +84,9 @@ export function verifyMembershipTag(
   tag: Uint8Array,
   h: Hash,
 ): Promise<boolean> {
-  return h.verifyMac(membershipKey, tag, encodeAuthenticatedContentTBM(tbm))
+  return h.verifyMac(membershipKey, tag, encode(authenticatedContentTBMEncoder)(tbm))
 }
 
 export function makeProposalRef(proposal: AuthenticatedContent, h: Hash): Promise<Uint8Array> {
-  return refhash("MLS 1.0 Proposal Reference", encodeAuthenticatedContent(proposal), h)
+  return refhash("MLS 1.0 Proposal Reference", encode(authenticatedContentEncoder)(proposal), h)
 }

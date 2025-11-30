@@ -1,21 +1,20 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { Capabilities } from "../../src/capabilities"
-import { Extension, ExtensionType } from "../../src/extension"
-import { ValidationError } from "../../src/mlsError"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { Capabilities } from "../../src/capabilities.js"
+import { Extension, ExtensionType } from "../../src/extension.js"
+import { ValidationError } from "../../src/mlsError.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Custom Extensions ${cs}`, async () => {
-    await customExtensionTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
+  await customExtensionTest(cs as CiphersuiteName)
+})
 
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -54,11 +53,19 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,
@@ -82,7 +89,13 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  await expect(createCommit(aliceGroup, emptyPskIndex, false, [addCharlieProposal], impl)).rejects.toThrow(
-    ValidationError,
-  )
+  await expect(
+    createCommit(
+      {
+        state: aliceGroup,
+        cipherSuite: impl,
+      },
+      { extraProposals: [addCharlieProposal] },
+    ),
+  ).rejects.toThrow(ValidationError)
 }

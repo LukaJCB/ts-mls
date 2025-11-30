@@ -1,14 +1,13 @@
 import json from "../../test_vectors/psk_secret.json"
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { computePskSecret, PreSharedKeyIdExternal } from "../../src/presharedkey"
-import { bytesToHex, hexToBytes } from "@noble/ciphers/utils"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { computePskSecret, PreSharedKeyIdExternal } from "../../src/presharedkey.js"
+import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 
-for (const [index, x] of json.entries()) {
-  test(`psk_secret test vectors ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await testPskSecret(x.psk_secret, x.psks, impl)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`psk_secret test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await testPskSecret(x.psk_secret, x.psks, impl)
+})
 
 type Psk = {
   psk_id: string

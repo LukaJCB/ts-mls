@@ -1,14 +1,14 @@
-import { Capabilities } from "./capabilities"
-import { CredentialTypeName } from "./credentialType"
-import { CiphersuiteName } from "./crypto/ciphersuite"
-import { Extension } from "./extension"
+import { Capabilities } from "./capabilities.js"
+import { CredentialTypeName } from "./credentialType.js"
+import { CiphersuiteName } from "./crypto/ciphersuite.js"
+import { Extension } from "./extension.js"
 
 export const greaseValues = [
   0x0a0a, 0x1a1a, 0x2a2a, 0x3a3a, 0x4a4a, 0x5a5a, 0x6a6a, 0x7a7a, 0x8a8a, 0x9a9a, 0xaaaa, 0xbaba, 0xcaca, 0xdada,
   0xeaea,
 ]
 
-export type GreaseConfig = {
+export interface GreaseConfig {
   probabilityPerGreaseValue: number
 }
 

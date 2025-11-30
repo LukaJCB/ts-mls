@@ -1,8 +1,8 @@
-import { KeyPackage } from "./keyPackage"
-import { LeafNode } from "./leafNode"
-import { constantTimeEqual } from "./util/constantTimeCompare"
+import { KeyPackage } from "./keyPackage.js"
+import { LeafNode } from "./leafNode.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
-export type KeyPackageEqualityConfig = {
+export interface KeyPackageEqualityConfig {
   compareKeyPackages(a: KeyPackage, b: KeyPackage): boolean
   compareKeyPackageToLeafNode(a: KeyPackage, b: LeafNode): boolean
 }

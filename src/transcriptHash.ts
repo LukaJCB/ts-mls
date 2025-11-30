@@ -1,19 +1,23 @@
-import { Decoder, mapDecodersOption } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Hash } from "./crypto/hash"
-import { decodeFramedContent, encodeFramedContent, FramedContentCommit } from "./framedContent"
-import { decodeWireformat, encodeWireformat, WireformatName } from "./wireformat"
+import { Decoder, mapDecodersOption } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { Hash } from "./crypto/hash.js"
+import { decodeFramedContent, FramedContentCommit, framedContentEncoder } from "./framedContent.js"
+import { decodeWireformat, wireformatEncoder, WireformatName } from "./wireformat.js"
 
-export type ConfirmedTranscriptHashInput = {
+export interface ConfirmedTranscriptHashInput {
   wireformat: WireformatName
   content: FramedContentCommit
   signature: Uint8Array
 }
 
-export const encodeConfirmedTranscriptHashInput: Encoder<ConfirmedTranscriptHashInput> = contramapEncoders(
-  [encodeWireformat, encodeFramedContent, encodeVarLenData],
+export const confirmedTranscriptHashInputEncoder: BufferEncoder<ConfirmedTranscriptHashInput> = contramapBufferEncoders(
+  [wireformatEncoder, framedContentEncoder, varLenDataEncoder],
   (input) => [input.wireformat, input.content, input.signature] as const,
+)
+
+export const encodeConfirmedTranscriptHashInput: Encoder<ConfirmedTranscriptHashInput> = encode(
+  confirmedTranscriptHashInputEncoder,
 )
 
 export const decodeConfirmedTranscriptHashInput: Decoder<ConfirmedTranscriptHashInput> = mapDecodersOption(
@@ -34,7 +38,13 @@ export function createConfirmedHash(
   input: ConfirmedTranscriptHashInput,
   hash: Hash,
 ): Promise<Uint8Array> {
-  return hash.digest(new Uint8Array([...interimTranscriptHash, ...encodeConfirmedTranscriptHashInput(input)]))
+  const [len, write] = confirmedTranscriptHashInputEncoder(input)
+  const buf = new ArrayBuffer(interimTranscriptHash.byteLength + len)
+  const arr = new Uint8Array(buf)
+  arr.set(interimTranscriptHash, 0)
+  write(interimTranscriptHash.byteLength, buf)
+
+  return hash.digest(arr)
 }
 
 export function createInterimHash(
@@ -42,5 +52,10 @@ export function createInterimHash(
   confirmationTag: Uint8Array,
   hash: Hash,
 ): Promise<Uint8Array> {
-  return hash.digest(new Uint8Array([...confirmedHash, ...encodeVarLenData(confirmationTag)]))
+  const [len, write] = varLenDataEncoder(confirmationTag)
+  const buf = new ArrayBuffer(confirmedHash.byteLength + len)
+  const arr = new Uint8Array(buf)
+  arr.set(confirmedHash, 0)
+  write(confirmedHash.byteLength, buf)
+  return hash.digest(arr)
 }

@@ -1,5 +1,5 @@
-import { encodeProposalOrRef, decodeProposalOrRef } from "../../src/proposalOrRefType"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeProposalOrRef, decodeProposalOrRef } from "../../src/proposalOrRefType.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ProposalOrRef roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeProposalOrRef, decodeProposalOrRef)

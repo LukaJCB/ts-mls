@@ -1,23 +1,22 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { Proposal, ProposalAdd } from "../../src/proposal"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { createProposal } from "../../src"
-import { processMessage } from "../../src/processMessages"
-import { encodeExternalSender } from "../../src/externalSender"
-import { WireformatName } from "../../src/wireformat"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { Proposal, ProposalAdd } from "../../src/proposal.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { createProposal } from "../../src/index.js"
+import { processMessage } from "../../src/processMessages.js"
+import { encodeExternalSender } from "../../src/externalSender.js"
+import { WireformatName } from "../../src/wireformat.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Reject incoming message ${cs}`, async () => {
-    await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
-    await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
+  await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
+  await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
+})
 
 async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -40,7 +39,16 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, publicMessage, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -89,7 +97,15 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   expect(aliceGroup.unappliedProposals).toStrictEqual({})
 
   // alice commits without the proposal
-  const aliceCommitResult = await createCommit(aliceGroup, emptyPskIndex, publicMessage, [], impl)
+  const aliceCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+    },
+  )
 
   aliceGroup = aliceCommitResult.newState
 

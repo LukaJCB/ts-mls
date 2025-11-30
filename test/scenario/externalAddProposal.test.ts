@@ -1,25 +1,22 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createGroupInfoWithExternalPub } from "../../src/createCommit"
-import { createCommit } from "../../src/createCommit"
-import { processPrivateMessage, processPublicMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { encodeExternalSender, ExternalSender } from "../../src/externalSender"
-import { Extension } from "../../src/extension"
-import { proposeAddExternal } from "../../src/externalProposal"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { proposeAddExternal } from "../../src/externalProposal.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`External Add Proposal ${cs}`, async () => {
-    await externalAddProposalTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`External Add Proposal %s`, async (cs) => {
+  await externalAddProposalTest(cs as CiphersuiteName)
+})
 
 async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -35,17 +32,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const externalSender: ExternalSender = {
-    credential: charlieCredential,
-    signaturePublicKey: charlie.publicPackage.leafNode.signaturePublicKey,
-  }
-
-  const extension: Extension = {
-    extensionType: "external_senders",
-    extensionData: encodeExternalSender(externalSender),
-  }
-
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [extension], impl)
+  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const addBobProposal: ProposalAdd = {
     proposalType: "add",
@@ -54,7 +41,13 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    { extraProposals: [addBobProposal] },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -68,7 +61,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
   )
 
   // external pub not really necessary here
-  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, impl)
+  const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
   const addCharlieProposal = await proposeAddExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, impl)
 
@@ -92,7 +85,10 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCharlieProposalResult.newState
 
-  const addCharlieCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const addCharlieCommitResult = await createCommit({
+    state: aliceGroup,
+    cipherSuite: impl,
+  })
 
   aliceGroup = addCharlieCommitResult.newState
 
@@ -109,7 +105,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
+  const charlieGroup = await joinGroup(
     addCharlieCommitResult.welcome!,
     charlie.publicPackage,
     charlie.privatePackage,

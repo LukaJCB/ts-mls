@@ -1,9 +1,9 @@
-import { decodeUint8, encodeUint8 } from "./codec/number"
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder"
-import { contramapEncoder, contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { decodeProposal, encodeProposal, Proposal } from "./proposal"
-import { enumNumberToKey } from "./util/enumHelpers"
+import { decodeUint8, uint8Encoder } from "./codec/number.js"
+import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { decodeProposal, Proposal, proposalEncoder } from "./proposal.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 const proposalOrRefTypes = {
   proposal: 1,
@@ -13,38 +13,53 @@ const proposalOrRefTypes = {
 export type ProposalOrRefTypeName = keyof typeof proposalOrRefTypes
 export type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTypeName]
 
-export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeName> = contramapEncoder(
-  encodeUint8,
+export const proposalOrRefTypeEncoder: BufferEncoder<ProposalOrRefTypeName> = contramapBufferEncoder(
+  uint8Encoder,
   (t) => proposalOrRefTypes[t],
 )
+
+export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeName> = encode(proposalOrRefTypeEncoder)
 
 export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeName> = mapDecoderOption(
   decodeUint8,
   enumNumberToKey(proposalOrRefTypes),
 )
 
-export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef
-export type ProposalOrRefProposal = { proposalOrRefType: "proposal"; proposal: Proposal }
-export type ProposalOrRefProposalRef = { proposalOrRefType: "reference"; reference: Uint8Array }
+export interface ProposalOrRefProposal {
+  proposalOrRefType: "proposal"
+  proposal: Proposal
+}
+export interface ProposalOrRefProposalRef {
+  proposalOrRefType: "reference"
+  reference: Uint8Array
+}
 
-export const encodeProposalOrRefProposal: Encoder<ProposalOrRefProposal> = contramapEncoders(
-  [encodeProposalOrRefType, encodeProposal],
+export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef
+
+export const proposalOrRefProposalEncoder: BufferEncoder<ProposalOrRefProposal> = contramapBufferEncoders(
+  [proposalOrRefTypeEncoder, proposalEncoder],
   (p) => [p.proposalOrRefType, p.proposal] as const,
 )
 
-export const encodeProposalOrRefProposalRef: Encoder<ProposalOrRefProposalRef> = contramapEncoders(
-  [encodeProposalOrRefType, encodeVarLenData],
+export const encodeProposalOrRefProposal: Encoder<ProposalOrRefProposal> = encode(proposalOrRefProposalEncoder)
+
+export const proposalOrRefProposalRefEncoder: BufferEncoder<ProposalOrRefProposalRef> = contramapBufferEncoders(
+  [proposalOrRefTypeEncoder, varLenDataEncoder],
   (r) => [r.proposalOrRefType, r.reference] as const,
 )
 
-export const encodeProposalOrRef: Encoder<ProposalOrRef> = (input) => {
+export const encodeProposalOrRefProposalRef: Encoder<ProposalOrRefProposalRef> = encode(proposalOrRefProposalRefEncoder)
+
+export const proposalOrRefEncoder: BufferEncoder<ProposalOrRef> = (input) => {
   switch (input.proposalOrRefType) {
     case "proposal":
-      return encodeProposalOrRefProposal(input)
+      return proposalOrRefProposalEncoder(input)
     case "reference":
-      return encodeProposalOrRefProposalRef(input)
+      return proposalOrRefProposalRefEncoder(input)
   }
 }
+
+export const encodeProposalOrRef: Encoder<ProposalOrRef> = encode(proposalOrRefEncoder)
 
 export const decodeProposalOrRef: Decoder<ProposalOrRef> = flatMapDecoder(
   decodeProposalOrRefType,

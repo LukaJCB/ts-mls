@@ -1,6 +1,6 @@
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { ValidationError } from "./mlsError"
-import { PreSharedKeyID, updatePskSecret } from "./presharedkey"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { ValidationError } from "./mlsError.js"
+import { PreSharedKeyID, updatePskSecret } from "./presharedkey.js"
 
 export interface PskIndex {
   findPsk(preSharedKeyId: PreSharedKeyID): Uint8Array | undefined

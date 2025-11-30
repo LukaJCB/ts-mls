@@ -1,5 +1,5 @@
-import { encodeSenderType, decodeSenderType, SenderTypeName } from "../../src/sender"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeSenderType, decodeSenderType, SenderTypeName } from "../../src/sender.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("SenderTypeName roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeSenderType, decodeSenderType)

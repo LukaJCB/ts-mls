@@ -1,5 +1,5 @@
-import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalKeyPackage: KeyPackage = {
   version: "mls10",

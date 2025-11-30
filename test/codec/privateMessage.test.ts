@@ -1,5 +1,5 @@
-import { encodePrivateMessage, decodePrivateMessage } from "../../src/privateMessage"
-import { createRoundtripTest } from "./roundtrip"
+import { encodePrivateMessage, decodePrivateMessage } from "../../src/privateMessage.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PrivateMessage roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePrivateMessage, decodePrivateMessage)

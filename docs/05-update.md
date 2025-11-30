@@ -11,11 +11,15 @@ This scenario demonstrates how group members can update their own keys with an e
 5. **Bob Processes Alice's Update**: Bob processes the update commit and advances to epoch 2.
 6. **Bob Updates**: Bob updates his own key with an empty commit (epoch 3).
 7. **Alice Processes Bob's Update**: Alice processes the update commit and advances to epoch 3.
+8. **Alice Proposes an Update**: Alice submits an Update Proposal
+9. **Bob Commits to Alice's Update**: Bob commits to Alice's updated key and advances to epoch 4.
+10. **Alice Processes Bob's Commit**: Alice processes the update commit and advances to epoch 4.
 
 ## Key Concepts
 
 - **Empty Commit**: A commit with no proposals, used to refresh a member's key material and advance the group epoch.
 - **Key Rotation**: Regular updates help maintain forward secrecy and post-compromise security.
+- **Update Proposal**: An MLS Proposal that allows a member to propose to update their keys without having to create a commit themselves.
 
 ---
 
@@ -52,7 +56,10 @@ const addBobProposal: Proposal = {
   proposalType: "add",
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const addBobCommitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
@@ -66,7 +73,7 @@ let bobGroup = await joinGroup(
 )
 
 // Alice updates her key with an empty commit, transitioning to epoch 2
-const emptyCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+const emptyCommitResult = await createCommit({ state: aliceGroup, cipherSuite: impl })
 if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
 
@@ -80,7 +87,7 @@ const bobProcessCommitResult = await processPrivateMessage(
 bobGroup = bobProcessCommitResult.newState
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
-const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+const emptyCommitResult3 = await createCommit({ state: aliceGroup, cipherSuite: impl })
 if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
 
@@ -92,6 +99,32 @@ const aliceProcessCommitResult3 = await processPrivateMessage(
   impl,
 )
 aliceGroup = aliceProcessCommitResult3.newState
+
+// Bob creates a new KeyPackage
+const alice2 = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+
+// Alice proposes to update her keys
+const updateAliceProposal: Proposal = {
+  proposalType: "update",
+  update: { leafNode: { ...alice2.publicPackage.leafNode, leafNodeSource: "update" } },
+}
+
+// Bob commits to Alice's proposal and transitions to epoch 4
+const updateBobCommitResult = await createCommit(
+  { state: bobGroup, cipherSuite: impl },
+  { extraProposals: [updateAliceProposal] },
+)
+if (updateBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+bobGroup = updateBobCommitResult.newState
+
+// Alice processes Bob's commit and transitions to epoch 4
+const aliceProcessCommitResult4 = await processPrivateMessage(
+  aliceGroup,
+  updateBobCommitResult.commit.privateMessage,
+  makePskIndex(aliceGroup, {}),
+  impl,
+)
+aliceGroup = aliceProcessCommitResult4.newState
 ```
 
 ---

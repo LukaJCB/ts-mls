@@ -1,20 +1,27 @@
-import { ContentTypeName } from "./contentType"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf"
-import { KeyRetentionConfig } from "./keyRetentionConfig"
-import { InternalError, ValidationError } from "./mlsError"
-import { ReuseGuard, SenderData } from "./sender"
-import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex } from "./treemath"
-import { updateArray } from "./util/array"
-import { repeatAsync } from "./util/repeat"
+import { ContentTypeName } from "./contentType.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
+import { KeyRetentionConfig } from "./keyRetentionConfig.js"
+import { InternalError, ValidationError } from "./mlsError.js"
+import { ReuseGuard, SenderData } from "./sender.js"
+import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath.js"
+import { updateArray } from "./util/array.js"
+import { repeatAsync } from "./util/repeat.js"
 
-export type GenerationSecret = { secret: Uint8Array; generation: number; unusedGenerations: Record<number, Uint8Array> }
+export interface GenerationSecret {
+  secret: Uint8Array
+  generation: number
+  unusedGenerations: Record<number, Uint8Array>
+}
 
-export type SecretTreeNode = { handshake: GenerationSecret; application: GenerationSecret }
+export interface SecretTreeNode {
+  handshake: GenerationSecret
+  application: GenerationSecret
+}
 
 export type SecretTree = SecretTreeNode[]
 
-export type ConsumeRatchetResult = {
+export interface ConsumeRatchetResult {
   nonce: Uint8Array
   reuseGuard: ReuseGuard
   key: Uint8Array
@@ -23,7 +30,7 @@ export type ConsumeRatchetResult = {
 }
 
 function scaffoldSecretTree(leafWidth: number, encryptionSecret: Uint8Array, kdf: Kdf): Promise<Uint8Array[]> {
-  const tree = new Array(nodeWidth(leafWidth))
+  const tree = new Array<Uint8Array>(nodeWidth(leafWidth))
   const rootIndex = root(leafWidth)
 
   const parentInhabited = updateArray(tree, rootIndex, encryptionSecret)
@@ -43,7 +50,7 @@ export async function createSecretTree(leafWidth: number, encryptionSecret: Uint
   )
 }
 
-async function deriveChildren(tree: Uint8Array[], nodeIndex: number, kdf: Kdf): Promise<Uint8Array[]> {
+async function deriveChildren(tree: Uint8Array[], nodeIndex: NodeIndex, kdf: Kdf): Promise<Uint8Array[]> {
   if (isLeaf(nodeIndex)) return tree
   const l = left(nodeIndex)
 
@@ -85,7 +92,7 @@ export async function ratchetUntil(
       return {
         secret: nextSecret,
         generation: s.generation + 1,
-        unusedGenerations: newFunction(s, config.retainKeysForGenerations),
+        unusedGenerations: updateUnusedGenerations(s, config.retainKeysForGenerations),
       }
     },
     current,
@@ -93,7 +100,7 @@ export async function ratchetUntil(
   )
 }
 
-function newFunction(s: GenerationSecret, retainGenerationsMax: number): Record<number, Uint8Array> {
+function updateUnusedGenerations(s: GenerationSecret, retainGenerationsMax: number): Record<number, Uint8Array> {
   const withNew = { ...s.unusedGenerations, [s.generation]: s.secret }
 
   const generations = Object.keys(withNew)
@@ -141,7 +148,7 @@ export async function ratchetToGeneration(
   config: KeyRetentionConfig,
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
-  const index = leafToNodeIndex(senderData.leafIndex)
+  const index = leafToNodeIndex(toLeafIndex(senderData.leafIndex))
   const node = tree[index]
   if (node === undefined) throw new InternalError("Bad node index for secret tree")
 

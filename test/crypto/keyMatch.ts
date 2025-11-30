@@ -1,8 +1,8 @@
-import { ClientState } from "../../src/clientState"
-import { CiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { Hpke } from "../../src/crypto/hpke"
-import { Signature } from "../../src/crypto/signature"
-import { getHpkePublicKey } from "../../src/ratchetTree"
+import { ClientState } from "../../src/clientState.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { Hpke } from "../../src/crypto/hpke.js"
+import { Signature } from "../../src/crypto/signature.js"
+import { getHpkePublicKey } from "../../src/ratchetTree.js"
 
 export async function hpkeKeysMatch(publicKey: Uint8Array, privateKey: Uint8Array, hpke: Hpke): Promise<boolean> {
   const encoder = new TextEncoder()

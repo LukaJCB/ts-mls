@@ -1,33 +1,41 @@
-import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Hash } from "./crypto/hash"
-import { Extension, extensionsEqual, extensionsSupportedByCapabilities } from "./extension"
-import { createConfirmationTag, FramedContentCommit } from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo"
-import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage"
-import { deriveKeySchedule, initializeKeySchedule, KeySchedule } from "./keySchedule"
-import { encodePskId, PreSharedKeyID } from "./presharedkey"
+import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Hash } from "./crypto/hash.js"
+import { Extension, extensionsEqual, extensionsSupportedByCapabilities } from "./extension.js"
+import { createConfirmationTag, FramedContentCommit } from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo.js"
+import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage.js"
+import { deriveKeySchedule, initializeKeySchedule, KeySchedule } from "./keySchedule.js"
+import { pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 
 import {
   addLeafNode,
   findBlankLeafNodeIndexOrExtend,
   findLeafIndex,
-  getHpkePublicKey,
   removeLeafNode,
   updateLeafNode,
-} from "./ratchetTree"
-import { RatchetTree } from "./ratchetTree"
-import { createSecretTree, SecretTree } from "./secretTree"
-import { createConfirmedHash, createInterimHash } from "./transcriptHash"
-import { treeHashRoot } from "./treeHash"
-import { directPath, isLeaf, leafToNodeIndex, leafWidth, nodeToLeafIndex } from "./treemath"
-import { firstCommonAncestor } from "./updatePath"
-import { bytesToBase64 } from "./util/byteArray"
-import { constantTimeEqual } from "./util/constantTimeCompare"
-import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome"
-import { WireformatName } from "./wireformat"
-import { ProposalOrRef } from "./proposalOrRefType"
+} from "./ratchetTree.js"
+import { RatchetTree } from "./ratchetTree.js"
+import { createSecretTree, SecretTree } from "./secretTree.js"
+import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
+import { treeHashRoot } from "./treeHash.js"
+import {
+  directPath,
+  isLeaf,
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  nodeToLeafIndex,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath.js"
+import { firstCommonAncestor } from "./updatePath.js"
+import { bytesToBase64 } from "./util/byteArray.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
+import { WireformatName } from "./wireformat.js"
+import { ProposalOrRef } from "./proposalOrRefType.js"
 import {
   Proposal,
   ProposalAdd,
@@ -39,15 +47,22 @@ import {
   ProposalUpdate,
   Reinit,
   Remove,
-} from "./proposal"
-import { pathToRoot } from "./pathSecrets"
-import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath"
-import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals"
-import { accumulatePskSecret, PskIndex } from "./pskIndex"
-import { getSenderLeafNodeIndex } from "./sender"
-import { addToMap } from "./util/addToMap"
-import { CryptoVerificationError, CodecError, InternalError, UsageError, ValidationError, MlsError } from "./mlsError"
-import { Signature } from "./crypto/signature"
+} from "./proposal.js"
+import { pathToRoot } from "./pathSecrets.js"
+import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
+import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals.js"
+import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
+import { getSenderLeafNodeIndex } from "./sender.js"
+import { addToMap } from "./util/addToMap.js"
+import {
+  CryptoVerificationError,
+  CodecError,
+  InternalError,
+  UsageError,
+  ValidationError,
+  MlsError,
+} from "./mlsError.js"
+import { Signature } from "./crypto/signature.js"
 import {
   LeafNode,
   LeafNodeCommit,
@@ -55,19 +70,21 @@ import {
   LeafNodeUpdate,
   verifyLeafNodeSignature,
   verifyLeafNodeSignatureKeyPackage,
-} from "./leafNode"
-import { protocolVersions } from "./protocolVersion"
-import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities"
-import { Capabilities } from "./capabilities"
-import { verifyParentHashes } from "./parentHash"
-import { AuthenticationService } from "./authenticationService"
-import { LifetimeConfig } from "./lifetimeConfig"
-import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig"
-import { ClientConfig, defaultClientConfig } from "./clientConfig"
-import { decodeExternalSender } from "./externalSender"
-import { arraysEqual } from "./util/array"
+} from "./leafNode.js"
+import { protocolVersions } from "./protocolVersion.js"
+import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities.js"
+import { Capabilities } from "./capabilities.js"
+import { verifyParentHashes } from "./parentHash.js"
+import { AuthenticationService } from "./authenticationService.js"
+import { LifetimeConfig } from "./lifetimeConfig.js"
+import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
+import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { decodeExternalSender } from "./externalSender.js"
+import { arraysEqual } from "./util/array.js"
+import { encode } from "./codec/tlsEncoder.js"
+import { CredentialTypeName } from "./credentialType.js"
 
-export type ClientState = {
+export interface ClientState {
   groupContext: GroupContext
   keySchedule: KeySchedule
   secretTree: SecretTree
@@ -89,7 +106,7 @@ export type GroupActiveState =
 /**
  * This type contains everything necessary to receieve application messages for an earlier epoch
  */
-export type EpochReceiverData = {
+export interface EpochReceiverData {
   resumptionPsk: Uint8Array
   secretTree: SecretTree
   ratchetTree: RatchetTree
@@ -111,7 +128,7 @@ export function checkCanSendHandshakeMessages(state: ClientState): void {
     throw new UsageError("Cannot send messages after being removed from group")
 }
 
-export type Proposals = {
+export interface Proposals {
   add: { senderLeafIndex: number | undefined; proposal: ProposalAdd }[]
   update: { senderLeafIndex: number | undefined; proposal: ProposalUpdate }[]
   remove: { senderLeafIndex: number | undefined; proposal: ProposalRemove }[]
@@ -193,7 +210,7 @@ async function validateProposals(
         node !== undefined &&
         node.nodeType === "leaf" &&
         config.compareKeyPackageToLeafNode(proposal.add.keyPackage, node.leaf) &&
-        p.remove.every((r) => r.proposal.remove.removed !== nodeToLeafIndex(nodeIndex)),
+        p.remove.every((r) => r.proposal.remove.removed !== nodeToLeafIndex(toNodeIndex(nodeIndex))),
     ),
   )
 
@@ -210,8 +227,10 @@ async function validateProposals(
   const multiplePskWithSamePskId = p.psk.some((a, indexA) =>
     p.psk.some(
       (b, indexB) =>
-        constantTimeEqual(encodePskId(a.proposal.psk.preSharedKeyId), encodePskId(b.proposal.psk.preSharedKeyId)) &&
-        indexA !== indexB,
+        constantTimeEqual(
+          encode(pskIdEncoder)(a.proposal.psk.preSharedKeyId),
+          encode(pskIdEncoder)(b.proposal.psk.preSharedKeyId),
+        ) && indexA !== indexB,
     ),
   )
 
@@ -278,27 +297,48 @@ export async function validateRatchetTree(
   treeHash: Uint8Array,
   cs: CiphersuiteImpl,
 ): Promise<MlsError | undefined> {
-  const treeIsStructurallySound = tree.every((n, index) =>
-    isLeaf(index) ? n === undefined || n.nodeType === "leaf" : n === undefined || n.nodeType === "parent",
-  )
+  const hpkeKeys = new Set<string>()
+  const signatureKeys = new Set<string>()
+  const credentialTypes = new Set<CredentialTypeName>()
+  for (const [i, n] of tree.entries()) {
+    const nodeIndex = toNodeIndex(i)
+    if (n?.nodeType === "leaf") {
+      if (!isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
-  if (!treeIsStructurallySound) return new ValidationError("Received Ratchet Tree is not structurally sound")
+      const hpkeKey = bytesToBase64(n.leaf.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
 
-  const parentHashesVerified = await verifyParentHashes(tree, cs.hash)
+      const signatureKey = bytesToBase64(n.leaf.signaturePublicKey)
+      if (signatureKeys.has(signatureKey)) return new ValidationError("signature keys not unique")
+      else signatureKeys.add(signatureKey)
 
-  if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
+      credentialTypes.add(n.leaf.credential.credentialType)
 
-  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash)))
-    return new ValidationError("Unable to verify tree hash")
+      const err =
+        n.leaf.leafNodeSource === "key_package"
+          ? await validateLeafNodeKeyPackage(n.leaf, groupContext, false, config, authService, cs.signature)
+          : await validateLeafNodeUpdateOrCommit(
+              n.leaf,
+              nodeToLeafIndex(nodeIndex),
+              groupContext,
+              authService,
+              cs.signature,
+            )
 
-  //validate all parent nodes
-  for (const [parentIndex, n] of tree.entries()) {
-    if (n?.nodeType === "parent") {
-      // verify unmerged leaves
+      if (err !== undefined) return err
+    } else if (n?.nodeType === "parent") {
+      if (isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
+
+      const hpkeKey = bytesToBase64(n.parent.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
+
       for (const unmergedLeaf of n.parent.unmergedLeaves) {
-        const dp = directPath(leafToNodeIndex(unmergedLeaf), leafWidth(tree.length))
-        const nodeIndex = leafToNodeIndex(unmergedLeaf)
-        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(parentIndex))
+        const leafIndex = toLeafIndex(unmergedLeaf)
+        const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
+        const nodeIndex = leafToNodeIndex(leafIndex)
+        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(i)))
           return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node")
 
         for (const parentIdx of dp) {
@@ -315,62 +355,27 @@ export async function validateRatchetTree(
     }
   }
 
-  const duplicateHpkeKeys = hasDuplicateUint8Arrays(
-    tree.map((n) => (n !== undefined ? getHpkePublicKey(n) : undefined)),
-  )
-
-  if (duplicateHpkeKeys) return new ValidationError("Multiple public keys with the same value")
-
-  // validate all leaf nodes
-  for (const [index, n] of tree.entries()) {
+  for (const n of tree) {
     if (n?.nodeType === "leaf") {
-      const err =
-        n.leaf.leafNodeSource === "key_package"
-          ? await validateLeafNodeKeyPackage(
-              n.leaf,
-              groupContext,
-              tree,
-              false,
-              config,
-              authService,
-              nodeToLeafIndex(index),
-              cs.signature,
-            )
-          : await validateLeafNodeUpdateOrCommit(
-              n.leaf,
-              nodeToLeafIndex(index),
-              groupContext,
-              tree,
-              authService,
-              cs.signature,
-            )
-
-      if (err !== undefined) return err
+      for (const credentialType of credentialTypes) {
+        if (!n.leaf.capabilities.credentials.includes(credentialType))
+          return new ValidationError("LeafNode has credential that is not supported by member of the group")
+      }
     }
   }
-}
 
-function hasDuplicateUint8Arrays(byteArrays: (Uint8Array | undefined)[]): boolean {
-  const seen = new Set<string>()
+  const parentHashesVerified = await verifyParentHashes(tree, cs.hash)
 
-  for (const data of byteArrays) {
-    if (data === undefined) continue
+  if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
 
-    const key = bytesToBase64(data)
-    if (seen.has(key)) {
-      return true
-    }
-    seen.add(key)
-  }
-
-  return false
+  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash)))
+    return new ValidationError("Unable to verify tree hash")
 }
 
 export async function validateLeafNodeUpdateOrCommit(
   leafNode: LeafNodeCommit | LeafNodeUpdate,
   leafIndex: number,
   groupContext: GroupContext,
-  tree: RatchetTree,
   authService: AuthenticationService,
   s: Signature,
 ): Promise<MlsError | undefined> {
@@ -378,7 +383,7 @@ export async function validateLeafNodeUpdateOrCommit(
 
   if (!signatureValid) return new CryptoVerificationError("Could not verify leaf node signature")
 
-  const commonError = await validateLeafNodeCommon(leafNode, groupContext, tree, authService, leafIndex)
+  const commonError = await validateLeafNodeCommon(leafNode, groupContext, authService)
 
   if (commonError !== undefined) return commonError
 }
@@ -390,9 +395,7 @@ export function throwIfDefined(err: MlsError | undefined): void {
 async function validateLeafNodeCommon(
   leafNode: LeafNode,
   groupContext: GroupContext,
-  tree: RatchetTree,
   authService: AuthenticationService,
-  leafIndex?: number,
 ) {
   const credentialValid = await authService.validateCredential(leafNode.credential, leafNode.signaturePublicKey)
 
@@ -409,40 +412,17 @@ async function validateLeafNodeCommon(
     if (!leafSupportsCapabilities) return new ValidationError("LeafNode does not support required capabilities")
   }
 
-  const credentialUnsupported = tree.some(
-    (node) =>
-      node !== undefined &&
-      node.nodeType === "leaf" &&
-      !node.leaf.capabilities.credentials.includes(leafNode.credential.credentialType),
-  )
-
-  if (credentialUnsupported)
-    return new ValidationError("LeafNode has credential that is not supported by member of the group")
-
   const extensionsSupported = extensionsSupportedByCapabilities(leafNode.extensions, leafNode.capabilities)
 
   if (!extensionsSupported) return new ValidationError("LeafNode contains extension not listed in capabilities")
-
-  const keysAreNotUnique = tree.some(
-    (node, nodeIndex) =>
-      node !== undefined &&
-      node.nodeType === "leaf" &&
-      (constantTimeEqual(node.leaf.hpkePublicKey, leafNode.hpkePublicKey) ||
-        constantTimeEqual(node.leaf.signaturePublicKey, leafNode.signaturePublicKey)) &&
-      leafIndex !== nodeToLeafIndex(nodeIndex),
-  )
-
-  if (keysAreNotUnique) return new ValidationError("hpke and signature keys not unique")
 }
 
 async function validateLeafNodeKeyPackage(
   leafNode: LeafNodeKeyPackage,
   groupContext: GroupContext,
-  tree: RatchetTree,
   sentByClient: boolean,
   config: LifetimeConfig,
   authService: AuthenticationService,
-  leafIndex: number | undefined,
   s: Signature,
 ): Promise<MlsError | undefined> {
   const signatureValid = await verifyLeafNodeSignatureKeyPackage(leafNode, s)
@@ -457,9 +437,38 @@ async function validateLeafNodeKeyPackage(
     }
   }
 
-  const commonError = await validateLeafNodeCommon(leafNode, groupContext, tree, authService, leafIndex)
+  const commonError = await validateLeafNodeCommon(leafNode, groupContext, authService)
 
   if (commonError !== undefined) return commonError
+}
+
+export async function validateLeafNodeCredentialAndKeyUniqueness(
+  tree: RatchetTree,
+  leafNode: LeafNode,
+  existingLeafIndex?: number,
+): Promise<ValidationError | undefined> {
+  const hpkeKeys = new Set<string>()
+  const signatureKeys = new Set<string>()
+  for (const [nodeIndex, node] of tree.entries()) {
+    if (node?.nodeType === "leaf") {
+      if (!node.leaf.capabilities.credentials.includes(leafNode.credential.credentialType)) {
+        return new ValidationError("LeafNode has credential that is not supported by member of the group")
+      }
+
+      const hpkeKey = bytesToBase64(node.leaf.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
+
+      const signatureKey = bytesToBase64(node.leaf.signaturePublicKey)
+      if (signatureKeys.has(signatureKey) && existingLeafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)))
+        return new ValidationError("signature keys not unique")
+      else signatureKeys.add(signatureKey)
+    } else if (node?.nodeType === "parent") {
+      const hpkeKey = bytesToBase64(node.parent.hpkePublicKey)
+      if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
+      else hpkeKeys.add(hpkeKey)
+    }
+  }
 }
 
 async function validateKeyPackage(
@@ -475,14 +484,16 @@ async function validateKeyPackage(
 
   if (kp.version !== groupContext.version) return new ValidationError("Invalid mls version")
 
+  const leafNodeConsistentWithTree = await validateLeafNodeCredentialAndKeyUniqueness(tree, kp.leafNode)
+
+  if (leafNodeConsistentWithTree !== undefined) return leafNodeConsistentWithTree
+
   const leafNodeError = await validateLeafNodeKeyPackage(
     kp.leafNode,
     groupContext,
-    tree,
     sentByClient,
     config,
     authService,
-    undefined,
     s,
   )
   if (leafNodeError !== undefined) return leafNodeError
@@ -521,10 +532,11 @@ function validateExternalInit(grouped: Proposals): ValidationError | undefined {
 }
 
 function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(remove.removed)] === undefined) return new ValidationError("Tried to remove empty leaf node")
+  if (tree[leafToNodeIndex(toLeafIndex(remove.removed))] === undefined)
+    return new ValidationError("Tried to remove empty leaf node")
 }
 
-export type ApplyProposalsResult = {
+export interface ApplyProposalsResult {
   tree: RatchetTree
   pskSecret: Uint8Array
   pskIds: PreSharedKeyID[]
@@ -535,14 +547,14 @@ export type ApplyProposalsResult = {
 }
 
 export type ApplyProposalsData =
-  | { kind: "memberCommit"; addedLeafNodes: [number, KeyPackage][]; extensions: Extension[] }
-  | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: number }
+  | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: Extension[] }
+  | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: LeafIndex }
   | { kind: "reinit"; reinit: Reinit }
 
 export async function applyProposals(
   state: ClientState,
   proposals: ProposalOrRef[],
-  committerLeafIndex: number | undefined,
+  committerLeafIndex: LeafIndex | undefined,
   pskSearch: PskIndex,
   sentByClient: boolean,
   cs: CiphersuiteImpl,
@@ -617,7 +629,7 @@ export async function applyProposals(
       zeroes,
     )
 
-    const selfRemoved = mutatedTree[leafToNodeIndex(state.privatePath.leafIndex)] === undefined
+    const selfRemoved = mutatedTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
 
     const needsUpdatePath =
       allProposals.length === 0 || Object.values(grouped.update).length > 1 || Object.values(grouped.remove).length > 1
@@ -639,7 +651,7 @@ export async function applyProposals(
     throwIfDefined(validateExternalInit(grouped))
 
     const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
-      return removeLeafNode(acc, proposal.remove.removed)
+      return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
     }, state.ratchetTree)
 
     const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
@@ -722,6 +734,30 @@ export async function joinGroup(
   resumingFromState?: ClientState,
   clientConfig: ClientConfig = defaultClientConfig,
 ): Promise<ClientState> {
+  const res = await joinGroupWithExtensions(
+    welcome,
+    keyPackage,
+    privateKeys,
+    pskSearch,
+    cs,
+    ratchetTree,
+    resumingFromState,
+    clientConfig,
+  )
+
+  return res[0]
+}
+
+export async function joinGroupWithExtensions(
+  welcome: Welcome,
+  keyPackage: KeyPackage,
+  privateKeys: PrivateKeyPackage,
+  pskSearch: PskIndex,
+  cs: CiphersuiteImpl,
+  ratchetTree?: RatchetTree,
+  resumingFromState?: ClientState,
+  clientConfig: ClientConfig = defaultClientConfig,
+): Promise<[ClientState, Extension[]]> {
   const keyPackageRef = await makeKeyPackageRef(keyPackage, cs.hash)
   const privKey = await cs.hpke.importPrivateKey(privateKeys.initPrivateKey)
   const groupSecrets = await decryptGroupSecrets(privKey, keyPackageRef, welcome, cs.hpke)
@@ -774,7 +810,7 @@ export async function joinGroup(
 
   if (tree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
 
-  const signerNode = tree[leafToNodeIndex(gi.signer)]
+  const signerNode = tree[leafToNodeIndex(toLeafIndex(gi.signer))]
 
   if (signerNode === undefined) {
     throw new ValidationError("Could not find signer leafNode")
@@ -788,7 +824,11 @@ export async function joinGroup(
 
   if (!credentialVerified) throw new ValidationError("Could not validate credential")
 
-  const groupInfoSignatureVerified = verifyGroupInfoSignature(gi, signerNode.leaf.signaturePublicKey, cs.signature)
+  const groupInfoSignatureVerified = await verifyGroupInfoSignature(
+    gi,
+    signerNode.leaf.signaturePublicKey,
+    cs.signature,
+  )
 
   if (!groupInfoSignatureVerified) throw new CryptoVerificationError("Could not verify groupInfo signature")
 
@@ -815,7 +855,7 @@ export async function joinGroup(
     privateKeys: { [leafToNodeIndex(newLeaf)]: privateKeys.hpkePrivateKey },
   }
 
-  const ancestorNodeIndex = firstCommonAncestor(tree, newLeaf, gi.signer)
+  const ancestorNodeIndex = firstCommonAncestor(tree, newLeaf, toLeafIndex(gi.signer))
 
   const updatedPkp =
     groupSecrets.pathSecret === undefined
@@ -837,19 +877,22 @@ export async function joinGroup(
 
   const secretTree = await createSecretTree(leafWidth(tree.length), keySchedule.encryptionSecret, cs.kdf)
 
-  return {
-    groupContext: gi.groupContext,
-    ratchetTree: tree,
-    privatePath: updatedPkp,
-    signaturePrivateKey: privateKeys.signaturePrivateKey,
-    confirmationTag: gi.confirmationTag,
-    unappliedProposals: {},
-    keySchedule,
-    secretTree,
-    historicalReceiverData: new Map(),
-    groupActiveState: { kind: "active" },
-    clientConfig,
-  }
+  return [
+    {
+      groupContext: gi.groupContext,
+      ratchetTree: tree,
+      privatePath: updatedPkp,
+      signaturePrivateKey: privateKeys.signaturePrivateKey,
+      confirmationTag: gi.confirmationTag,
+      unappliedProposals: {},
+      keySchedule,
+      secretTree,
+      historicalReceiverData: new Map(),
+      groupActiveState: { kind: "active" },
+      clientConfig,
+    },
+    gi.extensions,
+  ]
 }
 
 export async function createGroup(
@@ -934,20 +977,22 @@ async function applyTreeMutations(
   authService: AuthenticationService,
   lifetimeConfig: LifetimeConfig,
   s: Signature,
-): Promise<[RatchetTree, [number, KeyPackage][]]> {
+): Promise<[RatchetTree, [LeafIndex, KeyPackage][]]> {
   const treeAfterUpdate = await grouped.update.reduce(async (acc, { senderLeafIndex, proposal }) => {
     if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
 
+    throwIfDefined(await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s))
     throwIfDefined(
-      await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, ratchetTree, authService, s),
+      await validateLeafNodeCredentialAndKeyUniqueness(ratchetTree, proposal.update.leafNode, senderLeafIndex),
     )
-    return updateLeafNode(await acc, proposal.update.leafNode, senderLeafIndex)
+
+    return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
   }, Promise.resolve(ratchetTree))
 
   const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
     throwIfDefined(validateRemove(proposal.remove, ratchetTree))
 
-    return removeLeafNode(acc, proposal.remove.removed)
+    return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
   }, treeAfterUpdate)
 
   const [treeAfterAdd, addedLeafNodes] = await grouped.add.reduce(
@@ -966,9 +1011,12 @@ async function applyTreeMutations(
 
       const [tree, ws] = await acc
       const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
-      return [updatedTree, [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [number, KeyPackage]]]
+      return [
+        updatedTree,
+        [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [LeafIndex, KeyPackage]],
+      ]
     },
-    Promise.resolve([treeAfterRemove, []] as [RatchetTree, [number, KeyPackage][]]),
+    Promise.resolve([treeAfterRemove, []] as [RatchetTree, [LeafIndex, KeyPackage][]]),
   )
 
   return [treeAfterAdd, addedLeafNodes]

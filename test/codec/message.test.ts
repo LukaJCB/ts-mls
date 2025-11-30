@@ -1,5 +1,5 @@
-import { encodeMlsMessage, decodeMlsMessage } from "../../src/message"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("MLSMessage roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeMlsMessage, decodeMlsMessage)

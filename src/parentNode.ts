@@ -1,14 +1,20 @@
-import { encodeUint32, decodeUint32 } from "./codec/number"
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { Encoder, contramapEncoders } from "./codec/tlsEncoder"
-import { encodeVarLenData, encodeVarLenType, decodeVarLenData, decodeVarLenType } from "./codec/variableLength"
+import { uint32Encoder, decodeUint32 } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
+import { varLenDataEncoder, varLenTypeEncoder, decodeVarLenData, decodeVarLenType } from "./codec/variableLength.js"
 
-export type ParentNode = { hpkePublicKey: Uint8Array; parentHash: Uint8Array; unmergedLeaves: number[] }
+export interface ParentNode {
+  hpkePublicKey: Uint8Array
+  parentHash: Uint8Array
+  unmergedLeaves: number[]
+}
 
-export const encodeParentNode: Encoder<ParentNode> = contramapEncoders(
-  [encodeVarLenData, encodeVarLenData, encodeVarLenType(encodeUint32)],
+export const parentNodeEncoder: BufferEncoder<ParentNode> = contramapBufferEncoders(
+  [varLenDataEncoder, varLenDataEncoder, varLenTypeEncoder(uint32Encoder)],
   (node) => [node.hpkePublicKey, node.parentHash, node.unmergedLeaves] as const,
 )
+
+export const encodeParentNode: Encoder<ParentNode> = encode(parentNodeEncoder)
 
 export const decodeParentNode: Decoder<ParentNode> = mapDecoders(
   [decodeVarLenData, decodeVarLenData, decodeVarLenType(decodeUint32)],

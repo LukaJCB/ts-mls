@@ -1,21 +1,21 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CiphersuiteImpl, CiphersuiteName, decodeCiphersuite, encodeCiphersuite } from "./crypto/ciphersuite"
-import { Hash, refhash } from "./crypto/hash"
-import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature"
-import { decodeExtension, encodeExtension, Extension } from "./extension"
-import { decodeProtocolVersion, encodeProtocolVersion, ProtocolVersionName } from "./protocolVersion"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteImpl, CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { Hash, refhash } from "./crypto/hash.js"
+import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
+import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
 import {
   decodeLeafNodeKeyPackage,
-  encodeLeafNode,
+  leafNodeEncoder,
   LeafNodeKeyPackage,
   LeafNodeTBSKeyPackage,
   signLeafNodeKeyPackage,
-} from "./leafNode"
-import { Capabilities } from "./capabilities"
-import { Lifetime } from "./lifetime"
-import { Credential } from "./credential"
+} from "./leafNode.js"
+import { Capabilities } from "./capabilities.js"
+import { Lifetime } from "./lifetime.js"
+import { Credential } from "./credential.js"
 
 type KeyPackageTBS = {
   version: ProtocolVersionName
@@ -25,8 +25,8 @@ type KeyPackageTBS = {
   extensions: Extension[]
 }
 
-export const encodeKeyPackageTBS: Encoder<KeyPackageTBS> = contramapEncoders(
-  [encodeProtocolVersion, encodeCiphersuite, encodeVarLenData, encodeLeafNode, encodeVarLenType(encodeExtension)],
+export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBufferEncoders(
+  [protocolVersionEncoder, ciphersuiteEncoder, varLenDataEncoder, leafNodeEncoder, varLenTypeEncoder(extensionEncoder)],
   (keyPackageTBS) =>
     [
       keyPackageTBS.version,
@@ -36,6 +36,8 @@ export const encodeKeyPackageTBS: Encoder<KeyPackageTBS> = contramapEncoders(
       keyPackageTBS.extensions,
     ] as const,
 )
+
+export const encodeKeyPackageTBS: Encoder<KeyPackageTBS> = encode(keyPackageTBSEncoder)
 
 export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
   [
@@ -56,10 +58,12 @@ export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
 
 export type KeyPackage = KeyPackageTBS & { signature: Uint8Array }
 
-export const encodeKeyPackage: Encoder<KeyPackage> = contramapEncoders(
-  [encodeKeyPackageTBS, encodeVarLenData],
+export const keyPackageEncoder: BufferEncoder<KeyPackage> = contramapBufferEncoders(
+  [keyPackageTBSEncoder, varLenDataEncoder],
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )
+
+export const encodeKeyPackage: Encoder<KeyPackage> = encode(keyPackageEncoder)
 
 export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
   [decodeKeyPackageTBS, decodeVarLenData],
@@ -70,46 +74,53 @@ export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
 )
 
 export async function signKeyPackage(tbs: KeyPackageTBS, signKey: Uint8Array, s: Signature): Promise<KeyPackage> {
-  return { ...tbs, signature: await signWithLabel(signKey, "KeyPackageTBS", encodeKeyPackageTBS(tbs), s) }
+  return { ...tbs, signature: await signWithLabel(signKey, "KeyPackageTBS", encode(keyPackageTBSEncoder)(tbs), s) }
 }
 
 export async function verifyKeyPackage(kp: KeyPackage, s: Signature): Promise<boolean> {
-  return verifyWithLabel(kp.leafNode.signaturePublicKey, "KeyPackageTBS", encodeKeyPackageTBS(kp), kp.signature, s)
+  return verifyWithLabel(
+    kp.leafNode.signaturePublicKey,
+    "KeyPackageTBS",
+    encode(keyPackageTBSEncoder)(kp),
+    kp.signature,
+    s,
+  )
 }
 
-export function makeKeyPackageRef(value: KeyPackage, h: Hash) {
-  return refhash("MLS 1.0 KeyPackage Reference", encodeKeyPackage(value), h)
+export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Array> {
+  return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder)(value), h)
 }
 
-export type PrivateKeyPackage = {
+export interface PrivateKeyPackage {
   initPrivateKey: Uint8Array
   hpkePrivateKey: Uint8Array
   signaturePrivateKey: Uint8Array
 }
 
-export async function generateKeyPackage(
+export async function generateKeyPackageWithKey(
   credential: Credential,
   capabilities: Capabilities,
   lifetime: Lifetime,
   extensions: Extension[],
+  signatureKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
   cs: CiphersuiteImpl,
+  leafNodeExtensions?: Extension[],
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
-  const sigKeys = await cs.signature.keygen()
   const initKeys = await cs.hpke.generateKeyPair()
   const hpkeKeys = await cs.hpke.generateKeyPair()
 
   const privatePackage = {
     initPrivateKey: await cs.hpke.exportPrivateKey(initKeys.privateKey),
     hpkePrivateKey: await cs.hpke.exportPrivateKey(hpkeKeys.privateKey),
-    signaturePrivateKey: sigKeys.signKey,
+    signaturePrivateKey: signatureKeyPair.signKey,
   }
 
   const leafNodeTbs: LeafNodeTBSKeyPackage = {
     leafNodeSource: "key_package",
     hpkePublicKey: await cs.hpke.exportPublicKey(hpkeKeys.publicKey),
-    signaturePublicKey: sigKeys.publicKey,
+    signaturePublicKey: signatureKeyPair.publicKey,
     info: { leafNodeSource: "key_package" },
-    extensions,
+    extensions: leafNodeExtensions ?? [],
     credential,
     capabilities,
     lifetime,
@@ -119,9 +130,21 @@ export async function generateKeyPackage(
     version: "mls10",
     cipherSuite: cs.name,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
-    leafNode: await signLeafNodeKeyPackage(leafNodeTbs, sigKeys.signKey, cs.signature),
+    leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),
     extensions,
   }
 
-  return { publicPackage: await signKeyPackage(tbs, sigKeys.signKey, cs.signature), privatePackage }
+  return { publicPackage: await signKeyPackage(tbs, signatureKeyPair.signKey, cs.signature), privatePackage }
+}
+
+export async function generateKeyPackage(
+  credential: Credential,
+  capabilities: Capabilities,
+  lifetime: Lifetime,
+  extensions: Extension[],
+  cs: CiphersuiteImpl,
+  leafNodeExtensions?: Extension[],
+): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
+  const sigKeys = await cs.signature.keygen()
+  return generateKeyPackageWithKey(credential, capabilities, lifetime, extensions, sigKeys, cs, leafNodeExtensions)
 }

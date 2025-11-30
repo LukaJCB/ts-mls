@@ -1,5 +1,5 @@
-import { Decoder } from "../../src/codec/tlsDecoder"
-import { Encoder } from "../../src/codec/tlsEncoder"
+import { Decoder } from "../../src/codec/tlsDecoder.js"
+import { Encoder } from "../../src/codec/tlsEncoder.js"
 
 export function createRoundtripTest<T>(enc: Encoder<T>, dec: Decoder<T>): (t: T) => void {
   return (t) => {

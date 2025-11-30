@@ -1,25 +1,24 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/secret-tree.json"
-import { expandSenderDataKey, expandSenderDataNonce } from "../../src/sender"
-import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../src/secretTree"
-import { leafToNodeIndex } from "../../src/treemath"
-import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
+import { expandSenderDataKey, expandSenderDataNonce } from "../../src/sender.js"
+import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../src/secretTree.js"
+import { leafToNodeIndex, toLeafIndex } from "../../src/treemath.js"
+import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 
-for (const [index, x] of json.entries()) {
-  test(`secret-tree test vectors ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await testSecretTree(
-      x.sender_data.sender_data_secret,
-      x.sender_data.ciphertext,
-      x.sender_data.key,
-      x.sender_data.nonce,
-      x.encryption_secret,
-      x.leaves,
-      impl,
-    )
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await testSecretTree(
+    x.sender_data.sender_data_secret,
+    x.sender_data.ciphertext,
+    x.sender_data.key,
+    x.sender_data.nonce,
+    x.encryption_secret,
+    x.leaves,
+    impl,
+  )
+})
 
 type Leaf = {
   generation: number
@@ -48,7 +47,7 @@ async function testSecretTree(
 
   const tree = await createSecretTree(leaves.length, hexToBytes(encryptionSecret), impl.kdf)
   for (const [index, leaf] of leaves.entries()) {
-    const nodeIndex = leafToNodeIndex(index)
+    const nodeIndex = leafToNodeIndex(toLeafIndex(index))
     const handshakeSecret = tree[nodeIndex]!.handshake
     for (const gen of leaf) {
       const ratcheted = await ratchetUntil(handshakeSecret, gen.generation, defaultKeyRetentionConfig, impl.kdf)

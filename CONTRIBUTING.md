@@ -26,8 +26,6 @@ Thank you for your interest in contributing to ts-mls! This document outlines th
    npm install
    ```
 
-   Note: The `postinstall` script will automatically run `patch-package` to apply a necessary patch to the hpke-js dependency.
-
 ### Project Structure
 
 - `src/` - Main TypeScript source code
@@ -119,6 +117,16 @@ This command runs all the previously mentioned checks in sequence:
 3. **Documentation Verification** (`npm run verify-docs`)
 4. **Circular Dependency Check** (`npm run verify-madge`)
 5. **Test Suite** (`npm run test`)
+
+## Releasing a new version
+
+Releases are made via GitHub Actions and we utilize npm provenance, meaning that the release is signed by Sigstore public good servers and logged in a public ledger, where users can verify the build information on the Transparency Log. To generate a new release run:
+
+```bash
+npm version patch
+
+git push --follow-tags
+```
 
 ## Making Changes
 

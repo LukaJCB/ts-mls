@@ -1,21 +1,20 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Update ${cs}`, async () => {
-    await update(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Update %s`, async (cs) => {
+  await update(cs as CiphersuiteName)
+})
 
 async function update(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -37,7 +36,15 @@ async function update(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -52,7 +59,10 @@ async function update(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const emptyCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult = await createCommit({
+    state: aliceGroup,
+    cipherSuite: impl,
+  })
 
   if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 
@@ -67,7 +77,10 @@ async function update(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCommitResult.newState
 
-  const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult3 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
 
   if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 

@@ -1,28 +1,25 @@
-import { createGroup, joinGroup, ClientState, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import {
-  getCiphersuiteImpl,
-  getCiphersuiteFromName,
-  CiphersuiteName,
-  ciphersuites,
-  CiphersuiteImpl,
-} from "../../src/crypto/ciphersuite"
-import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage"
-import { Credential } from "../../src/credential"
-import { ProposalAdd, ProposalRemove } from "../../src/proposal"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup, ClientState, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
+import { Credential } from "../../src/credential.js"
+import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
+import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
 import { randomInt } from "crypto"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Large Group, Full Lifecycle ${cs}`, async () => {
+test.concurrent.each(Object.keys(ciphersuites))(
+  "Large Group, Full Lifecycle %s",
+  async (cs) => {
     await largeGroupFullLifecycle(cs as CiphersuiteName, 5, 8)
-  }, 60000)
-}
+  },
+  160000,
+)
 
 type MemberState = { id: string; state: ClientState; public: KeyPackage; private: PrivateKeyPackage }
 
@@ -97,7 +94,15 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       },
     }
 
-    const commitResult = await createCommit(remover.state, emptyPskIndex, false, [removeProposal], impl)
+    const commitResult = await createCommit(
+      {
+        state: remover.state,
+        cipherSuite: impl,
+      },
+      {
+        extraProposals: [removeProposal],
+      },
+    )
 
     if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
     remover.state = commitResult.newState
@@ -140,7 +145,15 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     add: { keyPackage: newKP.publicPackage },
   }
 
-  const commitResult = await createCommit(adder.state, emptyPskIndex, false, [addProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: adder.state,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addProposal],
+    },
+  )
 
   if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
 
@@ -176,7 +189,10 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
 async function update(memberStates: MemberState[], updateIndex: number, impl: CiphersuiteImpl) {
   const updater = memberStates[updateIndex]!
 
-  const emptyCommitResult = await createCommit(updater.state, emptyPskIndex, false, [], impl)
+  const emptyCommitResult = await createCommit({
+    state: updater.state,
+    cipherSuite: impl,
+  })
 
   updater.state = emptyCommitResult.newState
 

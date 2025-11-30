@@ -1,5 +1,5 @@
-import { encodeWelcome, decodeWelcome } from "../../src/welcome"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeWelcome, decodeWelcome } from "../../src/welcome.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Welcome roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeWelcome, decodeWelcome)

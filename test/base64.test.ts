@@ -1,4 +1,4 @@
-import { bytesToBase64, base64ToBytes } from "../src/util/byteArray"
+import { bytesToBase64, base64ToBytes } from "../src/util/byteArray.js"
 
 describe("base64", () => {
   describe("bytesToBase64", () => {

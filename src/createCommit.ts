@@ -1,5 +1,5 @@
-import { addHistoricalReceiverData, throwIfDefined, validateRatchetTree } from "./clientState"
-import { AuthenticatedContentCommit } from "./authenticatedContent"
+import { addHistoricalReceiverData, makePskIndex, throwIfDefined, validateRatchetTree } from "./clientState.js"
+import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
   applyProposals,
@@ -8,71 +8,110 @@ import {
   exportSecret,
   checkCanSendHandshakeMessages,
   GroupActiveState,
-} from "./clientState"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { decryptWithLabel } from "./crypto/hpke"
-import { deriveSecret } from "./crypto/kdf"
+} from "./clientState.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { decryptWithLabel } from "./crypto/hpke.js"
+import { deriveSecret } from "./crypto/kdf.js"
 import {
   createContentCommitSignature,
   createConfirmationTag,
   FramedContentAuthDataCommit,
   FramedContentCommit,
-} from "./framedContent"
-import { GroupContext, encodeGroupContext } from "./groupContext"
-import { GroupInfo, GroupInfoTBS, ratchetTreeFromExtension, signGroupInfo, verifyGroupInfoSignature } from "./groupInfo"
-import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage"
-import { initializeEpoch, EpochSecrets } from "./keySchedule"
-import { MLSMessage } from "./message"
-import { protect } from "./messageProtection"
-import { protectPublicMessage } from "./messageProtectionPublic"
-import { pathToPathSecrets } from "./pathSecrets"
-import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath"
-import { Proposal, ProposalExternalInit } from "./proposal"
-import { ProposalOrRef } from "./proposalOrRefType"
-import { PskIndex } from "./pskIndex"
+} from "./framedContent.js"
+import { GroupContext, groupContextEncoder } from "./groupContext.js"
+import {
+  GroupInfo,
+  GroupInfoTBS,
+  ratchetTreeFromExtension,
+  signGroupInfo,
+  verifyGroupInfoSignature,
+} from "./groupInfo.js"
+import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage.js"
+import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
+import { MLSMessage } from "./message.js"
+import { protect } from "./messageProtection.js"
+import { protectPublicMessage } from "./messageProtectionPublic.js"
+import { pathToPathSecrets } from "./pathSecrets.js"
+import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
+import { Proposal, ProposalExternalInit } from "./proposal.js"
+import { ProposalOrRef } from "./proposalOrRefType.js"
+import { PskIndex } from "./pskIndex.js"
 import {
   RatchetTree,
   addLeafNode,
-  encodeRatchetTree,
+  ratchetTreeEncoder,
   getCredentialFromLeafIndex,
   getSignaturePublicKeyFromLeafIndex,
   removeLeafNode,
-} from "./ratchetTree"
-import { createSecretTree, SecretTree } from "./secretTree"
-import { treeHashRoot } from "./treeHash"
-import { leafWidth, nodeToLeafIndex } from "./treemath"
-import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath"
-import { base64ToBytes } from "./util/byteArray"
-import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome"
-import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError"
-import { ClientConfig, defaultClientConfig } from "./clientConfig"
-import { extensionsSupportedByCapabilities } from "./extension"
+} from "./ratchetTree.js"
+import { createSecretTree, SecretTree } from "./secretTree.js"
+import { treeHashRoot } from "./treeHash.js"
+import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath.js"
+import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath.js"
+import { base64ToBytes } from "./util/byteArray.js"
+import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
+import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
+import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
+import { encode } from "./codec/tlsEncoder.js"
 
-export type CreateCommitResult = { newState: ClientState; welcome: Welcome | undefined; commit: MLSMessage }
+export interface MLSContext {
+  state: ClientState
+  cipherSuite: CiphersuiteImpl
+  pskIndex?: PskIndex
+}
 
-export async function createCommit(
-  state: ClientState,
-  pskSearch: PskIndex,
-  publicMessage: boolean,
-  extraProposals: Proposal[],
-  cs: CiphersuiteImpl,
-  ratchetTreeExtension: boolean = false,
-  authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<CreateCommitResult> {
+export interface CreateCommitResult {
+  newState: ClientState
+  welcome: Welcome | undefined
+  commit: MLSMessage
+}
+
+export interface CreateCommitOptions {
+  wireAsPublicMessage?: boolean
+  extraProposals?: Proposal[]
+  ratchetTreeExtension?: boolean
+  groupInfoExtensions?: Extension[]
+  authenticatedData?: Uint8Array
+}
+
+export async function createCommit(context: MLSContext, options?: CreateCommitOptions): Promise<CreateCommitResult> {
+  const { state, pskIndex = makePskIndex(state, {}), cipherSuite } = context
+  const {
+    wireAsPublicMessage = false,
+    extraProposals = [],
+    ratchetTreeExtension = false,
+    authenticatedData = new Uint8Array(),
+    groupInfoExtensions = [],
+  } = options ?? {}
+
   checkCanSendHandshakeMessages(state)
 
-  const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
+  const wireformat = wireAsPublicMessage ? "mls_public_message" : "mls_private_message"
 
   const allProposals = bundleAllProposals(state, extraProposals)
 
-  const res = await applyProposals(state, allProposals, state.privatePath.leafIndex, pskSearch, true, cs)
+  const res = await applyProposals(
+    state,
+    allProposals,
+    toLeafIndex(state.privatePath.leafIndex),
+    pskIndex,
+    true,
+    cipherSuite,
+  )
 
   if (res.additionalResult.kind === "externalCommit") throw new UsageError("Cannot create externalCommit as a member")
 
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
   const [tree, updatePath, pathSecrets, newPrivateKey] = res.needsUpdatePath
-    ? await createUpdatePath(res.tree, state.privatePath.leafIndex, state.groupContext, state.signaturePrivateKey, cs)
+    ? await createUpdatePath(
+        res.tree,
+        toLeafIndex(state.privatePath.leafIndex),
+        state.groupContext,
+        state.signaturePrivateKey,
+        cipherSuite,
+      )
     : [res.tree, undefined, [] as PathSecret[], undefined]
 
   const updatedExtensions =
@@ -84,17 +123,17 @@ export async function createCommit(
 
   const privateKeys = mergePrivateKeyPaths(
     newPrivateKey !== undefined
-      ? updateLeafKey(state.privatePath, await cs.hpke.exportPrivateKey(newPrivateKey))
+      ? updateLeafKey(state.privatePath, await cipherSuite.hpke.exportPrivateKey(newPrivateKey))
       : state.privatePath,
-    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), state.privatePath.leafIndex, cs),
+    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), state.privatePath.leafIndex, cipherSuite),
   )
 
   const lastPathSecret = pathSecrets.at(-1)
 
   const commitSecret =
     lastPathSecret === undefined
-      ? new Uint8Array(cs.kdf.size)
-      : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
+      ? new Uint8Array(cipherSuite.kdf.size)
+      : await deriveSecret(lastPathSecret.secret, "path", cipherSuite.kdf)
 
   const { signature, framedContent } = await createContentCommitSignature(
     state.groupContext,
@@ -103,10 +142,10 @@ export async function createCommit(
     { senderType: "member", leafIndex: state.privatePath.leafIndex },
     authenticatedData,
     state.signaturePrivateKey,
-    cs.signature,
+    cipherSuite.signature,
   )
 
-  const treeHash = await treeHashRoot(tree, cs.hash)
+  const treeHash = await treeHashRoot(tree, cipherSuite.hash)
 
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
@@ -115,7 +154,7 @@ export async function createCommit(
     signature,
     treeHash,
     state.confirmationTag,
-    cs.hash,
+    cipherSuite.hash,
   )
 
   const epochSecrets = await initializeEpoch(
@@ -123,13 +162,13 @@ export async function createCommit(
     commitSecret,
     updatedGroupContext,
     res.pskSecret,
-    cs.kdf,
+    cipherSuite.kdf,
   )
 
   const confirmationTag = await createConfirmationTag(
     epochSecrets.keySchedule.confirmationKey,
     updatedGroupContext.confirmedTranscriptHash,
-    cs.hash,
+    cipherSuite.hash,
   )
 
   const authData: FramedContentAuthDataCommit = {
@@ -138,7 +177,14 @@ export async function createCommit(
     confirmationTag,
   }
 
-  const [commit] = await protectCommit(publicMessage, state, authenticatedData, framedContent, authData, cs)
+  const [commit] = await protectCommit(
+    wireAsPublicMessage,
+    state,
+    authenticatedData,
+    framedContent,
+    authData,
+    cipherSuite,
+  )
 
   const welcome: Welcome | undefined = await createWelcome(
     ratchetTreeExtension,
@@ -146,10 +192,11 @@ export async function createCommit(
     confirmationTag,
     state,
     tree,
-    cs,
+    cipherSuite,
     epochSecrets,
     res,
     pathSecrets,
+    groupInfoExtensions,
   )
 
   const groupActiveState: GroupActiveState = res.selfRemoved
@@ -161,7 +208,11 @@ export async function createCommit(
   const newState: ClientState = {
     groupContext: updatedGroupContext,
     ratchetTree: tree,
-    secretTree: await createSecretTree(leafWidth(tree.length), epochSecrets.keySchedule.encryptionSecret, cs.kdf),
+    secretTree: await createSecretTree(
+      leafWidth(tree.length),
+      epochSecrets.keySchedule.encryptionSecret,
+      cipherSuite.kdf,
+    ),
     keySchedule: epochSecrets.keySchedule,
     privatePath: privateKeys,
     unappliedProposals: {},
@@ -196,10 +247,11 @@ async function createWelcome(
   epochSecrets: EpochSecrets,
   res: ApplyProposalsResult,
   pathSecrets: PathSecret[],
+  extensions: Extension[],
 ): Promise<Welcome | undefined> {
   const groupInfo = ratchetTreeExtension
-    ? await createGroupInfoWithRatchetTree(groupContext, confirmationTag, state, tree, cs)
-    : await createGroupInfo(groupContext, confirmationTag, state, cs)
+    ? await createGroupInfoWithRatchetTree(groupContext, confirmationTag, state, tree, extensions, cs)
+    : await createGroupInfo(groupContext, confirmationTag, state, extensions, cs)
 
   const encryptedGroupInfo = await encryptGroupInfo(groupInfo, epochSecrets.welcomeSecret, cs)
 
@@ -233,7 +285,7 @@ async function createWelcome(
 
 async function createEncryptedGroupSecrets(
   tree: RatchetTree,
-  leafNodeIndex: number,
+  leafNodeIndex: LeafIndex,
   state: ClientState,
   pathSecrets: PathSecret[],
   cs: CiphersuiteImpl,
@@ -242,7 +294,7 @@ async function createEncryptedGroupSecrets(
   epochSecrets: EpochSecrets,
   res: ApplyProposalsResult,
 ) {
-  const nodeIndex = firstCommonAncestor(tree, leafNodeIndex, state.privatePath.leafIndex)
+  const nodeIndex = firstCommonAncestor(tree, leafNodeIndex, toLeafIndex(state.privatePath.leafIndex))
   const pathSecret = pathSecrets.find((ps) => ps.nodeIndex === nodeIndex)
   const pk = await cs.hpke.importPublicKey(keyPackage.initKey)
   const egs = await encryptGroupSecrets(
@@ -261,11 +313,12 @@ export async function createGroupInfo(
   groupContext: GroupContext,
   confirmationTag: Uint8Array,
   state: ClientState,
+  extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const groupInfoTbs: GroupInfoTBS = {
     groupContext: groupContext,
-    extensions: groupContext.extensions,
+    extensions: extensions,
     confirmationTag,
     signer: state.privatePath.leafIndex,
   }
@@ -278,43 +331,64 @@ export async function createGroupInfoWithRatchetTree(
   confirmationTag: Uint8Array,
   state: ClientState,
   tree: RatchetTree,
+  extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const gi = await createGroupInfo(groupContext, confirmationTag, state, cs)
+  const encodedTree = encode(ratchetTreeEncoder)(tree)
 
-  const encodedTree = encodeRatchetTree(tree)
+  const gi = await createGroupInfo(
+    groupContext,
+    confirmationTag,
+    state,
+    [...extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }],
+    cs,
+  )
 
-  return { ...gi, extensions: [...gi.extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }] }
+  return gi
 }
 
-export async function createGroupInfoWithExternalPub(state: ClientState, cs: CiphersuiteImpl): Promise<GroupInfo> {
-  const gi = await createGroupInfo(state.groupContext, state.confirmationTag, state, cs)
-
+export async function createGroupInfoWithExternalPub(
+  state: ClientState,
+  extensions: Extension[],
+  cs: CiphersuiteImpl,
+): Promise<GroupInfo> {
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
 
-  return { ...gi, extensions: [...gi.extensions, { extensionType: "external_pub", extensionData: externalPub }] }
+  const gi = await createGroupInfo(
+    state.groupContext,
+    state.confirmationTag,
+    state,
+    [...extensions, { extensionType: "external_pub", extensionData: externalPub }],
+    cs,
+  )
+
+  return gi
 }
 
 export async function createGroupInfoWithExternalPubAndRatchetTree(
   state: ClientState,
+  extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const gi = await createGroupInfo(state.groupContext, state.confirmationTag, state, cs)
-
-  const encodedTree = encodeRatchetTree(state.ratchetTree)
+  const encodedTree = encode(ratchetTreeEncoder)(state.ratchetTree)
 
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
 
-  return {
-    ...gi,
-    extensions: [
-      ...gi.extensions,
+  const gi = await createGroupInfo(
+    state.groupContext,
+    state.confirmationTag,
+    state,
+    [
+      ...extensions,
       { extensionType: "external_pub", extensionData: externalPub },
       { extensionType: "ratchet_tree", extensionData: encodedTree },
     ],
-  }
+    cs,
+  )
+
+  return gi
 }
 
 async function protectCommit(
@@ -361,27 +435,27 @@ async function protectCommit(
 export async function applyUpdatePathSecret(
   tree: RatchetTree,
   privatePath: PrivateKeyPath,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   gc: GroupContext,
   path: UpdatePath,
-  excludeNodes: number[],
+  excludeNodes: NodeIndex[],
   cs: CiphersuiteImpl,
-): Promise<{ nodeIndex: number; pathSecret: Uint8Array }> {
+): Promise<{ nodeIndex: NodeIndex; pathSecret: Uint8Array }> {
   const {
     nodeIndex: ancestorNodeIndex,
     resolution,
     updateNode,
-  } = firstMatchAncestor(tree, privatePath.leafIndex, senderLeafIndex, path)
+  } = firstMatchAncestor(tree, toLeafIndex(privatePath.leafIndex), senderLeafIndex, path)
 
   for (const [i, nodeIndex] of filterNewLeaves(resolution, excludeNodes).entries()) {
     if (privatePath.privateKeys[nodeIndex] !== undefined) {
-      const key = await cs.hpke.importPrivateKey(privatePath.privateKeys[nodeIndex]!)
-      const ct = updateNode?.encryptedPathSecret[i]!
+      const key = await cs.hpke.importPrivateKey(privatePath.privateKeys[nodeIndex])
+      const ct = updateNode!.encryptedPathSecret[i]!
 
       const pathSecret = await decryptWithLabel(
         key,
         "UpdatePathNode",
-        encodeGroupContext(gc),
+        encode(groupContextEncoder)(gc),
         ct.kemOutput,
         ct.ciphertext,
         cs.hpke,
@@ -430,26 +504,28 @@ export async function joinGroupExternal(
     ),
   )
 
-  const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(ratchetTree, groupInfo.signer)
+  const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
 
-  const signerCredential = getCredentialFromLeafIndex(ratchetTree, groupInfo.signer)
+  const signerCredential = getCredentialFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
 
   const credentialVerified = await clientConfig.authService.validateCredential(signerCredential, signaturePublicKey)
 
   if (!credentialVerified) throw new ValidationError("Could not validate credential")
 
-  const groupInfoSignatureVerified = verifyGroupInfoSignature(groupInfo, signaturePublicKey, cs.signature)
+  const groupInfoSignatureVerified = await verifyGroupInfoSignature(groupInfo, signaturePublicKey, cs.signature)
 
   if (!groupInfoSignatureVerified) throw new CryptoVerificationError("Could not verify groupInfo Signature")
 
   const formerLeafIndex = resync
     ? nodeToLeafIndex(
-        ratchetTree.findIndex((n) => {
-          if (n !== undefined && n.nodeType === "leaf") {
-            return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
-          }
-          return false
-        }),
+        toNodeIndex(
+          ratchetTree.findIndex((n) => {
+            if (n !== undefined && n.nodeType === "leaf") {
+              return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
+            }
+            return false
+          }),
+        ),
       )
     : undefined
 
@@ -544,7 +620,7 @@ export async function joinGroupExternal(
 
   return { publicMessage: msg, newState: state }
 }
-export function filterNewLeaves(resolution: number[], excludeNodes: number[]): number[] {
+export function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): NodeIndex[] {
   const set = new Set(excludeNodes)
   return resolution.filter((i) => !set.has(i))
 }

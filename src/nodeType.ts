@@ -1,7 +1,7 @@
-import { decodeUint8, encodeUint8 } from "./codec/number"
-import { Decoder, mapDecoderOption } from "./codec/tlsDecoder"
-import { contramapEncoder, Encoder } from "./codec/tlsEncoder"
-import { enumNumberToKey } from "./util/enumHelpers"
+import { decodeUint8, uint8Encoder } from "./codec/number.js"
+import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 const nodeTypes = {
   leaf: 1,
@@ -11,6 +11,8 @@ const nodeTypes = {
 export type NodeTypeName = keyof typeof nodeTypes
 export type NodeTypeValue = (typeof nodeTypes)[NodeTypeName]
 
-export const encodeNodeType: Encoder<NodeTypeName> = contramapEncoder(encodeUint8, (t) => nodeTypes[t])
+export const nodeTypeEncoder: BufferEncoder<NodeTypeName> = contramapBufferEncoder(uint8Encoder, (t) => nodeTypes[t])
+
+export const encodeNodeType: Encoder<NodeTypeName> = encode(nodeTypeEncoder)
 
 export const decodeNodeType: Decoder<NodeTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(nodeTypes))

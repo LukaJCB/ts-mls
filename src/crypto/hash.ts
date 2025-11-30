@@ -1,37 +1,7 @@
-import { utf8ToBytes } from "@noble/ciphers/utils"
-import { encodeVarLenData } from "../codec/variableLength"
-import { bytesToBuffer } from "../util/byteArray"
+import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
+import { varLenDataEncoder } from "../codec/variableLength.js"
 
 export type HashAlgorithm = "SHA-512" | "SHA-384" | "SHA-256"
-
-export function makeHashImpl(sc: SubtleCrypto, h: HashAlgorithm): Hash {
-  return {
-    async digest(data) {
-      const result = await sc.digest(h, bytesToBuffer(data))
-      return new Uint8Array(result)
-    },
-    async mac(key, data) {
-      const result = await sc.sign("HMAC", await importMacKey(key, h), bytesToBuffer(data))
-      return new Uint8Array(result)
-    },
-    async verifyMac(key, mac, data) {
-      return sc.verify("HMAC", await importMacKey(key, h), bytesToBuffer(mac), bytesToBuffer(data))
-    },
-  }
-}
-
-function importMacKey(rawKey: Uint8Array, h: HashAlgorithm): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    "raw",
-    bytesToBuffer(rawKey),
-    {
-      name: "HMAC",
-      hash: { name: h },
-    },
-    false,
-    ["sign", "verify"],
-  )
-}
 
 export interface Hash {
   digest(data: Uint8Array): Promise<Uint8Array>
@@ -43,7 +13,8 @@ export function refhash(label: string, value: Uint8Array, h: Hash) {
   return h.digest(encodeRefHash(label, value))
 }
 
-function encodeRefHash(label: string, value: Uint8Array) {
-  const labelBytes = utf8ToBytes(label)
-  return new Uint8Array([...encodeVarLenData(labelBytes), ...encodeVarLenData(value)])
+function encodeRefHash(label: string, value: Uint8Array): Uint8Array {
+  const labelBytes = new TextEncoder().encode(label)
+  const enc = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
+  return encode(enc)([labelBytes, value])
 }

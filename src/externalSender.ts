@@ -1,17 +1,19 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, encodeVarLenData } from "./codec/variableLength"
-import { Credential, decodeCredential, encodeCredential } from "./credential"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { Credential, decodeCredential, credentialEncoder } from "./credential.js"
 
-export type ExternalSender = {
+export interface ExternalSender {
   signaturePublicKey: Uint8Array
   credential: Credential
 }
 
-export const encodeExternalSender: Encoder<ExternalSender> = contramapEncoders(
-  [encodeVarLenData, encodeCredential],
+export const externalSenderEncoder: BufferEncoder<ExternalSender> = contramapBufferEncoders(
+  [varLenDataEncoder, credentialEncoder],
   (e) => [e.signaturePublicKey, e.credential] as const,
 )
+
+export const encodeExternalSender: Encoder<ExternalSender> = encode(externalSenderEncoder)
 
 export const decodeExternalSender: Decoder<ExternalSender> = mapDecoders(
   [decodeVarLenData, decodeCredential],

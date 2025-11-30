@@ -1,19 +1,18 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { hexToBytes } from "@noble/ciphers/utils"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/welcome.json"
-import { decodeMlsMessage } from "../../src/message"
-import { makeKeyPackageRef } from "../../src/keyPackage"
-import { constantTimeEqual } from "../../src/util/constantTimeCompare"
-import { verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "../../src/groupInfo"
-import { decryptGroupInfo, decryptGroupSecrets } from "../../src/welcome"
-import { PrivateKey } from "../../src/crypto/hpke"
+import { decodeMlsMessage } from "../../src/message.js"
+import { makeKeyPackageRef } from "../../src/keyPackage.js"
+import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
+import { verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "../../src/groupInfo.js"
+import { decryptGroupInfo, decryptGroupSecrets } from "../../src/welcome.js"
+import { PrivateKey } from "../../src/crypto/hpke.js"
 
-for (const [index, x] of json.entries()) {
-  test(`welcome test vectors ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await testWelcome(x.init_priv, x.key_package, x.signer_pub, x.welcome, impl)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`welcome test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await testWelcome(x.init_priv, x.key_package, x.signer_pub, x.welcome, impl)
+})
 
 async function testWelcome(
   init_priv: string,

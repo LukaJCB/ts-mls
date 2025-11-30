@@ -1,10 +1,11 @@
-import { getCiphersuiteFromId, getCiphersuiteImpl } from "../src/crypto/ciphersuite"
-import { GroupContext } from "../src/groupContext"
-import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo"
-import { ed25519 } from "@noble/curves/ed25519"
+import { getCiphersuiteFromId } from "../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
+import { GroupContext } from "../src/groupContext.js"
+import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo.js"
+import { ed25519 } from "@noble/curves/ed25519.js"
 
 describe("GroupInfo signing and verification", () => {
-  const privateKey = ed25519.utils.randomPrivateKey()
+  const privateKey = ed25519.utils.randomSecretKey()
   const publicKey = ed25519.getPublicKey(privateKey)
 
   const groupContext: GroupContext = {

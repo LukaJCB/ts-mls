@@ -1,21 +1,20 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { branchGroup, joinGroupFromBranch } from "../../src/resumption"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { branchGroup, joinGroupFromBranch } from "../../src/resumption.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Resumption ${cs}`, async () => {
-    await resumption(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Resumption %s`, async (cs) => {
+  await resumption(cs as CiphersuiteName)
+})
 
 async function resumption(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -37,7 +36,15 @@ async function resumption(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = commitResult.newState
 

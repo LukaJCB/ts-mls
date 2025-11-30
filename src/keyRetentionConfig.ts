@@ -1,4 +1,4 @@
-export type KeyRetentionConfig = {
+export interface KeyRetentionConfig {
   retainKeysForGenerations: number
   retainKeysForEpochs: number
   maximumForwardRatchetSteps: number

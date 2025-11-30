@@ -1,23 +1,22 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { defaultGreaseConfig, greaseExtensions } from "../../src/grease"
-import { Capabilities } from "../../src/capabilities"
-import { extensionTypeToNumber } from "../../src/extension"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { defaultGreaseConfig, greaseExtensions } from "../../src/grease.js"
+import { Capabilities } from "../../src/capabilities.js"
+import { extensionTypeToNumber } from "../../src/extension.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Grease ${cs}`, async () => {
-    await greaseTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
+  await greaseTest(cs as CiphersuiteName)
+})
 
 async function greaseTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -44,11 +43,19 @@ async function greaseTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
-  let bobGroup = await joinGroup(
+  const bobGroup = await joinGroup(
     addBobCommitResult.welcome!,
     bob.publicPackage,
     bob.privatePackage,

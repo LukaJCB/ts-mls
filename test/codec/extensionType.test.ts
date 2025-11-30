@@ -2,8 +2,8 @@ import {
   encodeDefaultExtensionType,
   decodeDefaultExtensionType,
   DefaultExtensionTypeName,
-} from "../../src/defaultExtensionType"
-import { createRoundtripTest } from "./roundtrip"
+} from "../../src/defaultExtensionType.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("DefaultExtensionTypeName roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeDefaultExtensionType, decodeDefaultExtensionType)

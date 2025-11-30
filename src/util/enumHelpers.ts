@@ -15,7 +15,7 @@ export function openEnumNumberToKey<S extends string>(rec: Record<S, number>): (
   return (n) => {
     const decoded = enumNumberToKey(rec)(n)
     if (decoded === undefined) return n.toString() as S
-    else return decoded as S
+    else return decoded
   }
 }
 

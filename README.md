@@ -8,7 +8,7 @@ This project aims to be a full implementation of [RFC 9420](https://datatracker.
 
 ## Installation
 
-> **Node.js Requirement**: Node.js 19+ is required when using this library in Node.js environments due to the Web Crypto API dependency.
+> **Node.js Requirement**: Node.js 20+ is required when using this library in Node.js environments.
 
 ```bash
 # npm
@@ -62,7 +62,7 @@ The following cipher suites are supported:
 | X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_AES256GCM_SHA512_MLDSA78              | 87  | @hpke/hybridkem-x-wing, @noble/post-quantum                         |
 | X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA78       | 88  | @hpke/hybridkem-x-wing, @hpke/chacha20poly1305, @noble/post-quantum |
 
-## Security Disclaimer
+## ⚠️ Security Disclaimer
 
 This library has not undergone a formal security audit. While care has been taken to implement the MLS protocol correctly and securely, it may contain undiscovered vulnerabilities. If you plan to use this library in a production or security-critical context, proceed with caution and consider conducting an independent security review.
 
@@ -98,7 +98,7 @@ const groupId = new TextEncoder().encode("group1")
 // alice creates a new group
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-// bob generates her key package
+// bob generates his key package
 const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
@@ -123,7 +123,7 @@ const addBobProposal: Proposal = {
 }
 
 // alice commits
-const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
 
 aliceGroup = commitResult.newState
 

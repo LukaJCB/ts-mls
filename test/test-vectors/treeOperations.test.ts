@@ -1,4 +1,5 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import {
   addLeafNode,
   decodeRatchetTree,
@@ -6,18 +7,17 @@ import {
   RatchetTree,
   removeLeafNode,
   updateLeafNode,
-} from "../../src/ratchetTree"
-import { hexToBytes } from "@noble/ciphers/utils"
+} from "../../src/ratchetTree.js"
+import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-operations.json"
-import { decodeProposal, Proposal } from "../../src/proposal"
-import { treeHashRoot } from "../../src/treeHash"
+import { decodeProposal, Proposal } from "../../src/proposal.js"
+import { treeHashRoot } from "../../src/treeHash.js"
+import { toLeafIndex } from "../../src/treemath.js"
 
-for (const [index, x] of json.entries()) {
-  test(`tree-operations test vectors ${index}`, async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
-    await treeOperationsTest(x, impl)
-  })
-}
+test.concurrent.each(json.map((x, index) => [index, x]))(`tree-operations test vectors %i`, async (_index, x) => {
+  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  await treeOperationsTest(x, impl)
+})
 
 type TreeOperationData = {
   proposal: string
@@ -54,9 +54,9 @@ function applyProposal(proposal: Proposal, tree: RatchetTree, data: TreeOperatio
     case "add":
       return addLeafNode(tree, proposal.add.keyPackage.leafNode)[0]
     case "update":
-      return updateLeafNode(tree, proposal.update.leafNode, data.proposal_sender)
+      return updateLeafNode(tree, proposal.update.leafNode, toLeafIndex(data.proposal_sender))
     case "remove":
-      return removeLeafNode(tree, proposal.remove.removed)
+      return removeLeafNode(tree, toLeafIndex(proposal.remove.removed))
     case "psk":
     case "reinit":
     case "external_init":

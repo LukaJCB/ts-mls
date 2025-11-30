@@ -1,10 +1,10 @@
-import { AuthenticationService, defaultAuthenticationService } from "./authenticationService"
-import { defaultKeyPackageEqualityConfig, KeyPackageEqualityConfig } from "./keyPackageEqualityConfig"
-import { defaultKeyRetentionConfig, KeyRetentionConfig } from "./keyRetentionConfig"
-import { defaultLifetimeConfig, LifetimeConfig } from "./lifetimeConfig"
-import { defaultPaddingConfig, PaddingConfig } from "./paddingConfig"
+import { AuthenticationService, defaultAuthenticationService } from "./authenticationService.js"
+import { defaultKeyPackageEqualityConfig, KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
+import { defaultKeyRetentionConfig, KeyRetentionConfig } from "./keyRetentionConfig.js"
+import { defaultLifetimeConfig, LifetimeConfig } from "./lifetimeConfig.js"
+import { defaultPaddingConfig, PaddingConfig } from "./paddingConfig.js"
 
-export type ClientConfig = {
+export interface ClientConfig {
   keyRetentionConfig: KeyRetentionConfig
   lifetimeConfig: LifetimeConfig
   keyPackageEqualityConfig: KeyPackageEqualityConfig

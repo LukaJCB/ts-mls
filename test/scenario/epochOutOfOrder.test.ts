@@ -1,41 +1,36 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { createApplicationMessage, createProposal } from "../../src/createMessage"
-import { processPrivateMessage } from "../../src/processMessages"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { PrivateMessage } from "../../src/privateMessage"
-import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig"
-import { ClientState } from "../../src/clientState"
-import { CiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { KeyRetentionConfig } from "../../src/keyRetentionConfig"
-import { ValidationError } from "../../src/mlsError"
-import { defaultClientConfig } from "../../src/clientConfig"
+import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { createApplicationMessage, createProposal } from "../../src/createMessage.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { PrivateMessage } from "../../src/privateMessage.js"
+import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
+import { ClientState } from "../../src/clientState.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { KeyRetentionConfig } from "../../src/keyRetentionConfig.js"
+import { ValidationError } from "../../src/mlsError.js"
+import { defaultClientConfig } from "../../src/clientConfig.js"
 
 describe("Out of order message processing by epoch", () => {
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order epoch ${cs}`, async () => {
-      await epochOutOfOrder(cs as CiphersuiteName)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
+    await epochOutOfOrder(cs as CiphersuiteName)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order epoch random ${cs}`, async () => {
-      await epochOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForEpochs)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch random %s`, async (cs) => {
+    await epochOutOfOrderRandom(cs as CiphersuiteName, defaultKeyRetentionConfig.retainKeysForEpochs)
+  })
 
-  for (const cs of Object.keys(ciphersuites)) {
-    test(`Out of order epoch limit reached fails ${cs}`, async () => {
-      await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
-    })
-  }
+  test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch limit reached fails %s`, async (cs) => {
+    await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
+  })
 })
 
 type TestParticipants = {
@@ -69,7 +64,16 @@ async function setupTestParticipants(
   }
 
   // alice adds bob and initiates epoch 1
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl, true)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal],
+      ratchetTreeExtension: true,
+    },
+  )
   aliceGroup = addBobCommitResult.newState
 
   // bob joins at epoch 1
@@ -111,7 +115,10 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateFirstProposalResult.newState
 
   // bob creates an empty commit and goes to epoch 2
-  const emptyCommitResult1 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult1 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
   bobGroup = emptyCommitResult1.newState
 
   if (emptyCommitResult1.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -130,7 +137,10 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateSecondMessageResult.newState
 
   // bob creates an empty commit and goes to epoch 3
-  const emptyCommitResult2 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult2 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
   bobGroup = emptyCommitResult2.newState
 
   if (emptyCommitResult2.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -149,7 +159,10 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateThirdMessageResult.newState
 
   // bob creates an empty commit and goes to epoch 4
-  const emptyCommitResult3 = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const emptyCommitResult3 = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
   bobGroup = emptyCommitResult3.newState
 
   if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -195,7 +208,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   if (aliceCreateFirstProposalResult.message.wireformat !== "mls_private_message")
     throw new Error("Expected private message")
 
-  expect(
+  await expect(
     processPrivateMessage(bobGroup, aliceCreateFirstProposalResult.message.privateMessage, emptyPskIndex, impl),
   ).rejects.toThrow(ValidationError)
 
@@ -210,14 +223,17 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     // alice sends the first message in current epoch
     aliceGroup = createMessageResult.newState
 
     // bob creates an empty commit and goes to next epoch
-    const emptyCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+    const emptyCommitResult = await createCommit({
+      state: bobGroup,
+      cipherSuite: impl,
+    })
     bobGroup = emptyCommitResult.newState
 
     if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
@@ -256,14 +272,17 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
 
   const message = new TextEncoder().encode("Hi!")
 
-  let messages: PrivateMessage[] = []
+  const messages: PrivateMessage[] = []
   for (let i = 0; i < totalMessages; i++) {
     const createMessageResult = await createApplicationMessage(aliceGroup, message, impl)
     // alice sends the first message in current epoch
     aliceGroup = createMessageResult.newState
 
     // bob creates an empty commit and goes to next epoch
-    const emptyCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+    const emptyCommitResult = await createCommit({
+      state: bobGroup,
+      cipherSuite: impl,
+    })
     bobGroup = emptyCommitResult.newState
 
     if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")

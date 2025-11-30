@@ -1,24 +1,23 @@
-import { ClientState, createGroup, joinGroup, makePskIndex } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { ProposalAdd } from "../../src/proposal"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { processMessage } from "../../src/processMessages"
-import { acceptAll } from "../../src/IncomingMessageAction"
+import { ClientState, createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { ProposalAdd } from "../../src/proposal.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { processMessage } from "../../src/processMessages.js"
+import { acceptAll } from "../../src/incomingMessageAction.js"
 
-import { ProtocolVersionName } from "../../src/protocolVersion"
-import { ValidationError } from "../../src/mlsError"
+import { ProtocolVersionName } from "../../src/protocolVersion.js"
+import { ValidationError } from "../../src/mlsError.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Reinit Validation ${cs}`, async () => {
-    await reinitValidation(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
+  await reinitValidation(cs as CiphersuiteName)
+})
 
 async function reinitValidation(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -40,7 +39,13 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const commitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    { extraProposals: [addBobProposal] },
+  )
 
   aliceGroup = commitResult.newState
 
@@ -53,7 +58,10 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     aliceGroup.ratchetTree,
   )
 
-  const bobCommitResult = await createCommit(bobGroup, emptyPskIndex, false, [], impl)
+  const bobCommitResult = await createCommit({
+    state: bobGroup,
+    cipherSuite: impl,
+  })
 
   bobGroup = bobCommitResult.newState
 

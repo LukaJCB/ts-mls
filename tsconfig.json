@@ -1,29 +1,26 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "skipLibCheck": true,
-
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "noEmit": false,
+    "moduleResolution": "Bundler",
+    "noEmit": true,
     "outDir": "dist",
     "declaration": true,
-    "incremental": false,
+    "incremental": true,
     "sourceMap": true,
     "resolveJsonModule": true,
+    "types": ["vitest/globals"],
 
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", "bench"]
 }

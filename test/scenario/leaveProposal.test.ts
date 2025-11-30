@@ -1,25 +1,24 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { createProposal } from "../../src/createMessage"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName, getCiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { Proposal, ProposalAdd } from "../../src/proposal"
-import { checkHpkeKeysMatch } from "../crypto/keyMatch"
-import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { defaultCapabilities } from "../../src/defaultCapabilities"
-import { WireformatName } from "../../src/wireformat"
-import { processMessage } from "../../src/processMessages"
-import { acceptAll } from "../../src/IncomingMessageAction"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { createProposal } from "../../src/createMessage.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { Proposal, ProposalAdd } from "../../src/proposal.js"
+import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
+import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { WireformatName } from "../../src/wireformat.js"
+import { processMessage } from "../../src/processMessages.js"
+import { acceptAll } from "../../src/incomingMessageAction.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Leave Proposal ${cs}`, async () => {
-    await leaveProposal(cs as CiphersuiteName, true)
-    await leaveProposal(cs as CiphersuiteName, false)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
+  await leaveProposal(cs as CiphersuiteName, true)
+  await leaveProposal(cs as CiphersuiteName, false)
+})
 
 async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -53,12 +52,15 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    aliceGroup,
-    emptyPskIndex,
-    publicMessage,
-    [addBobProposal, addCharlieProposal],
-    impl,
-    true,
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+      extraProposals: [addBobProposal, addCharlieProposal],
+      ratchetTreeExtension: true,
+    },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
@@ -116,7 +118,16 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   charlieGroup = charlieProcessProposalResult.newState
 
   //bob commits to alice leaving
-  const bobCommitResult = await createCommit(bobGroup, emptyPskIndex, publicMessage, [], impl, false)
+  const bobCommitResult = await createCommit(
+    {
+      state: bobGroup,
+      cipherSuite: impl,
+    },
+    {
+      wireAsPublicMessage: publicMessage,
+      ratchetTreeExtension: false,
+    },
+  )
 
   bobGroup = bobCommitResult.newState
 

@@ -1,8 +1,8 @@
-import { ClientState, makePskIndex } from "../../src/clientState"
-import { createApplicationMessage } from "../../src/createMessage"
-import { processPrivateMessage } from "../../src/processMessages"
-import { CiphersuiteImpl } from "../../src/crypto/ciphersuite"
-import { UsageError } from "../../src/mlsError"
+import { ClientState, makePskIndex } from "../../src/clientState.js"
+import { createApplicationMessage } from "../../src/createMessage.js"
+import { processPrivateMessage } from "../../src/processMessages.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { UsageError } from "../../src/mlsError.js"
 
 export async function testEveryoneCanMessageEveryone(
   clients: ClientState[],

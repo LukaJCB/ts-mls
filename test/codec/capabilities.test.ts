@@ -1,5 +1,5 @@
-import { encodeCapabilities, decodeCapabilities, Capabilities } from "../../src/capabilities"
-import { createRoundtripTest } from "./roundtrip"
+import { encodeCapabilities, decodeCapabilities, Capabilities } from "../../src/capabilities.js"
+import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Capabilities roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeCapabilities, decodeCapabilities)

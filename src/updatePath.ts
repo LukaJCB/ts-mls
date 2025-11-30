@@ -1,62 +1,76 @@
-import { Decoder, mapDecoders } from "./codec/tlsDecoder"
-import { contramapEncoders, Encoder } from "./codec/tlsEncoder"
-import { decodeVarLenData, decodeVarLenType, encodeVarLenData, encodeVarLenType } from "./codec/variableLength"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
-import { Hash } from "./crypto/hash"
-import { encryptWithLabel, PrivateKey } from "./crypto/hpke"
-import { deriveSecret } from "./crypto/kdf"
-import { encodeGroupContext, GroupContext } from "./groupContext"
-import { decodeLeafNodeCommit, encodeLeafNode, LeafNodeCommit, LeafNodeTBSCommit, signLeafNodeCommit } from "./leafNode"
-import { calculateParentHash } from "./parentHash"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { Hash } from "./crypto/hash.js"
+import { encryptWithLabel, PrivateKey } from "./crypto/hpke.js"
+import { deriveSecret } from "./crypto/kdf.js"
+import { groupContextEncoder, GroupContext } from "./groupContext.js"
+import {
+  decodeLeafNodeCommit,
+  leafNodeEncoder,
+  LeafNodeCommit,
+  LeafNodeTBSCommit,
+  signLeafNodeCommit,
+} from "./leafNode.js"
+import { calculateParentHash } from "./parentHash.js"
 import {
   filteredDirectPath,
   filteredDirectPathAndCopathResolution,
   getHpkePublicKey,
   Node,
   RatchetTree,
-} from "./ratchetTree"
-import { treeHashRoot } from "./treeHash"
-import { isAncestor, leafToNodeIndex } from "./treemath"
-import { updateArray } from "./util/array"
-import { constantTimeEqual } from "./util/constantTimeCompare"
-import { decodeHpkeCiphertext, encodeHpkeCiphertext, HPKECiphertext } from "./hpkeCiphertext"
-import { InternalError, ValidationError } from "./mlsError"
+} from "./ratchetTree.js"
+import { treeHashRoot } from "./treeHash.js"
+import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath.js"
+import { updateArray } from "./util/array.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { decodeHpkeCiphertext, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
+import { InternalError, ValidationError } from "./mlsError.js"
 
-export type UpdatePathNode = {
+export interface UpdatePathNode {
   hpkePublicKey: Uint8Array
   encryptedPathSecret: HPKECiphertext[]
 }
 
-export const encodeUpdatePathNode: Encoder<UpdatePathNode> = contramapEncoders(
-  [encodeVarLenData, encodeVarLenType(encodeHpkeCiphertext)],
+export const updatePathNodeEncoder: BufferEncoder<UpdatePathNode> = contramapBufferEncoders(
+  [varLenDataEncoder, varLenTypeEncoder(hpkeCiphertextEncoder)],
   (node) => [node.hpkePublicKey, node.encryptedPathSecret] as const,
 )
+
+export const encodeUpdatePathNode: Encoder<UpdatePathNode> = encode(updatePathNodeEncoder)
 
 export const decodeUpdatePathNode: Decoder<UpdatePathNode> = mapDecoders(
   [decodeVarLenData, decodeVarLenType(decodeHpkeCiphertext)],
   (hpkePublicKey, encryptedPathSecret) => ({ hpkePublicKey, encryptedPathSecret }),
 )
 
-export type UpdatePath = {
+export interface UpdatePath {
   leafNode: LeafNodeCommit
   nodes: UpdatePathNode[]
 }
 
-export const encodeUpdatePath: Encoder<UpdatePath> = contramapEncoders(
-  [encodeLeafNode, encodeVarLenType(encodeUpdatePathNode)],
+export const updatePathEncoder: BufferEncoder<UpdatePath> = contramapBufferEncoders(
+  [leafNodeEncoder, varLenTypeEncoder(updatePathNodeEncoder)],
   (path) => [path.leafNode, path.nodes] as const,
 )
+
+export const encodeUpdatePath: Encoder<UpdatePath> = encode(updatePathEncoder)
 
 export const decodeUpdatePath: Decoder<UpdatePath> = mapDecoders(
   [decodeLeafNodeCommit, decodeVarLenType(decodeUpdatePathNode)],
   (leafNode, nodes) => ({ leafNode, nodes }),
 )
 
-export type PathSecret = { nodeIndex: number; secret: Uint8Array; sendTo: number[] }
+export interface PathSecret {
+  nodeIndex: number
+  secret: Uint8Array
+  sendTo: number[]
+}
 
 export async function createUpdatePath(
   originalTree: RatchetTree,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   groupContext: GroupContext,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
@@ -139,7 +153,7 @@ function encryptSecretsForPath(
           const { ct, enc } = await encryptWithLabel(
             await cs.hpke.importPublicKey(getHpkePublicKey(originalTree[nodeIndex]!)),
             "UpdatePathNode",
-            encodeGroupContext(updatedGroupContext),
+            encode(groupContextEncoder)(updatedGroupContext),
             pathSecret.secret,
             cs.hpke,
           )
@@ -152,7 +166,7 @@ function encryptSecretsForPath(
 }
 
 async function insertParentHashes(
-  fdp: { resolution: number[]; nodeIndex: number }[],
+  fdp: { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
   updatedTree: RatchetTree,
   cs: CiphersuiteImpl,
 ) {
@@ -178,7 +192,7 @@ async function insertParentHashes(
 async function applyInitialTreeUpdate(
   fdp: { resolution: number[]; nodeIndex: number }[],
   pathSecret: Uint8Array,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   tree: RatchetTree,
   cs: CiphersuiteImpl,
 ): Promise<[PathSecret[], RatchetTree]> {
@@ -210,7 +224,7 @@ async function applyInitialTreeUpdate(
 
 export async function applyUpdatePath(
   tree: RatchetTree,
-  senderLeafIndex: number,
+  senderLeafIndex: LeafIndex,
   path: UpdatePath,
   h: Hash,
   isExternal: boolean = false,
@@ -269,7 +283,7 @@ export async function applyUpdatePath(
   return copy
 }
 
-export function firstCommonAncestor(tree: RatchetTree, leafIndex: number, senderLeafIndex: number): number {
+export function firstCommonAncestor(tree: RatchetTree, leafIndex: LeafIndex, senderLeafIndex: LeafIndex): NodeIndex {
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, tree)
 
   for (const { nodeIndex } of fdp) {
@@ -283,10 +297,10 @@ export function firstCommonAncestor(tree: RatchetTree, leafIndex: number, sender
 
 export function firstMatchAncestor(
   tree: RatchetTree,
-  leafIndex: number,
-  senderLeafIndex: number,
+  leafIndex: LeafIndex,
+  senderLeafIndex: LeafIndex,
   path: UpdatePath,
-): { nodeIndex: number; resolution: number[]; updateNode: UpdatePathNode | undefined } {
+): { nodeIndex: NodeIndex; resolution: NodeIndex[]; updateNode: UpdatePathNode | undefined } {
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, tree)
 
   for (const [n, { nodeIndex, resolution }] of fdp.entries()) {

@@ -1,32 +1,36 @@
-import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent"
-import { CiphersuiteImpl } from "./crypto/ciphersuite"
+import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
   FramedContentTBSApplicationOrProposal,
   signFramedContentApplicationOrProposal,
   verifyFramedContentSignature,
-} from "./framedContent"
-import { GroupContext } from "./groupContext"
-import { Proposal } from "./proposal"
+} from "./framedContent.js"
+import { GroupContext } from "./groupContext.js"
+import { Proposal } from "./proposal.js"
 import {
   decodePrivateMessageContent,
   decryptSenderData,
-  encodePrivateContentAAD,
   encodePrivateMessageContent,
   encryptSenderData,
   PrivateContentAAD,
+  privateContentAADEncoder,
   PrivateMessage,
   PrivateMessageContent,
   toAuthenticatedContent,
-} from "./privateMessage"
-import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree"
-import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree"
-import { SenderData, SenderDataAAD } from "./sender"
-import { leafToNodeIndex } from "./treemath"
-import { KeyRetentionConfig } from "./keyRetentionConfig"
-import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError"
-import { PaddingConfig } from "./paddingConfig"
+} from "./privateMessage.js"
+import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree.js"
+import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
+import { SenderData, SenderDataAAD } from "./sender.js"
+import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
+import { KeyRetentionConfig } from "./keyRetentionConfig.js"
+import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
+import { PaddingConfig } from "./paddingConfig.js"
+import { encode } from "./codec/tlsEncoder.js"
 
-export type ProtectApplicationDataResult = { privateMessage: PrivateMessage; newSecretTree: SecretTree }
+export interface ProtectApplicationDataResult {
+  privateMessage: PrivateMessage
+  newSecretTree: SecretTree
+}
 
 export async function protectApplicationData(
   signKey: Uint8Array,
@@ -78,7 +82,7 @@ export async function protectApplicationData(
   return { newSecretTree: result.tree, privateMessage: result.privateMessage }
 }
 
-export type ProtectProposalResult = {
+export interface ProtectProposalResult {
   privateMessage: PrivateMessage
   newSecretTree: SecretTree
   proposalRef: Uint8Array
@@ -139,7 +143,10 @@ export async function protectProposal(
   return { privateMessage: privateMessage.privateMessage, newSecretTree, proposalRef }
 }
 
-export type ProtectResult = { privateMessage: PrivateMessage; tree: SecretTree }
+export interface ProtectResult {
+  privateMessage: PrivateMessage
+  tree: SecretTree
+}
 
 export async function protect(
   senderDataSecret: Uint8Array,
@@ -151,12 +158,12 @@ export async function protect(
   config: PaddingConfig,
   cs: CiphersuiteImpl,
 ): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
-  const node = secretTree[leafToNodeIndex(leafIndex)]
+  const node = secretTree[leafToNodeIndex(toLeafIndex(leafIndex))]
   if (node === undefined) throw new InternalError("Bad node index for secret tree")
 
   const { newTree, generation, reuseGuard, nonce, key } = await consumeRatchet(
     secretTree,
-    leafToNodeIndex(leafIndex),
+    leafToNodeIndex(toLeafIndex(leafIndex)),
     content.contentType,
     cs,
   )
@@ -171,7 +178,7 @@ export async function protect(
   const ciphertext = await cs.hpke.encryptAead(
     key,
     nonce,
-    encodePrivateContentAAD(aad),
+    encode(privateContentAADEncoder)(aad),
     encodePrivateMessageContent(config)(content),
   )
 
@@ -202,7 +209,10 @@ export async function protect(
   }
 }
 
-export type UnprotectResult = { content: AuthenticatedContent; tree: SecretTree }
+export interface UnprotectResult {
+  content: AuthenticatedContent
+  tree: SecretTree
+}
 
 export async function unprotectPrivateMessage(
   senderDataSecret: Uint8Array,
@@ -229,7 +239,7 @@ export async function unprotectPrivateMessage(
     authenticatedData: msg.authenticatedData,
   }
 
-  const decrypted = await cs.hpke.decryptAead(key, nonce, encodePrivateContentAAD(aad), msg.ciphertext)
+  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(privateContentAADEncoder)(aad), msg.ciphertext)
 
   const pmc = decodePrivateMessageContent(msg.contentType)(decrypted, 0)?.[0]
 
@@ -240,7 +250,7 @@ export async function unprotectPrivateMessage(
   const signaturePublicKey =
     overrideSignatureKey !== undefined
       ? overrideSignatureKey
-      : getSignaturePublicKeyFromLeafIndex(ratchetTree, senderData.leafIndex)
+      : getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(senderData.leafIndex))
 
   const signatureValid = await verifyFramedContentSignature(
     signaturePublicKey,
@@ -257,6 +267,6 @@ export async function unprotectPrivateMessage(
 }
 
 export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(senderData.leafIndex)]?.nodeType !== "leaf")
+  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== "leaf")
     return new ValidationError("SenderData did not point to a non-blank leaf node")
 }

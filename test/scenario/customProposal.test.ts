@@ -1,21 +1,20 @@
-import { createGroup, joinGroup } from "../../src/clientState"
-import { createCommit } from "../../src/createCommit"
-import { emptyPskIndex } from "../../src/pskIndex"
-import { Credential } from "../../src/credential"
-import { CiphersuiteName, getCiphersuiteImpl, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite"
-import { generateKeyPackage } from "../../src/keyPackage"
-import { Proposal, ProposalAdd } from "../../src/proposal"
-import { testEveryoneCanMessageEveryone } from "./common"
-import { defaultLifetime } from "../../src/lifetime"
-import { Capabilities } from "../../src/capabilities"
-import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src"
-import { UsageError } from "../../src/mlsError"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit } from "../../src/createCommit.js"
+import { emptyPskIndex } from "../../src/pskIndex.js"
+import { Credential } from "../../src/credential.js"
+import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { generateKeyPackage } from "../../src/keyPackage.js"
+import { Proposal, ProposalAdd } from "../../src/proposal.js"
+import { testEveryoneCanMessageEveryone } from "./common.js"
+import { defaultLifetime } from "../../src/lifetime.js"
+import { Capabilities } from "../../src/capabilities.js"
+import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src/index.js"
+import { UsageError } from "../../src/mlsError.js"
 
-for (const cs of Object.keys(ciphersuites)) {
-  test(`Custom Proposals ${cs}`, async () => {
-    await customProposalTest(cs as CiphersuiteName)
-  })
-}
+test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
+  await customProposalTest(cs as CiphersuiteName)
+})
 
 async function customProposalTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -47,7 +46,13 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [addBobProposal], impl)
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    { extraProposals: [addBobProposal] },
+  )
 
   aliceGroup = addBobCommitResult.newState
 
@@ -88,9 +93,13 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
   aliceGroup = processProposalResult.newState
 
   //creating an application message will fail now
-  expect(createApplicationMessage(aliceGroup, new Uint8Array([1, 2, 3]), impl)).rejects.toThrow(UsageError)
+  await expect(createApplicationMessage(aliceGroup, new Uint8Array([1, 2, 3]), impl)).rejects.toThrow(UsageError)
 
-  const createCommitResult = await createCommit(aliceGroup, emptyPskIndex, false, [], impl)
+  const createCommitResult = await createCommit({
+    state: aliceGroup,
+
+    cipherSuite: impl,
+  })
 
   aliceGroup = createCommitResult.newState
 

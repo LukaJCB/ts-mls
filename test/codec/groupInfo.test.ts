@@ -5,9 +5,9 @@ import {
   encodeGroupInfo,
   decodeGroupInfo,
   GroupInfo,
-} from "../../src/groupInfo"
-import { createRoundtripTest } from "./roundtrip"
-import { GroupContext } from "../../src/groupContext"
+} from "../../src/groupInfo.js"
+import { createRoundtripTest } from "./roundtrip.js"
+import { GroupContext } from "../../src/groupContext.js"
 
 const dummyGroupContext: GroupContext = {
   version: "mls10",
