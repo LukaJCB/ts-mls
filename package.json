@@ -65,7 +65,7 @@
     "eslint": "9.39.1",
     "eslint-plugin-import": "2.32.0",
     "madge": "8.0.0",
-    "prettier": "3.7.1",
+    "prettier": "3.7.3",
     "tinybench": "5.1.0",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
