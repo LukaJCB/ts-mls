@@ -5,18 +5,7 @@ import { Hash } from "./crypto/hash.js"
 import { InternalError } from "./mlsError.js"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
 import { treeHash } from "./treeHash.js"
-import {
-  isLeaf,
-  LeafIndex,
-  leafToNodeIndex,
-  leafWidth,
-  left,
-  NodeIndex,
-  right,
-  root,
-  toLeafIndex,
-  toNodeIndex,
-} from "./treemath.js"
+import { isLeaf, LeafIndex, leafWidth, left, NodeIndex, right, root, toNodeIndex } from "./treemath.js"
 
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
@@ -69,12 +58,11 @@ export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<bo
  * Traverse tree from bottom up, verifying that all non-blank parent nodes are covered by exactly one chain
  */
 function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, number>> {
-  const leaves = tree.filter((_v, i) => isLeaf(toNodeIndex(i)))
-  return leaves.reduce(
-    async (acc, leafNode, leafIndex) => {
-      if (leafNode === undefined) return acc
+  return tree.reduce(
+    async (acc, node, nodeIndex) => {
+      let currentIndex = toNodeIndex(nodeIndex)
+      if (!isLeaf(currentIndex) || node === undefined) return acc
 
-      let currentIndex = leafToNodeIndex(toLeafIndex(leafIndex))
       let updated = { ...(await acc) }
 
       const rootIndex = root(leafWidth(tree.length))
