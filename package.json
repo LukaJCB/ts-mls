@@ -30,7 +30,7 @@
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
     "@hpke/ml-kem": "0.2.1",
-    "@noble/ciphers": "2.0.1",
+    "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
     "@noble/post-quantum": "0.5.2"
   },
@@ -56,7 +56,7 @@
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
     "@hpke/ml-kem": "0.2.1",
-    "@noble/ciphers": "2.0.1",
+    "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
     "@noble/hashes": "2.0.1",
     "@noble/post-quantum": "0.5.1",
