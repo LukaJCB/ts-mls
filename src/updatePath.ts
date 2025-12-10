@@ -23,7 +23,6 @@ import {
 } from "./ratchetTree.js"
 import { treeHashRoot } from "./treeHash.js"
 import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath.js"
-import { updateArray } from "./util/array.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decodeHpkeCiphertext, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
 import { InternalError, ValidationError } from "./mlsError.js"
@@ -86,11 +85,13 @@ export async function createUpdatePath(
 
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, originalTree)
 
+  const copy = originalTree.slice()
+
   const [ps, updatedTree]: [PathSecret[], RatchetTree] = await applyInitialTreeUpdate(
     fdp,
     pathSecret,
     senderLeafIndex,
-    originalTree,
+    copy,
     cs,
   )
 
@@ -111,12 +112,12 @@ export async function createUpdatePath(
 
   const updatedLeafNode = await signLeafNodeCommit(updatedLeafNodeTbs, signaturePrivateKey, cs.signature)
 
-  const finalTree = updateArray(treeWithHashes, leafToNodeIndex(senderLeafIndex), {
+  treeWithHashes[leafToNodeIndex(senderLeafIndex)] = {
     nodeType: "leaf",
     leaf: updatedLeafNode,
-  })
+  }
 
-  const updatedTreeHash = await treeHashRoot(finalTree, cs.hash)
+  const updatedTreeHash = await treeHashRoot(treeWithHashes, cs.hash)
 
   const updatedGroupContext: GroupContext = {
     ...groupContext,
@@ -129,12 +130,12 @@ export async function createUpdatePath(
 
   // we have to pass the old tree here since the receiver won't have the updated public keys yet
   const updatePathNodes: UpdatePathNode[] = await Promise.all(
-    pathSecrets.map(encryptSecretsForPath(originalTree, finalTree, updatedGroupContext, cs)),
+    pathSecrets.map(encryptSecretsForPath(originalTree, treeWithHashes, updatedGroupContext, cs)),
   )
 
   const updatePath: UpdatePath = { leafNode: updatedLeafNode, nodes: updatePathNodes }
 
-  return [finalTree, updatePath, pathSecrets, leafKeypair.privateKey] as const
+  return [treeWithHashes, updatePath, pathSecrets, leafKeypair.privateKey] as const
 }
 
 function encryptSecretsForPath(
@@ -167,22 +168,19 @@ function encryptSecretsForPath(
 
 async function insertParentHashes(
   fdp: { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
-  updatedTree: RatchetTree,
+  tree: RatchetTree,
   cs: CiphersuiteImpl,
 ) {
-  return await fdp
-    .slice()
-    .reverse()
-    .reduce(async (treePromise, { nodeIndex }) => {
-      const tree = await treePromise
-      const parentHash = await calculateParentHash(tree, nodeIndex, cs.hash)
-      const currentNode = tree[nodeIndex]
-      if (currentNode === undefined || currentNode.nodeType === "leaf")
-        throw new InternalError("Expected non-blank parent node")
-      const updatedNode: Node = { nodeType: "parent", parent: { ...currentNode.parent, parentHash: parentHash[0] } }
-
-      return updateArray(tree, nodeIndex, updatedNode)
-    }, Promise.resolve(updatedTree))
+  for (let x = fdp.length - 1; x >= 0; x--) {
+    const { nodeIndex } = fdp[x]!
+    const parentHash = await calculateParentHash(tree, nodeIndex, cs.hash)
+    const currentNode = tree[nodeIndex]
+    if (currentNode === undefined || currentNode.nodeType === "leaf")
+      throw new InternalError("Expected non-blank parent node")
+    const updatedNode: Node = { nodeType: "parent", parent: { ...currentNode.parent, parentHash: parentHash[0] } }
+    tree[nodeIndex] = updatedNode
+  }
+  return tree
 }
 
 /**
@@ -204,16 +202,16 @@ async function applyInitialTreeUpdate(
       const nextNodeSecret = await deriveSecret(nextPathSecret, "node", cs.kdf)
       const { publicKey } = await cs.hpke.deriveKeyPair(nextNodeSecret)
 
-      const updatedTree = updateArray(tree, nodeIndex, {
+      tree[nodeIndex] = {
         nodeType: "parent",
         parent: {
           hpkePublicKey: await cs.hpke.exportPublicKey(publicKey),
           parentHash: new Uint8Array(),
           unmergedLeaves: [],
         },
-      })
+      }
 
-      return [[{ nodeIndex, secret: nextPathSecret, sendTo: resolution }, ...pathSecrets], updatedTree]
+      return [[{ nodeIndex, secret: nextPathSecret, sendTo: resolution }, ...pathSecrets], tree]
     },
     Promise.resolve([[{ secret: pathSecret, nodeIndex: leafToNodeIndex(senderLeafIndex), sendTo: [] }], tree] as [
       PathSecret[],

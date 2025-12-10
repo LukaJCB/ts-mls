@@ -5,7 +5,6 @@ import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
 import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath.js"
-import { updateArray } from "./util/array.js"
 import { repeatAsync } from "./util/repeat.js"
 
 export interface GenerationSecret {
@@ -33,8 +32,8 @@ function scaffoldSecretTree(leafWidth: number, encryptionSecret: Uint8Array, kdf
   const tree = new Array<Uint8Array>(nodeWidth(leafWidth))
   const rootIndex = root(leafWidth)
 
-  const parentInhabited = updateArray(tree, rootIndex, encryptionSecret)
-  return deriveChildren(parentInhabited, rootIndex, kdf)
+  tree[rootIndex] = encryptionSecret
+  return deriveChildren(tree, rootIndex, kdf)
 }
 
 export async function createSecretTree(leafWidth: number, encryptionSecret: Uint8Array, kdf: Kdf): Promise<SecretTree> {
@@ -62,9 +61,10 @@ async function deriveChildren(tree: Uint8Array[], nodeIndex: NodeIndex, kdf: Kdf
 
   const rightSecret = await expandWithLabel(parentSecret, "tree", new TextEncoder().encode("right"), kdf.size, kdf)
 
-  const currentTree = updateArray(updateArray(tree, l, leftSecret), r, rightSecret)
+  tree[l] = leftSecret
+  tree[r] = rightSecret
 
-  return deriveChildren(await deriveChildren(currentTree, l, kdf), r, kdf)
+  return deriveChildren(await deriveChildren(tree, l, kdf), r, kdf)
 }
 
 export async function deriveNonce(secret: Uint8Array, generation: number, cs: CiphersuiteImpl): Promise<Uint8Array> {
@@ -249,7 +249,8 @@ async function createRatchetResultWithSecret(
   const newNode =
     contentType === "application" ? { ...node, application: ratchetState } : { ...node, handshake: ratchetState }
 
-  const newTree = updateArray(tree, index, newNode)
+  const newTree = tree.slice()
+  newTree[index] = newNode
 
   return {
     generation: generation,
