@@ -59,7 +59,7 @@
     "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
     "@noble/hashes": "2.0.1",
-    "@noble/post-quantum": "0.5.1",
+    "@noble/post-quantum": "0.5.4",
     "@types/jest": "30.0.0",
     "@vitest/coverage-v8": "3.2.4",
     "eslint": "9.39.1",

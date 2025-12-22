@@ -34,8 +34,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       '@noble/post-quantum':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.4
+        version: 0.5.4
       '@types/jest':
         specifier: 30.0.0
         version: 30.0.0
@@ -560,8 +560,8 @@ packages:
     resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
     engines: {node: '>= 20.19.0'}
 
-  '@noble/post-quantum@0.5.1':
-    resolution: {integrity: sha512-OABLmlDXCTy7DQYTgVUKsO+m4VTPedGxZXjK30+DG4Sc1LgRxvT9IcSAKgvta9LYiddYVjBT0/Fjkcbojqcl1g==}
+  '@noble/post-quantum@0.5.4':
+    resolution: {integrity: sha512-leww0zzIirrvwaYMPI9fj6aRIlA/c6Y0/lifQQ1YOOyHEr0MNH3yYpjXeiVG+tWdPps4XxGclFWX2INPO3Yo5w==}
     engines: {node: '>= 20.19.0'}
 
   '@pkgjs/parseargs@0.11.0':
@@ -2761,7 +2761,7 @@ snapshots:
 
   '@noble/hashes@2.0.1': {}
 
-  '@noble/post-quantum@0.5.1':
+  '@noble/post-quantum@0.5.4':
     dependencies:
       '@noble/curves': 2.0.1
       '@noble/hashes': 2.0.1
