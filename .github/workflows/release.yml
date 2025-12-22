@@ -30,6 +30,6 @@ jobs:
         run: pnpm build
 
       - name: Publish to npm with Provenance
-        run: pnpm publish
+        run: pnpm publish --no-git-checks
         env:
           NPM_CONFIG_PROVENANCE: "true"
