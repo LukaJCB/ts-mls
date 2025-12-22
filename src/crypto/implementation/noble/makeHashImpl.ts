@@ -1,6 +1,7 @@
 import { HashAlgorithm, Hash } from "../../hash.js"
 import { sha256, sha384, sha512 } from "@noble/hashes/sha2.js"
 import { hmac } from "@noble/hashes/hmac.js"
+import { constantTimeEqual } from "../../../util/constantTimeCompare.js"
 
 export function makeHashImpl(h: HashAlgorithm): Hash {
   return {
@@ -30,7 +31,7 @@ export function makeHashImpl(h: HashAlgorithm): Hash {
     },
     async verifyMac(key, mac, data) {
       const expectedMac = await this.mac(key, data)
-      return mac.length === expectedMac.length && mac.every((byte, i) => byte === expectedMac[i])
+      return constantTimeEqual(mac, expectedMac)
     },
   }
 }

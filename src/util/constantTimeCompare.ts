@@ -3,7 +3,7 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 
   let result = 0
   for (let i = 0; i < a.length; i++) {
-    result |= (a[i] as number) ^ (b[i] as number)
+    result |= a[i]! ^ b[i]!
   }
   return result === 0
 }
