@@ -17,7 +17,7 @@ import {
   updateLeafNode,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { createSecretTree, SecretTree } from "./secretTree.js"
+import { createSecretTree, SecretTree, shredSecretTree } from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
 import { treeHashRoot } from "./treeHash.js"
 import {
@@ -31,7 +31,7 @@ import {
   toNodeIndex,
 } from "./treemath.js"
 import { firstCommonAncestor } from "./updatePath.js"
-import { bytesToBase64 } from "./util/byteArray.js"
+import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
 import { WireformatName } from "./wireformat.js"
@@ -112,6 +112,11 @@ export interface EpochReceiverData {
   ratchetTree: RatchetTree
   senderDataSecret: Uint8Array
   groupContext: GroupContext
+}
+
+export function shredEpochReceiverData(data: EpochReceiverData): void {
+  zeroOutUint8Array(data.senderDataSecret)
+  shredSecretTree(data.secretTree)
 }
 
 export function checkCanSendApplicationMessages(state: ClientState): void {
@@ -1065,5 +1070,17 @@ function removeOldHistoricalReceiverData(
 ): Map<bigint, EpochReceiverData> {
   const sortedEpochs = [...historicalReceiverData.keys()].sort((a, b) => (a < b ? -1 : 1))
 
-  return new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!]))
+  const length = sortedEpochs.length
+
+  const map = new Map<bigint, EpochReceiverData>()
+  for (const [n, epoch] of sortedEpochs.entries()) {
+    const data = historicalReceiverData.get(epoch)!
+    if (length - n > max) {
+      shredEpochReceiverData(data)
+    } else {
+      map.set(epoch, data)
+    }
+  }
+
+  return map
 }

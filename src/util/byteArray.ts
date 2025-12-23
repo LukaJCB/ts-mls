@@ -49,3 +49,10 @@ export function concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
   result.set(b, a.length)
   return result
 }
+
+export function zeroOutUint8Array(buf: Uint8Array): void {
+  crypto.getRandomValues(buf)
+  for (let i = 0; i < buf.length; i++) {
+    buf[i]! ^= buf[i]!
+  }
+}

@@ -5,6 +5,7 @@ import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
 import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath.js"
+import { zeroOutUint8Array } from "./util/byteArray.js"
 import { repeatAsync } from "./util/repeat.js"
 
 export interface GenerationSecret {
@@ -26,6 +27,19 @@ export interface ConsumeRatchetResult {
   key: Uint8Array
   generation: number
   newTree: SecretTree
+}
+
+export function shredSecretTree(tree: SecretTree): void {
+  for (const node of tree) {
+    zeroOutUint8Array(node.application.secret)
+    zeroOutUint8Array(node.handshake.secret)
+    for (const gen of Object.values(node.application.unusedGenerations)) {
+      zeroOutUint8Array(gen)
+    }
+    for (const gen of Object.values(node.handshake.unusedGenerations)) {
+      zeroOutUint8Array(gen)
+    }
+  }
 }
 
 function scaffoldSecretTree(leafWidth: number, encryptionSecret: Uint8Array, kdf: Kdf): Promise<Uint8Array[]> {
