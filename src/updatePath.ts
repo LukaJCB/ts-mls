@@ -107,7 +107,8 @@ export async function createUpdatePath(
     credential: originalLeafNode.leaf.credential,
     signaturePublicKey: originalLeafNode.leaf.signaturePublicKey,
     parentHash: leafParentHash[0],
-    info: { leafNodeSource: "commit", groupId: groupContext.groupId, leafIndex: senderLeafIndex },
+    groupId: groupContext.groupId,
+    leafIndex: senderLeafIndex,
   }
 
   const updatedLeafNode = await signLeafNodeCommit(updatedLeafNodeTbs, signaturePrivateKey, cs.signature)

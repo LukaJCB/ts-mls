@@ -119,7 +119,6 @@ export async function generateKeyPackageWithKey(
     leafNodeSource: "key_package",
     hpkePublicKey: await cs.hpke.exportPublicKey(hpkeKeys.publicKey),
     signaturePublicKey: signatureKeyPair.publicKey,
-    info: { leafNodeSource: "key_package" },
     extensions: leafNodeExtensions ?? [],
     credential,
     capabilities,

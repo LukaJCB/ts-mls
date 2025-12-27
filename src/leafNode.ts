@@ -1,26 +1,12 @@
 import { Capabilities, capabilitiesEncoder, decodeCapabilities } from "./capabilities.js"
-import { uint32Encoder } from "./codec/number.js"
-import {
-  Decoder,
-  mapDecoders,
-  mapDecoder,
-  flatMapDecoder,
-  succeedDecoder,
-  mapDecoderOption,
-} from "./codec/tlsDecoder.js"
-import {
-  BufferEncoder,
-  contramapBufferEncoders,
-  contramapBufferEncoder,
-  encode,
-  Encoder,
-  encVoid,
-} from "./codec/tlsEncoder.js"
+import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { Decoder, mapDecoders, flatMapDecoder, mapDecoderOption, mapDecoder } from "./codec/tlsDecoder.js"
+import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, decodeVarLenData, varLenTypeEncoder, decodeVarLenType } from "./codec/variableLength.js"
 import { credentialEncoder, decodeCredential, Credential } from "./credential.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { Extension, extensionEncoder, decodeExtension } from "./extension.js"
-import { leafNodeSourceEncoder, decodeLeafNodeSource, LeafNodeSourceName } from "./leafNodeSource.js"
+import { leafNodeSourceEncoder, decodeLeafNodeSource } from "./leafNodeSource.js"
 import { Lifetime, lifetimeEncoder, decodeLifetime } from "./lifetime.js"
 
 export interface LeafNodeData {
@@ -47,36 +33,127 @@ export const decodeLeafNodeData: Decoder<LeafNodeData> = mapDecoders(
   }),
 )
 
-export type LeafNodeInfo = LeafNodeInfoKeyPackage | LeafNodeInfoUpdate | LeafNodeInfoCommit
+export type LeafNodeInfoOmitted = LeafNodeInfoKeyPackage | LeafNodeInfoUpdateOmitted | LeafNodeInfoCommitOmitted
+
+export interface LeafNodeInfoUpdateOmitted {
+  leafNodeSource: "update"
+  extensions: Extension[]
+}
+export interface LeafNodeInfoCommitOmitted {
+  leafNodeSource: "commit"
+  parentHash: Uint8Array
+  extensions: Extension[]
+}
+
 export interface LeafNodeInfoKeyPackage {
   leafNodeSource: "key_package"
   lifetime: Lifetime
-}
-export interface LeafNodeInfoUpdate {
-  leafNodeSource: "update"
-}
-export interface LeafNodeInfoCommit {
-  leafNodeSource: "commit"
-  parentHash: Uint8Array
+  extensions: Extension[]
 }
 
-export const leafNodeInfoLifetimeEncoder: BufferEncoder<LeafNodeInfoKeyPackage> = contramapBufferEncoders(
-  [leafNodeSourceEncoder, lifetimeEncoder],
-  (info) => ["key_package", info.lifetime] as const,
+export const leafNodeInfoKeyPackageEncoder: BufferEncoder<LeafNodeInfoKeyPackage> = contramapBufferEncoders(
+  [leafNodeSourceEncoder, lifetimeEncoder, varLenTypeEncoder(extensionEncoder)],
+  (info) => ["key_package", info.lifetime, info.extensions] as const,
 )
 
-export const encodeLeafNodeInfoLifetime: Encoder<LeafNodeInfoKeyPackage> = encode(leafNodeInfoLifetimeEncoder)
+export const encodeLeafNodeInfoKeyPackage: Encoder<LeafNodeInfoKeyPackage> = encode(leafNodeInfoKeyPackageEncoder)
 
-export const leafNodeInfoUpdateEncoder: BufferEncoder<LeafNodeInfoUpdate> = contramapBufferEncoder(
-  leafNodeSourceEncoder,
-  (i) => i.leafNodeSource,
+export const leafNodeInfoUpdateOmittedEncoder: BufferEncoder<LeafNodeInfoUpdateOmitted> = contramapBufferEncoders(
+  [leafNodeSourceEncoder, varLenTypeEncoder(extensionEncoder)],
+  (i) => [i.leafNodeSource, i.extensions] as const,
+)
+
+export const encodeLeafNodeInfoUpdateOmitted: Encoder<LeafNodeInfoUpdate> = encode(leafNodeInfoUpdateOmittedEncoder)
+
+export const leafNodeInfoCommitOmittedEncoder: BufferEncoder<LeafNodeInfoCommitOmitted> = contramapBufferEncoders(
+  [leafNodeSourceEncoder, varLenDataEncoder, varLenTypeEncoder(extensionEncoder)],
+  (info) => [info.leafNodeSource, info.parentHash, info.extensions] as const,
+)
+
+export const encodeLeafNodeInfoCommitOmitted: Encoder<LeafNodeInfoCommitOmitted> = encode(
+  leafNodeInfoCommitOmittedEncoder,
+)
+
+export const leafNodeInfoOmittedEncoder: BufferEncoder<LeafNodeInfoOmitted> = (info) => {
+  switch (info.leafNodeSource) {
+    case "key_package":
+      return leafNodeInfoKeyPackageEncoder(info)
+    case "update":
+      return leafNodeInfoUpdateOmittedEncoder(info)
+    case "commit":
+      return leafNodeInfoCommitOmittedEncoder(info)
+  }
+}
+
+export const encodeLeafNodeInfoOmitted: Encoder<LeafNodeInfoOmitted> = encode(leafNodeInfoOmittedEncoder)
+
+export const decodeLeafNodeInfoKeyPackage: Decoder<LeafNodeInfoKeyPackage> = mapDecoders(
+  [decodeLifetime, decodeVarLenType(decodeExtension)],
+  (lifetime, extensions) => ({
+    leafNodeSource: "key_package",
+    lifetime,
+    extensions,
+  }),
+)
+
+export const decodeLeafNodeInfoUpdateOmitted: Decoder<LeafNodeInfoUpdateOmitted> = mapDecoder(
+  decodeVarLenType(decodeExtension),
+  (extensions) => ({
+    leafNodeSource: "update",
+    extensions,
+  }),
+)
+
+export const decodeLeafNodeInfoCommitOmitted: Decoder<LeafNodeInfoCommitOmitted> = mapDecoders(
+  [decodeVarLenData, decodeVarLenType(decodeExtension)],
+  (parentHash, extensions) => ({
+    leafNodeSource: "commit",
+    parentHash,
+    extensions,
+  }),
+)
+
+export const decodeLeafNodeInfoOmitted: Decoder<LeafNodeInfoOmitted> = flatMapDecoder(
+  decodeLeafNodeSource,
+  (leafNodeSource): Decoder<LeafNodeInfoOmitted> => {
+    switch (leafNodeSource) {
+      case "key_package":
+        return decodeLeafNodeInfoKeyPackage
+      case "update":
+        return decodeLeafNodeInfoUpdateOmitted
+      case "commit":
+        return decodeLeafNodeInfoCommitOmitted
+    }
+  },
+)
+
+export type LeafNodeInfo = LeafNodeInfoKeyPackage | LeafNodeInfoUpdate | LeafNodeInfoCommit
+
+export interface LeafNodeInfoKeyPackage {
+  leafNodeSource: "key_package"
+  lifetime: Lifetime
+  extensions: Extension[]
+}
+
+export type LeafNodeInfoUpdate = LeafNodeInfoUpdateOmitted & {
+  groupId: Uint8Array
+  leafIndex: number
+}
+export type LeafNodeInfoCommit = LeafNodeInfoCommitOmitted & {
+  groupId: Uint8Array
+  leafIndex: number
+}
+
+export const leafNodeInfoUpdateEncoder: BufferEncoder<LeafNodeInfoUpdate> = contramapBufferEncoders(
+  [leafNodeInfoUpdateOmittedEncoder, varLenDataEncoder, uint32Encoder],
+  (i) => [i, i.groupId, i.leafIndex] as const,
 )
 
 export const encodeLeafNodeInfoUpdate: Encoder<LeafNodeInfoUpdate> = encode(leafNodeInfoUpdateEncoder)
 
 export const leafNodeInfoCommitEncoder: BufferEncoder<LeafNodeInfoCommit> = contramapBufferEncoders(
-  [leafNodeSourceEncoder, varLenDataEncoder],
-  (info) => ["commit", info.parentHash] as const,
+  [leafNodeInfoCommitOmittedEncoder, varLenDataEncoder, uint32Encoder],
+  (info) => [info, info.groupId, info.leafIndex] as const,
 )
 
 export const encodeLeafNodeInfoCommit: Encoder<LeafNodeInfoCommit> = encode(leafNodeInfoCommitEncoder)
@@ -84,7 +161,7 @@ export const encodeLeafNodeInfoCommit: Encoder<LeafNodeInfoCommit> = encode(leaf
 export const leafNodeInfoEncoder: BufferEncoder<LeafNodeInfo> = (info) => {
   switch (info.leafNodeSource) {
     case "key_package":
-      return leafNodeInfoLifetimeEncoder(info)
+      return leafNodeInfoKeyPackageEncoder(info)
     case "update":
       return leafNodeInfoUpdateEncoder(info)
     case "commit":
@@ -94,127 +171,96 @@ export const leafNodeInfoEncoder: BufferEncoder<LeafNodeInfo> = (info) => {
 
 export const encodeLeafNodeInfo: Encoder<LeafNodeInfo> = encode(leafNodeInfoEncoder)
 
-export const decodeLeafNodeInfoLifetime: Decoder<LeafNodeInfoKeyPackage> = mapDecoder(decodeLifetime, (lifetime) => ({
-  leafNodeSource: "key_package",
-  lifetime,
-}))
+export const decodeLeafNodeInfoUpdate: Decoder<LeafNodeInfoUpdate> = mapDecoders(
+  [decodeLeafNodeInfoUpdateOmitted, decodeVarLenData, decodeUint32],
+  (ln, groupId, leafIndex) => ({
+    ...ln,
+    groupId,
+    leafIndex,
+  }),
+)
 
-export const decodeLeafNodeInfoCommit: Decoder<LeafNodeInfoCommit> = mapDecoders([decodeVarLenData], (parentHash) => ({
-  leafNodeSource: "commit",
-  parentHash,
-}))
+export const decodeLeafNodeInfoCommit: Decoder<LeafNodeInfoCommit> = mapDecoders(
+  [decodeLeafNodeInfoCommitOmitted, decodeVarLenData, decodeUint32],
+  (ln, groupId, leafIndex) => ({
+    ...ln,
+    groupId,
+    leafIndex,
+  }),
+)
 
 export const decodeLeafNodeInfo: Decoder<LeafNodeInfo> = flatMapDecoder(
   decodeLeafNodeSource,
   (leafNodeSource): Decoder<LeafNodeInfo> => {
     switch (leafNodeSource) {
       case "key_package":
-        return decodeLeafNodeInfoLifetime
+        return decodeLeafNodeInfoKeyPackage
       case "update":
-        return succeedDecoder({ leafNodeSource })
+        return decodeLeafNodeInfoUpdate
       case "commit":
         return decodeLeafNodeInfoCommit
     }
   },
 )
 
-export interface LeafNodeExtensions {
-  extensions: Extension[]
-}
+export type LeafNodeTBS = LeafNodeData & LeafNodeInfo
 
-export const leafNodeExtensionsEncoder: BufferEncoder<LeafNodeExtensions> = contramapBufferEncoder(
-  varLenTypeEncoder(extensionEncoder),
-  (ext) => ext.extensions,
-)
+export type LeafNodeTBSCommit = LeafNodeData & LeafNodeInfoCommit
 
-export const encodeLeafNodeExtensions: Encoder<LeafNodeExtensions> = encode(leafNodeExtensionsEncoder)
-
-export const decodeLeafNodeExtensions: Decoder<LeafNodeExtensions> = mapDecoder(
-  decodeVarLenType(decodeExtension),
-  (extensions) => ({ extensions }),
-)
-
-type GroupIdLeafIndex = {
-  leafNodeSource: Exclude<LeafNodeSourceName, "key_package">
-  groupId: Uint8Array
-  leafIndex: number
-}
-
-export const groupIdLeafIndexEncoder: BufferEncoder<GroupIdLeafIndex> = contramapBufferEncoders(
-  [varLenDataEncoder, uint32Encoder],
-  (g) => [g.groupId, g.leafIndex] as const,
-)
-
-export const encodeGroupIdLeafIndex: Encoder<GroupIdLeafIndex> = encode(groupIdLeafIndexEncoder)
-
-export type LeafNodeGroupInfo = GroupIdLeafIndex | { leafNodeSource: "key_package" }
-
-export const leafNodeGroupInfoEncoder: BufferEncoder<LeafNodeGroupInfo> = (info) => {
-  switch (info.leafNodeSource) {
-    case "key_package":
-      return encVoid
-    case "update":
-    case "commit":
-      return groupIdLeafIndexEncoder(info)
-  }
-}
-
-export const encodeLeafNodeGroupInfo: Encoder<LeafNodeGroupInfo> = encode(leafNodeGroupInfoEncoder)
-
-export type LeafNodeTBS = LeafNodeData & LeafNodeInfo & LeafNodeExtensions & { info: LeafNodeGroupInfo }
-
-export type LeafNodeTBSCommit = LeafNodeData & LeafNodeInfoCommit & LeafNodeExtensions & { info: GroupIdLeafIndex }
-
-export type LeafNodeTBSKeyPackage = LeafNodeData &
-  LeafNodeInfoKeyPackage &
-  LeafNodeExtensions & { info: { leafNodeSource: "key_package" } }
+export type LeafNodeTBSKeyPackage = LeafNodeData & LeafNodeInfoKeyPackage
 
 export const leafNodeTBSEncoder: BufferEncoder<LeafNodeTBS> = contramapBufferEncoders(
-  [leafNodeDataEncoder, leafNodeInfoEncoder, leafNodeExtensionsEncoder, leafNodeGroupInfoEncoder],
-  (tbs) => [tbs, tbs, tbs, tbs.info] as const,
+  [leafNodeDataEncoder, leafNodeInfoEncoder],
+  (tbs) => [tbs, tbs] as const,
 )
 
 export const encodeLeafNodeTBS: Encoder<LeafNodeTBS> = encode(leafNodeTBSEncoder)
 
-export type LeafNode = LeafNodeData & LeafNodeInfo & LeafNodeExtensions & { signature: Uint8Array }
+export type LeafNode = LeafNodeData & LeafNodeInfoOmitted & { signature: Uint8Array }
 
 export const leafNodeEncoder: BufferEncoder<LeafNode> = contramapBufferEncoders(
-  [leafNodeDataEncoder, leafNodeInfoEncoder, leafNodeExtensionsEncoder, varLenDataEncoder],
-  (leafNode) => [leafNode, leafNode, leafNode, leafNode.signature] as const,
+  [leafNodeDataEncoder, leafNodeInfoOmittedEncoder, varLenDataEncoder],
+  (leafNode) => [leafNode, leafNode, leafNode.signature] as const,
 )
 
 export const encodeLeafNode: Encoder<LeafNode> = encode(leafNodeEncoder)
 
 export const decodeLeafNode: Decoder<LeafNode> = mapDecoders(
-  [decodeLeafNodeData, decodeLeafNodeInfo, decodeLeafNodeExtensions, decodeVarLenData],
-  (data, info, extensions, signature) => ({
+  [decodeLeafNodeData, decodeLeafNodeInfoOmitted, decodeVarLenData],
+  (data, info, signature) => ({
     ...data,
     ...info,
-    ...extensions,
     signature,
   }),
 )
 
-export type LeafNodeKeyPackage = LeafNode & LeafNodeInfoKeyPackage
+export type LeafNodeKeyPackage = LeafNode & { leafNodeSource: "key_package" }
 
 export const decodeLeafNodeKeyPackage: Decoder<LeafNodeKeyPackage> = mapDecoderOption(decodeLeafNode, (ln) =>
   ln.leafNodeSource === "key_package" ? ln : undefined,
 )
 
-export type LeafNodeCommit = LeafNode & LeafNodeInfoCommit
+export type LeafNodeCommit = LeafNode & { leafNodeSource: "commit" }
 
 export const decodeLeafNodeCommit: Decoder<LeafNodeCommit> = mapDecoderOption(decodeLeafNode, (ln) =>
   ln.leafNodeSource === "commit" ? ln : undefined,
 )
 
-export type LeafNodeUpdate = LeafNode & LeafNodeInfoUpdate
+export type LeafNodeUpdate = LeafNode & { leafNodeSource: "update" }
 
 export const decodeLeafNodeUpdate: Decoder<LeafNodeUpdate> = mapDecoderOption(decodeLeafNode, (ln) =>
   ln.leafNodeSource === "update" ? ln : undefined,
 )
 
 function toTbs(leafNode: LeafNode, groupId: Uint8Array, leafIndex: number): LeafNodeTBS {
-  return { ...leafNode, info: { leafNodeSource: leafNode.leafNodeSource, groupId, leafIndex } }
+  switch (leafNode.leafNodeSource) {
+    case "key_package":
+      return { ...leafNode, leafNodeSource: leafNode.leafNodeSource }
+    case "update":
+      return { ...leafNode, leafNodeSource: leafNode.leafNodeSource, groupId, leafIndex }
+    case "commit":
+      return { ...leafNode, leafNodeSource: leafNode.leafNodeSource, groupId, leafIndex }
+  }
 }
 
 export async function signLeafNodeCommit(
@@ -255,11 +301,5 @@ export function verifyLeafNodeSignature(
 }
 
 export function verifyLeafNodeSignatureKeyPackage(leaf: LeafNodeKeyPackage, sig: Signature): Promise<boolean> {
-  return verifyWithLabel(
-    leaf.signaturePublicKey,
-    "LeafNodeTBS",
-    encode(leafNodeTBSEncoder)({ ...leaf, info: { leafNodeSource: leaf.leafNodeSource } }),
-    leaf.signature,
-    sig,
-  )
+  return verifyWithLabel(leaf.signaturePublicKey, "LeafNodeTBS", encode(leafNodeTBSEncoder)(leaf), leaf.signature, sig)
 }

@@ -188,17 +188,16 @@ async function resignLeafNode(
   if (tree[nodeIndex]?.leaf.leafNodeSource === "commit") {
     const newLeaf = {
       ...tree[nodeIndex]!.leaf,
-      info: {
-        leafNodeSource: tree[nodeIndex]!.leaf.leafNodeSource,
-        groupId,
-        leafIndex: nodeToLeafIndex(toNodeIndex(nodeIndex)),
-      },
+
+      leafNodeSource: tree[nodeIndex]!.leaf.leafNodeSource,
+      groupId,
+      leafIndex: nodeToLeafIndex(toNodeIndex(nodeIndex)),
     }
     const signed = await signLeafNodeCommit(newLeaf, privateKey, impl.signature)
     tree[nodeIndex]!.leaf.signature = signed.signature
   } else if (tree[nodeIndex]?.leaf.leafNodeSource === "key_package") {
     const signed = await signLeafNodeKeyPackage(
-      { ...tree[nodeIndex]?.leaf, info: { leafNodeSource: "key_package" } },
+      { ...tree[nodeIndex]?.leaf, leafNodeSource: "key_package" },
       privateKey,
       impl.signature,
     )
