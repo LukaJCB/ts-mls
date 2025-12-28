@@ -11,21 +11,6 @@ export function encode<T>(enc: BufferEncoder<T>): Encoder<T> {
   }
 }
 
-export function composeBufferEncoder<T, U>(encT: BufferEncoder<T>, encU: BufferEncoder<U>): BufferEncoder<[T, U]> {
-  return ([t, u]) => {
-    const [lenT, writeT] = encT(t)
-    const [lenU, writeU] = encU(u)
-
-    return [
-      lenT + lenU,
-      (offset, buffer) => {
-        writeT(offset, buffer)
-        writeU(offset + lenT, buffer)
-      },
-    ]
-  }
-}
-
 export function contramapBufferEncoder<T, U>(enc: BufferEncoder<T>, f: (u: U) => Readonly<T>): BufferEncoder<U> {
   return (u: U) => enc(f(u))
 }
