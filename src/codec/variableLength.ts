@@ -1,6 +1,8 @@
 import { CodecError } from "../mlsError.js"
-import { Decoder } from "./tlsDecoder.js"
-import { BufferEncoder } from "./tlsEncoder.js"
+import { base64ToBytes, bytesToBase64 } from "../util/byteArray.js"
+import { decodeUint64, uint64Encoder } from "./number.js"
+import { Decoder, mapDecoder, mapDecoders } from "./tlsDecoder.js"
+import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders } from "./tlsEncoder.js"
 
 export const varLenDataEncoder: BufferEncoder<Uint8Array> = (data) => {
   const [len, write] = lengthEncoder(data.length)
@@ -142,4 +144,73 @@ export function decodeVarLenType<T>(dec: Decoder<T>): Decoder<T[]> {
 
     return [result, totalLength]
   }
+}
+
+export function base64RecordEncoder<V>(valueEncoder: BufferEncoder<V>): BufferEncoder<Record<string, V>> {
+  const entryEncoder = contramapBufferEncoders(
+    [contramapBufferEncoder(varLenDataEncoder, base64ToBytes), valueEncoder],
+    ([key, value]: [string, V]) => [key, value] as const,
+  )
+
+  return contramapBufferEncoders([varLenTypeEncoder(entryEncoder)], (record) => [Object.entries(record)] as const)
+}
+
+export function decodeBase64Record<V>(decodeValue: Decoder<V>): Decoder<Record<string, V>> {
+  return mapDecoder(
+    decodeVarLenType(
+      mapDecoders([mapDecoder(decodeVarLenData, bytesToBase64), decodeValue], (key, value) => [key, value] as const),
+    ),
+    (entries) => {
+      const record: Record<string, V> = {}
+      for (const [key, value] of entries) {
+        record[key] = value
+      }
+      return record
+    },
+  )
+}
+
+export function numberRecordEncoder<V>(
+  numberEncoder: BufferEncoder<number>,
+  valueEncoder: BufferEncoder<V>,
+): BufferEncoder<Record<number, V>> {
+  const entryEncoder = contramapBufferEncoders(
+    [numberEncoder, valueEncoder],
+    ([key, value]: [number, V]) => [key, value] as const,
+  )
+
+  return contramapBufferEncoder(varLenTypeEncoder(entryEncoder), (record) =>
+    Object.entries(record).map(([key, value]) => [Number(key), value] as [number, V]),
+  )
+}
+
+export function decodeNumberRecord<V>(
+  decodeNumber: Decoder<number>,
+  decodeValue: Decoder<V>,
+): Decoder<Record<number, V>> {
+  return mapDecoder(
+    decodeVarLenType(mapDecoders([decodeNumber, decodeValue], (key, value) => [key, value] as const)),
+    (entries) => {
+      const record: Record<number, V> = {}
+      for (const [key, value] of entries) {
+        record[key] = value
+      }
+      return record
+    },
+  )
+}
+export function bigintMapEncoder<V>(valueEncoder: BufferEncoder<V>): BufferEncoder<Map<bigint, V>> {
+  const entryEncoder = contramapBufferEncoders(
+    [uint64Encoder, valueEncoder],
+    ([key, value]: [bigint, V]) => [key, value] as const,
+  )
+
+  return contramapBufferEncoder(varLenTypeEncoder(entryEncoder), (map) => Array.from(map.entries()))
+}
+
+export function decodeBigintMap<V>(decodeValue: Decoder<V>): Decoder<Map<bigint, V>> {
+  return mapDecoder(
+    decodeVarLenType(mapDecoders([decodeUint64, decodeValue], (key, value) => [key, value] as const)),
+    (entries) => new Map(entries),
+  )
 }

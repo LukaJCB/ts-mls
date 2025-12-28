@@ -103,4 +103,6 @@ export function succeedDecoder<T>(t: T): Decoder<T> {
   return () => [t, 0] as const
 }
 
-export const decodeVoid: Decoder<void> = () => [undefined, 0] as const
+export function failDecoder<T>(): Decoder<T> {
+  return () => undefined
+}

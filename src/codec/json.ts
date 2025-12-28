@@ -1,5 +1,6 @@
 import { ClientConfig } from "../clientConfig.js"
-import { ClientState, EpochReceiverData } from "../clientState.js"
+import { ClientState } from "../clientState.js"
+import { EpochReceiverData } from "../epochReceiverData.js"
 
 export function toJsonString(clientState: ClientState): string {
   const { clientConfig, ...state } = clientState

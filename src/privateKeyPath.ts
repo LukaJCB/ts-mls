@@ -1,3 +1,7 @@
+import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import { decodeNumberRecord, decodeVarLenData, numberRecordEncoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import { PathSecrets } from "./pathSecrets.js"
@@ -7,6 +11,20 @@ export interface PrivateKeyPath {
   leafIndex: number
   privateKeys: Record<number, Uint8Array>
 }
+
+export const privateKeyPathEncoder: BufferEncoder<PrivateKeyPath> = contramapBufferEncoders(
+  [uint32Encoder, numberRecordEncoder(uint32Encoder, varLenDataEncoder)],
+  (pkp) => [pkp.leafIndex, pkp.privateKeys] as const,
+)
+
+export const decodePrivateKeyPath: Decoder<PrivateKeyPath> = mapDecoders(
+  [decodeUint32, decodeNumberRecord(decodeUint32, decodeVarLenData)],
+  (leafIndex, privateKeys) => ({
+    leafIndex,
+    privateKeys,
+  }),
+)
+
 /**
  * Merges PrivateKeyPaths, BEWARE, if there is a conflict, this function will prioritize the second `b` parameter
  */

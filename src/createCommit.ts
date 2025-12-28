@@ -7,8 +7,8 @@ import {
   ApplyProposalsResult,
   exportSecret,
   checkCanSendHandshakeMessages,
-  GroupActiveState,
 } from "./clientState.js"
+import { GroupActiveState } from "./groupActiveState.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { decryptWithLabel } from "./crypto/hpke.js"
 import { deriveSecret } from "./crypto/kdf.js"

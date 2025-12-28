@@ -3,21 +3,29 @@ import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import { Extension, extensionsEqual, extensionsSupportedByCapabilities } from "./extension.js"
 import { createConfirmationTag, FramedContentCommit } from "./framedContent.js"
-import { GroupContext } from "./groupContext.js"
+import { decodeGroupContext, GroupContext, groupContextEncoder } from "./groupContext.js"
 import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage.js"
-import { deriveKeySchedule, initializeKeySchedule, KeySchedule } from "./keySchedule.js"
+import {
+  decodeKeySchedule,
+  deriveKeySchedule,
+  initializeKeySchedule,
+  KeySchedule,
+  keyScheduleEncoder,
+} from "./keySchedule.js"
 import { pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 
 import {
   addLeafNode,
+  decodeRatchetTree,
   findBlankLeafNodeIndexOrExtend,
   findLeafIndex,
+  ratchetTreeEncoder,
   removeLeafNode,
   updateLeafNode,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { createSecretTree, SecretTree } from "./secretTree.js"
+import { createSecretTree, decodeSecretTree, SecretTree, secretTreeEncoder } from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
 import { treeHashRoot } from "./treeHash.js"
 import {
@@ -49,8 +57,20 @@ import {
   Remove,
 } from "./proposal.js"
 import { pathToRoot } from "./pathSecrets.js"
-import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
-import { UnappliedProposals, addUnappliedProposal, ProposalWithSender } from "./unappliedProposals.js"
+import {
+  PrivateKeyPath,
+  decodePrivateKeyPath,
+  mergePrivateKeyPaths,
+  privateKeyPathEncoder,
+  toPrivateKeyPath,
+} from "./privateKeyPath.js"
+import {
+  UnappliedProposals,
+  addUnappliedProposal,
+  ProposalWithSender,
+  unappliedProposalsEncoder,
+  decodeUnappliedProposals,
+} from "./unappliedProposals.js"
 import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
 import { getSenderLeafNodeIndex } from "./sender.js"
 import { addToMap } from "./util/addToMap.js"
@@ -81,10 +101,16 @@ import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
-import { encode } from "./codec/tlsEncoder.js"
+import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { CredentialTypeName } from "./credentialType.js"
+import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
+import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 
-export interface ClientState {
+export type ClientState = GroupState & { clientConfig: ClientConfig }
+
+export interface GroupState {
   groupContext: GroupContext
   keySchedule: KeySchedule
   secretTree: SecretTree
@@ -95,24 +121,75 @@ export interface ClientState {
   confirmationTag: Uint8Array
   historicalReceiverData: Map<bigint, EpochReceiverData>
   groupActiveState: GroupActiveState
-  clientConfig: ClientConfig
 }
 
-export type GroupActiveState =
-  | { kind: "active" }
-  | { kind: "suspendedPendingReinit"; reinit: Reinit }
-  | { kind: "removedFromGroup" }
+export const groupStateEncoder: BufferEncoder<GroupState> = contramapBufferEncoders(
+  [
+    groupContextEncoder,
+    keyScheduleEncoder,
+    secretTreeEncoder,
+    ratchetTreeEncoder,
+    privateKeyPathEncoder,
+    varLenDataEncoder,
+    unappliedProposalsEncoder,
+    varLenDataEncoder,
+    bigintMapEncoder(epochReceiverDataEncoder),
+    groupActiveStateEncoder,
+  ],
+  (state) =>
+    [
+      state.groupContext,
+      state.keySchedule,
+      state.secretTree,
+      state.ratchetTree,
+      state.privatePath,
+      state.signaturePrivateKey,
+      state.unappliedProposals,
+      state.confirmationTag,
+      state.historicalReceiverData,
+      state.groupActiveState,
+    ] as const,
+)
 
-/**
- * This type contains everything necessary to receieve application messages for an earlier epoch
- */
-export interface EpochReceiverData {
-  resumptionPsk: Uint8Array
-  secretTree: SecretTree
-  ratchetTree: RatchetTree
-  senderDataSecret: Uint8Array
-  groupContext: GroupContext
-}
+export const encodeGroupState: Encoder<GroupState> = encode(groupStateEncoder)
+
+export const decodeGroupState: Decoder<GroupState> = mapDecoders(
+  [
+    decodeGroupContext,
+    decodeKeySchedule,
+    decodeSecretTree,
+    decodeRatchetTree,
+    decodePrivateKeyPath,
+    decodeVarLenData,
+    decodeUnappliedProposals,
+    decodeVarLenData,
+    decodeBigintMap(decodeEpochReceiverData),
+    decodeGroupActiveState,
+  ],
+  (
+    groupContext,
+    keySchedule,
+    secretTree,
+    ratchetTree,
+    privatePath,
+    signaturePrivateKey,
+    unappliedProposals,
+    confirmationTag,
+    historicalReceiverData,
+    groupActiveState,
+  ) => ({
+    groupContext,
+    keySchedule,
+    secretTree,
+    ratchetTree,
+    privatePath,
+    signaturePrivateKey,
+    unappliedProposals,
+    confirmationTag,
+    historicalReceiverData,
+    groupActiveState,
+  }),
+)
 
 export function checkCanSendApplicationMessages(state: ClientState): void {
   if (Object.keys(state.unappliedProposals).length !== 0)

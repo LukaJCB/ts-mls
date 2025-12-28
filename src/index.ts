@@ -33,15 +33,11 @@ export { type LifetimeConfig, defaultLifetimeConfig } from "./lifetimeConfig.js"
 export { type PrivateKeyPackage, type KeyPackage, generateKeyPackage, generateKeyPackageWithKey } from "./keyPackage.js"
 export { type KeyRetentionConfig, defaultKeyRetentionConfig } from "./keyRetentionConfig.js"
 
-export {
-  createGroup,
-  makePskIndex,
-  joinGroup,
-  joinGroupWithExtensions,
-  type ClientState,
-  type GroupActiveState,
-  type EpochReceiverData,
-} from "./clientState.js"
+export { createGroup, makePskIndex, joinGroup, joinGroupWithExtensions, type ClientState } from "./clientState.js"
+
+export { type GroupActiveState } from "./groupActiveState.js"
+
+export { type EpochReceiverData } from "./epochReceiverData.js"
 
 export { createApplicationMessage, createProposal } from "./createMessage.js"
 

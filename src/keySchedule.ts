@@ -1,3 +1,6 @@
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
+import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { extractEpochSecret, extractJoinerSecret, GroupContext } from "./groupContext.js"
@@ -15,6 +18,74 @@ export interface KeySchedule {
   epochAuthenticator: Uint8Array
   initSecret: Uint8Array
 }
+
+export const keyScheduleEncoder: BufferEncoder<KeySchedule> = contramapBufferEncoders(
+  [
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+    varLenDataEncoder,
+  ],
+  (ks) =>
+    [
+      ks.epochSecret,
+      ks.senderDataSecret,
+      ks.encryptionSecret,
+      ks.exporterSecret,
+      ks.externalSecret,
+      ks.confirmationKey,
+      ks.membershipKey,
+      ks.resumptionPsk,
+      ks.epochAuthenticator,
+      ks.initSecret,
+    ] as const,
+)
+
+export const encodeKeySchedule: Encoder<KeySchedule> = encode(keyScheduleEncoder)
+
+export const decodeKeySchedule: Decoder<KeySchedule> = mapDecoders(
+  [
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+    decodeVarLenData,
+  ],
+  (
+    epochSecret,
+    senderDataSecret,
+    encryptionSecret,
+    exporterSecret,
+    externalSecret,
+    confirmationKey,
+    membershipKey,
+    resumptionPsk,
+    epochAuthenticator,
+    initSecret,
+  ) => ({
+    epochSecret,
+    senderDataSecret,
+    encryptionSecret,
+    exporterSecret,
+    externalSecret,
+    confirmationKey,
+    membershipKey,
+    resumptionPsk,
+    epochAuthenticator,
+    initSecret,
+  }),
+)
 
 export interface EpochSecrets {
   keySchedule: KeySchedule
