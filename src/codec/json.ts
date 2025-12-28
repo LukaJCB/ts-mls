@@ -2,6 +2,9 @@ import { ClientConfig } from "../clientConfig.js"
 import { ClientState } from "../clientState.js"
 import { EpochReceiverData } from "../epochReceiverData.js"
 
+/**
+ * @deprecated Use encodeGroupState instead for binary serialization
+ */
 export function toJsonString(clientState: ClientState): string {
   const { clientConfig, ...state } = clientState
 
@@ -144,6 +147,9 @@ function deepConvertUint8Arrays(obj: unknown, depth = 0, maxDepth = 20): unknown
   return obj
 }
 
+/**
+ * @deprecated Use decodeGroupState instead for binary deserialization
+ */
 export function fromJsonString(s: string, config: ClientConfig): ClientState | undefined {
   try {
     const parsed = JSON.parse(s) as unknown

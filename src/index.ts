@@ -33,7 +33,16 @@ export { type LifetimeConfig, defaultLifetimeConfig } from "./lifetimeConfig.js"
 export { type PrivateKeyPackage, type KeyPackage, generateKeyPackage, generateKeyPackageWithKey } from "./keyPackage.js"
 export { type KeyRetentionConfig, defaultKeyRetentionConfig } from "./keyRetentionConfig.js"
 
-export { createGroup, makePskIndex, joinGroup, joinGroupWithExtensions, type ClientState } from "./clientState.js"
+export {
+  createGroup,
+  makePskIndex,
+  joinGroup,
+  joinGroupWithExtensions,
+  decodeGroupState,
+  encodeGroupState,
+  type GroupState,
+  type ClientState,
+} from "./clientState.js"
 
 export { type GroupActiveState } from "./groupActiveState.js"
 
