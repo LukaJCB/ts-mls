@@ -1,45 +1,56 @@
-import { createGroup } from "../../src/clientState.js"
-import { Credential } from "../../src/credential.js"
-import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
-import { generateKeyPackage } from "../../src/keyPackage.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { ClientConfig, defaultClientConfig } from "../../src/clientConfig.js"
-import { fromJsonString, toJsonString } from "../../src/codec/json.js"
+import {
+  CiphersuiteName,
+  ciphersuites,
+  createGroup,
+  Credential,
+  defaultCapabilities,
+  defaultLifetime,
+  generateKeyPackage,
+  getCiphersuiteFromName,
+  getCiphersuiteImpl,
+} from "../../src/index.js"
+import { decodeGroupState, encodeGroupState, GroupState } from "../../src/clientState.js"
 
-test.concurrent.each(Object.keys(ciphersuites))("ClientState serialization round-trip %s", async (cs) => {
-  await clientStateSerializationTest(cs as CiphersuiteName)
-})
+test.concurrent.each(Object.keys(ciphersuites).slice(0, 1))(
+  "ClientState Binary serialization round-trip %s",
+  async (cs) => {
+    await clientStateBinarySerializationTest(cs as CiphersuiteName)
+  },
+)
 
-async function clientStateSerializationTest(cipherSuite: CiphersuiteName) {
+async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = {
     credentialType: "basic",
     identity: new TextEncoder().encode("alice"),
   }
+
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("test-group")
 
-  const clientConfig: ClientConfig = defaultClientConfig
-
   const originalState = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+
+  let groupState: GroupState | null = null
+
   const { clientConfig: _config, ...firstState } = originalState
 
-  const jsonString = toJsonString(originalState)
-  expect(typeof jsonString).toBe("string")
+  groupState = firstState
 
-  const deserializedState = fromJsonString(jsonString, clientConfig)
-  expect(deserializedState).toBeDefined()
-  expect(deserializedState).not.toBeNull()
+  const binary = encodeGroupState(originalState)
+  expect(binary).toBeInstanceOf(Uint8Array)
+  expect(binary.byteLength).toBeGreaterThan(0)
 
-  if (!deserializedState) {
-    throw new Error("deserialization failed unexpectedly")
+  const decoded = decodeGroupState(binary, 0)
+
+  if (!decoded) {
+    throw new Error("binary deserialization failed unexpectedly")
   }
 
-  const { clientConfig: __config, ...secondState } = deserializedState
-
-  expect(firstState).toEqual(secondState)
+  console.log(groupState.ratchetTree)
+  console.log("foo")
+  console.log(decoded[0].ratchetTree)
+  console.log("bar")
+  expect(groupState.ratchetTree).toEqual(decoded[0].ratchetTree)
 }

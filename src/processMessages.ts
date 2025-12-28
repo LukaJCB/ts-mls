@@ -1,7 +1,6 @@
 import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
-  GroupActiveState,
   addHistoricalReceiverData,
   applyProposals,
   nextEpochContext,
@@ -10,6 +9,7 @@ import {
   validateLeafNodeCredentialAndKeyUniqueness,
   validateLeafNodeUpdateOrCommit,
 } from "./clientState.js"
+import { GroupActiveState } from "./groupActiveState.js"
 import { applyUpdatePathSecret } from "./createCommit.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Kdf, deriveSecret } from "./crypto/kdf.js"

@@ -1,3 +1,14 @@
+import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import {
+  decodeNumberRecord,
+  decodeVarLenData,
+  decodeVarLenType,
+  numberRecordEncoder,
+  varLenDataEncoder,
+  varLenTypeEncoder,
+} from "./codec/variableLength.js"
 import { ContentTypeName } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
@@ -13,12 +24,43 @@ export interface GenerationSecret {
   unusedGenerations: Record<number, Uint8Array>
 }
 
+export const generationSecretEncoder: BufferEncoder<GenerationSecret> = contramapBufferEncoders(
+  [varLenDataEncoder, uint32Encoder, numberRecordEncoder(uint32Encoder, varLenDataEncoder)],
+  (gs) => [gs.secret, gs.generation, gs.unusedGenerations] as const,
+)
+
+export const decodeGenerationSecret: Decoder<GenerationSecret> = mapDecoders(
+  [decodeVarLenData, decodeUint32, decodeNumberRecord(decodeUint32, decodeVarLenData)],
+  (secret, generation, unusedGenerations) => ({
+    secret,
+    generation,
+    unusedGenerations,
+  }),
+)
+
 export interface SecretTreeNode {
   handshake: GenerationSecret
   application: GenerationSecret
 }
 
+export const secretTreeNodeEncoder: BufferEncoder<SecretTreeNode> = contramapBufferEncoders(
+  [generationSecretEncoder, generationSecretEncoder],
+  (node) => [node.handshake, node.application] as const,
+)
+
+export const decodeSecretTreeNode: Decoder<SecretTreeNode> = mapDecoders(
+  [decodeGenerationSecret, decodeGenerationSecret],
+  (handshake, application) => ({
+    handshake,
+    application,
+  }),
+)
+
 export type SecretTree = SecretTreeNode[]
+
+export const secretTreeEncoder: BufferEncoder<SecretTree> = varLenTypeEncoder(secretTreeNodeEncoder)
+
+export const decodeSecretTree: Decoder<SecretTree> = decodeVarLenType(decodeSecretTreeNode)
 
 export interface ConsumeRatchetResult {
   nonce: Uint8Array
