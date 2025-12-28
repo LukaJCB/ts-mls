@@ -191,6 +191,35 @@ export const decodeGroupState: Decoder<GroupState> = mapDecoders(
   }),
 )
 
+export function getOwnLeafNode(state: ClientState): LeafNode {
+  const idx = leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))
+  const leaf = state.ratchetTree[idx]
+  if (leaf?.nodeType !== "leaf") throw new InternalError("Expected leaf node")
+  return leaf.leaf
+}
+
+export function getGroupMembers(state: ClientState): LeafNode[] {
+  return extractFromGroupMembers(
+    state,
+    () => false,
+    (l) => l,
+  )
+}
+
+export function extractFromGroupMembers<T>(
+  state: ClientState,
+  exclude: (l: LeafNode) => boolean,
+  map: (l: LeafNode) => T,
+): T[] {
+  const recipients = []
+  for (const node of state.ratchetTree) {
+    if (node?.nodeType === "leaf" && !exclude(node.leaf)) {
+      recipients.push(map(node.leaf))
+    }
+  }
+  return recipients
+}
+
 export function checkCanSendApplicationMessages(state: ClientState): void {
   if (Object.keys(state.unappliedProposals).length !== 0)
     throw new UsageError("Cannot send application message with unapplied proposals")
