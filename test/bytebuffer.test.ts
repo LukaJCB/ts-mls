@@ -1,5 +1,5 @@
 import { describe, expect } from "vitest"
-import { bytesToArrayBuffer, toBufferSource } from "../src/util/byteArray"
+import { bytesToArrayBuffer, toBufferSource } from "../src/util/byteArray.js"
 
 describe("bytesToArrayBuffer", () => {
   test("works with ArrayBuffer-backed Uint8Array", () => {

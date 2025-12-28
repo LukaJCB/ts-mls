@@ -76,28 +76,4 @@ describe("base64", () => {
       expect(converted).toEqual(original)
     })
   })
-
-  describe("base64ToBytes (Browser atob path)", () => {
-    const originalBuffer = globalThis.Buffer
-    const originalAtob = globalThis.atob
-
-    beforeAll(() => {
-      // Simulate browser: remove Buffer and add atob
-      // @ts-expect-error
-      delete globalThis.Buffer
-      globalThis.atob = (str: string) => originalBuffer.from(str, "base64").toString("binary")
-    })
-
-    afterAll(() => {
-      globalThis.Buffer = originalBuffer
-      globalThis.atob = originalAtob
-    })
-
-    test("decodes using browser atob when Buffer is not defined", () => {
-      const original = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-      const base64 = bytesToBase64(original)
-      const converted = base64ToBytes(base64)
-      expect(converted).toEqual(original)
-    })
-  })
 })

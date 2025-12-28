@@ -85,6 +85,8 @@ export { type ClientConfig } from "./clientConfig.js"
 
 export { type Welcome } from "./welcome.js"
 
+export { mlsExporter } from "./keySchedule.js"
+
 export {
   type Ciphersuite,
   type CiphersuiteName,
@@ -101,7 +103,15 @@ export { defaultCryptoProvider } from "./crypto/implementation/default/provider.
 
 export { bytesToBase64 } from "./util/byteArray.js"
 
-export { decodeMlsMessage, encodeMlsMessage, type MlsPublicMessage, type MlsPrivateMessage } from "./message.js"
+export {
+  decodeMlsMessage,
+  encodeMlsMessage,
+  type MLSMessage,
+  type MlsPublicMessage,
+  type MlsWelcome,
+  type MlsGroupInfo,
+  type MlsPrivateMessage,
+} from "./message.js"
 export { type Lifetime, defaultLifetime } from "./lifetime.js"
 export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
