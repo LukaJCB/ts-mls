@@ -6,22 +6,22 @@
   "bugs": {
     "url": "https://github.com/LukaJCB/ts-mls/issues"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
     },
     "./*.js": {
-      "types": "./dist/*.d.ts",
-      "import": "./dist/*.js",
-      "default": "./dist/*.js"
+      "types": "./dist/src/*.d.ts",
+      "import": "./dist/src/*.js",
+      "default": "./dist/src/*.js"
     }
   },
   "files": [
-    "dist"
+    "dist/src/"
   ],
   "dependencies": {
     "@hpke/core": "1.7.5"
@@ -86,7 +86,7 @@
     "benchmark": "tsx bench/index.ts",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
-    "lint": "eslint src/",
+    "lint": "eslint src/ test/",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
     "verify-docs": "typescript-docs-verifier -p tsconfig.docs.json --input-files README.md docs/*.md",

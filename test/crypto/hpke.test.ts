@@ -1,4 +1,4 @@
-import { Hpke } from "../../src/crypto/hpke.js"
+import { Hpke, PrivateKey } from "../../src/crypto/hpke.js"
 import { makeHpke as defaultMakeHpke } from "../../src/crypto/implementation/default/makeHpke.js"
 import { makeHpke as nobleMakeHpke } from "../../src/crypto/implementation/noble/makeHpke.js"
 import { CryptoError } from "../../src/mlsError.js"
@@ -12,19 +12,22 @@ const hpkeAlg = {
 
 describe("Default hpke error handling", () => {
   let hpke: Hpke
+  let secKey: PrivateKey
   beforeAll(async () => {
     hpke = await defaultMakeHpke(hpkeAlg)
+    const { privateKey } = await hpke.generateKeyPair()
+    secKey = privateKey
   })
 
   test("throws CryptoError from open (invalid ciphertext)", async () => {
-    await expect(hpke.open({} as any, new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3]))).rejects.toThrow(
+    await expect(hpke.open(secKey, new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3]))).rejects.toThrow(
       CryptoError,
     )
   })
 
   test("throws CryptoError from importSecret (invalid kemOutput)", async () => {
     await expect(
-      hpke.importSecret({} as any, new Uint8Array([1]), new Uint8Array([2]), 16, new Uint8Array([3])),
+      hpke.importSecret(secKey, new Uint8Array([1]), new Uint8Array([2]), 16, new Uint8Array([3])),
     ).rejects.toThrow(CryptoError)
   })
 
@@ -81,19 +84,22 @@ describe("Default hpke happy path", () => {
 
 describe("Noble hpke error handling", () => {
   let hpke: Hpke
+  let secKey: PrivateKey
   beforeAll(async () => {
-    hpke = await nobleMakeHpke(hpkeAlg)
+    hpke = await defaultMakeHpke(hpkeAlg)
+    const { privateKey } = await hpke.generateKeyPair()
+    secKey = privateKey
   })
 
   test("throws CryptoError from open (invalid ciphertext)", async () => {
-    await expect(hpke.open({} as any, new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3]))).rejects.toThrow(
+    await expect(hpke.open(secKey, new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3]))).rejects.toThrow(
       CryptoError,
     )
   })
 
   test("throws CryptoError from importSecret (invalid kemOutput)", async () => {
     await expect(
-      hpke.importSecret({} as any, new Uint8Array([1]), new Uint8Array([2]), 16, new Uint8Array([3])),
+      hpke.importSecret(secKey, new Uint8Array([1]), new Uint8Array([2]), 16, new Uint8Array([3])),
     ).rejects.toThrow(CryptoError)
   })
 

@@ -45,7 +45,7 @@ async function treeOperationsTest(data: TreeOperationData, impl: CiphersuiteImpl
 
   expect(encodeRatchetTree(treeAfter)).toStrictEqual(hexToBytes(data.tree_after))
 
-  const hashAfter = await treeHashRoot(treeAfter!, impl.hash)
+  const hashAfter = await treeHashRoot(treeAfter, impl.hash)
   expect(hashAfter).toStrictEqual(hexToBytes(data.tree_hash_after))
 }
 

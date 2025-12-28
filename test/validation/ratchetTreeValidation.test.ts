@@ -187,21 +187,21 @@ async function resignLeafNode(
   if (tree[nodeIndex]!.nodeType === "parent") throw new Error("expected leaf")
   if (tree[nodeIndex]?.leaf.leafNodeSource === "commit") {
     const newLeaf = {
-      ...tree[nodeIndex]!.leaf,
+      ...tree[nodeIndex].leaf,
 
-      leafNodeSource: tree[nodeIndex]!.leaf.leafNodeSource,
+      leafNodeSource: tree[nodeIndex].leaf.leafNodeSource,
       groupId,
       leafIndex: nodeToLeafIndex(toNodeIndex(nodeIndex)),
     }
     const signed = await signLeafNodeCommit(newLeaf, privateKey, impl.signature)
-    tree[nodeIndex]!.leaf.signature = signed.signature
+    tree[nodeIndex].leaf.signature = signed.signature
   } else if (tree[nodeIndex]?.leaf.leafNodeSource === "key_package") {
     const signed = await signLeafNodeKeyPackage(
       { ...tree[nodeIndex]?.leaf, leafNodeSource: "key_package" },
       privateKey,
       impl.signature,
     )
-    tree[nodeIndex]!.leaf.signature = signed.signature
+    tree[nodeIndex].leaf.signature = signed.signature
   } else {
     throw new Error("Couldn't sign")
   }
@@ -318,10 +318,10 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
   //tamper with a leaf node signature
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0] === undefined || tree[0]!.nodeType === "parent") throw new Error("expected leaf")
+  if (tree[0] === undefined || tree[0].nodeType === "parent") throw new Error("expected leaf")
 
   // flip a byte in the signature to invalidate it
-  tree[0]!.leaf.signature[0] = (tree[0]!.leaf.signature[0]! + 1) & 0xff
+  tree[0].leaf.signature[0] = (tree[0].leaf.signature[0]! + 1) & 0xff
 
   const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
 
@@ -352,11 +352,11 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
   // tamper with the key_package leaf node signature
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0] === undefined || tree[0]!.nodeType === "parent" || tree[0].leaf.leafNodeSource !== "key_package")
+  if (tree[0] === undefined || tree[0].nodeType === "parent" || tree[0].leaf.leafNodeSource !== "key_package")
     throw new Error("expected key_package leaf source")
 
   // flip a byte in the signature to invalidate it
-  tree[0]!.leaf.signature[0] = (tree[0]!.leaf.signature[0]! + 1) & 0xff
+  tree[0].leaf.signature[0] = (tree[0].leaf.signature[0]! + 1) & 0xff
 
   const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
 
@@ -377,7 +377,7 @@ async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -413,7 +413,7 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -449,7 +449,7 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -557,7 +557,7 @@ async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const bob = await generateKeyPackageWithKey(bobCredential, defaultCapabilities(), defaultLifetime, [], sigKeys, impl)

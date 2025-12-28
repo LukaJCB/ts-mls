@@ -109,7 +109,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
 
     for (const pp of privatePaths) {
       if (pp.leafIndex === path.sender) {
-        expect(path.path_secrets[pp.leafIndex]).toBeNull
+        expect(path.path_secrets[pp.leafIndex]).toBeNull()
       } else {
         await testCommitSecret(tree, pp, path, updatedGroupContext, updatePath[0], impl)
 

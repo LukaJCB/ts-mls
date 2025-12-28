@@ -49,7 +49,7 @@ export function shuffledIndices<T>(arr: T[]): number[] {
 
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[indices[i], indices[j]!] = [indices[j]!, indices[i]!]
+    ;[indices[i], indices[j]] = [indices[j]!, indices[i]!]
   }
 
   return indices
