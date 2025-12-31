@@ -1,9 +1,52 @@
 import { DependencyError } from "../../../mlsError.js"
 import { SignatureAlgorithm, Signature } from "../../signature.js"
+import { toBufferSource } from "../../../util/byteArray.js"
+
+function rawEd25519ToPKCS8(rawKey: Uint8Array): Uint8Array {
+  const oid = new Uint8Array([0x06, 0x03, 0x2b, 0x65, 0x70])
+
+  const innerOctetString = new Uint8Array([0x04, 0x20, ...rawKey])
+
+  const privateKeyField = new Uint8Array([0x04, 0x22, ...innerOctetString])
+  const algorithmSeq = new Uint8Array([0x30, 0x05, ...oid])
+
+  const version = new Uint8Array([0x02, 0x01, 0x00])
+
+  const content = new Uint8Array([...version, ...algorithmSeq, ...privateKeyField])
+
+  return new Uint8Array([0x30, content.length, ...content])
+}
 
 export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<Signature> {
   switch (alg) {
-    case "Ed25519":
+    case "Ed25519": {
+      const subtle = globalThis.crypto?.subtle
+
+      if (subtle !== undefined) {
+        return {
+          async sign(signKey, message) {
+            const keyData = signKey.length === 32 ? rawEd25519ToPKCS8(signKey) : signKey
+            const key = await subtle.importKey("pkcs8", toBufferSource(keyData), "Ed25519", false, ["sign"])
+            const sig = await subtle.sign("Ed25519", key, toBufferSource(message))
+            return new Uint8Array(sig)
+          },
+          async verify(publicKey, message, signature) {
+            const key = await subtle.importKey("raw", toBufferSource(publicKey), "Ed25519", false, ["verify"])
+            return subtle.verify("Ed25519", key, toBufferSource(signature), toBufferSource(message))
+          },
+          async keygen() {
+            const keyPair = await subtle.generateKey("Ed25519", true, ["sign", "verify"])
+            const publicKeyBuffer = await subtle.exportKey("raw", keyPair.publicKey)
+            const privateKeyBuffer = await subtle.exportKey("pkcs8", keyPair.privateKey)
+
+            const publicKey = new Uint8Array(publicKeyBuffer)
+            const signKey = new Uint8Array(privateKeyBuffer)
+
+            return { signKey, publicKey }
+          },
+        }
+      }
+
       try {
         const { ed25519 } = await import("@noble/curves/ed25519.js")
         return {
@@ -23,6 +66,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
           "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
         )
       }
+    }
 
     case "Ed448":
       try {
