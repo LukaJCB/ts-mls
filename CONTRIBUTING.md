@@ -7,7 +7,7 @@ Thank you for your interest in contributing to ts-mls! This document outlines th
 ### Prerequisites
 
 - Node.js (version 19 or higher required)
-- npm (comes with Node.js)
+- pnpm (comes with Node.js)
 
 > **Note**: Node.js 19+ is required because this project uses the Web Crypto API (`crypto.subtle`) which is only available as a global object starting from Node.js 19.
 
@@ -23,7 +23,7 @@ Thank you for your interest in contributing to ts-mls! This document outlines th
 2. Install dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 ### Project Structure
@@ -40,7 +40,7 @@ Thank you for your interest in contributing to ts-mls! This document outlines th
 To build the TypeScript code:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 This compiles the TypeScript source code in `src/` to JavaScript in `dist/`.
@@ -50,13 +50,13 @@ This compiles the TypeScript source code in `src/` to JavaScript in `dist/`.
 To run all tests:
 
 ```bash
-npm run test
+pnpm test
 ```
 
 To run a specific test by name:
 
 ```bash
-npm run test -- --t "Large Group, Full Lifecycle"
+pnpm test -- --t "Large Group, Full Lifecycle"
 ```
 
 The test suite contains:
@@ -73,13 +73,13 @@ The project uses Prettier for code formatting.
 To format all files:
 
 ```bash
-npm run format
+pnpm format
 ```
 
 To check if files are properly formatted:
 
 ```bash
-npm run format:check
+pnpm format:check
 ```
 
 ### Documentation Verification
@@ -87,7 +87,7 @@ npm run format:check
 To verify that code examples in documentation compile correctly:
 
 ```bash
-npm run verify-docs
+pnpm verify-docs
 ```
 
 This checks all markdown files in the `docs/` directory and the `README.md` for valid TypeScript code examples.
@@ -97,7 +97,7 @@ This checks all markdown files in the `docs/` directory and the `README.md` for 
 To check for circular dependencies:
 
 ```bash
-npx run verify-madge
+npx verify-madge
 ```
 
 This ensures the codebase doesn't have circular import dependencies.
@@ -107,23 +107,23 @@ This ensures the codebase doesn't have circular import dependencies.
 Before submitting a pull request, all checks must pass. The complete verification process can be run with:
 
 ```bash
-npm run verify
+pnpm verify
 ```
 
 This command runs all the previously mentioned checks in sequence:
 
-1. **Build Check** (`npm run build`)
-2. **Format Check** (`npm run format:check`)
-3. **Documentation Verification** (`npm run verify-docs`)
-4. **Circular Dependency Check** (`npm run verify-madge`)
-5. **Test Suite** (`npm run test`)
+1. **Build Check** (`pnpm build`)
+2. **Format Check** (`pnpm format:check`)
+3. **Documentation Verification** (`pnpm verify-docs`)
+4. **Circular Dependency Check** (`pnpm verify-madge`)
+5. **Test Suite** (`pnpm test`)
 
 ## Releasing a new version
 
-Releases are made via GitHub Actions and we utilize npm provenance, meaning that the release is signed by Sigstore public good servers and logged in a public ledger, where users can verify the build information on the Transparency Log. To generate a new release run:
+Releases are made via GitHub Actions and we utilize pnpm provenance, meaning that the release is signed by Sigstore public good servers and logged in a public ledger, where users can verify the build information on the Transparency Log. To generate a new release run:
 
 ```bash
-npm version patch
+pnpm version patch
 
 git push --follow-tags
 ```
@@ -150,7 +150,7 @@ git push --follow-tags
 
 1. Create a feature branch from the main branch
 2. Make your changes following the guidelines above
-3. Run the complete verification process: `npm run verify`
+3. Run the complete verification process: `pnpm verify`
 4. Ensure all checks pass
 5. Submit a pull request with a clear description of your changes
 
