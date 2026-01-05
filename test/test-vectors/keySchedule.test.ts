@@ -41,7 +41,7 @@ async function testKeySchedule(
       // Verify that group context matches the provided group_context value
       expect(encodeGroupContext(gc)).toStrictEqual(hexToBytes(epoch.group_context))
 
-      const { keySchedule, joinerSecret, welcomeSecret } = await initializeEpoch(
+      const { keySchedule, joinerSecret, welcomeSecret, encryptionSecret } = await initializeEpoch(
         initSecret,
         hexToBytes(epoch.commit_secret),
         gc,
@@ -53,7 +53,7 @@ async function testKeySchedule(
       expect(welcomeSecret).toStrictEqual(hexToBytes(epoch.welcome_secret))
       expect(keySchedule.initSecret).toStrictEqual(hexToBytes(epoch.init_secret))
       expect(keySchedule.senderDataSecret).toStrictEqual(hexToBytes(epoch.sender_data_secret))
-      expect(keySchedule.encryptionSecret).toStrictEqual(hexToBytes(epoch.encryption_secret))
+      expect(encryptionSecret).toStrictEqual(hexToBytes(epoch.encryption_secret))
       expect(keySchedule.exporterSecret).toStrictEqual(hexToBytes(epoch.exporter_secret))
       expect(keySchedule.externalSecret).toStrictEqual(hexToBytes(epoch.external_secret))
       expect(keySchedule.confirmationKey).toStrictEqual(hexToBytes(epoch.confirmation_key))
