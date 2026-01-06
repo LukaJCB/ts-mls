@@ -48,9 +48,5 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
     throw new Error("binary deserialization failed unexpectedly")
   }
 
-  console.log(groupState.ratchetTree)
-  console.log("foo")
-  console.log(decoded[0].ratchetTree)
-  console.log("bar")
   expect(groupState.ratchetTree).toEqual(decoded[0].ratchetTree)
 }

@@ -158,12 +158,12 @@ export async function protect(
   config: PaddingConfig,
   cs: CiphersuiteImpl,
 ): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
-  const node = secretTree[leafToNodeIndex(toLeafIndex(leafIndex))]
+  const node = secretTree[leafIndex]
   if (node === undefined) throw new InternalError("Bad node index for secret tree")
 
   const { newTree, generation, reuseGuard, nonce, key } = await consumeRatchet(
     secretTree,
-    leafToNodeIndex(toLeafIndex(leafIndex)),
+    toLeafIndex(leafIndex),
     content.contentType,
     cs,
   )

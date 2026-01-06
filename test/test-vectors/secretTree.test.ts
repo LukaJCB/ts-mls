@@ -4,7 +4,7 @@ import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/secret-tree.json"
 import { expandSenderDataKey, expandSenderDataNonce } from "../../src/sender.js"
 import { createSecretTree, deriveKey, deriveNonce, ratchetUntil } from "../../src/secretTree.js"
-import { leafToNodeIndex, toLeafIndex } from "../../src/treemath.js"
+import { toLeafIndex } from "../../src/treemath.js"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
@@ -47,8 +47,8 @@ async function testSecretTree(
 
   const tree = await createSecretTree(leaves.length, hexToBytes(encryptionSecret), impl.kdf)
   for (const [index, leaf] of leaves.entries()) {
-    const nodeIndex = leafToNodeIndex(toLeafIndex(index))
-    const handshakeSecret = tree[nodeIndex]!.handshake
+    const leafIndex = toLeafIndex(index)
+    const handshakeSecret = tree[leafIndex]!.handshake
     for (const gen of leaf) {
       const ratcheted = await ratchetUntil(handshakeSecret, gen.generation, defaultKeyRetentionConfig, impl.kdf)
       expect(ratcheted.generation).toBe(gen.generation)
@@ -62,7 +62,7 @@ async function testSecretTree(
       expect(handshakeNonce).toStrictEqual(hexToBytes(gen.handshake_nonce))
     }
 
-    const applicationSecret = tree[nodeIndex]!.application
+    const applicationSecret = tree[leafIndex]!.application
     for (const gen of leaf) {
       const ratcheted = await ratchetUntil(applicationSecret, gen.generation, defaultKeyRetentionConfig, impl.kdf)
       expect(ratcheted.generation).toBe(gen.generation)
