@@ -7,9 +7,9 @@ import { extractEpochSecret, extractJoinerSecret, GroupContext } from "./groupCo
 import { extractWelcomeSecret } from "./groupInfo.js"
 
 export interface KeySchedule {
-  epochSecret: Uint8Array
+  // epochSecret: Uint8Array
   senderDataSecret: Uint8Array
-  encryptionSecret: Uint8Array
+  // encryptionSecret: Uint8Array
   exporterSecret: Uint8Array
   externalSecret: Uint8Array
   confirmationKey: Uint8Array
@@ -19,6 +19,7 @@ export interface KeySchedule {
   initSecret: Uint8Array
 }
 
+//TODO remove 2 arrays here once we break compatability
 export const keyScheduleEncoder: BufferEncoder<KeySchedule> = contramapBufferEncoders(
   [
     varLenDataEncoder,
@@ -34,9 +35,9 @@ export const keyScheduleEncoder: BufferEncoder<KeySchedule> = contramapBufferEnc
   ],
   (ks) =>
     [
-      ks.epochSecret,
+      new Uint8Array(),
       ks.senderDataSecret,
-      ks.encryptionSecret,
+      new Uint8Array(),
       ks.exporterSecret,
       ks.externalSecret,
       ks.confirmationKey,
@@ -63,9 +64,9 @@ export const decodeKeySchedule: Decoder<KeySchedule> = mapDecoders(
     decodeVarLenData,
   ],
   (
-    epochSecret,
+    _epochSecret,
     senderDataSecret,
-    encryptionSecret,
+    _encryptionSecret,
     exporterSecret,
     externalSecret,
     confirmationKey,
@@ -74,9 +75,7 @@ export const decodeKeySchedule: Decoder<KeySchedule> = mapDecoders(
     epochAuthenticator,
     initSecret,
   ) => ({
-    epochSecret,
     senderDataSecret,
-    encryptionSecret,
     exporterSecret,
     externalSecret,
     confirmationKey,
@@ -91,6 +90,7 @@ export interface EpochSecrets {
   keySchedule: KeySchedule
   joinerSecret: Uint8Array
   welcomeSecret: Uint8Array
+  encryptionSecret: Uint8Array
 }
 
 export async function mlsExporter(
@@ -114,13 +114,16 @@ export async function deriveKeySchedule(
 ) {
   const epochSecret = await extractEpochSecret(groupContext, joinerSecret, kdf, pskSecret)
 
-  return await initializeKeySchedule(epochSecret, kdf)
+  const encryptionSecret = await deriveSecret(epochSecret, "encryption", kdf)
+
+  const keySchedule = await initializeKeySchedule(epochSecret, kdf)
+
+  return [keySchedule, encryptionSecret] as const
 }
 
 export async function initializeKeySchedule(epochSecret: Uint8Array, kdf: Kdf): Promise<KeySchedule> {
   const newInitSecret = await deriveSecret(epochSecret, "init", kdf)
   const senderDataSecret = await deriveSecret(epochSecret, "sender data", kdf)
-  const encryptionSecret = await deriveSecret(epochSecret, "encryption", kdf)
   const exporterSecret = await deriveSecret(epochSecret, "exporter", kdf)
   const externalSecret = await deriveSecret(epochSecret, "external", kdf)
   const confirmationKey = await deriveSecret(epochSecret, "confirm", kdf)
@@ -129,10 +132,8 @@ export async function initializeKeySchedule(epochSecret: Uint8Array, kdf: Kdf): 
   const epochAuthenticator = await deriveSecret(epochSecret, "authentication", kdf)
 
   const newKeySchedule: KeySchedule = {
-    epochSecret: epochSecret,
     initSecret: newInitSecret,
     senderDataSecret,
-    encryptionSecret,
     exporterSecret,
     externalSecret,
     confirmationKey,
@@ -155,7 +156,7 @@ export async function initializeEpoch(
 
   const welcomeSecret = await extractWelcomeSecret(joinerSecret, pskSecret, kdf)
 
-  const newKeySchedule: KeySchedule = await deriveKeySchedule(joinerSecret, pskSecret, groupContext, kdf)
+  const [newKeySchedule, encryptionSecret] = await deriveKeySchedule(joinerSecret, pskSecret, groupContext, kdf)
 
-  return { welcomeSecret, joinerSecret, keySchedule: newKeySchedule }
+  return { welcomeSecret, joinerSecret, encryptionSecret, keySchedule: newKeySchedule }
 }

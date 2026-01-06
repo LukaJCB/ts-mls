@@ -107,6 +107,7 @@ import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder 
 import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
 import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { deriveSecret } from "./crypto/kdf.js"
 
 export type ClientState = GroupState & { clientConfig: ClientConfig }
 
@@ -975,13 +976,18 @@ export async function joinGroupWithExtensions(
           privateKeyPath,
         )
 
-  const keySchedule = await deriveKeySchedule(groupSecrets.joinerSecret, pskSecret, gi.groupContext, cs.kdf)
+  const [keySchedule, encryptionSecret] = await deriveKeySchedule(
+    groupSecrets.joinerSecret,
+    pskSecret,
+    gi.groupContext,
+    cs.kdf,
+  )
 
   const confirmationTagVerified = await verifyGroupInfoConfirmationTag(gi, groupSecrets.joinerSecret, pskSecret, cs)
 
   if (!confirmationTagVerified) throw new CryptoVerificationError("Could not verify confirmation tag")
 
-  const secretTree = await createSecretTree(leafWidth(tree.length), keySchedule.encryptionSecret, cs.kdf)
+  const secretTree = await createSecretTree(leafWidth(tree.length), encryptionSecret, cs.kdf)
 
   return [
     {
@@ -1036,7 +1042,9 @@ export async function createGroup(
 
   const confirmationTag = await createConfirmationTag(keySchedule.confirmationKey, confirmedTranscriptHash, cs.hash)
 
-  const secretTree = await createSecretTree(1, keySchedule.encryptionSecret, cs.kdf)
+  const encryptionSecret = await deriveSecret(epochSecret, "encryption", cs.kdf)
+
+  const secretTree = await createSecretTree(1, encryptionSecret, cs.kdf)
 
   return {
     ratchetTree,

@@ -208,11 +208,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
   const newState: ClientState = {
     groupContext: updatedGroupContext,
     ratchetTree: tree,
-    secretTree: await createSecretTree(
-      leafWidth(tree.length),
-      epochSecrets.keySchedule.encryptionSecret,
-      cipherSuite.kdf,
-    ),
+    secretTree: await createSecretTree(leafWidth(tree.length), epochSecrets.encryptionSecret, cipherSuite.kdf),
     keySchedule: epochSecrets.keySchedule,
     privatePath: privateKeys,
     unappliedProposals: {},
@@ -599,7 +595,7 @@ export async function joinGroupExternal(
   const state: ClientState = {
     ratchetTree: newTree,
     groupContext: groupContext,
-    secretTree: await createSecretTree(leafWidth(newTree.length), epochSecrets.keySchedule.encryptionSecret, cs.kdf),
+    secretTree: await createSecretTree(leafWidth(newTree.length), epochSecrets.encryptionSecret, cs.kdf),
     privatePath: privateKeyPath,
     confirmationTag,
     historicalReceiverData: new Map(),
