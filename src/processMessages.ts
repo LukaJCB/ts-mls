@@ -201,7 +201,7 @@ async function processCommit(
 
   const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, false, cs)
 
-  const action = callback({ kind: "commit", proposals: result.allProposals })
+  const action = callback({ kind: "commit", senderLeafIndex, proposals: result.allProposals })
 
   if (action === "reject") {
     return { newState: state, actionTaken: action }
