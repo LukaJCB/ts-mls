@@ -48,12 +48,13 @@ import { createSecretTree, SecretTree } from "./secretTree.js"
 import { treeHashRoot } from "./treeHash.js"
 import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath.js"
 import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath.js"
-import { base64ToBytes } from "./util/byteArray.js"
+import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
+import { PublicMessage } from "./publicMessage.js"
 
 export interface MLSContext {
   state: ClientState
@@ -65,6 +66,7 @@ export interface CreateCommitResult {
   newState: ClientState
   welcome: Welcome | undefined
   commit: MLSMessage
+  consumed: Uint8Array[]
 }
 
 export interface CreateCommitOptions {
@@ -177,7 +179,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     confirmationTag,
   }
 
-  const [commit] = await protectCommit(
+  const [commit, _newTree, consumedSecrets] = await protectCommit(
     wireAsPublicMessage,
     state,
     authenticatedData,
@@ -205,6 +207,8 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
       ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
       : { kind: "active" }
 
+  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state)
+
   const newState: ClientState = {
     groupContext: updatedGroupContext,
     ratchetTree: tree,
@@ -212,14 +216,20 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     keySchedule: epochSecrets.keySchedule,
     privatePath: privateKeys,
     unappliedProposals: {},
-    historicalReceiverData: addHistoricalReceiverData(state),
+    historicalReceiverData,
     confirmationTag,
     signaturePrivateKey: state.signaturePrivateKey,
     groupActiveState,
     clientConfig: state.clientConfig,
   }
 
-  return { newState, welcome, commit }
+  zeroOutUint8Array(commitSecret)
+  zeroOutUint8Array(epochSecrets.encryptionSecret)
+  zeroOutUint8Array(epochSecrets.joinerSecret)
+
+  const consumed = [...consumedSecrets, ...consumedEpochData, state.keySchedule.initSecret]
+
+  return { newState, welcome, commit, consumed }
 }
 
 function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): ProposalOrRef[] {
@@ -394,7 +404,7 @@ async function protectCommit(
   content: FramedContentCommit,
   authData: FramedContentAuthDataCommit,
   cs: CiphersuiteImpl,
-): Promise<[MLSMessage, SecretTree]> {
+): Promise<[MLSMessage, SecretTree, Uint8Array[]]> {
   const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
 
   const authenticatedContent: AuthenticatedContentCommit = {
@@ -411,7 +421,7 @@ async function protectCommit(
       cs,
     )
 
-    return [{ version: "mls10", wireformat: "mls_public_message", publicMessage: msg }, state.secretTree]
+    return [{ version: "mls10", wireformat: "mls_public_message", publicMessage: msg }, state.secretTree, []]
   } else {
     const res = await protect(
       state.keySchedule.senderDataSecret,
@@ -424,7 +434,11 @@ async function protectCommit(
       cs,
     )
 
-    return [{ version: "mls10", wireformat: "mls_private_message", privateMessage: res.privateMessage }, res.tree]
+    return [
+      { version: "mls10", wireformat: "mls_private_message", privateMessage: res.privateMessage },
+      res.tree,
+      res.consumed,
+    ]
   }
 }
 
@@ -472,7 +486,7 @@ export async function joinGroupExternal(
   tree?: RatchetTree,
   clientConfig: ClientConfig = defaultClientConfig,
   authenticatedData: Uint8Array = new Uint8Array(),
-) {
+): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
   const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === "external_pub")
 
   if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
@@ -613,6 +627,11 @@ export async function joinGroupExternal(
   }
 
   const msg = await protectPublicMessage(epochSecrets.keySchedule.membershipKey, groupContext, authenticatedContent, cs)
+
+  zeroOutUint8Array(commitSecret)
+  zeroOutUint8Array(initSecret)
+  zeroOutUint8Array(epochSecrets.encryptionSecret)
+  zeroOutUint8Array(epochSecrets.joinerSecret)
 
   return { publicMessage: msg, newState: state }
 }

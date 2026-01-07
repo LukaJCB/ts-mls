@@ -33,7 +33,7 @@ describe("EpochReceiverData roundtrip", () => {
 
     const state = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-    const historical = addHistoricalReceiverData(state)
+    const [historical] = addHistoricalReceiverData(state)
 
     expect(historical.size).toBeGreaterThan(0)
 

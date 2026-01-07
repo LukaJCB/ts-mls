@@ -43,14 +43,16 @@ import {
 import { UpdatePath, applyUpdatePath } from "./updatePath.js"
 import { addToMap } from "./util/addToMap.js"
 import { WireformatName } from "./wireformat.js"
+import { zeroOutUint8Array } from "./util/byteArray.js"
 
 export type ProcessMessageResult =
   | {
       kind: "newState"
       newState: ClientState
       actionTaken: IncomingMessageAction
+      consumed: Uint8Array[]
     }
-  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState }
+  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState; consumed: Uint8Array[] }
 
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
@@ -84,7 +86,12 @@ export async function processPrivateMessage(
       const newState = { ...state, historicalReceiverData: newHistoricalReceiverData }
 
       if (result.content.content.contentType === "application") {
-        return { kind: "applicationMessage", message: result.content.content.applicationData, newState }
+        return {
+          kind: "applicationMessage",
+          message: result.content.content.applicationData,
+          newState,
+          consumed: result.consumed,
+        }
       } else {
         throw new ValidationError("Cannot process commit or proposal from former epoch")
       }
@@ -106,9 +113,14 @@ export async function processPrivateMessage(
   const updatedState = { ...state, secretTree: result.tree }
 
   if (result.content.content.contentType === "application") {
-    return { kind: "applicationMessage", message: result.content.content.applicationData, newState: updatedState }
+    return {
+      kind: "applicationMessage",
+      message: result.content.content.applicationData,
+      newState: updatedState,
+      consumed: result.consumed,
+    }
   } else if (result.content.content.contentType === "commit") {
-    const { newState, actionTaken } = await processCommit(
+    const { newState, actionTaken, consumed } = await processCommit(
       updatedState,
       result.content as AuthenticatedContentCommit,
       "mls_private_message",
@@ -120,6 +132,7 @@ export async function processPrivateMessage(
       kind: "newState",
       newState,
       actionTaken,
+      consumed: [...result.consumed, ...consumed],
     }
   } else {
     const action = callback({
@@ -134,12 +147,14 @@ export async function processPrivateMessage(
         kind: "newState",
         newState: updatedState,
         actionTaken: action,
+        consumed: result.consumed,
       }
     else
       return {
         kind: "newState",
         newState: await processProposal(updatedState, result.content, result.content.content.proposal, cs.hash),
         actionTaken: action,
+        consumed: result.consumed,
       }
   }
 }
@@ -147,6 +162,7 @@ export async function processPrivateMessage(
 export interface NewStateWithActionTaken {
   newState: ClientState
   actionTaken: IncomingMessageAction
+  consumed: Uint8Array[]
 }
 
 export async function processPublicMessage(
@@ -175,11 +191,13 @@ export async function processPublicMessage(
       return {
         newState: state,
         actionTaken: action,
+        consumed: [],
       }
     else
       return {
         newState: await processProposal(state, content, content.content.proposal, cs.hash),
         actionTaken: action,
+        consumed: [],
       }
   } else {
     return processCommit(state, content as AuthenticatedContentCommit, "mls_public_message", pskSearch, callback, cs) //todo solve with types
@@ -204,7 +222,7 @@ async function processCommit(
   const action = callback({ kind: "commit", senderLeafIndex, proposals: result.allProposals })
 
   if (action === "reject") {
-    return { newState: state, actionTaken: action }
+    return { newState: state, actionTaken: action, consumed: [] }
   }
 
   if (content.content.commit.path !== undefined) {
@@ -293,6 +311,14 @@ async function processCommit(
       ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
       : { kind: "active" }
 
+  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state)
+
+  zeroOutUint8Array(commitSecret)
+  zeroOutUint8Array(epochSecrets.joinerSecret)
+  zeroOutUint8Array(epochSecrets.encryptionSecret)
+
+  const consumed = [...consumedEpochData, initSecret]
+
   return {
     newState: {
       ...state,
@@ -302,11 +328,12 @@ async function processCommit(
       groupContext: updatedGroupContext,
       keySchedule: epochSecrets.keySchedule,
       confirmationTag: content.auth.confirmationTag,
-      historicalReceiverData: addHistoricalReceiverData(state),
+      historicalReceiverData,
       unappliedProposals: {},
       groupActiveState,
     },
     actionTaken: action,
+    consumed,
   }
 }
 
