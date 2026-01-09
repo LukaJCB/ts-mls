@@ -50,6 +50,8 @@ export { type EpochReceiverData } from "./epochReceiverData.js"
 
 export { createApplicationMessage, createProposal } from "./createMessage.js"
 
+export { zeroOutUint8Array } from "./util/byteArray.js"
+
 export {
   joinGroupExternal,
   createCommit,

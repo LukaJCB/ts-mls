@@ -85,6 +85,7 @@ import {
   encodeMlsMessage,
   decodeMlsMessage,
   Proposal,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -127,6 +128,9 @@ const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }
 
 aliceGroup = commitResult.newState
 
+// alice deletes the keys used to encrypt the commit message
+commitResult.consumed.forEach(zeroOutUint8Array)
+
 // alice sends welcome message to bob
 const encodedWelcome = encodeMlsMessage({
   welcome: commitResult.welcome!,
@@ -156,6 +160,9 @@ const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, mess
 
 aliceGroup = aliceCreateMessageResult.newState
 
+// alice deletes the keys used to encrypt the application message
+aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
+
 // alice sends the message to bob
 const encodedPrivateMessageAlice = encodeMlsMessage({
   privateMessage: aliceCreateMessageResult.privateMessage,
@@ -179,6 +186,9 @@ const bobProcessMessageResult = await processPrivateMessage(
 bobGroup = bobProcessMessageResult.newState
 
 if (bobProcessMessageResult.kind === "newState") throw new Error("Expected application message")
+
+// bob deletes the keys used to decrypt the application message
+bobProcessMessageResult.consumed.forEach(zeroOutUint8Array)
 
 console.log(bobProcessMessageResult.message)
 ```
