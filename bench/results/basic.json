@@ -1,18 +1,18 @@
 [
   {
     "name": "Generate KeyPackage",
-    "avg": 1014,
+    "avg": 1029,
     "med": 1044,
-    "latencyAvg": 1003748,
-    "latencyMed": 957896,
-    "samples": 1000
+    "latencyAvg": 979067,
+    "latencyMed": 957875,
+    "samples": 1022
   },
   {
     "name": "Create group & welcome",
-    "avg": 195,
-    "med": 198,
-    "latencyAvg": 5228770,
-    "latencyMed": 5044771,
+    "avg": 217,
+    "med": 221,
+    "latencyAvg": 4738712,
+    "latencyMed": 4524166,
     "samples": 1000
   }
 ]
