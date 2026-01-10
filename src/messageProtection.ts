@@ -23,7 +23,7 @@ import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.j
 import { SenderData, SenderDataAAD } from "./sender.js"
 import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
-import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
+import { CryptoVerificationError, CodecError, ValidationError, MlsError } from "./mlsError.js"
 import { PaddingConfig } from "./paddingConfig.js"
 import { encode } from "./codec/tlsEncoder.js"
 
@@ -158,9 +158,6 @@ export async function protect(
   config: PaddingConfig,
   cs: CiphersuiteImpl,
 ): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
-  const node = secretTree[leafIndex]
-  if (node === undefined) throw new InternalError("Bad node index for secret tree")
-
   const { newTree, generation, reuseGuard, nonce, key } = await consumeRatchet(
     secretTree,
     toLeafIndex(leafIndex),
