@@ -8,6 +8,7 @@ This scenario demonstrates the most fundamental workflow in MLS: creating a grou
 2. **Adding a Member**: Alice adds Bob to the group using an Add proposal and a Commit.
 3. **Joining**: Bob joins the group using the Welcome message.
 4. **Messaging**: Alice sends an encrypted application message to Bob, and Bob decrypts it.
+5. **Key Deletion**: After sending or receiving a message, Alice and Bob delete the keys for that message.
 
 ## Key Concepts
 
@@ -16,6 +17,7 @@ This scenario demonstrates the most fundamental workflow in MLS: creating a grou
 - **Commit**: A message that applies proposals and advances the group state. Commits are signed and update the group epoch.
 - **Welcome**: A message that allows new members to join the group securely. It contains the secrets needed to initialize their state.
 - **Application Message**: An encrypted message sent within the group. Only current group members can decrypt these messages.
+- **Deletion Schedule**: It is advisable to delete all security-sensitive values as soon as they are consumed, this includes all keys used to encrypt and decrypt messages. These keys should be used only once and the next message will be encrypted with a new key.
 
 Note that Bob will have to receive the ratchet tree out-of-band from Alice, if you wish to include the ratchet tree in the welcome message, check out [how to use the ratchet_tree extension](02-ratchet-tree-extension.md).
 
@@ -37,6 +39,7 @@ import {
   createApplicationMessage,
   createCommit,
   Proposal,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 // Setup ciphersuite and credentials
@@ -57,6 +60,9 @@ const addBobProposal: Proposal = {
 const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
 aliceGroup = commitResult.newState
 
+// Alice deletes the keys used to encrypt the commit message
+commitResult.consumed.forEach(zeroOutUint8Array)
+
 // Bob joins using the welcome message
 let bobGroup = await joinGroup(
   commitResult.welcome!,
@@ -72,6 +78,9 @@ const messageToBob = new TextEncoder().encode("Hello bob!")
 const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, messageToBob, impl)
 aliceGroup = aliceCreateMessageResult.newState
 
+// Alice deletes the keys used to encrypt the application message
+aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
+
 // Bob receives the message
 const bobProcessMessageResult = await processPrivateMessage(
   bobGroup,
@@ -80,6 +89,9 @@ const bobProcessMessageResult = await processPrivateMessage(
   impl,
 )
 bobGroup = bobProcessMessageResult.newState
+
+// Bob deletes the keys used to decrypt the application message
+bobProcessMessageResult.consumed.forEach(zeroOutUint8Array)
 ```
 
 ---
@@ -89,3 +101,5 @@ bobGroup = bobProcessMessageResult.newState
 - After running this scenario, both Alice and Bob will have a synchronized view of the group state.
 - Bob will be able to decrypt and read Alice's message.
 - The group state (including epoch, tree, and secrets) will be updated for both members.
+- Bob and Alice will be able to process or create the same message multiple times until they delete their consumed keys, at that point, the message will no longer encrypt or decrypt correctly.
+- ts-mls generally prefers immutability, users of this library can expect that no function in the library will directly mutate any values passed to the function. However, care must be taken to clean up any sensitive values that may linger on in memory (especially for long running processes).

@@ -9,7 +9,6 @@ import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
 import { root, right, left, toLeafIndex, LeafIndex, leafToNodeIndex, toNodeIndex, NodeIndex } from "./treemath.js"
-import { repeatAsync } from "./util/repeat.js"
 
 export interface GenerationSecret {
   secret: Uint8Array
@@ -176,23 +175,24 @@ export async function ratchetUntil(
 
   if (generationDifference > config.maximumForwardRatchetSteps)
     throw new ValidationError("Desired generation too far in the future")
-  const consumed = new Array<Uint8Array>(generationDifference)
-  const newSecret = await repeatAsync(
-    async (s) => {
-      const nextSecret = await deriveTreeSecret(s.secret, "secret", s.generation, kdf.size, kdf)
 
-      const [updated, old] = updateUnusedGenerations(s, config.retainKeysForGenerations)
-      consumed.push(...old)
-      return {
-        secret: nextSecret,
-        generation: s.generation + 1,
-        unusedGenerations: updated,
-      }
-    },
-    current,
-    generationDifference,
-  )
-  return [newSecret, consumed]
+  const consumed: Uint8Array[] = []
+  let result: GenerationSecret = { ...current }
+
+  for (let i = 0; i < generationDifference; i++) {
+    const nextSecret = await deriveTreeSecret(result.secret, "secret", result.generation, kdf.size, kdf)
+
+    const [updated, old] = updateUnusedGenerations(result, config.retainKeysForGenerations)
+    consumed.push(...old)
+
+    result = {
+      secret: nextSecret,
+      generation: result.generation + 1,
+      unusedGenerations: updated,
+    }
+  }
+
+  return [result, consumed]
 }
 
 function updateUnusedGenerations(
@@ -210,16 +210,26 @@ function updateUnusedGenerations(
 }
 
 function removeOldGenerations(
-  historicalReceiverData: Record<number, Uint8Array>,
+  unusedGenerations: Record<number, Uint8Array>,
   max: number,
 ): [Record<number, Uint8Array>, Uint8Array[]] {
-  const sortedGenerations = Object.keys(historicalReceiverData).sort((a, b) => (a < b ? -1 : 1))
+  const generations = Object.keys(unusedGenerations)
+    .map(Number)
+    .sort((a, b) => a - b)
 
-  const consumed = sortedGenerations.slice(0, max + 1).map((generation) => historicalReceiverData[Number(generation)]!)
+  const cutoff = generations.length - max
 
-  const record = Object.fromEntries(
-    sortedGenerations.slice(-max).map((generation) => [generation, historicalReceiverData[Number(generation)]!]),
-  )
+  const consumed = new Array<Uint8Array>()
+  const record: Record<number, Uint8Array> = {}
+
+  for (const [n, gen] of generations.entries()) {
+    const value = unusedGenerations[gen]!
+    if (n < cutoff) {
+      consumed.push(value)
+    } else {
+      record[gen] = value
+    }
+  }
 
   return [record, consumed]
 }
@@ -282,8 +292,6 @@ export async function ratchetToGeneration(
   node = workingTree.leafNodes[nodeIndex]!
 
   const ratchet = ratchetForContentType(node, contentType)
-
-  console.log("FOO", consumedSecrets)
 
   if (ratchet.generation > senderData.generation) {
     const desired = ratchet.unusedGenerations[senderData.generation]
