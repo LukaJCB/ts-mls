@@ -16,7 +16,7 @@ import { zeroOutUint8Array } from "../../src/util/byteArray.js"
 import { CryptoError } from "../../src/mlsError.js"
 import { PrivateMessage } from "../../src/privateMessage.js"
 
-test.concurrent.each(Object.keys(ciphersuites).slice(0, 1))(`Cleanup consumed values %s`, async (cs) => {
+test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
 })
 

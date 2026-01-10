@@ -8,7 +8,7 @@ import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
-import { root, right, left, toLeafIndex, LeafIndex, leafToNodeIndex, toNodeIndex, NodeIndex } from "./treemath.js"
+import { root, right, left, toLeafIndex, LeafIndex, leafToNodeIndex, NodeIndex, parent } from "./treemath.js"
 
 export interface GenerationSecret {
   secret: Uint8Array
@@ -104,31 +104,42 @@ async function deriveLeafSecret(
   leafIndex: LeafIndex,
   secretTree: SecretTree,
   kdf: Kdf,
-): Promise<{ secret: Uint8Array; updatedIntermediateNodes: Record<number, Uint8Array>; consumed: Uint8Array[] }> {
+): Promise<{ secret: Uint8Array; updatedIntermediateNodes: Record<NodeIndex, Uint8Array>; consumed: Uint8Array[] }> {
   const targetNodeIndex = leafToNodeIndex(leafIndex)
   const rootIndex = root(secretTree.leafWidth)
 
   const updatedIntermediateNodes = { ...secretTree.intermediateNodes }
   const consumed = new Array<Uint8Array>()
 
-  let current = rootIndex
+  // iterate from target leaf up to root
+  const pathFromLeaf: NodeIndex[] = []
+  let current = targetNodeIndex
+  while (current !== rootIndex) {
+    pathFromLeaf.push(current)
+    current = parent(current, secretTree.leafWidth)
+  }
+  pathFromLeaf.push(rootIndex)
 
+  // find the first existing node in the path
+  let startIndex = pathFromLeaf.length - 1
+  while (startIndex >= 0 && updatedIntermediateNodes[pathFromLeaf[startIndex]!] === undefined) {
+    startIndex--
+  }
+
+  if (startIndex < 0) {
+    throw new InternalError("No intermediate nodes found in path from leaf to root")
+  }
+
+  // derive down from the found node to the target
+  current = pathFromLeaf[startIndex]!
   while (current !== targetNodeIndex) {
     const l = left(current)
     const r = right(current)
 
     const nextNodeIndex = targetNodeIndex < current ? l : r
 
-    if (updatedIntermediateNodes[nextNodeIndex] !== undefined) {
-      current = nextNodeIndex
-      continue
-    }
-
     // we have to derive both children so we can delete the consumed secret
-    const currentSecret = updatedIntermediateNodes[current]
-    if (!currentSecret) {
-      throw new InternalError("Current node missing from tree")
-    }
+    const currentSecret = updatedIntermediateNodes[current]!
 
     const leftSecret = await expandWithLabel(currentSecret, "tree", new TextEncoder().encode("left"), kdf.size, kdf)
     const rightSecret = await expandWithLabel(currentSecret, "tree", new TextEncoder().encode("right"), kdf.size, kdf)
@@ -260,36 +271,10 @@ export async function ratchetToGeneration(
 ): Promise<ConsumeRatchetResult> {
   const index = toLeafIndex(senderData.leafIndex)
   const nodeIndex = leafToNodeIndex(index)
-  let node = tree.leafNodes[nodeIndex]
 
-  let consumedSecrets = new Array<Uint8Array>()
-  // Start with current tree state
-  let workingTree: SecretTree = tree
+  const [updatedTree, consumedSecrets] = await updateTreeWithLeafSecret(tree, index, nodeIndex, cs)
 
-  // Lazy derivation: derive leaf if not cached
-  if (node === undefined) {
-    const { secret: leafSecret, updatedIntermediateNodes, consumed } = await deriveLeafSecret(index, tree, cs.kdf)
-    const application = await createRatchetRoot(leafSecret, "application", cs.kdf)
-    const handshake = await createRatchetRoot(leafSecret, "handshake", cs.kdf)
-    consumedSecrets = consumed
-    node = { handshake, application }
-    // Merge derived nodes with new leaf node immutably
-    workingTree = {
-      ...tree,
-      intermediateNodes: { ...tree.intermediateNodes, ...updatedIntermediateNodes },
-      leafNodes: { ...tree.leafNodes, [nodeIndex]: node },
-    }
-  } else {
-    // Node already exists, but we still need workingTree to be a copy
-    workingTree = {
-      ...tree,
-      intermediateNodes: { ...tree.intermediateNodes },
-      leafNodes: { ...tree.leafNodes },
-    }
-  }
-
-  // Get the node from working tree (either newly created or already existing)
-  node = workingTree.leafNodes[nodeIndex]!
+  const node = updatedTree.leafNodes[nodeIndex]!
 
   const ratchet = ratchetForContentType(node, contentType)
 
@@ -308,7 +293,7 @@ export async function ratchetToGeneration(
         desired,
         senderData.generation,
         senderData.reuseGuard,
-        workingTree,
+        updatedTree,
         contentType,
         consumed,
         cs,
@@ -330,7 +315,7 @@ export async function ratchetToGeneration(
     index,
     currentSecret,
     senderData.reuseGuard,
-    workingTree,
+    updatedTree,
     contentType,
     [...consumed, ...consumedSecrets],
     cs,
@@ -344,42 +329,43 @@ export async function consumeRatchet(
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
   const nodeIndex = leafToNodeIndex(index)
-  let node = tree.leafNodes[nodeIndex]
+  const [updatedTree, consumedSecrets] = await updateTreeWithLeafSecret(tree, index, nodeIndex, cs)
 
-  // Start with current tree state
-  let workingTree: SecretTree = tree
-
-  let consumedSecrets = new Array<Uint8Array>()
-
-  // Lazy derivation: derive leaf if not cached
-  if (node === undefined) {
-    const { secret: leafSecret, updatedIntermediateNodes, consumed } = await deriveLeafSecret(index, tree, cs.kdf)
-    const application = await createRatchetRoot(leafSecret, "application", cs.kdf)
-    const handshake = await createRatchetRoot(leafSecret, "handshake", cs.kdf)
-    node = { handshake, application }
-    consumedSecrets = consumed
-    // Merge derived nodes with new leaf node immutably
-    workingTree = {
-      ...tree,
-      intermediateNodes: { ...tree.intermediateNodes, ...updatedIntermediateNodes },
-      leafNodes: { ...tree.leafNodes, [nodeIndex]: node },
-    }
-  } else {
-    // Node already exists, but we still need workingTree to be a copy
-    workingTree = {
-      ...tree,
-      intermediateNodes: { ...tree.intermediateNodes },
-      leafNodes: { ...tree.leafNodes },
-    }
-  }
-
-  // Get the node from working tree (either newly created or already existing)
-  node = workingTree.leafNodes[nodeIndex]!
+  const node = updatedTree.leafNodes[nodeIndex]!
 
   const currentSecret = ratchetForContentType(node, contentType)
   const reuseGuard = cs.rng.randomBytes(4) as ReuseGuard
 
-  return createRatchetResult(node, index, currentSecret, reuseGuard, workingTree, contentType, consumedSecrets, cs)
+  return createRatchetResult(node, index, currentSecret, reuseGuard, updatedTree, contentType, consumedSecrets, cs)
+}
+
+async function updateTreeWithLeafSecret(
+  tree: SecretTree,
+  index: LeafIndex,
+  nodeIndex: NodeIndex,
+  cs: CiphersuiteImpl,
+): Promise<[SecretTree, Uint8Array[]]> {
+  const existingNode = tree.leafNodes[nodeIndex]
+
+  if (existingNode === undefined) {
+    const { secret: leafSecret, updatedIntermediateNodes, consumed } = await deriveLeafSecret(index, tree, cs.kdf)
+    const application = await createRatchetRoot(leafSecret, "application", cs.kdf)
+    const handshake = await createRatchetRoot(leafSecret, "handshake", cs.kdf)
+
+    // Remove the target node from intermediate nodes since it's now a leaf
+    const { [nodeIndex]: _, ...remainingIntermediateNodes } = updatedIntermediateNodes
+
+    return [
+      {
+        ...tree,
+        intermediateNodes: remainingIntermediateNodes,
+        leafNodes: { ...tree.leafNodes, [nodeIndex]: { handshake, application } },
+      },
+      [...consumed, leafSecret],
+    ]
+  } else {
+    return [tree, []]
+  }
 }
 
 async function createRatchetResult(
@@ -404,7 +390,7 @@ async function createRatchetResult(
 
   return await createRatchetResultWithSecret(
     node,
-    toNodeIndex(index),
+    leafToNodeIndex(index),
     currentSecret.secret,
     currentSecret.generation,
     reuseGuard,

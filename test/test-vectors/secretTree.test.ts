@@ -53,13 +53,17 @@ async function testSecretTree(
       const app = await ratchetToGeneration(tree, senderData, "application", defaultKeyRetentionConfig, impl)
 
       expect(app.generation).toBe(gen.generation)
+      // application_key = application_ratchet_key_[i]_[generation]
       expect(app.key).toStrictEqual(hexToBytes(gen.application_key))
+      // application_nonce = application_ratchet_nonce_[i]_[generation]
       expect(app.nonce).toStrictEqual(hexToBytes(gen.application_nonce))
 
       const handshake = await ratchetToGeneration(app.newTree, senderData, "commit", defaultKeyRetentionConfig, impl)
 
       expect(handshake.generation).toBe(gen.generation)
+      //handshake_key = handshake_ratchet_key_[i]_[generation]
       expect(handshake.key).toStrictEqual(hexToBytes(gen.handshake_key))
+      // handshake_nonce = handshake_ratchet_nonce_[i]_[generation]
       expect(handshake.nonce).toStrictEqual(hexToBytes(gen.handshake_nonce))
       tree = handshake.newTree
     }
