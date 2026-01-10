@@ -13,7 +13,7 @@ export async function createProposal(
   proposal: Proposal,
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<{ newState: ClientState; message: MLSMessage }> {
+): Promise<{ newState: ClientState; message: MLSMessage; consumed: Uint8Array[] }> {
   if (publicMessage) {
     const result = await protectProposalPublic(
       state.signaturePrivateKey,
@@ -33,6 +33,7 @@ export async function createProposal(
     return {
       newState,
       message: { wireformat: "mls_public_message", version: "mls10", publicMessage: result.publicMessage },
+      consumed: [],
     }
   } else {
     const result = await protectProposal(
@@ -61,6 +62,7 @@ export async function createProposal(
     return {
       newState,
       message: { wireformat: "mls_private_message", version: "mls10", privateMessage: result.privateMessage },
+      consumed: result.consumed,
     }
   }
 }
@@ -70,7 +72,7 @@ export async function createApplicationMessage(
   message: Uint8Array,
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<{ newState: ClientState; privateMessage: PrivateMessage }> {
+): Promise<{ newState: ClientState; privateMessage: PrivateMessage; consumed: Uint8Array[] }> {
   checkCanSendApplicationMessages(state)
 
   const result = await protectApplicationData(
@@ -85,5 +87,9 @@ export async function createApplicationMessage(
     cs,
   )
 
-  return { newState: { ...state, secretTree: result.newSecretTree }, privateMessage: result.privateMessage }
+  return {
+    newState: { ...state, secretTree: result.newSecretTree },
+    privateMessage: result.privateMessage,
+    consumed: result.consumed,
+  }
 }

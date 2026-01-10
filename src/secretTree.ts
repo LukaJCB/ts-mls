@@ -1,28 +1,14 @@
 import { decodeUint32, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
-import {
-  decodeNumberRecord,
-  decodeVarLenData,
-  numberRecordEncoder,
-  varLenDataEncoder,
-} from "./codec/variableLength.js"
+import { decodeNumberRecord, decodeVarLenData, numberRecordEncoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeName } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
-import {
-  root,
-  right,
-  left,
-  toLeafIndex,
-  LeafIndex,
-  leafToNodeIndex,
-  toNodeIndex,
-  nodeToLeafIndex,
-} from "./treemath.js"
+import { root, right, left, toLeafIndex, LeafIndex, leafToNodeIndex, toNodeIndex, NodeIndex } from "./treemath.js"
 import { repeatAsync } from "./util/repeat.js"
 
 export interface GenerationSecret {
@@ -65,7 +51,7 @@ export const decodeSecretTreeNode: Decoder<SecretTreeNode> = mapDecoders(
 
 export interface SecretTree {
   leafWidth: number
-  intermediateNodes: Record<number, Uint8Array> 
+  intermediateNodes: Record<number, Uint8Array>
   leafNodes: Record<number, SecretTreeNode>
 }
 
@@ -87,58 +73,77 @@ export const decodeSecretTree: Decoder<SecretTree> = mapDecoders(
   (leafWidth, intermediateNodes, leafNodes) => ({ leafWidth, intermediateNodes, leafNodes }),
 )
 
+export function allSecretTreeValues(tree: SecretTree): Uint8Array[] {
+  const arr = new Array<Uint8Array>(tree.leafWidth * 2)
+  for (const node of Object.values(tree.leafNodes)) {
+    arr.push(node.application.secret)
+    arr.push(node.handshake.secret)
+    for (const gen of Object.values(node.application.unusedGenerations)) {
+      arr.push(gen)
+    }
+    for (const gen of Object.values(node.handshake.unusedGenerations)) {
+      arr.push(gen)
+    }
+  }
+
+  for (const node of Object.values(tree.intermediateNodes)) {
+    arr.push(node)
+  }
+  return arr
+}
+
 export interface ConsumeRatchetResult {
   nonce: Uint8Array
   reuseGuard: ReuseGuard
   key: Uint8Array
   generation: number
   newTree: SecretTree
+  consumed: Uint8Array[]
 }
 
 async function deriveLeafSecret(
   leafIndex: LeafIndex,
   secretTree: SecretTree,
   kdf: Kdf,
-): Promise<{ secret: Uint8Array; updatedIntermediateNodes: Record<number, Uint8Array>, consumed: Uint8Array[] }> {
+): Promise<{ secret: Uint8Array; updatedIntermediateNodes: Record<number, Uint8Array>; consumed: Uint8Array[] }> {
   const targetNodeIndex = leafToNodeIndex(leafIndex)
   const rootIndex = root(secretTree.leafWidth)
-  
+
   const updatedIntermediateNodes = { ...secretTree.intermediateNodes }
   const consumed = new Array<Uint8Array>()
-  
+
   let current = rootIndex
-  
+
   while (current !== targetNodeIndex) {
     const l = left(current)
     const r = right(current)
-    
-    const nextNodeIndex = targetNodeIndex < current ? l : r
-    
-    if (updatedIntermediateNodes[nextNodeIndex] !== undefined) {
 
+    const nextNodeIndex = targetNodeIndex < current ? l : r
+
+    if (updatedIntermediateNodes[nextNodeIndex] !== undefined) {
       current = nextNodeIndex
       continue
     }
-    
+
     // we have to derive both children so we can delete the consumed secret
     const currentSecret = updatedIntermediateNodes[current]
     if (!currentSecret) {
       throw new InternalError("Current node missing from tree")
     }
-    
+
     const leftSecret = await expandWithLabel(currentSecret, "tree", new TextEncoder().encode("left"), kdf.size, kdf)
     const rightSecret = await expandWithLabel(currentSecret, "tree", new TextEncoder().encode("right"), kdf.size, kdf)
-    
+
     updatedIntermediateNodes[l] = leftSecret
     updatedIntermediateNodes[r] = rightSecret
 
     consumed.push(currentSecret)
-    
+
     delete updatedIntermediateNodes[current]
-    
+
     current = nextNodeIndex
   }
-  
+
   return { secret: updatedIntermediateNodes[targetNodeIndex]!, updatedIntermediateNodes, consumed }
 }
 
@@ -166,33 +171,40 @@ export async function ratchetUntil(
   desiredGen: number,
   config: KeyRetentionConfig,
   kdf: Kdf,
-): Promise<GenerationSecret> {
+): Promise<[GenerationSecret, Uint8Array[]]> {
   const generationDifference = desiredGen - current.generation
 
   if (generationDifference > config.maximumForwardRatchetSteps)
     throw new ValidationError("Desired generation too far in the future")
-
-  return await repeatAsync(
+  const consumed = new Array<Uint8Array>(generationDifference)
+  const newSecret = await repeatAsync(
     async (s) => {
       const nextSecret = await deriveTreeSecret(s.secret, "secret", s.generation, kdf.size, kdf)
+
+      const [updated, old] = updateUnusedGenerations(s, config.retainKeysForGenerations)
+      consumed.push(...old)
       return {
         secret: nextSecret,
         generation: s.generation + 1,
-        unusedGenerations: updateUnusedGenerations(s, config.retainKeysForGenerations),
+        unusedGenerations: updated,
       }
     },
     current,
     generationDifference,
   )
+  return [newSecret, consumed]
 }
 
-function updateUnusedGenerations(s: GenerationSecret, retainGenerationsMax: number): Record<number, Uint8Array> {
-  const withNew = { ...s.unusedGenerations, [s.generation]: s.secret }
+function updateUnusedGenerations(
+  s: GenerationSecret,
+  retainGenerationsMax: number,
+): [Record<number, Uint8Array>, Uint8Array[]] {
+  const withNew: Record<number, Uint8Array> = { ...s.unusedGenerations, [s.generation]: s.secret }
 
   const generations = Object.keys(withNew)
 
-  const result =
-    generations.length >= retainGenerationsMax ? removeOldGenerations(withNew, retainGenerationsMax) : withNew
+  const result: [Record<number, Uint8Array>, Uint8Array[]] =
+    generations.length >= retainGenerationsMax ? removeOldGenerations(withNew, retainGenerationsMax) : [withNew, []]
 
   return result
 }
@@ -200,14 +212,16 @@ function updateUnusedGenerations(s: GenerationSecret, retainGenerationsMax: numb
 function removeOldGenerations(
   historicalReceiverData: Record<number, Uint8Array>,
   max: number,
-): Record<number, Uint8Array> {
-  const sortedGenerations = Object.keys(historicalReceiverData)
-    .map(Number)
-    .sort((a, b) => (a < b ? -1 : 1))
+): [Record<number, Uint8Array>, Uint8Array[]] {
+  const sortedGenerations = Object.keys(historicalReceiverData).sort((a, b) => (a < b ? -1 : 1))
 
-  return Object.fromEntries(
-    sortedGenerations.slice(-max).map((generation) => [generation, historicalReceiverData[generation]!]),
+  const consumed = sortedGenerations.slice(0, max + 1).map((generation) => historicalReceiverData[Number(generation)]!)
+
+  const record = Object.fromEntries(
+    sortedGenerations.slice(-max).map((generation) => [generation, historicalReceiverData[Number(generation)]!]),
   )
+
+  return [record, consumed]
 }
 
 export async function derivePrivateMessageNonce(
@@ -237,15 +251,17 @@ export async function ratchetToGeneration(
   const index = toLeafIndex(senderData.leafIndex)
   const nodeIndex = leafToNodeIndex(index)
   let node = tree.leafNodes[nodeIndex]
-  
+
+  let consumedSecrets = new Array<Uint8Array>()
   // Start with current tree state
   let workingTree: SecretTree = tree
-  
+
   // Lazy derivation: derive leaf if not cached
   if (node === undefined) {
     const { secret: leafSecret, updatedIntermediateNodes, consumed } = await deriveLeafSecret(index, tree, cs.kdf)
     const application = await createRatchetRoot(leafSecret, "application", cs.kdf)
     const handshake = await createRatchetRoot(leafSecret, "handshake", cs.kdf)
+    consumedSecrets = consumed
     node = { handshake, application }
     // Merge derived nodes with new leaf node immutably
     workingTree = {
@@ -261,18 +277,22 @@ export async function ratchetToGeneration(
       leafNodes: { ...tree.leafNodes },
     }
   }
-  
+
   // Get the node from working tree (either newly created or already existing)
   node = workingTree.leafNodes[nodeIndex]!
 
   const ratchet = ratchetForContentType(node, contentType)
 
+  console.log("FOO", consumedSecrets)
+
   if (ratchet.generation > senderData.generation) {
     const desired = ratchet.unusedGenerations[senderData.generation]
 
     if (desired !== undefined) {
-      const { [senderData.generation]: _, ...removedDesiredGen } = ratchet.unusedGenerations
+      const { [senderData.generation]: consumedValue, ...removedDesiredGen } = ratchet.unusedGenerations
       const ratchetState = { ...ratchet, unusedGenerations: removedDesiredGen }
+
+      const consumed = consumedValue ? [...consumedSecrets, consumedValue] : consumedSecrets
 
       return await createRatchetResultWithSecret(
         node,
@@ -282,6 +302,7 @@ export async function ratchetToGeneration(
         senderData.reuseGuard,
         workingTree,
         contentType,
+        consumed,
         cs,
         ratchetState,
       )
@@ -289,14 +310,23 @@ export async function ratchetToGeneration(
     throw new ValidationError("Desired gen in the past")
   }
 
-  const currentSecret = await ratchetUntil(
+  const [currentSecret, consumed] = await ratchetUntil(
     ratchetForContentType(node, contentType),
     senderData.generation,
     config,
     cs.kdf,
   )
 
-  return createRatchetResult(node, index, currentSecret, senderData.reuseGuard, workingTree, contentType, cs)
+  return createRatchetResult(
+    node,
+    index,
+    currentSecret,
+    senderData.reuseGuard,
+    workingTree,
+    contentType,
+    [...consumed, ...consumedSecrets],
+    cs,
+  )
 }
 
 export async function consumeRatchet(
@@ -307,16 +337,19 @@ export async function consumeRatchet(
 ): Promise<ConsumeRatchetResult> {
   const nodeIndex = leafToNodeIndex(index)
   let node = tree.leafNodes[nodeIndex]
-  
+
   // Start with current tree state
   let workingTree: SecretTree = tree
-  
+
+  let consumedSecrets = new Array<Uint8Array>()
+
   // Lazy derivation: derive leaf if not cached
   if (node === undefined) {
-    const { secret: leafSecret, updatedIntermediateNodes } = await deriveLeafSecret(index, tree, cs.kdf)
+    const { secret: leafSecret, updatedIntermediateNodes, consumed } = await deriveLeafSecret(index, tree, cs.kdf)
     const application = await createRatchetRoot(leafSecret, "application", cs.kdf)
     const handshake = await createRatchetRoot(leafSecret, "handshake", cs.kdf)
     node = { handshake, application }
+    consumedSecrets = consumed
     // Merge derived nodes with new leaf node immutably
     workingTree = {
       ...tree,
@@ -331,14 +364,14 @@ export async function consumeRatchet(
       leafNodes: { ...tree.leafNodes },
     }
   }
-  
+
   // Get the node from working tree (either newly created or already existing)
   node = workingTree.leafNodes[nodeIndex]!
 
   const currentSecret = ratchetForContentType(node, contentType)
   const reuseGuard = cs.rng.randomBytes(4) as ReuseGuard
 
-  return createRatchetResult(node, index, currentSecret, reuseGuard, workingTree, contentType, cs)
+  return createRatchetResult(node, index, currentSecret, reuseGuard, workingTree, contentType, consumedSecrets, cs)
 }
 
 async function createRatchetResult(
@@ -348,6 +381,7 @@ async function createRatchetResult(
   reuseGuard: ReuseGuard,
   tree: SecretTree,
   contentType: ContentTypeName,
+  consumed: Uint8Array[],
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
   const nextSecret = await deriveTreeSecret(
@@ -362,12 +396,13 @@ async function createRatchetResult(
 
   return await createRatchetResultWithSecret(
     node,
-    2 * index,  // Convert leaf index to node index
+    toNodeIndex(index),
     currentSecret.secret,
     currentSecret.generation,
     reuseGuard,
     tree,
     contentType,
+    consumed,
     cs,
     ratchetState,
   )
@@ -375,12 +410,13 @@ async function createRatchetResult(
 
 async function createRatchetResultWithSecret(
   node: SecretTreeNode,
-  index: number,
+  index: NodeIndex,
   secret: Uint8Array,
   generation: number,
   reuseGuard: ReuseGuard,
   tree: SecretTree,
   contentType: ContentTypeName,
+  consumed: Uint8Array[],
   cs: CiphersuiteImpl,
   ratchetState: GenerationSecret,
 ): Promise<ConsumeRatchetResult> {
@@ -400,6 +436,7 @@ async function createRatchetResultWithSecret(
     nonce,
     key,
     newTree,
+    consumed: [...consumed, secret, key],
   }
 }
 

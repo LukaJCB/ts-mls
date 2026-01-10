@@ -49,7 +49,7 @@ async function testSecretTree(
   for (const [index, leaf] of leaves.entries()) {
     const leafIndex = toLeafIndex(index)
     for (const gen of leaf) {
-      const senderData = {leafIndex, generation: gen.generation, reuseGuard: new Uint8Array(4) as ReuseGuard }
+      const senderData = { leafIndex, generation: gen.generation, reuseGuard: new Uint8Array(4) as ReuseGuard }
       const app = await ratchetToGeneration(tree, senderData, "application", defaultKeyRetentionConfig, impl)
 
       expect(app.generation).toBe(gen.generation)

@@ -60,7 +60,7 @@ async function joinGroupBench(
   kp: KeyPackage,
   result: CreateCommitResult,
 ) {
-  await joinGroup(result.welcome!, kp, pkp, emptyPskIndex, impl)
+  await joinGroup(result.welcome!, kp, pkp, emptyPskIndex, impl, result.newState.ratchetTree)
 }
 
 async function createCommitBench(impl: CiphersuiteImpl, aliceGroup: ClientState) {
@@ -102,7 +102,6 @@ async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
     },
     {
       extraProposals: [removeBobProposal],
-      ratchetTreeExtension: true,
     },
   )
 
@@ -128,7 +127,6 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
     },
     {
       extraProposals: [addBobProposal],
-      ratchetTreeExtension: true,
     },
   )
 
@@ -176,7 +174,6 @@ async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps:
       },
       {
         extraProposals: proposals,
-        ratchetTreeExtension: true,
       },
     )
 
@@ -224,6 +221,7 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
     initResult.bob.privatePackage,
     emptyPskIndex,
     impl,
+    initResult.result.newState.ratchetTree,
   )
 
   const commitResult = await createCommit({

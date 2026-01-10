@@ -25,7 +25,7 @@ import {
   updateLeafNode,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { createSecretTree, decodeSecretTree, SecretTree, secretTreeEncoder } from "./secretTree.js"
+import { allSecretTreeValues, createSecretTree, decodeSecretTree, SecretTree, secretTreeEncoder } from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
 import { treeHashRoot } from "./treeHash.js"
 import {
@@ -39,7 +39,7 @@ import {
   toNodeIndex,
 } from "./treemath.js"
 import { firstCommonAncestor } from "./updatePath.js"
-import { bytesToBase64 } from "./util/byteArray.js"
+import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
 import { WireformatName } from "./wireformat.js"
@@ -191,6 +191,72 @@ export const decodeGroupState: Decoder<GroupState> = mapDecoders(
     groupActiveState,
   }),
 )
+
+export const groupStateEncoderWithoutTree: BufferEncoder<GroupState> = contramapBufferEncoders(
+  [
+    groupContextEncoder,
+    keyScheduleEncoder,
+    secretTreeEncoder,
+    privateKeyPathEncoder,
+    varLenDataEncoder,
+    unappliedProposalsEncoder,
+    varLenDataEncoder,
+    bigintMapEncoder(epochReceiverDataEncoder),
+    groupActiveStateEncoder,
+  ],
+  (state) =>
+    [
+      state.groupContext,
+      state.keySchedule,
+      state.secretTree,
+      state.privatePath,
+      state.signaturePrivateKey,
+      state.unappliedProposals,
+      state.confirmationTag,
+      state.historicalReceiverData,
+      state.groupActiveState,
+    ] as const,
+)
+
+export const encodeGroupStateWithoutTree: Encoder<GroupState> = encode(groupStateEncoderWithoutTree)
+
+export function decodeGroupStateWithoutTree(ratchetTree: RatchetTree): Decoder<GroupState> {
+  return mapDecoders(
+    [
+      decodeGroupContext,
+      decodeKeySchedule,
+      decodeSecretTree,
+      decodePrivateKeyPath,
+      decodeVarLenData,
+      decodeUnappliedProposals,
+      decodeVarLenData,
+      decodeBigintMap(decodeEpochReceiverData),
+      decodeGroupActiveState,
+    ],
+    (
+      groupContext,
+      keySchedule,
+      secretTree,
+      privatePath,
+      signaturePrivateKey,
+      unappliedProposals,
+      confirmationTag,
+      historicalReceiverData,
+      groupActiveState,
+    ) => ({
+      groupContext,
+      keySchedule,
+      secretTree,
+      ratchetTree,
+      privatePath,
+      signaturePrivateKey,
+      unappliedProposals,
+      confirmationTag,
+      historicalReceiverData,
+      groupActiveState,
+    }),
+  )
+}
 
 export function getOwnLeafNode(state: ClientState): LeafNode {
   const idx = leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))
@@ -989,6 +1055,8 @@ export async function joinGroupWithExtensions(
 
   const secretTree = createSecretTree(leafWidth(tree.length), encryptionSecret)
 
+  zeroOutUint8Array(groupSecrets.joinerSecret)
+
   return [
     {
       groupContext: gi.groupContext,
@@ -1045,6 +1113,8 @@ export async function createGroup(
   const encryptionSecret = await deriveSecret(epochSecret, "encryption", cs.kdf)
 
   const secretTree = createSecretTree(1, encryptionSecret)
+
+  zeroOutUint8Array(epochSecret)
 
   return {
     ratchetTree,
@@ -1154,7 +1224,7 @@ export async function processProposal(
   }
 }
 
-export function addHistoricalReceiverData(state: ClientState): Map<bigint, EpochReceiverData> {
+export function addHistoricalReceiverData(state: ClientState): [Map<bigint, EpochReceiverData>, Uint8Array[]] {
   const withNew = addToMap(state.historicalReceiverData, state.groupContext.epoch, {
     secretTree: state.secretTree,
     ratchetTree: state.ratchetTree,
@@ -1165,10 +1235,10 @@ export function addHistoricalReceiverData(state: ClientState): Map<bigint, Epoch
 
   const epochs = [...withNew.keys()]
 
-  const result =
+  const result: [Map<bigint, EpochReceiverData>, Uint8Array[]] =
     epochs.length >= state.clientConfig.keyRetentionConfig.retainKeysForEpochs
       ? removeOldHistoricalReceiverData(withNew, state.clientConfig.keyRetentionConfig.retainKeysForEpochs)
-      : withNew
+      : [withNew, []]
 
   return result
 }
@@ -1176,8 +1246,22 @@ export function addHistoricalReceiverData(state: ClientState): Map<bigint, Epoch
 function removeOldHistoricalReceiverData(
   historicalReceiverData: Map<bigint, EpochReceiverData>,
   max: number,
-): Map<bigint, EpochReceiverData> {
+): [Map<bigint, EpochReceiverData>, Uint8Array[]] {
   const sortedEpochs = [...historicalReceiverData.keys()].sort((a, b) => (a < b ? -1 : 1))
 
-  return new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!]))
+  const length = sortedEpochs.length
+
+  const toBeDeleted = new Array<Uint8Array>()
+
+  const map = new Map<bigint, EpochReceiverData>()
+  for (const [n, epoch] of sortedEpochs.entries()) {
+    const data = historicalReceiverData.get(epoch)!
+    if (length - n > max) {
+      toBeDeleted.push(...allSecretTreeValues(data.secretTree))
+    } else {
+      map.set(epoch, data)
+    }
+  }
+
+  return [new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!])), []]
 }

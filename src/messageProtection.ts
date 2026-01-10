@@ -30,6 +30,7 @@ import { encode } from "./codec/tlsEncoder.js"
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
   newSecretTree: SecretTree
+  consumed: Uint8Array[]
 }
 
 export async function protectApplicationData(
@@ -79,13 +80,14 @@ export async function protectApplicationData(
     cs,
   )
 
-  return { newSecretTree: result.tree, privateMessage: result.privateMessage }
+  return { newSecretTree: result.tree, privateMessage: result.privateMessage, consumed: result.consumed }
 }
 
 export interface ProtectProposalResult {
   privateMessage: PrivateMessage
   newSecretTree: SecretTree
   proposalRef: Uint8Array
+  consumed: Uint8Array[]
 }
 
 export async function protectProposal(
@@ -120,7 +122,7 @@ export async function protectProposal(
   const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
   const content = { ...tbs.content, auth }
 
-  const privateMessage = await protect(
+  const protectResult = await protect(
     senderDataSecret,
     authenticatedData,
     groupContext,
@@ -131,7 +133,7 @@ export async function protectProposal(
     cs,
   )
 
-  const newSecretTree = privateMessage.tree
+  const newSecretTree = protectResult.tree
 
   const authenticatedContent = {
     wireformat: "mls_private_message" as const,
@@ -140,12 +142,13 @@ export async function protectProposal(
   }
   const proposalRef = await makeProposalRef(authenticatedContent, cs.hash)
 
-  return { privateMessage: privateMessage.privateMessage, newSecretTree, proposalRef }
+  return { privateMessage: protectResult.privateMessage, newSecretTree, proposalRef, consumed: protectResult.consumed }
 }
 
 export interface ProtectResult {
   privateMessage: PrivateMessage
   tree: SecretTree
+  consumed: Uint8Array[]
 }
 
 export async function protect(
@@ -157,8 +160,8 @@ export async function protect(
   leafIndex: number,
   config: PaddingConfig,
   cs: CiphersuiteImpl,
-): Promise<{ privateMessage: PrivateMessage; tree: SecretTree }> {
-  const { newTree, generation, reuseGuard, nonce, key } = await consumeRatchet(
+): Promise<ProtectResult> {
+  const { newTree, generation, reuseGuard, nonce, key, consumed } = await consumeRatchet(
     secretTree,
     toLeafIndex(leafIndex),
     content.contentType,
@@ -203,12 +206,14 @@ export async function protect(
       ciphertext,
     },
     tree: newTree,
+    consumed,
   }
 }
 
 export interface UnprotectResult {
   content: AuthenticatedContent
   tree: SecretTree
+  consumed: Uint8Array[]
 }
 
 export async function unprotectPrivateMessage(
@@ -227,7 +232,13 @@ export async function unprotectPrivateMessage(
 
   validateSenderData(senderData, ratchetTree)
 
-  const { key, nonce, newTree } = await ratchetToGeneration(secretTree, senderData, msg.contentType, config, cs)
+  const { key, nonce, newTree, consumed } = await ratchetToGeneration(
+    secretTree,
+    senderData,
+    msg.contentType,
+    config,
+    cs,
+  )
 
   const aad: PrivateContentAAD = {
     groupId: msg.groupId,
@@ -260,7 +271,7 @@ export async function unprotectPrivateMessage(
 
   if (!signatureValid) throw new CryptoVerificationError("Signature invalid")
 
-  return { tree: newTree, content }
+  return { tree: newTree, content, consumed }
 }
 
 export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {

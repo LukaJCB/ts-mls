@@ -10,16 +10,14 @@ import {
   getCiphersuiteFromName,
   getCiphersuiteImpl,
   Proposal,
-  decodeGroupState, encodeGroupState,
-  createApplicationMessage
+  decodeGroupState,
+  encodeGroupState,
+  createApplicationMessage,
 } from "../../src/index.js"
 
-test.concurrent.each(Object.keys(ciphersuites))(
-  "ClientState Binary serialization round-trip %s",
-  async (cs) => {
-    await clientStateBinarySerializationTest(cs as CiphersuiteName)
-  },
-)
+test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serialization round-trip %s", async (cs) => {
+  await clientStateBinarySerializationTest(cs as CiphersuiteName)
+})
 
 async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -82,9 +80,9 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
   const message = new TextEncoder().encode("Hello!")
-  
+
   const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, message, impl)
-  
+
   aliceGroup = aliceCreateMessageResult.newState
 
   const { clientConfig: _config2, ...secondState } = aliceGroup

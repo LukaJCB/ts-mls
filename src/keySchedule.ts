@@ -99,7 +99,7 @@ export async function mlsExporter(
   context: Uint8Array,
   length: number,
   cs: CiphersuiteImpl,
-) {
+): Promise<Uint8Array> {
   const secret = await deriveSecret(exporterSecret, label, cs.kdf)
 
   const hash = await cs.hash.digest(context)
@@ -111,7 +111,7 @@ export async function deriveKeySchedule(
   pskSecret: Uint8Array,
   groupContext: GroupContext,
   kdf: Kdf,
-) {
+): Promise<[KeySchedule, Uint8Array]> {
   const epochSecret = await extractEpochSecret(groupContext, joinerSecret, kdf, pskSecret)
 
   const encryptionSecret = await deriveSecret(epochSecret, "encryption", kdf)
