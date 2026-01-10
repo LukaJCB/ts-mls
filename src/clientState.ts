@@ -1250,14 +1250,14 @@ function removeOldHistoricalReceiverData(
 ): [Map<bigint, EpochReceiverData>, Uint8Array[]] {
   const sortedEpochs = [...historicalReceiverData.keys()].sort((a, b) => (a < b ? -1 : 1))
 
-  const length = sortedEpochs.length
+  const cutoff = sortedEpochs.length - max
 
   const toBeDeleted = new Array<Uint8Array>()
 
   const map = new Map<bigint, EpochReceiverData>()
   for (const [n, epoch] of sortedEpochs.entries()) {
     const data = historicalReceiverData.get(epoch)!
-    if (length - n > max) {
+    if (n < cutoff) {
       toBeDeleted.push(...allSecretTreeValues(data.secretTree))
     } else {
       map.set(epoch, data)
