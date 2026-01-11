@@ -11,6 +11,7 @@ import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { senderTypes } from "./sender.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export async function proposeAddExternal(
@@ -43,7 +44,7 @@ export async function proposeAddExternal(
   )
 
   return {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     version: groupInfo.groupContext.version,
     publicMessage: result.publicMessage,
   }
@@ -80,7 +81,7 @@ export async function proposeExternal(
   )
 
   return {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     version: groupInfo.groupContext.version,
     publicMessage: result.publicMessage,
   }

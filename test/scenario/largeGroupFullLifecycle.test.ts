@@ -12,7 +12,7 @@ import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 import { randomInt } from "crypto"
 
 test.concurrent.each(Object.keys(ciphersuites))(
@@ -106,7 +106,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       },
     )
 
-    if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+    if (commitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
     remover.state = commitResult.newState
 
     // Apply the commit to all members (except removed and remover)
@@ -157,7 +157,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     },
   )
 
-  if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (commitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
   adder.state = commitResult.newState
 
@@ -198,7 +198,8 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
 
   updater.state = emptyCommitResult.newState
 
-  if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   // Update all existing members (including adder)
   for (let i = 0; i < memberStates.length; i++) {

@@ -37,6 +37,7 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -72,7 +73,8 @@ const addBobCommitResult = await createCommit(
   { extraProposals: [addBobProposal] },
 )
 
-if (addBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (addBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 aliceGroup = addBobCommitResult.newState
 
@@ -96,7 +98,8 @@ const addCharlieCommitResult = await createCommit(
   { extraProposals: [addCharlieProposal] },
 )
 aliceGroup = addCharlieCommitResult.newState
-if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // Bob processes the commit and transitions to epoch 2 as well
 const processAddCharlieResult = await processPrivateMessage(

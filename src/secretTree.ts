@@ -331,7 +331,9 @@ async function createRatchetResultWithSecret(
   const { nonce, key } = await createKeyAndNonce(secret, generation, reuseGuard, cs)
 
   const newNode =
-    contentType === contentTypes.application ? { ...node, application: ratchetState } : { ...node, handshake: ratchetState }
+    contentType === contentTypes.application
+      ? { ...node, application: ratchetState }
+      : { ...node, handshake: ratchetState }
 
   const newTree = tree.slice()
   newTree[index] = newNode

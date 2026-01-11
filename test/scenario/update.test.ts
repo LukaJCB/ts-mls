@@ -13,7 +13,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Update %s`, async (cs) => {
   await update(cs as CiphersuiteName)
 })
@@ -72,7 +72,8 @@ async function update(cipherSuite: CiphersuiteName) {
     cipherSuite: impl,
   })
 
-  if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   aliceGroup = emptyCommitResult.newState
 
@@ -90,7 +91,8 @@ async function update(cipherSuite: CiphersuiteName) {
     cipherSuite: impl,
   })
 
-  if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   bobGroup = emptyCommitResult3.newState
 

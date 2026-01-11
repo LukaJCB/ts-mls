@@ -3,8 +3,7 @@ import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/t
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeProposal, Proposal, proposalEncoder } from "./proposal.js"
-import { enumNumberParse } from "./util/enumHelpers.js"
-
+import { numberToEnum } from "./util/enumHelpers.js"
 
 export const proposalOrRefTypes = {
   proposal: 1,
@@ -20,7 +19,7 @@ export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeValue> = encode(p
 
 export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeValue> = mapDecoderOption(
   decodeUint8,
-  enumNumberParse(proposalOrRefTypes),
+  numberToEnum(proposalOrRefTypes),
 )
 
 /** @public */

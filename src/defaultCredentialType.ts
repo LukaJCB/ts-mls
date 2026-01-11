@@ -1,4 +1,3 @@
-
 /** @public */
 export const defaultCredentialTypes = {
   basic: 1,
@@ -19,4 +18,3 @@ export function defaultCredentialTypeValueFromName(name: DefaultCredentialTypeNa
 export function isDefaultCredentialTypeValue(v: number): v is DefaultCredentialTypeValue {
   return defaultCredentialTypeValues.has(v)
 }
-

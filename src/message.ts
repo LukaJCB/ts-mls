@@ -6,7 +6,7 @@ import { decodePrivateMessage, privateMessageEncoder, PrivateMessage } from "./p
 import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { decodePublicMessage, publicMessageEncoder, PublicMessage } from "./publicMessage.js"
 import { decodeWelcome, Welcome, welcomeEncoder } from "./welcome.js"
-import { decodeWireformat, wireformatEncoder } from "./wireformat.js"
+import { decodeWireformat, wireformatEncoder, wireformats } from "./wireformat.js"
 
 /** @public */
 export interface MlsMessageProtocol {
@@ -15,30 +15,30 @@ export interface MlsMessageProtocol {
 
 /** @public */
 export interface MlsWelcome {
-  wireformat: "mls_welcome"
+  wireformat: typeof wireformats.mls_welcome
   welcome: Welcome
 }
 
 /** @public */
 export interface MlsPrivateMessage {
-  wireformat: "mls_private_message"
+  wireformat: typeof wireformats.mls_private_message
   privateMessage: PrivateMessage
 }
 
 /** @public */
 export interface MlsGroupInfo {
-  wireformat: "mls_group_info"
+  wireformat: typeof wireformats.mls_group_info
   groupInfo: GroupInfo
 }
 
 /** @public */
 export interface MlsKeyPackage {
-  wireformat: "mls_key_package"
+  wireformat: typeof wireformats.mls_key_package
   keyPackage: KeyPackage
 }
 /** @public */
 export interface MlsPublicMessage {
-  wireformat: "mls_public_message"
+  wireformat: typeof wireformats.mls_public_message
   publicMessage: PublicMessage
 }
 
@@ -84,15 +84,15 @@ export const encodeMlsKeyPackage: Encoder<MlsKeyPackage> = encode(mlsKeyPackageE
 
 export const mlsMessageContentEncoder: BufferEncoder<MlsMessageContent> = (mc) => {
   switch (mc.wireformat) {
-    case "mls_public_message":
+    case wireformats.mls_public_message:
       return mlsPublicMessageEncoder(mc)
-    case "mls_welcome":
+    case wireformats.mls_welcome:
       return mlsWelcomeEncoder(mc)
-    case "mls_private_message":
+    case wireformats.mls_private_message:
       return mlsPrivateMessageEncoder(mc)
-    case "mls_group_info":
+    case wireformats.mls_group_info:
       return mlsGroupInfoEncoder(mc)
-    case "mls_key_package":
+    case wireformats.mls_key_package:
       return mlsKeyPackageEncoder(mc)
   }
 }
@@ -103,15 +103,15 @@ export const decodeMlsMessageContent: Decoder<MlsMessageContent> = flatMapDecode
   decodeWireformat,
   (wireformat): Decoder<MlsMessageContent> => {
     switch (wireformat) {
-      case "mls_public_message":
+      case wireformats.mls_public_message:
         return mapDecoder(decodePublicMessage, (publicMessage) => ({ wireformat, publicMessage }))
-      case "mls_welcome":
+      case wireformats.mls_welcome:
         return mapDecoder(decodeWelcome, (welcome) => ({ wireformat, welcome }))
-      case "mls_private_message":
+      case wireformats.mls_private_message:
         return mapDecoder(decodePrivateMessage, (privateMessage) => ({ wireformat, privateMessage }))
-      case "mls_group_info":
+      case wireformats.mls_group_info:
         return mapDecoder(decodeGroupInfo, (groupInfo) => ({ wireformat, groupInfo }))
-      case "mls_key_package":
+      case wireformats.mls_key_package:
         return mapDecoder(decodeKeyPackage, (keyPackage) => ({ wireformat, keyPackage }))
     }
   },

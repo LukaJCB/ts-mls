@@ -5,8 +5,8 @@ import { Hpke, HpkeAlgorithm } from "./hpke.js"
 import { BufferEncoder, encode, Encoder } from "../codec/tlsEncoder.js"
 import { decodeUint16, uint16Encoder } from "../codec/number.js"
 import { Decoder } from "../codec/tlsDecoder.js"
-import { reverseMap } from "../util/enumHelpers.js"
 import { Rng } from "./rng.js"
+import { reverseMap } from "../util/enumHelpers.js"
 
 /** @public */
 export interface CiphersuiteImpl {

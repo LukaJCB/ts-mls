@@ -2,10 +2,7 @@ import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import {
-  defaultCredentialTypes,
-  isDefaultCredentialTypeValue,
-} from "./defaultCredentialType.js"
+import { defaultCredentialTypes, isDefaultCredentialTypeValue } from "./defaultCredentialType.js"
 
 /** @public */
 export type Credential = DefaultCredential | CredentialCustom

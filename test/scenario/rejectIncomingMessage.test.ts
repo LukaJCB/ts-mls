@@ -12,10 +12,9 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { createProposal } from "../../src/index.js"
 import { processMessage } from "../../src/processMessages.js"
 import { encodeExternalSender } from "../../src/externalSender.js"
-import { WireformatName } from "../../src/wireformat.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
   await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
@@ -31,7 +30,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
-  const preferredWireformat: WireformatName = publicMessage ? "mls_public_message" : "mls_private_message"
+  const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 

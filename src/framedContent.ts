@@ -15,7 +15,7 @@ import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { groupContextEncoder, GroupContext } from "./groupContext.js"
-import { wireformatEncoder, WireformatName } from "./wireformat.js"
+import { wireformatEncoder, WireformatName, wireformats, WireformatValue } from "./wireformat.js"
 import { decodeProposal, proposalEncoder, Proposal } from "./proposal.js"
 import { protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import {
@@ -115,7 +115,7 @@ export const decodeFramedContentInfo: Decoder<FramedContentInfo> = flatMapDecode
   },
 )
 
-export function toTbs(content: FramedContent, wireformat: WireformatName, context: GroupContext): FramedContentTBS {
+export function toTbs(content: FramedContent, wireformat: WireformatValue, context: GroupContext): FramedContentTBS {
   return { protocolVersion: context.version, wireformat, content, senderType: content.sender.senderType, context }
 }
 
@@ -178,7 +178,7 @@ export const encodeSenderInfo: Encoder<SenderInfo> = encode(senderInfoEncoder)
 
 export type FramedContentTBS = {
   protocolVersion: ProtocolVersionValue
-  wireformat: WireformatName
+  wireformat: WireformatValue
   content: FramedContent
 } & SenderInfo
 
@@ -206,7 +206,10 @@ type FramedContentAuthDataContent =
   | FramedContentAuthDataContentCommit
   | FramedContentAuthDataContentApplicationOrProposal
 /** @public */
-export type FramedContentAuthDataContentCommit = { contentType: typeof contentTypes.commit; confirmationTag: Uint8Array }
+export type FramedContentAuthDataContentCommit = {
+  contentType: typeof contentTypes.commit
+  confirmationTag: Uint8Array
+}
 /** @public */
 export type FramedContentAuthDataContentApplicationOrProposal = {
   contentType: typeof contentTypes.application | typeof contentTypes.proposal
@@ -260,7 +263,7 @@ export function decodeFramedContentAuthData(contentType: ContentTypeValue): Deco
 
 export async function verifyFramedContentSignature(
   signKey: Uint8Array,
-  wireformat: WireformatName,
+  wireformat: WireformatValue,
   content: FramedContent,
   auth: FramedContentAuthData,
   context: GroupContext,
@@ -318,7 +321,7 @@ export async function createContentCommitSignature(
 ): Promise<{ framedContent: FramedContentCommit; signature: Uint8Array }> {
   const tbs: FramedContentTBSCommit = {
     protocolVersion: groupContext.version,
-    wireformat,
+    wireformat: wireformats[wireformat],
     content: {
       contentType: contentTypes.commit,
       commit: c,

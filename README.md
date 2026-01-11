@@ -87,6 +87,7 @@ import {
   encodeMlsMessage,
   decodeMlsMessage,
   protocolVersions,
+  wireformats,
   Proposal,
   zeroOutUint8Array,
 } from "ts-mls"
@@ -115,14 +116,14 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 // bob sends keyPackage to alice
 const keyPackageMessage = encodeMlsMessage({
   keyPackage: bob.publicPackage,
-  wireformat: "mls_key_package",
+  wireformat: wireformats.mls_key_package,
   version: protocolVersions.mls10,
 })
 
 // alice decodes bob's keyPackage
 const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
 
-if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expected key package")
+if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
 // alice creates proposal to add bob
 const addBobProposal: Proposal = {
@@ -143,14 +144,14 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 // alice sends welcome message to bob
 const encodedWelcome = encodeMlsMessage({
   welcome: commitResult.welcome!,
-  wireformat: "mls_welcome",
+  wireformat: wireformats.mls_welcome,
   version: protocolVersions.mls10,
 })
 
 // bob decodes the welcome message
 const decodedWelcome = decodeMlsMessage(encodedWelcome, 0)![0]
 
-if (decodedWelcome.wireformat !== "mls_welcome") throw new Error("Expected welcome")
+if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
 // bob creates his own group state
 let bobGroup = await joinGroup(
@@ -175,14 +176,15 @@ aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 // alice sends the message to bob
 const encodedPrivateMessageAlice = encodeMlsMessage({
   privateMessage: aliceCreateMessageResult.privateMessage,
-  wireformat: "mls_private_message",
+  wireformat: wireformats.mls_private_message,
   version: protocolVersions.mls10,
 })
 
 // bob decodes the message
 const decodedPrivateMessageAlice = decodeMlsMessage(encodedPrivateMessageAlice, 0)![0]
 
-if (decodedPrivateMessageAlice.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (decodedPrivateMessageAlice.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // bob receives the message
 const bobProcessMessageResult = await processPrivateMessage(

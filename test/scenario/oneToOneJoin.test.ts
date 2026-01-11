@@ -15,7 +15,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
   await oneToOne(cs as CiphersuiteName)
 })
@@ -42,14 +42,14 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   // bob sends keyPackage to alice
   const keyPackageMessage = encodeMlsMessage({
     keyPackage: bob.publicPackage,
-    wireformat: "mls_key_package",
+    wireformat: wireformats.mls_key_package,
     version: protocolVersions.mls10,
   })
 
   // alice decodes bob's keyPackage
   const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
 
-  if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expected key package")
+  if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
   // alice creates proposal to add bob
   const addBobProposal: ProposalAdd = {
@@ -75,14 +75,14 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   // alice sends welcome message to bob
   const encodedWelcome = encodeMlsMessage({
     welcome: commitResult.welcome!,
-    wireformat: "mls_welcome",
+    wireformat: wireformats.mls_welcome,
     version: protocolVersions.mls10,
   })
 
   // bob decodes the welcome message
   const decodedWelcome = decodeMlsMessage(encodedWelcome, 0)![0]
 
-  if (decodedWelcome.wireformat !== "mls_welcome") throw new Error("Expected welcome")
+  if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
   // bob creates his own group state
   let bobGroup = await joinGroup(
@@ -107,14 +107,15 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   // alice sends the message to bob
   const encodedPrivateMessageAlice = encodeMlsMessage({
     privateMessage: aliceCreateMessageResult.privateMessage,
-    wireformat: "mls_private_message",
+    wireformat: wireformats.mls_private_message,
     version: protocolVersions.mls10,
   })
 
   // bob decodes the message
   const decodedPrivateMessageAlice = decodeMlsMessage(encodedPrivateMessageAlice, 0)![0]
 
-  if (decodedPrivateMessageAlice.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (decodedPrivateMessageAlice.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   // bob receives the message
   const bobProcessMessageResult = await processPrivateMessage(
@@ -138,13 +139,14 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
 
   const encodedPrivateMessageBob = encodeMlsMessage({
     privateMessage: bobCreateMessageResult.privateMessage,
-    wireformat: "mls_private_message",
+    wireformat: wireformats.mls_private_message,
     version: protocolVersions.mls10,
   })
 
   const decodedPrivateMessageBob = decodeMlsMessage(encodedPrivateMessageBob, 0)![0]
 
-  if (decodedPrivateMessageBob.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (decodedPrivateMessageBob.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const aliceProcessMessageResult = await processPrivateMessage(
     aliceGroup,

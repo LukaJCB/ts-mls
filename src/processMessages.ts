@@ -42,7 +42,7 @@ import {
 } from "./treemath.js"
 import { UpdatePath, applyUpdatePath } from "./updatePath.js"
 import { addToMap } from "./util/addToMap.js"
-import { WireformatName } from "./wireformat.js"
+import { WireformatName, wireformats } from "./wireformat.js"
 import { zeroOutUint8Array } from "./util/byteArray.js"
 import { contentTypes } from "./contentType.js"
 
@@ -427,7 +427,7 @@ export async function processMessage(
   action: IncomingMessageCallback,
   cs: CiphersuiteImpl,
 ): Promise<ProcessMessageResult> {
-  if (message.wireformat === "mls_public_message") {
+  if (message.wireformat === wireformats.mls_public_message) {
     const result = await processPublicMessage(state, message.publicMessage, pskIndex, cs, action)
 
     return { ...result, kind: "newState" }

@@ -15,6 +15,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { proposeAddExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Add Proposal %s`, async (cs) => {
   await externalAddProposalTest(cs as CiphersuiteName)
@@ -76,7 +77,7 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   const addCharlieProposal = await proposeAddExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, impl)
 
-  if (addCharlieProposal.wireformat !== "mls_public_message") throw new Error("Expected public message")
+  if (addCharlieProposal.wireformat !== wireformats.mls_public_message) throw new Error("Expected public message")
 
   const aliceProcessCharlieProposalResult = await processPublicMessage(
     aliceGroup,
@@ -103,7 +104,8 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   aliceGroup = addCharlieCommitResult.newState
 
-  if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processAddCharlieResult = await processPrivateMessage(
     bobGroup,

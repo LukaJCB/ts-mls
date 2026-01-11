@@ -27,6 +27,7 @@ import {
   SenderData,
   SenderDataAAD,
 } from "./sender.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export interface PrivateMessage {
@@ -198,7 +199,7 @@ export function toAuthenticatedContent(
   senderLeafIndex: number,
 ): AuthenticatedContent {
   return {
-    wireformat: "mls_private_message",
+    wireformat: wireformats.mls_private_message,
     content: {
       groupId: msg.groupId,
       epoch: msg.epoch,

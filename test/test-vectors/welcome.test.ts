@@ -8,6 +8,7 @@ import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "../../src/groupInfo.js"
 import { decryptGroupInfo, decryptGroupSecrets } from "../../src/welcome.js"
 import { PrivateKey } from "../../src/crypto/hpke.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`welcome test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -22,12 +23,13 @@ async function testWelcome(
   impl: CiphersuiteImpl,
 ) {
   const x = decodeMlsMessage(hexToBytes(welcome), 0)
-  if (x === undefined || x[0].wireformat !== "mls_welcome") throw new Error("Couldn't decode to welcome")
+  if (x === undefined || x[0].wireformat !== wireformats.mls_welcome) throw new Error("Couldn't decode to welcome")
 
   const w = x[0].welcome
 
   const y = decodeMlsMessage(hexToBytes(key_package), 0)
-  if (y === undefined || y[0].wireformat !== "mls_key_package") throw new Error("Couldn't decode to key package")
+  if (y === undefined || y[0].wireformat !== wireformats.mls_key_package)
+    throw new Error("Couldn't decode to key package")
 
   const keyPackageRef = await makeKeyPackageRef(y[0].keyPackage, impl.hash)
 

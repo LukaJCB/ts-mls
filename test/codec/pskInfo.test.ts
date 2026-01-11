@@ -1,16 +1,16 @@
-import { decodePskInfo, encodePskInfo, resumptionPSKUsages } from "../../src/presharedkey.js"
+import { decodePskInfo, encodePskInfo, pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PSKInfo roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePskInfo, decodePskInfo)
 
   test("roundtrips external", () => {
-    roundtrip({ psktype: "external", pskId: new Uint8Array([1, 2, 3]) })
+    roundtrip({ psktype: pskTypes.external, pskId: new Uint8Array([1, 2, 3]) })
   })
 
   test("roundtrips resumption", () => {
     roundtrip({
-      psktype: "resumption",
+      psktype: pskTypes.resumption,
       usage: resumptionPSKUsages.application,
       pskGroupId: new Uint8Array([4, 5, 6]),
       pskEpoch: 123n,

@@ -1,4 +1,5 @@
 import { encodeGroupSecrets, decodeGroupSecrets } from "../../src/groupSecrets.js"
+import { pskTypes } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("GroupSecrets roundtrip", () => {
@@ -12,7 +13,9 @@ describe("GroupSecrets roundtrip", () => {
     roundtrip({
       joinerSecret: new Uint8Array([2, 3, 4]),
       pathSecret: new Uint8Array([5, 6, 7]),
-      psks: [{ psktype: "external", pskId: new Uint8Array([8, 9, 10]), pskNonce: new Uint8Array([11, 12, 13, 14]) }],
+      psks: [
+        { psktype: pskTypes.external, pskId: new Uint8Array([8, 9, 10]), pskNonce: new Uint8Array([11, 12, 13, 14]) },
+      ],
     })
   })
 })

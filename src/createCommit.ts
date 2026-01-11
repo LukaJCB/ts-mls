@@ -61,6 +61,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export interface MLSContext {
@@ -248,7 +249,10 @@ function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): Pro
     reference: base64ToBytes(p),
   }))
 
-  const proposals: ProposalOrRef[] = extraProposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p }))
+  const proposals: ProposalOrRef[] = extraProposals.map((p) => ({
+    proposalOrRefType: proposalOrRefTypes.proposal,
+    proposal: p,
+  }))
 
   return [...refs, ...proposals]
 }
@@ -417,7 +421,7 @@ async function protectCommit(
   authData: FramedContentAuthDataCommit,
   cs: CiphersuiteImpl,
 ): Promise<[MLSMessage, SecretTree, Uint8Array[]]> {
-  const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
+  const wireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
   const authenticatedContent: AuthenticatedContentCommit = {
     wireformat,
@@ -434,7 +438,7 @@ async function protectCommit(
     )
 
     return [
-      { version: protocolVersions.mls10, wireformat: "mls_public_message", publicMessage: msg },
+      { version: protocolVersions.mls10, wireformat: wireformats.mls_public_message, publicMessage: msg },
       state.secretTree,
       [],
     ]
@@ -451,7 +455,11 @@ async function protectCommit(
     )
 
     return [
-      { version: protocolVersions.mls10, wireformat: "mls_private_message", privateMessage: res.privateMessage },
+      {
+        version: protocolVersions.mls10,
+        wireformat: wireformats.mls_private_message,
+        privateMessage: res.privateMessage,
+      },
       res.tree,
       res.consumed,
     ]
@@ -594,7 +602,10 @@ export async function joinGroupExternal(
   const { signature, framedContent } = await createContentCommitSignature(
     groupInfo.groupContext,
     "mls_public_message",
-    { proposals: proposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p })), path: updatePath },
+    {
+      proposals: proposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p })),
+      path: updatePath,
+    },
     {
       senderType: senderTypes.new_member_commit,
     },
@@ -640,7 +651,7 @@ export async function joinGroupExternal(
   const authenticatedContent: AuthenticatedContentCommit = {
     content: framedContent,
     auth: { signature, confirmationTag, contentType: contentTypes.commit },
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
   }
 
   const msg = await protectPublicMessage(epochSecrets.keySchedule.membershipKey, groupContext, authenticatedContent, cs)

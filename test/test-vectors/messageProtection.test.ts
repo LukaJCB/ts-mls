@@ -27,6 +27,7 @@ import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { nodeTypes } from "../../src/nodeType.js"
 import { contentTypes } from "../../src/contentType.js"
 import { senderTypes } from "../../src/sender.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -152,7 +153,7 @@ async function protectThenUnprotectCommitPublic(data: MessageProtectionData, gc:
   )
 
   const authenticatedContent: AuthenticatedContent = {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     content: framedContent,
     auth: { contentType: contentTypes.commit, signature: signature, confirmationTag },
   }
@@ -176,7 +177,7 @@ async function protectThenUnprotectCommitPublic(data: MessageProtectionData, gc:
 
 async function publicProposal(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
   const prop = decodeMlsMessage(hexToBytes(data.proposal_pub), 0)
-  if (prop === undefined || prop[0].wireformat !== "mls_public_message")
+  if (prop === undefined || prop[0].wireformat !== wireformats.mls_public_message)
     throw new Error("could not decode mls public message")
 
   const unprotected = await unprotectPublicMessage(
@@ -195,7 +196,7 @@ async function publicProposal(data: MessageProtectionData, gc: GroupContext, imp
 
 async function publicCommit(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
   const c = decodeMlsMessage(hexToBytes(data.commit_pub), 0)
-  if (c === undefined || c[0].wireformat !== "mls_public_message")
+  if (c === undefined || c[0].wireformat !== wireformats.mls_public_message)
     throw new Error("could not decode mls public message")
 
   const unprotected = await unprotectPublicMessage(
@@ -214,7 +215,7 @@ async function publicCommit(data: MessageProtectionData, gc: GroupContext, impl:
 
 async function publicApplicationFails(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
   const privateApplication = decodeMlsMessage(hexToBytes(data.application_priv), 0)
-  if (privateApplication === undefined || privateApplication[0].wireformat !== "mls_private_message")
+  if (privateApplication === undefined || privateApplication[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
@@ -243,7 +244,7 @@ async function publicApplicationFails(data: MessageProtectionData, gc: GroupCont
       authenticatedData: new Uint8Array(),
     },
     auth: unprotected.content.auth,
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
   }
 
   await expect(protectPublicMessage(hexToBytes(data.membership_key), gc, content, impl)).rejects.toThrow(UsageError)
@@ -251,7 +252,7 @@ async function publicApplicationFails(data: MessageProtectionData, gc: GroupCont
 
 async function commit(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
   const privateCommit = decodeMlsMessage(hexToBytes(data.commit_priv), 0)
-  if (privateCommit === undefined || privateCommit[0].wireformat !== "mls_private_message")
+  if (privateCommit === undefined || privateCommit[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
@@ -275,7 +276,7 @@ async function commit(data: MessageProtectionData, gc: GroupContext, impl: Ciphe
 
 async function application(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
   const privateApplication = decodeMlsMessage(hexToBytes(data.application_priv), 0)
-  if (privateApplication === undefined || privateApplication[0].wireformat !== "mls_private_message")
+  if (privateApplication === undefined || privateApplication[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
@@ -421,7 +422,7 @@ async function protectThenUnprotectCommit(data: MessageProtectionData, gc: Group
 
 async function proposal(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
   const privateProposal = decodeMlsMessage(hexToBytes(data.proposal_priv), 0)
-  if (privateProposal === undefined || privateProposal[0].wireformat !== "mls_private_message")
+  if (privateProposal === undefined || privateProposal[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
   const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)

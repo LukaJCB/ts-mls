@@ -15,7 +15,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
   await reinit(cs as CiphersuiteName)
 })
@@ -75,7 +75,8 @@ async function reinit(cipherSuite: CiphersuiteName) {
 
   aliceGroup = reinitCommitResult.newState
 
-  if (reinitCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processReinitResult = await processPrivateMessage(
     bobGroup,

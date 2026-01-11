@@ -182,7 +182,10 @@ async function insertParentHashes(
     const currentNode = tree[nodeIndex]
     if (currentNode === undefined || currentNode.nodeType === nodeTypes.leaf)
       throw new InternalError("Expected non-blank parent node")
-    const updatedNode: Node = { nodeType: nodeTypes.parent, parent: { ...currentNode.parent, parentHash: parentHash[0] } }
+    const updatedNode: Node = {
+      nodeType: nodeTypes.parent,
+      parent: { ...currentNode.parent, parentHash: parentHash[0] },
+    }
     tree[nodeIndex] = updatedNode
   }
   return tree

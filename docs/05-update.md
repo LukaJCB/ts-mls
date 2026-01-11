@@ -40,6 +40,8 @@ import {
   getCiphersuiteFromName,
   generateKeyPackage,
   Proposal,
+  leafNodeSources,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -82,7 +84,7 @@ let bobGroup = await joinGroup(
 
 // Alice updates her key with an empty commit, transitioning to epoch 2
 const emptyCommitResult = await createCommit({ state: aliceGroup, cipherSuite: impl })
-if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
 
 // Bob processes Alice's update and transitions to epoch 2
@@ -96,7 +98,8 @@ bobGroup = bobProcessCommitResult.newState
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
 const emptyCommitResult3 = await createCommit({ state: aliceGroup, cipherSuite: impl })
-if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
 
 // Alice processes Bob's update and transitions to epoch 3
@@ -122,7 +125,8 @@ const updateBobCommitResult = await createCommit(
   { state: bobGroup, cipherSuite: impl },
   { extraProposals: [updateAliceProposal] },
 )
-if (updateBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (updateBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 bobGroup = updateBobCommitResult.newState
 
 // Alice processes Bob's commit and transitions to epoch 4

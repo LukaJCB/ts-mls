@@ -3,11 +3,11 @@ import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { decodeFramedContent, FramedContentCommit, framedContentEncoder } from "./framedContent.js"
-import { decodeWireformat, wireformatEncoder, WireformatName } from "./wireformat.js"
+import { decodeWireformat, wireformatEncoder, WireformatValue } from "./wireformat.js"
 import { contentTypes } from "./contentType.js"
 
 export interface ConfirmedTranscriptHashInput {
-  wireformat: WireformatName
+  wireformat: WireformatValue
   content: FramedContentCommit
   signature: Uint8Array
 }

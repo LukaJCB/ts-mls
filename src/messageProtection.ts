@@ -28,6 +28,7 @@ import { PaddingConfig } from "./paddingConfig.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { nodeTypes } from "./nodeType.js"
 import { contentTypes } from "./contentType.js"
+import { wireformats } from "./wireformat.js"
 
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -48,7 +49,7 @@ export async function protectApplicationData(
 ): Promise<ProtectApplicationDataResult> {
   const tbs: FramedContentTBSApplicationOrProposal = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
+    wireformat: wireformats.mls_private_message,
     content: {
       contentType: contentTypes.application,
       applicationData,
@@ -105,7 +106,7 @@ export async function protectProposal(
 ): Promise<ProtectProposalResult> {
   const tbs = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_private_message" as const,
+    wireformat: wireformats.mls_private_message,
     content: {
       contentType: contentTypes.proposal,
       proposal: p,
@@ -138,7 +139,7 @@ export async function protectProposal(
   const newSecretTree = protectResult.tree
 
   const authenticatedContent = {
-    wireformat: "mls_private_message" as const,
+    wireformat: wireformats.mls_private_message,
     content,
     auth,
   }
@@ -267,7 +268,7 @@ export async function unprotectPrivateMessage(
 
   const signatureValid = await verifyFramedContentSignature(
     signaturePublicKey,
-    "mls_private_message",
+    wireformats.mls_private_message,
     content.content,
     content.auth,
     groupContext,

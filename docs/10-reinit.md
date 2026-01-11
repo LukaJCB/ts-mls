@@ -41,6 +41,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -84,7 +85,8 @@ const newGroupId = new TextEncoder().encode("new-group1")
 const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", newCiphersuite, [], impl)
 aliceGroup = reinitCommitResult.newState
 
-if (reinitCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // Bob processes the reinit commit and prepares to join the new group
 const processReinitResult = await processPrivateMessage(

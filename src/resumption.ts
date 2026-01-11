@@ -13,7 +13,7 @@ import { CryptoProvider } from "./crypto/provider.js"
 import { Extension } from "./extension.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { UsageError } from "./mlsError.js"
-import { resumptionPSKUsages, type ResumptionPSKUsageValue, PreSharedKeyID } from "./presharedkey.js"
+import { pskTypes, resumptionPSKUsages, type ResumptionPSKUsageValue, PreSharedKeyID } from "./presharedkey.js"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { protocolVersions, ProtocolVersionName } from "./protocolVersion.js"
@@ -103,7 +103,7 @@ export function makeResumptionPsk(
   const psk = {
     pskEpoch: state.groupContext.epoch,
     pskGroupId: state.groupContext.groupId,
-    psktype: "resumption",
+    psktype: pskTypes.resumption,
     pskNonce,
     usage,
   } as const

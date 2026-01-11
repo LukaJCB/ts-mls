@@ -13,7 +13,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`3-party join %s`, async (cs) => {
   await threePartyJoin(cs as CiphersuiteName)
 })
@@ -92,7 +92,8 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
 
   aliceGroup = addCharlieCommitResult.newState
 
-  if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processAddCharlieResult = await processPrivateMessage(
     bobGroup,

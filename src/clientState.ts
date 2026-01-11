@@ -13,7 +13,7 @@ import {
   KeySchedule,
   keyScheduleEncoder,
 } from "./keySchedule.js"
-import { pskIdEncoder, PreSharedKeyID, resumptionPSKUsages } from "./presharedkey.js"
+import { pskIdEncoder, PreSharedKeyID, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -42,7 +42,7 @@ import { firstCommonAncestor } from "./updatePath.js"
 import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
-import { WireformatName } from "./wireformat.js"
+import { WireformatName, wireformats } from "./wireformat.js"
 import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import {
   isDefaultProposal,
@@ -898,7 +898,7 @@ export async function applyProposals(
 export function makePskIndex(state: ClientState | undefined, externalPsks: Record<string, Uint8Array>): PskIndex {
   return {
     findPsk(preSharedKeyId) {
-      if (preSharedKeyId.psktype === "external") {
+      if (preSharedKeyId.psktype === pskTypes.external) {
         return externalPsks[bytesToBase64(preSharedKeyId.pskId)]
       }
 
@@ -920,7 +920,11 @@ export async function nextEpochContext(
   h: Hash,
 ): Promise<GroupContext> {
   const interimTranscriptHash = await createInterimHash(groupContext.confirmedTranscriptHash, confirmationTag, h)
-  const newConfirmedHash = await createConfirmedHash(interimTranscriptHash, { wireformat, content, signature }, h)
+  const newConfirmedHash = await createConfirmedHash(
+    interimTranscriptHash,
+    { wireformat: wireformats[wireformat], content, signature },
+    h,
+  )
 
   return {
     ...groupContext,
@@ -979,7 +983,7 @@ export async function joinGroupWithExtensions(
   const gi = await decryptGroupInfo(welcome, groupSecrets.joinerSecret, pskSecret, cs)
   if (gi === undefined) throw new CodecError("Could not decode group info")
 
-  const resumptionPsk = pskIds.find((id) => id.psktype === "resumption")
+  const resumptionPsk = pskIds.find((id) => id.psktype === pskTypes.resumption)
   if (resumptionPsk !== undefined) {
     if (resumingFromState === undefined) throw new ValidationError("No prior state passed for resumption")
 

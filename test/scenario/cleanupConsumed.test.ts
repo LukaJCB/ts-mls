@@ -18,6 +18,7 @@ import { CryptoError } from "../../src/mlsError.js"
 import { PrivateMessage } from "../../src/privateMessage.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
@@ -45,14 +46,14 @@ async function cleanup(cipherSuite: CiphersuiteName) {
   // bob sends keyPackage to alice
   const keyPackageMessage = encodeMlsMessage({
     keyPackage: bob.publicPackage,
-    wireformat: "mls_key_package",
+    wireformat: wireformats.mls_key_package,
     version: protocolVersions.mls10,
   })
 
   // alice decodes bob's keyPackage
   const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
 
-  if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expected key package")
+  if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
   // alice creates proposal to add bob
   const addBobProposal: ProposalAdd = {

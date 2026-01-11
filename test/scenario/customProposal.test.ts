@@ -14,6 +14,7 @@ import { UsageError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
   await customProposalTest(cs as CiphersuiteName)
@@ -85,7 +86,8 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   bobGroup = createProposalResult.newState
 
-  if (createProposalResult.message.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (createProposalResult.message.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processProposalResult = await processPrivateMessage(
     aliceGroup,
@@ -112,7 +114,8 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   aliceGroup = createCommitResult.newState
 
-  if (createCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (createCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processCommitResult = await processPrivateMessage(
     bobGroup,

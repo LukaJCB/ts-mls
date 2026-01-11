@@ -7,6 +7,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { contentTypes } from "../../src/contentType.js"
 import { senderTypes } from "../../src/sender.js"
+import { wireformats } from "../../src/wireformat.js"
 
 const minimalContent: FramedContentCommit = {
   groupId: new Uint8Array([1]),
@@ -42,6 +43,6 @@ describe("ConfirmedTranscriptHashInput roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeConfirmedTranscriptHashInput, decodeConfirmedTranscriptHashInput)
 
   test("roundtrips", () => {
-    roundtrip({ wireformat: "mls_public_message", content: minimalContent, signature: new Uint8Array([8]) })
+    roundtrip({ wireformat: wireformats.mls_public_message, content: minimalContent, signature: new Uint8Array([8]) })
   })
 })

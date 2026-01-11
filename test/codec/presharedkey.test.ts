@@ -7,14 +7,15 @@ import {
   encodePskLabel,
   encodePskType,
   encodeResumptionPSKUsage,
+  pskTypes,
   resumptionPSKUsages,
 } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 test("PSKType roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePskType, decodePskType)
-  roundtrip("external")
-  roundtrip("resumption")
+  roundtrip(pskTypes.external)
+  roundtrip(pskTypes.resumption)
 })
 
 test("ResumptionPSKUsageValue roundtrip", () => {
@@ -39,9 +40,9 @@ const dummyPskInfoResumption = [
 ] as const
 const dummyPskInfoExternal = [{ pskId: dummyByteArray[0] }, { pskId: dummyByteArray[1] }] as const
 const dummyPskId = [
-  { psktype: "external", ...dummyPskInfoExternal[0], pskNonce: dummyByteArray[0] },
-  { psktype: "resumption", ...dummyPskInfoResumption[0], pskNonce: dummyByteArray[0] },
-  { psktype: "resumption", ...dummyPskInfoResumption[1], pskNonce: dummyByteArray[1] },
+  { psktype: pskTypes.external, ...dummyPskInfoExternal[0], pskNonce: dummyByteArray[0] },
+  { psktype: pskTypes.resumption, ...dummyPskInfoResumption[0], pskNonce: dummyByteArray[0] },
+  { psktype: pskTypes.resumption, ...dummyPskInfoResumption[1], pskNonce: dummyByteArray[1] },
 ] as const
 const dummyPskLabel = [
   { id: dummyPskId[0], index: 99, count: 200 },

@@ -20,6 +20,7 @@ import { KeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { defaultClientConfig } from "../../src/clientConfig.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 describe("Out of order message processing by epoch", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
@@ -129,7 +130,8 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   })
   bobGroup = emptyCommitResult1.newState
 
-  if (emptyCommitResult1.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult1.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   // alice processes the empty commit and goes to epoch 2
   const aliceProcessFirstCommitResult = await processPrivateMessage(
@@ -151,7 +153,8 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   })
   bobGroup = emptyCommitResult2.newState
 
-  if (emptyCommitResult2.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult2.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   // alice processes the empty commit and goes to epoch 3
   const aliceProcessSecondCommitResult = await processPrivateMessage(
@@ -173,7 +176,8 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   })
   bobGroup = emptyCommitResult3.newState
 
-  if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   // alice processes the empty commit and goes to epoch 4
   const aliceProcessThirdCommitResult = await processPrivateMessage(
@@ -213,7 +217,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
 
   //bob won't be able to receive the proposal from an older epoch
 
-  if (aliceCreateFirstProposalResult.message.wireformat !== "mls_private_message")
+  if (aliceCreateFirstProposalResult.message.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
   await expect(
@@ -244,7 +248,8 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
     })
     bobGroup = emptyCommitResult.newState
 
-    if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+    if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
+      throw new Error("Expected private message")
 
     // alice processes the empty commit and goes to next epoch
     const aliceProcessCommitResult = await processPrivateMessage(
@@ -293,7 +298,8 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
     })
     bobGroup = emptyCommitResult.newState
 
-    if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+    if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
+      throw new Error("Expected private message")
 
     // alice processes the empty commit and goes to next epoch
     const aliceProcessCommitResult = await processPrivateMessage(

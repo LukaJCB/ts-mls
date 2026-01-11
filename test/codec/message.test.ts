@@ -6,6 +6,7 @@ import { createRoundtripTest } from "./roundtrip.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { contentTypes } from "../../src/contentType.js"
 import { senderTypes } from "../../src/sender.js"
+import { wireformats } from "../../src/wireformat.js"
 
 describe("MLSMessage roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeMlsMessage, decodeMlsMessage)
@@ -13,7 +14,7 @@ describe("MLSMessage roundtrip", () => {
   test("roundtrips public message", () => {
     roundtrip({
       version: protocolVersions.mls10,
-      wireformat: "mls_public_message",
+      wireformat: wireformats.mls_public_message,
       publicMessage: {
         content: {
           contentType: contentTypes.application,
@@ -24,7 +25,7 @@ describe("MLSMessage roundtrip", () => {
           applicationData: new Uint8Array([3]),
         },
         auth: { contentType: contentTypes.application, signature: new Uint8Array([4, 5, 6]) },
-          senderType: senderTypes.member,
+        senderType: senderTypes.member,
         membershipTag: new Uint8Array([7, 8, 9]),
       },
     })
@@ -33,7 +34,7 @@ describe("MLSMessage roundtrip", () => {
   test("roundtrips private message", () => {
     roundtrip({
       version: protocolVersions.mls10,
-      wireformat: "mls_private_message",
+      wireformat: wireformats.mls_private_message,
       privateMessage: {
         contentType: contentTypes.proposal,
         groupId: new Uint8Array([1]),
@@ -48,7 +49,7 @@ describe("MLSMessage roundtrip", () => {
   test("roundtrips key package message", () => {
     roundtrip({
       version: protocolVersions.mls10,
-      wireformat: "mls_key_package",
+      wireformat: wireformats.mls_key_package,
       keyPackage: {
         version: protocolVersions.mls10,
         cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
@@ -78,7 +79,7 @@ describe("MLSMessage roundtrip", () => {
   test("roundtrips welcome", () => {
     roundtrip({
       version: protocolVersions.mls10,
-      wireformat: "mls_welcome",
+      wireformat: wireformats.mls_welcome,
       welcome: {
         cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
         secrets: [],
@@ -90,7 +91,7 @@ describe("MLSMessage roundtrip", () => {
   test("roundtrips group info message", () => {
     roundtrip({
       version: protocolVersions.mls10,
-      wireformat: "mls_group_info",
+      wireformat: wireformats.mls_group_info,
       groupInfo: {
         groupContext: {
           version: protocolVersions.mls10,

@@ -5,7 +5,7 @@ import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
-import { enumNumberParse } from "./util/enumHelpers.js"
+import { numberToEnum } from "./util/enumHelpers.js"
 
 /** @public */
 export const senderTypes = {
@@ -17,13 +17,14 @@ export const senderTypes = {
 
 /** @public */
 export type SenderTypeName = keyof typeof senderTypes
+/** @public */
 export type SenderTypeValue = (typeof senderTypes)[SenderTypeName]
 
 export const senderTypeEncoder: BufferEncoder<SenderTypeValue> = uint8Encoder
 
 export const encodeSenderType: Encoder<SenderTypeValue> = encode(senderTypeEncoder)
 
-export const decodeSenderType: Decoder<SenderTypeValue> = mapDecoderOption(decodeUint8, enumNumberParse(senderTypes))
+export const decodeSenderType: Decoder<SenderTypeValue> = mapDecoderOption(decodeUint8, numberToEnum(senderTypes))
 
 /** @public */
 export interface SenderMember {

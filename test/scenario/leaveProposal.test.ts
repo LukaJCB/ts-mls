@@ -12,11 +12,10 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { WireformatName } from "../../src/wireformat.js"
 import { processMessage } from "../../src/processMessages.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
   await leaveProposal(cs as CiphersuiteName, true)
   await leaveProposal(cs as CiphersuiteName, false)
@@ -31,7 +30,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-  const preferredWireformat: WireformatName = publicMessage ? "mls_public_message" : "mls_private_message"
+  const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)

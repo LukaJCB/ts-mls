@@ -22,6 +22,7 @@ import { Capabilities } from "../../src/capabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { pskTypes } from "../../src/presharedkey.js"
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -330,7 +331,7 @@ describe("Proposal Validation", () => {
     const pskId = new Uint8Array([1, 2, 3, 4])
     const pskProposal: Proposal = {
       proposalType: defaultProposalTypes.psk,
-      psk: { preSharedKeyId: { psktype: "external", pskId, pskNonce: new Uint8Array([5, 6, 7, 8]) } },
+      psk: { preSharedKeyId: { psktype: pskTypes.external, pskId, pskNonce: new Uint8Array([5, 6, 7, 8]) } },
     }
 
     await expect(

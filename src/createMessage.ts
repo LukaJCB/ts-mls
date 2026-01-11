@@ -7,6 +7,7 @@ import { protectProposalPublic } from "./messageProtectionPublic.js"
 import { Proposal } from "./proposal.js"
 import { addUnappliedProposal } from "./unappliedProposals.js"
 import { protocolVersions } from "./protocolVersion.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export async function createProposal(
@@ -28,14 +29,18 @@ export async function createProposal(
     )
     const newState = await processProposal(
       state,
-      { content: result.publicMessage.content, auth: result.publicMessage.auth, wireformat: "mls_public_message" },
+      {
+        content: result.publicMessage.content,
+        auth: result.publicMessage.auth,
+        wireformat: wireformats.mls_public_message,
+      },
       proposal,
       cs.hash,
     )
     return {
       newState,
       message: {
-        wireformat: "mls_public_message",
+        wireformat: wireformats.mls_public_message,
         version: protocolVersions.mls10,
         publicMessage: result.publicMessage,
       },
@@ -68,7 +73,7 @@ export async function createProposal(
     return {
       newState,
       message: {
-        wireformat: "mls_private_message",
+        wireformat: wireformats.mls_private_message,
         version: protocolVersions.mls10,
         privateMessage: result.privateMessage,
       },

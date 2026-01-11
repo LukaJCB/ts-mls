@@ -17,6 +17,7 @@ import { Extension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -103,7 +104,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     impl,
   )
 
-  if (addCharlieProposal.wireformat !== "mls_public_message") throw new Error("Expected public message")
+  if (addCharlieProposal.wireformat !== wireformats.mls_public_message) throw new Error("Expected public message")
 
   const aliceProcessCharlieProposalResult = await processPublicMessage(
     aliceGroup,
@@ -130,7 +131,8 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   aliceGroup = removeBobCommitResult.newState
 
-  if (removeBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processRemoveBobResult = await processPrivateMessage(
     bobGroup,

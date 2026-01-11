@@ -35,6 +35,7 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -85,7 +86,8 @@ const removeBobCommitResult = await createCommit(
   { extraProposals: [removeBobProposal] },
 )
 aliceGroup = removeBobCommitResult.newState
-if (removeBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // Bob processes the removal and is removed from the group (epoch 2)
 const bobProcessRemoveResult = await processPrivateMessage(

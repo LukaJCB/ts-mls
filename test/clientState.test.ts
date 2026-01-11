@@ -19,6 +19,7 @@ import { processPrivateMessage } from "../src/processMessages.js"
 import { defaultProposalTypes } from "../src/defaultProposalType.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 import { LeafNode } from "../src/leafNode.js"
+import { wireformats } from "../src/wireformat.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
@@ -70,7 +71,8 @@ async function buildThreeMemberGroup() {
     { extraProposals: [addCharlieProposal] },
   )
   aliceGroup = addCharlieCommitResult.newState
-  if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
   const processAddCharlieResult = await processPrivateMessage(
     bobGroup,
     addCharlieCommitResult.commit.privateMessage,

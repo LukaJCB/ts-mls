@@ -14,6 +14,8 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
+import { pskTypes } from "../../src/presharedkey.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External PSK %s`, async (cs) => {
   await externalPsk(cs as CiphersuiteName)
@@ -78,7 +80,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: {
-        psktype: "external",
+        psktype: pskTypes.external,
         pskId: pskId1,
         pskNonce: pskNonce1,
       },
@@ -89,7 +91,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: {
-        psktype: "external",
+        psktype: pskTypes.external,
         pskId: pskId2,
         pskNonce: pskNonce2,
       },
@@ -115,7 +117,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   aliceGroup = pskCommitResult.newState
 
-  if (pskCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
   const processPskResult = await processPrivateMessage(
     bobGroup,

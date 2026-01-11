@@ -14,7 +14,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
@@ -111,7 +111,8 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   aliceGroup = removeBobCommitResult.newState
 
-  if (removeBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const bobProcessCommitResult = await processPrivateMessage(
     bobGroup,

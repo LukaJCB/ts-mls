@@ -12,6 +12,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { pskTypes } from "../../src/presharedkey.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
   await externalPskJoin(cs as CiphersuiteName)
@@ -52,7 +53,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
     proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: {
-        psktype: "external",
+        psktype: pskTypes.external,
         pskId,
         pskNonce,
       },

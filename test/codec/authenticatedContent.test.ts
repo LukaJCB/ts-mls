@@ -2,13 +2,14 @@ import { encodeAuthenticatedContent, decodeAuthenticatedContent } from "../../sr
 import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { senderTypes } from "../../src/sender.js"
+import { wireformats } from "../../src/wireformat.js"
 
 describe("AuthenticatedContent roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeAuthenticatedContent, decodeAuthenticatedContent)
 
   test("roundtrips minimal", () => {
     roundtrip({
-      wireformat: "mls_public_message",
+      wireformat: wireformats.mls_public_message,
       content: {
         contentType: contentTypes.application,
         groupId: new Uint8Array([1]),
@@ -23,7 +24,7 @@ describe("AuthenticatedContent roundtrip", () => {
 
   test("roundtrips nontrivial", () => {
     roundtrip({
-      wireformat: "mls_private_message",
+      wireformat: wireformats.mls_private_message,
       content: {
         contentType: contentTypes.commit,
         groupId: new Uint8Array([7, 8, 9]),

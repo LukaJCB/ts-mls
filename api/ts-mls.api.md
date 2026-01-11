@@ -848,7 +848,7 @@ export interface MlsWelcome {
     // (undocumented)
     welcome: Welcome;
     // (undocumented)
-    wireformat: "mls_welcome";
+    wireformat: wireformats.mls_welcome;
 }
 
 // @public (undocumented)

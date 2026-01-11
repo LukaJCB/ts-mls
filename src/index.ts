@@ -138,6 +138,7 @@ export { type Brand } from "./util/brand.js"
 
 export { type ContentTypeName, type ContentTypeValue } from "./contentType.js"
 export { type ProtocolVersionName, type ProtocolVersionValue } from "./protocolVersion.js"
+export { wireformats, type WireformatName, type WireformatValue } from "./wireformat.js"
 
 export { type DefaultCredentialTypeName, type DefaultCredentialTypeValue } from "./defaultCredentialType.js"
 export { type CredentialBasic, type CredentialX509 } from "./credential.js"
@@ -147,7 +148,14 @@ export { type NewStateWithActionTaken } from "./processMessages.js"
 
 export { type GroupInfo } from "./groupInfo.js"
 export { type EncryptedGroupSecrets } from "./welcome.js"
-export { type PreSharedKeyID, type PSKInfo, type PSKNonce } from "./presharedkey.js"
+export {
+  pskTypes,
+  type PSKTypeName,
+  type PSKTypeValue,
+  type PreSharedKeyID,
+  type PSKInfo,
+  type PSKNonce,
+} from "./presharedkey.js"
 
 export {
   type ProposalAdd,
@@ -221,6 +229,7 @@ export { type MlsMessageProtocol, type MlsMessageContent, type MlsKeyPackage } f
 
 export { contentTypes } from "./contentType.js"
 export { defaultCredentialTypes } from "./defaultCredentialType.js"
+export { leafNodeSources, type LeafNodeSourceName, type LeafNodeSourceValue } from "./leafNodeSource.js"
 export { protocolVersions } from "./protocolVersion.js"
 
 export { type GroupInfoTBS } from "./groupInfo.js"

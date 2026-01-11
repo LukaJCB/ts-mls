@@ -37,6 +37,8 @@ import {
   processPrivateMessage,
   makePskIndex,
   bytesToBase64,
+  pskTypes,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -86,7 +88,7 @@ const pskProposal: Proposal = {
   proposalType: defaultProposalTypes.psk,
   psk: {
     preSharedKeyId: {
-      psktype: "external",
+      psktype: pskTypes.external,
       pskId,
       pskNonce,
     },
@@ -107,7 +109,7 @@ const pskCommitResult = await createCommit(
 )
 aliceGroup = pskCommitResult.newState
 
-if (pskCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
 // Bob processes the commit using the PSK
 const processPskResult = await processPrivateMessage(
@@ -164,6 +166,7 @@ import {
   processPrivateMessage,
   makePskIndex,
   bytesToBase64,
+  pskTypes,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -191,7 +194,7 @@ const pskProposal: Proposal = {
   proposalType: defaultProposalTypes.psk,
   psk: {
     preSharedKeyId: {
-      psktype: "external",
+      psktype: pskTypes.external,
       pskId,
       pskNonce,
     },
