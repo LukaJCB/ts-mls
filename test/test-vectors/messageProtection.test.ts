@@ -21,6 +21,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { RatchetTree } from "../../src/ratchetTree.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultPaddingConfig } from "../../src/paddingConfig.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -50,7 +51,7 @@ type MessageProtectionData = {
 
 async function testMessageProtection(data: MessageProtectionData, impl: CiphersuiteImpl) {
   const gc: GroupContext = {
-    version: "mls10",
+    version: protocolVersions.mls10,
     cipherSuite: data.cipher_suite as CiphersuiteId,
     groupId: hexToBytes(data.group_id),
     epoch: BigInt(data.epoch),

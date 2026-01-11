@@ -12,6 +12,7 @@ import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
   await oneToOne(cs as CiphersuiteName)
@@ -34,7 +35,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   const keyPackageMessage = encodeMlsMessage({
     keyPackage: bob.publicPackage,
     wireformat: "mls_key_package",
-    version: "mls10",
+    version: protocolVersions.mls10,
   })
 
   // alice decodes bob's keyPackage
@@ -67,7 +68,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   const encodedWelcome = encodeMlsMessage({
     welcome: commitResult.welcome!,
     wireformat: "mls_welcome",
-    version: "mls10",
+    version: protocolVersions.mls10,
   })
 
   // bob decodes the welcome message
@@ -99,7 +100,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   const encodedPrivateMessageAlice = encodeMlsMessage({
     privateMessage: aliceCreateMessageResult.privateMessage,
     wireformat: "mls_private_message",
-    version: "mls10",
+    version: protocolVersions.mls10,
   })
 
   // bob decodes the message
@@ -130,7 +131,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   const encodedPrivateMessageBob = encodeMlsMessage({
     privateMessage: bobCreateMessageResult.privateMessage,
     wireformat: "mls_private_message",
-    version: "mls10",
+    version: protocolVersions.mls10,
   })
 
   const decodedPrivateMessageBob = decodeMlsMessage(encodedPrivateMessageBob, 0)![0]

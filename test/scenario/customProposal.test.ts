@@ -11,6 +11,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src/index.js"
 import { UsageError } from "../../src/mlsError.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
   await customProposalTest(cs as CiphersuiteName)
@@ -25,7 +26,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     extensions: [],
     credentials: ["basic"],
     proposals: [customProposalType],
-    versions: ["mls10"],
+    versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],
   }
 

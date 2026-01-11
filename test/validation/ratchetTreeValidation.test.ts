@@ -24,7 +24,7 @@ import {
 } from "../../src/createCommit.js"
 import { ratchetTreeFromExtension } from "../../src/groupInfo.js"
 import { treeHashRoot } from "../../src/treeHash.js"
-import { ProtocolVersionName } from "../../src/protocolVersion.js"
+import { protocolVersions, ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { signLeafNodeCommit, signLeafNodeKeyPackage } from "../../src/leafNode.js"
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 
@@ -98,7 +98,7 @@ async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
   ]
 
   const groupContext: GroupContext = {
-    version: "mls10",
+    version: protocolVersions.mls10,
     cipherSuite: ciphersuites[cipherSuite],
     epoch: 0n,
     treeHash: new Uint8Array(),
@@ -460,8 +460,8 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-  // tamper with the KeyPackage version string to mismatch the group's version
-  bob.publicPackage.version = "bogus-version" as ProtocolVersionName
+  // tamper with the KeyPackage version id to mismatch the group's version
+  bob.publicPackage.version = 0xffff as ProtocolVersionValue
 
   const addBobProposal: Proposal = {
     proposalType: "add",

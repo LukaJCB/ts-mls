@@ -4,6 +4,7 @@ import {
   proposalWithSenderEncoder,
 } from "../../src/unappliedProposals.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
 const dummyAddProposal: ProposalWithSender = {
@@ -11,7 +12,7 @@ const dummyAddProposal: ProposalWithSender = {
     proposalType: "add",
     add: {
       keyPackage: {
-        version: "mls10",
+        version: protocolVersions.mls10,
         cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
         initKey: new Uint8Array([]),
         leafNode: {

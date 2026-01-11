@@ -9,9 +9,10 @@ import {
 import { createRoundtripTest } from "./roundtrip.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 const dummyGroupContext: GroupContext = {
-  version: "mls10",
+  version: protocolVersions.mls10,
   cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
   groupId: new Uint8Array([1, 2, 3]),
   epoch: 0n,

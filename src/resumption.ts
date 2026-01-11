@@ -15,7 +15,7 @@ import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { UsageError } from "./mlsError.js"
 import { ResumptionPSKUsageName, PreSharedKeyID } from "./presharedkey.js"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
-import { ProtocolVersionName } from "./protocolVersion.js"
+import { protocolVersions, ProtocolVersionName } from "./protocolVersion.js"
 import { RatchetTree } from "./ratchetTree.js"
 import { Welcome } from "./welcome.js"
 
@@ -32,7 +32,7 @@ export async function reinitGroup(
     proposalType: "reinit",
     reinit: {
       groupId,
-      version,
+      version: protocolVersions[version],
       cipherSuite: ciphersuites[cipherSuite],
       extensions,
     },

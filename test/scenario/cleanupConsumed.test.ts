@@ -15,6 +15,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { zeroOutUint8Array } from "../../src/util/byteArray.js"
 import { CryptoError } from "../../src/mlsError.js"
 import { PrivateMessage } from "../../src/privateMessage.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
@@ -37,7 +38,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
   const keyPackageMessage = encodeMlsMessage({
     keyPackage: bob.publicPackage,
     wireformat: "mls_key_package",
-    version: "mls10",
+    version: protocolVersions.mls10,
   })
 
   // alice decodes bob's keyPackage

@@ -10,6 +10,7 @@ import {
 } from "./clientState.js"
 import { GroupActiveState } from "./groupActiveState.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { protocolVersions } from "./protocolVersion.js"
 import { decryptWithLabel } from "./crypto/hpke.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import {
@@ -427,7 +428,11 @@ async function protectCommit(
       cs,
     )
 
-    return [{ version: "mls10", wireformat: "mls_public_message", publicMessage: msg }, state.secretTree, []]
+    return [
+      { version: protocolVersions.mls10, wireformat: "mls_public_message", publicMessage: msg },
+      state.secretTree,
+      [],
+    ]
   } else {
     const res = await protect(
       state.keySchedule.senderDataSecret,
@@ -441,7 +446,7 @@ async function protectCommit(
     )
 
     return [
-      { version: "mls10", wireformat: "mls_private_message", privateMessage: res.privateMessage },
+      { version: protocolVersions.mls10, wireformat: "mls_private_message", privateMessage: res.privateMessage },
       res.tree,
       res.consumed,
     ]

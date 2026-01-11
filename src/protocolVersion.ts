@@ -10,16 +10,27 @@ export const protocolVersions = {
 
 /** @public */
 export type ProtocolVersionName = keyof typeof protocolVersions
+/** @public */
 export type ProtocolVersionValue = (typeof protocolVersions)[ProtocolVersionName]
 
-export const protocolVersionEncoder: BufferEncoder<ProtocolVersionName> = contramapBufferEncoder(
+const protocolVersionValues = new Set<number>(Object.values(protocolVersions))
+
+export const protocolVersionEncoder: BufferEncoder<ProtocolVersionValue> = uint16Encoder
+
+export const encodeProtocolVersion: Encoder<ProtocolVersionValue> = encode(protocolVersionEncoder)
+
+export const decodeProtocolVersion: Decoder<ProtocolVersionValue> = mapDecoderOption(decodeUint16, (v) =>
+  protocolVersionValues.has(v) ? (v as ProtocolVersionValue) : undefined,
+)
+
+export const protocolVersionNameEncoder: BufferEncoder<ProtocolVersionName> = contramapBufferEncoder(
   uint16Encoder,
   (t) => protocolVersions[t],
 )
 
-export const encodeProtocolVersion: Encoder<ProtocolVersionName> = encode(protocolVersionEncoder)
+export const encodeProtocolVersionName: Encoder<ProtocolVersionName> = encode(protocolVersionNameEncoder)
 
-export const decodeProtocolVersion: Decoder<ProtocolVersionName> = mapDecoderOption(
+export const decodeProtocolVersionName: Decoder<ProtocolVersionName> = mapDecoderOption(
   decodeUint16,
   enumNumberToKey(protocolVersions),
 )

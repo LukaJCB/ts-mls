@@ -7,7 +7,7 @@ import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 import { decodeKeyPackage, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { decodePskId, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 import { decodeDefaultProposalType, defaultProposalTypeEncoder } from "./defaultProposalType.js"
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { decodeLeafNodeUpdate, leafNodeEncoder, LeafNodeUpdate } from "./leafNode.js"
 
 /** @public */
@@ -53,7 +53,7 @@ export const decodePSK: Decoder<PSK> = mapDecoder(decodePskId, (preSharedKeyId) 
 /** @public */
 export interface Reinit {
   groupId: Uint8Array
-  version: ProtocolVersionName
+  version: ProtocolVersionValue
   cipherSuite: CiphersuiteId
   extensions: Extension[]
 }

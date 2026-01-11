@@ -1,5 +1,6 @@
 import { encodeRatchetTree, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 describe("RatchetTree roundtrip", () => {
   test("roundtrips single leaf", () => {
@@ -11,7 +12,7 @@ describe("RatchetTree roundtrip", () => {
           signaturePublicKey: new Uint8Array([2]),
           credential: { credentialType: "basic", identity: new Uint8Array([3]) },
           capabilities: {
-            versions: ["mls10"],
+            versions: [protocolVersions.mls10],
             ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
             extensions: [],
             proposals: [],
@@ -38,7 +39,7 @@ describe("RatchetTree roundtrip", () => {
           signaturePublicKey: new Uint8Array([2]),
           credential: { credentialType: "basic", identity: new Uint8Array([3]) },
           capabilities: {
-            versions: ["mls10"],
+            versions: [protocolVersions.mls10],
             ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
             extensions: [],
             proposals: [],
@@ -65,7 +66,7 @@ describe("RatchetTree roundtrip", () => {
           signaturePublicKey: new Uint8Array([6]),
           credential: { credentialType: "basic", identity: new Uint8Array([7]) },
           capabilities: {
-            versions: ["mls10"],
+            versions: [protocolVersions.mls10],
             ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
             extensions: [],
             proposals: [],

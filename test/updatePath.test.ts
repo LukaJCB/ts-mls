@@ -5,6 +5,7 @@ import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
+import { protocolVersions } from "../src/protocolVersion.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {
@@ -19,7 +20,7 @@ describe("createUpdatePath", () => {
         identity: new TextEncoder().encode("user1"),
       },
       capabilities: {
-        versions: ["mls10"],
+        versions: [protocolVersions.mls10],
         ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
         extensions: [],
         proposals: [],
@@ -66,7 +67,7 @@ describe("createUpdatePath", () => {
     const originalLeaf2HpkeKey = originalTree[2].leaf.hpkePublicKey.slice()
 
     const groupContext: GroupContext = {
-      version: "mls10",
+      version: protocolVersions.mls10,
       cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       groupId: new Uint8Array(16),
       epoch: 1n,
@@ -98,7 +99,7 @@ describe("createUpdatePath", () => {
         identity: new TextEncoder().encode(identity),
       },
       capabilities: {
-        versions: ["mls10"],
+        versions: [protocolVersions.mls10],
         ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
         extensions: [],
         proposals: [],
@@ -156,7 +157,7 @@ describe("createUpdatePath", () => {
     const originalParent5HpkeKey = originalTree[5].parent.hpkePublicKey.slice()
 
     const groupContext: GroupContext = {
-      version: "mls10",
+      version: protocolVersions.mls10,
       cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       groupId: new Uint8Array(16),
       epoch: 1n,

@@ -689,7 +689,7 @@ function validateReinit(
 ): ValidationError | undefined {
   if (allProposals.length !== 1) return new ValidationError("Reinit proposal needs to be commited by itself")
 
-  if (protocolVersions[reinit.version] < protocolVersions[gc.version])
+  if (reinit.version < gc.version)
     return new ValidationError("A ReInit proposal cannot use a version less than the version for the current group")
 }
 
@@ -1102,7 +1102,7 @@ export async function createGroup(
   const confirmedTranscriptHash = new Uint8Array()
 
   const groupContext: GroupContext = {
-    version: "mls10",
+    version: protocolVersions.mls10,
     cipherSuite: cs.name,
     epoch: 0n,
     treeHash: await treeHashRoot(ratchetTree, cs.hash),

@@ -12,7 +12,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { processMessage } from "../../src/processMessages.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
 
-import { ProtocolVersionName } from "../../src/protocolVersion.js"
+import { ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { ValidationError } from "../../src/mlsError.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
@@ -139,7 +139,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     ...bobGroup,
     groupActiveState: {
       kind: "suspendedPendingReinit",
-      reinit: { ...reinit!, version: "mls2" as ProtocolVersionName },
+      reinit: { ...reinit!, version: 0xffff as ProtocolVersionValue },
     },
   }
 

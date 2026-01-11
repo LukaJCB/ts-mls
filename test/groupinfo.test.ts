@@ -3,13 +3,14 @@ import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { GroupContext } from "../src/groupContext.js"
 import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo.js"
 import { ed25519 } from "@noble/curves/ed25519.js"
+import { protocolVersions } from "../src/protocolVersion.js"
 
 describe("GroupInfo signing and verification", () => {
   const privateKey = ed25519.utils.randomSecretKey()
   const publicKey = ed25519.getPublicKey(privateKey)
 
   const groupContext: GroupContext = {
-    version: "mls10",
+    version: protocolVersions.mls10,
     cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
     groupId: new Uint8Array([0x01, 0x02]),
     epoch: BigInt(42),

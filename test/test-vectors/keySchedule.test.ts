@@ -3,6 +3,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { encodeGroupContext, GroupContext } from "../../src/groupContext.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/key-schedule.json"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 import { initializeEpoch, mlsExporter } from "../../src/keySchedule.js"
 
@@ -24,7 +25,7 @@ async function testKeySchedule(
       const initSecret = await prevInitSecret
 
       const gc: GroupContext = {
-        version: "mls10",
+        version: protocolVersions.mls10,
         cipherSuite: cipher_suite,
         groupId: hexToBytes(group_id),
         epoch: BigInt(index),

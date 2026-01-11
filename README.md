@@ -84,6 +84,7 @@ import {
   generateKeyPackage,
   encodeMlsMessage,
   decodeMlsMessage,
+  protocolVersions,
   Proposal,
   zeroOutUint8Array,
 } from "ts-mls"
@@ -107,7 +108,7 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 const keyPackageMessage = encodeMlsMessage({
   keyPackage: bob.publicPackage,
   wireformat: "mls_key_package",
-  version: "mls10",
+  version: protocolVersions.mls10,
 })
 
 // alice decodes bob's keyPackage
@@ -135,7 +136,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 const encodedWelcome = encodeMlsMessage({
   welcome: commitResult.welcome!,
   wireformat: "mls_welcome",
-  version: "mls10",
+  version: protocolVersions.mls10,
 })
 
 // bob decodes the welcome message
@@ -167,7 +168,7 @@ aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 const encodedPrivateMessageAlice = encodeMlsMessage({
   privateMessage: aliceCreateMessageResult.privateMessage,
   wireformat: "mls_private_message",
-  version: "mls10",
+  version: protocolVersions.mls10,
 })
 
 // bob decodes the message

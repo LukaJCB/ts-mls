@@ -7,11 +7,11 @@ import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/c
 import { expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 
 /** @public */
 export interface GroupContext {
-  version: ProtocolVersionName
+  version: ProtocolVersionValue
   cipherSuite: CiphersuiteId
   groupId: Uint8Array
   epoch: bigint

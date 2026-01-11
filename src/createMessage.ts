@@ -6,6 +6,7 @@ import { protectProposal, protectApplicationData } from "./messageProtection.js"
 import { protectProposalPublic } from "./messageProtectionPublic.js"
 import { Proposal } from "./proposal.js"
 import { addUnappliedProposal } from "./unappliedProposals.js"
+import { protocolVersions } from "./protocolVersion.js"
 
 /** @public */
 export async function createProposal(
@@ -33,7 +34,11 @@ export async function createProposal(
     )
     return {
       newState,
-      message: { wireformat: "mls_public_message", version: "mls10", publicMessage: result.publicMessage },
+      message: {
+        wireformat: "mls_public_message",
+        version: protocolVersions.mls10,
+        publicMessage: result.publicMessage,
+      },
       consumed: [],
     }
   } else {
@@ -62,7 +67,11 @@ export async function createProposal(
 
     return {
       newState,
-      message: { wireformat: "mls_private_message", version: "mls10", privateMessage: result.privateMessage },
+      message: {
+        wireformat: "mls_private_message",
+        version: protocolVersions.mls10,
+        privateMessage: result.privateMessage,
+      },
       consumed: result.consumed,
     }
   }

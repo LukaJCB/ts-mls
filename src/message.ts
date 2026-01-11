@@ -3,14 +3,14 @@ import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec
 import { decodeGroupInfo, groupInfoEncoder, GroupInfo } from "./groupInfo.js"
 import { decodeKeyPackage, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { decodePrivateMessage, privateMessageEncoder, PrivateMessage } from "./privateMessage.js"
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { decodePublicMessage, publicMessageEncoder, PublicMessage } from "./publicMessage.js"
 import { decodeWelcome, Welcome, welcomeEncoder } from "./welcome.js"
 import { decodeWireformat, wireformatEncoder } from "./wireformat.js"
 
 /** @public */
 export interface MlsMessageProtocol {
-  version: ProtocolVersionName
+  version: ProtocolVersionValue
 }
 
 /** @public */

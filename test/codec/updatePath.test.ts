@@ -1,5 +1,6 @@
 import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {
@@ -12,7 +13,7 @@ describe("UpdatePath", () => {
           identity: new Uint8Array([7, 8, 9]),
         },
         capabilities: {
-          versions: ["mls10"],
+          versions: [protocolVersions.mls10],
           ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
           extensions: [],
           proposals: [],
@@ -41,7 +42,7 @@ describe("UpdatePath", () => {
           identity: new Uint8Array([26, 27, 28, 29, 30]),
         },
         capabilities: {
-          versions: ["mls10"],
+          versions: [protocolVersions.mls10],
           ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
           extensions: [],
           proposals: [],

@@ -17,7 +17,7 @@ import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js
 import { groupContextEncoder, GroupContext } from "./groupContext.js"
 import { wireformatEncoder, WireformatName } from "./wireformat.js"
 import { decodeProposal, proposalEncoder, Proposal } from "./proposal.js"
-import { protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import {
   decodeSender,
   senderEncoder,
@@ -176,7 +176,7 @@ export const senderInfoEncoder: BufferEncoder<SenderInfo> = (info) => {
 export const encodeSenderInfo: Encoder<SenderInfo> = encode(senderInfoEncoder)
 
 export type FramedContentTBS = {
-  protocolVersion: ProtocolVersionName
+  protocolVersion: ProtocolVersionValue
   wireformat: WireformatName
   content: FramedContent
 } & SenderInfo

@@ -5,7 +5,12 @@ import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite }
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import {
+  decodeProtocolVersion,
+  protocolVersionEncoder,
+  protocolVersions,
+  ProtocolVersionValue,
+} from "./protocolVersion.js"
 import {
   decodeLeafNodeKeyPackage,
   leafNodeEncoder,
@@ -19,7 +24,7 @@ import { Credential } from "./credential.js"
 
 /** @public */
 export type KeyPackageTBS = {
-  version: ProtocolVersionName
+  version: ProtocolVersionValue
   cipherSuite: CiphersuiteId
   initKey: Uint8Array
   leafNode: LeafNodeKeyPackage
@@ -130,7 +135,7 @@ export async function generateKeyPackageWithKey(
   }
 
   const tbs: KeyPackageTBS = {
-    version: "mls10",
+    version: protocolVersions.mls10,
     cipherSuite: cs.name,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
     leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),

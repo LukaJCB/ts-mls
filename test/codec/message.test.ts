@@ -1,5 +1,6 @@
 import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("MLSMessage roundtrip", () => {
@@ -7,7 +8,7 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips public message", () => {
     roundtrip({
-      version: "mls10",
+      version: protocolVersions.mls10,
       wireformat: "mls_public_message",
       publicMessage: {
         content: {
@@ -27,7 +28,7 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips private message", () => {
     roundtrip({
-      version: "mls10",
+      version: protocolVersions.mls10,
       wireformat: "mls_private_message",
       privateMessage: {
         contentType: "proposal",
@@ -42,10 +43,10 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips key package message", () => {
     roundtrip({
-      version: "mls10",
+      version: protocolVersions.mls10,
       wireformat: "mls_key_package",
       keyPackage: {
-        version: "mls10",
+        version: protocolVersions.mls10,
         cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
         initKey: new Uint8Array([]),
         leafNode: {
@@ -72,7 +73,7 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips welcome", () => {
     roundtrip({
-      version: "mls10",
+      version: protocolVersions.mls10,
       wireformat: "mls_welcome",
       welcome: {
         cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
@@ -84,11 +85,11 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips group info message", () => {
     roundtrip({
-      version: "mls10",
+      version: protocolVersions.mls10,
       wireformat: "mls_group_info",
       groupInfo: {
         groupContext: {
-          version: "mls10",
+          version: protocolVersions.mls10,
           cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
           groupId: new Uint8Array([1, 2, 3]),
           epoch: 0n,
