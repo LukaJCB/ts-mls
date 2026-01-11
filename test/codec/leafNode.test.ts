@@ -2,6 +2,7 @@ import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode.js"
 import { credentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalLeafNode: LeafNode = {
@@ -33,7 +34,7 @@ const nontrivialLeafNode: LeafNode = {
   },
   leafNodeSource: "commit",
   parentHash: new Uint8Array([9, 10]),
-  extensions: [{ extensionType: "ratchet_tree", extensionData: new Uint8Array([11, 12]) }],
+  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([11, 12]) }],
   signature: new Uint8Array([13, 14]),
 }
 

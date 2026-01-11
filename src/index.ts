@@ -1,4 +1,4 @@
-export { type Extension, type ExtensionType } from "./extension.js"
+export { type Extension } from "./extension.js"
 
 export { defaultProposalTypes, type DefaultProposalTypeName } from "./defaultProposalType.js"
 

@@ -8,7 +8,7 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension, ExtensionType } from "../../src/extension.js"
+import { Extension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { credentialTypes } from "../../src/credentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
@@ -20,7 +20,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`Custom GroupInfoExtensions %s`,
 async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const customExtensionType: ExtensionType = 91
+  const customExtensionType: number = 91
 
   const capabilities: Capabilities = {
     extensions: [customExtensionType],

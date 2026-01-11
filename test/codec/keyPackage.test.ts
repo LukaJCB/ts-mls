@@ -2,6 +2,7 @@ import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPac
 import { credentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const minimalKeyPackage: KeyPackage = {
@@ -45,10 +46,10 @@ const nontrivialKeyPackage: KeyPackage = {
     },
     leafNodeSource: "key_package",
     lifetime: { notBefore: 1n, notAfter: 2n },
-    extensions: [{ extensionType: "ratchet_tree", extensionData: new Uint8Array([10, 11]) }],
+    extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([10, 11]) }],
     signature: new Uint8Array([12, 13]),
   },
-  extensions: [{ extensionType: "ratchet_tree", extensionData: new Uint8Array([14, 15]) }],
+  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([14, 15]) }],
   signature: new Uint8Array([16, 17]),
 }
 

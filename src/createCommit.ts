@@ -36,6 +36,7 @@ import { pathToPathSecrets } from "./pathSecrets.js"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
 import { Proposal, ProposalExternalInit } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { ProposalOrRef } from "./proposalOrRefType.js"
 import { PskIndex } from "./pskIndex.js"
 import {
@@ -352,7 +353,7 @@ export async function createGroupInfoWithRatchetTree(
     groupContext,
     confirmationTag,
     state,
-    [...extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }],
+    [...extensions, { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encodedTree }],
     cs,
   )
 
@@ -372,7 +373,7 @@ export async function createGroupInfoWithExternalPub(
     state.groupContext,
     state.confirmationTag,
     state,
-    [...extensions, { extensionType: "external_pub", extensionData: externalPub }],
+    [...extensions, { extensionType: defaultExtensionTypes.external_pub, extensionData: externalPub }],
     cs,
   )
 
@@ -396,8 +397,8 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
     state,
     [
       ...extensions,
-      { extensionType: "external_pub", extensionData: externalPub },
-      { extensionType: "ratchet_tree", extensionData: encodedTree },
+      { extensionType: defaultExtensionTypes.external_pub, extensionData: externalPub },
+      { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encodedTree },
     ],
     cs,
   )
@@ -500,7 +501,7 @@ export async function joinGroupExternal(
   clientConfig: ClientConfig = defaultClientConfig,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
-  const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === "external_pub")
+  const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.external_pub)
 
   if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
 

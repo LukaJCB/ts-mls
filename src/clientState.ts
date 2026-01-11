@@ -58,6 +58,7 @@ import {
   Remove,
 } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { pathToRoot } from "./pathSecrets.js"
 import {
   PrivateKeyPath,
@@ -432,7 +433,9 @@ async function validateProposals(
 
   const allExtensions = flattenExtensions(p[defaultProposalTypes.group_context_extensions])
 
-  const requiredCapabilities = allExtensions.find((e) => e.extensionType === "required_capabilities")
+  const requiredCapabilities = allExtensions.find(
+    (e) => e.extensionType === defaultExtensionTypes.required_capabilities,
+  )
 
   if (requiredCapabilities !== undefined) {
     const caps = decodeRequiredCapabilities(requiredCapabilities.extensionData, 0)
@@ -459,7 +462,7 @@ async function validateExternalSenders(
   extensions: Extension[],
   authService: AuthenticationService,
 ): Promise<MlsError | undefined> {
-  const externalSenders = extensions.filter((e) => e.extensionType === "external_senders")
+  const externalSenders = extensions.filter((e) => e.extensionType === defaultExtensionTypes.external_senders)
   for (const externalSender of externalSenders) {
     const decoded = decodeExternalSender(externalSender.extensionData, 0)
     if (decoded === undefined) return new CodecError("Could not decode external_senders")
@@ -594,7 +597,9 @@ async function validateLeafNodeCommon(
 
   if (!credentialValid) return new ValidationError("Could not validate credential")
 
-  const requiredCapabilities = groupContext.extensions.find((e) => e.extensionType === "required_capabilities")
+  const requiredCapabilities = groupContext.extensions.find(
+    (e) => e.extensionType === defaultExtensionTypes.required_capabilities,
+  )
 
   if (requiredCapabilities !== undefined) {
     const caps = decodeRequiredCapabilities(requiredCapabilities.extensionData, 0)

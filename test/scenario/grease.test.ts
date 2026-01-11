@@ -12,7 +12,6 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultGreaseConfig, greaseExtensions } from "../../src/grease.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { extensionTypeToNumber } from "../../src/extension.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
@@ -26,7 +25,7 @@ async function greaseTest(cipherSuite: CiphersuiteName) {
   const greased = greaseExtensions(defaultGreaseConfig)
   const caps: Capabilities = {
     ...defaultCapabilities(),
-    extensions: greased.map((n) => extensionTypeToNumber(n.extensionType)),
+    extensions: greased.map((n) => n.extensionType),
   }
   const alice = await generateKeyPackage(aliceCredential, caps, defaultLifetime, greased, impl)
 

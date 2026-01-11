@@ -8,6 +8,7 @@ import { protectExternalProposalPublic } from "./messageProtectionPublic.js"
 import { UsageError, ValidationError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 /** @public */
@@ -57,7 +58,7 @@ export async function proposeExternal(
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MLSMessage> {
   const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
-    if (ex.extensionType !== "external_senders") return false
+    if (ex.extensionType !== defaultExtensionTypes.external_senders) return false
     const decoded = decodeExternalSender(ex.extensionData, 0)
 
     if (decoded === undefined) throw new ValidationError("Could not decode external_sender extension")

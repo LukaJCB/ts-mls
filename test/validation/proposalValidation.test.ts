@@ -20,6 +20,7 @@ import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -65,7 +66,7 @@ describe("Proposal Validation", () => {
         groupContextExtensions: {
           extensions: [
             {
-              extensionType: "required_capabilities",
+              extensionType: defaultExtensionTypes.required_capabilities,
               extensionData: encodeRequiredCapabilities({
                 extensionTypes: [],
                 proposalTypes: [99],
@@ -103,7 +104,7 @@ describe("Proposal Validation", () => {
         groupContextExtensions: {
           extensions: [
             {
-              extensionType: "required_capabilities",
+              extensionType: defaultExtensionTypes.required_capabilities,
               extensionData: encodeRequiredCapabilities({
                 extensionTypes: [],
                 proposalTypes: [],
@@ -129,7 +130,9 @@ describe("Proposal Validation", () => {
     const proposalInvalidRequiredCapabilities: Proposal = {
       proposalType: defaultProposalTypes.group_context_extensions,
       groupContextExtensions: {
-        extensions: [{ extensionType: "required_capabilities", extensionData: new Uint8Array([1, 2]) }],
+        extensions: [
+          { extensionType: defaultExtensionTypes.required_capabilities, extensionData: new Uint8Array([1, 2]) },
+        ],
       },
     }
 
@@ -146,7 +149,9 @@ describe("Proposal Validation", () => {
       const proposalInvalidExternalSenders: Proposal = {
         proposalType: defaultProposalTypes.group_context_extensions,
         groupContextExtensions: {
-          extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2]) }],
+          extensions: [
+            { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2]) },
+          ],
         },
       }
 
@@ -160,7 +165,7 @@ describe("Proposal Validation", () => {
         groupContextExtensions: {
           extensions: [
             {
-              extensionType: "external_senders",
+              extensionType: defaultExtensionTypes.external_senders,
               extensionData: encodeExternalSender({ credential: badCredential, signaturePublicKey: new Uint8Array() }),
             },
           ],
@@ -349,7 +354,9 @@ describe("Proposal Validation", () => {
           ...groupInfo,
           groupContext: {
             ...groupInfo.groupContext,
-            extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2, 3]) }],
+            extensions: [
+              { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2, 3]) },
+            ],
           },
         },
         removeBobProposal,
@@ -376,7 +383,9 @@ describe("Proposal Validation", () => {
             ...groupInfo,
             groupContext: {
               ...groupInfo.groupContext,
-              extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2, 3]) }],
+              extensions: [
+                { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2, 3]) },
+              ],
             },
           },
           removeBobProposal,

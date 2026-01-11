@@ -13,6 +13,7 @@ import { processMessage } from "../../src/processMessages.js"
 import { encodeExternalSender } from "../../src/externalSender.js"
 import { WireformatName } from "../../src/wireformat.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
@@ -67,7 +68,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     groupContextExtensions: {
       extensions: [
         {
-          extensionType: "external_senders",
+          extensionType: defaultExtensionTypes.external_senders,
           extensionData: encodeExternalSender({
             credential: { credentialType: "basic", identity: new Uint8Array() },
             signaturePublicKey: new Uint8Array(),

@@ -15,6 +15,7 @@ import { encodeExternalSender, ExternalSender } from "../../src/externalSender.j
 import { Extension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -40,7 +41,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   }
 
   const extension: Extension = {
-    extensionType: "external_senders",
+    extensionType: defaultExtensionTypes.external_senders,
     extensionData: encodeExternalSender(externalSender),
   }
 

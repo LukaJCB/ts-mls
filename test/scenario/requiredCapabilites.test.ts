@@ -14,6 +14,7 @@ import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { credentialTypes } from "../../src/credentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -42,7 +43,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
   const groupId = new TextEncoder().encode("group1")
 
   const requiredCapabilitiesExtension: Extension = {
-    extensionType: "required_capabilities",
+    extensionType: defaultExtensionTypes.required_capabilities,
     extensionData: encodeRequiredCapabilities(requiredCapabilities),
   }
 

@@ -1,40 +1,30 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
-import { Decoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import {
-  decodeDefaultExtensionType,
-  defaultExtensionTypeEncoder,
   DefaultExtensionTypeName,
-  defaultExtensionTypes,
+  DefaultExtensionTypeValue,
+  defaultExtensionTypeValueFromName,
+  isDefaultExtensionTypeValue,
 } from "./defaultExtensionType.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 /** @public */
-export type ExtensionType = DefaultExtensionTypeName | number
-
-export const extensionTypeEncoder: BufferEncoder<ExtensionType> = (t) =>
-  typeof t === "number" ? uint16Encoder(t) : defaultExtensionTypeEncoder(t)
-
-export const encodeExtensionType: Encoder<ExtensionType> = encode(extensionTypeEncoder)
-
-export const decodeExtensionType: Decoder<ExtensionType> = orDecoder(decodeDefaultExtensionType, decodeUint16)
-
-/** @public */
 export interface Extension {
-  extensionType: ExtensionType
+  extensionType: number
   extensionData: Uint8Array
 }
 
 export const extensionEncoder: BufferEncoder<Extension> = contramapBufferEncoders(
-  [extensionTypeEncoder, varLenDataEncoder],
+  [uint16Encoder, varLenDataEncoder],
   (e) => [e.extensionType, e.extensionData] as const,
 )
 
 export const encodeExtension: Encoder<Extension> = encode(extensionEncoder)
 
 export const decodeExtension: Decoder<Extension> = mapDecoders(
-  [decodeExtensionType, decodeVarLenData],
+  [decodeUint16, decodeVarLenData],
   (extensionType, extensionData) => ({ extensionType, extensionData }),
 )
 
@@ -53,13 +43,13 @@ export function extensionsSupportedByCapabilities(
 ): boolean {
   return requiredExtensions
     .filter((ex) => !isDefaultExtension(ex.extensionType))
-    .every((ex) => capabilities.extensions.includes(extensionTypeToNumber(ex.extensionType)))
+    .every((ex) => capabilities.extensions.includes(ex.extensionType))
 }
 
-function isDefaultExtension(t: ExtensionType): boolean {
-  return typeof t !== "number"
+function isDefaultExtension(t: number): boolean {
+  return isDefaultExtensionTypeValue(t)
 }
 
-export function extensionTypeToNumber(t: ExtensionType): number {
-  return typeof t === "number" ? t : defaultExtensionTypes[t]
+export function extensionTypeValueFromName(name: DefaultExtensionTypeName): DefaultExtensionTypeValue {
+  return defaultExtensionTypeValueFromName(name)
 }

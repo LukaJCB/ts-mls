@@ -28,6 +28,7 @@ import { protocolVersions, ProtocolVersionValue } from "../../src/protocolVersio
 import { signLeafNodeCommit, signLeafNodeKeyPackage } from "../../src/leafNode.js"
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 describe("Ratchet Tree Validation", () => {
   const suites = Object.keys(ciphersuites)
@@ -175,7 +176,7 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
 
   await resignLeafNode(tree, 0, groupId, alice.privatePackage.signaturePrivateKey, impl)
 
-  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
 
   treeExtension!.extensionData = encodeRatchetTree(tree)
 
@@ -267,7 +268,7 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
 
   await resignLeafNode(tree, 0, groupId, alice.privatePackage.signaturePrivateKey, impl)
 
-  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
 
   treeExtension!.extensionData = encodeRatchetTree(tree)
 
@@ -330,7 +331,7 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
   // flip a byte in the signature to invalidate it
   tree[0].leaf.signature[0] = (tree[0].leaf.signature[0]! + 1) & 0xff
 
-  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
 
   treeExtension!.extensionData = encodeRatchetTree(tree)
 
@@ -365,7 +366,7 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
   // flip a byte in the signature to invalidate it
   tree[0].leaf.signature[0] = (tree[0].leaf.signature[0]! + 1) & 0xff
 
-  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
 
   treeExtension!.extensionData = encodeRatchetTree(tree)
 
@@ -578,7 +579,7 @@ async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
   // manually add bob with same signature key
   const [newTree] = addLeafNode(tree, bob.publicPackage.leafNode)
 
-  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+  const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
   treeExtension!.extensionData = encodeRatchetTree(newTree)
 
   groupInfo.groupContext.treeHash = await treeHashRoot(newTree, impl.hash)

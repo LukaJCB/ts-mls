@@ -10,6 +10,7 @@ import { createRoundtripTest } from "./roundtrip.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 const dummyGroupContext: GroupContext = {
   version: protocolVersions.mls10,
@@ -20,7 +21,10 @@ const dummyGroupContext: GroupContext = {
   confirmedTranscriptHash: new Uint8Array([6]),
   extensions: [],
 }
-const dummyExtension = { extensionType: "ratchet_tree", extensionData: new Uint8Array([8, 9]) } as const
+const dummyExtension = {
+  extensionType: defaultExtensionTypes.ratchet_tree,
+  extensionData: new Uint8Array([8, 9]),
+} as const
 
 const minimalTBS: GroupInfoTBS = {
   groupContext: dummyGroupContext,
