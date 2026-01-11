@@ -37,7 +37,8 @@ import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath }
 import { Proposal, ProposalExternalInit } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
-import { ProposalOrRef } from "./proposalOrRefType.js"
+import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
+import { nodeTypes } from "./nodeType.js"
 import { PskIndex } from "./pskIndex.js"
 import {
   RatchetTree,
@@ -241,11 +242,11 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
 
 function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): ProposalOrRef[] {
   const refs: ProposalOrRef[] = Object.keys(state.unappliedProposals).map((p) => ({
-    proposalOrRefType: "reference",
+    proposalOrRefType: proposalOrRefTypes.reference,
     reference: base64ToBytes(p),
   }))
 
-  const proposals: ProposalOrRef[] = extraProposals.map((p) => ({ proposalOrRefType: "proposal", proposal: p }))
+  const proposals: ProposalOrRef[] = extraProposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p }))
 
   return [...refs, ...proposals]
 }
@@ -544,7 +545,7 @@ export async function joinGroupExternal(
     ? nodeToLeafIndex(
         toNodeIndex(
           ratchetTree.findIndex((n) => {
-            if (n !== undefined && n.nodeType === "leaf") {
+            if (n !== undefined && n.nodeType === nodeTypes.leaf) {
               return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
             }
             return false
@@ -591,7 +592,7 @@ export async function joinGroupExternal(
   const { signature, framedContent } = await createContentCommitSignature(
     groupInfo.groupContext,
     "mls_public_message",
-    { proposals: proposals.map((p) => ({ proposalOrRefType: "proposal", proposal: p })), path: updatePath },
+    { proposals: proposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p })), path: updatePath },
     {
       senderType: "new_member_commit",
     },

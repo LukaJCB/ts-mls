@@ -43,7 +43,7 @@ import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
 import { WireformatName } from "./wireformat.js"
-import { ProposalOrRef } from "./proposalOrRefType.js"
+import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import {
   isDefaultProposal,
   Proposal,
@@ -95,6 +95,7 @@ import {
   verifyLeafNodeSignatureKeyPackage,
 } from "./leafNode.js"
 import { leafNodeSources } from "./leafNodeSource.js"
+import { nodeTypes } from "./nodeType.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities.js"
 import { Capabilities } from "./capabilities.js"
@@ -269,7 +270,7 @@ export function decodeGroupStateWithoutTree(ratchetTree: RatchetTree): Decoder<G
 export function getOwnLeafNode(state: ClientState): LeafNode {
   const idx = leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))
   const leaf = state.ratchetTree[idx]
-  if (leaf?.nodeType !== "leaf") throw new InternalError("Expected leaf node")
+  if (leaf?.nodeType !== nodeTypes.leaf) throw new InternalError("Expected leaf node")
   return leaf.leaf
 }
 
@@ -288,7 +289,7 @@ export function extractFromGroupMembers<T>(
 ): T[] {
   const recipients = []
   for (const node of state.ratchetTree) {
-    if (node?.nodeType === "leaf" && !exclude(node.leaf)) {
+    if (node?.nodeType === nodeTypes.leaf && !exclude(node.leaf)) {
       recipients.push(map(node.leaf))
     }
   }
@@ -396,7 +397,7 @@ async function validateProposals(
     tree.some(
       (node, nodeIndex) =>
         node !== undefined &&
-        node.nodeType === "leaf" &&
+        node.nodeType === nodeTypes.leaf &&
         config.compareKeyPackageToLeafNode(proposal.add.keyPackage, node.leaf) &&
         p[defaultProposalTypes.remove].every(
           (r) => r.proposal.remove.removed !== nodeToLeafIndex(toNodeIndex(nodeIndex)),
@@ -443,7 +444,7 @@ async function validateProposals(
     if (caps === undefined) return new CodecError("Could not decode required_capabilities")
 
     const everyLeafSupportsCapabilities = tree
-      .filter((n) => n !== undefined && n.nodeType === "leaf")
+      .filter((n) => n !== undefined && n.nodeType === nodeTypes.leaf)
       .every((l) => capabiltiesAreSupported(caps[0], l.leaf.capabilities))
 
     if (!everyLeafSupportsCapabilities) return new ValidationError("Not all members support required capabilities")
@@ -494,7 +495,7 @@ export async function validateRatchetTree(
   const credentialTypes = new Set<number>()
   for (const [i, n] of tree.entries()) {
     const nodeIndex = toNodeIndex(i)
-    if (n?.nodeType === "leaf") {
+    if (n?.nodeType === nodeTypes.leaf) {
       if (!isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
       const hpkeKey = bytesToBase64(n.leaf.hpkePublicKey)
@@ -521,7 +522,7 @@ export async function validateRatchetTree(
             )
 
       if (err !== undefined) return err
-    } else if (n?.nodeType === "parent") {
+    } else if (n?.nodeType === nodeTypes.parent) {
       if (isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
       const hpkeKey = bytesToBase64(n.parent.hpkePublicKey)
@@ -532,14 +533,14 @@ export async function validateRatchetTree(
         const leafIndex = toLeafIndex(unmergedLeaf)
         const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
         const nodeIndex = leafToNodeIndex(leafIndex)
-        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(i)))
+        if (tree[nodeIndex]?.nodeType !== nodeTypes.leaf && !dp.includes(toNodeIndex(i)))
           return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node")
 
         for (const parentIdx of dp) {
           const dpNode = tree[parentIdx]
 
           if (dpNode !== undefined) {
-            if (dpNode.nodeType !== "parent") return new InternalError("Expected parent node")
+            if (dpNode.nodeType !== nodeTypes.parent) return new InternalError("Expected parent node")
 
             if (!arraysEqual(dpNode.parent.unmergedLeaves, n.parent.unmergedLeaves))
               return new ValidationError("non-blank intermediate node must list leaf node in its unmerged_leaves")
@@ -550,7 +551,7 @@ export async function validateRatchetTree(
   }
 
   for (const n of tree) {
-    if (n?.nodeType === "leaf") {
+    if (n?.nodeType === nodeTypes.leaf) {
       for (const credentialType of credentialTypes) {
         if (!n.leaf.capabilities.credentials.includes(credentialType))
           return new ValidationError("LeafNode has credential that is not supported by member of the group")
@@ -646,7 +647,7 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
   for (const [nodeIndex, node] of tree.entries()) {
-    if (node?.nodeType === "leaf") {
+    if (node?.nodeType === nodeTypes.leaf) {
       const credentialType = leafNode.credential.credentialType
       if (!node.leaf.capabilities.credentials.includes(credentialType)) {
         return new ValidationError("LeafNode has credential that is not supported by member of the group")
@@ -660,7 +661,7 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
       if (signatureKeys.has(signatureKey) && existingLeafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)))
         return new ValidationError("signature keys not unique")
       else signatureKeys.add(signatureKey)
-    } else if (node?.nodeType === "parent") {
+    } else if (node?.nodeType === nodeTypes.parent) {
       const hpkeKey = bytesToBase64(node.parent.hpkePublicKey)
       if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
       else hpkeKeys.add(hpkeKey)
@@ -758,7 +759,7 @@ export async function applyProposals(
   cs: CiphersuiteImpl,
 ): Promise<ApplyProposalsResult> {
   const allProposals = proposals.reduce((acc, cur) => {
-    if (cur.proposalOrRefType === "proposal")
+    if (cur.proposalOrRefType === proposalOrRefTypes.proposal)
       return [...acc, { proposal: cur.proposal, senderLeafIndex: committerLeafIndex }]
 
     const p = state.unappliedProposals[bytesToBase64(cur.reference)]
@@ -1022,7 +1023,7 @@ export async function joinGroupWithExtensions(
   if (signerNode === undefined) {
     throw new ValidationError("Could not find signer leafNode")
   }
-  if (signerNode.nodeType === "parent") throw new ValidationError("Expected non blank leaf node")
+  if (signerNode.nodeType === nodeTypes.parent) throw new ValidationError("Expected non blank leaf node")
 
   const credentialVerified = await clientConfig.authService.validateCredential(
     signerNode.leaf.credential,
@@ -1119,7 +1120,7 @@ export async function createGroup(
   cs: CiphersuiteImpl,
   clientConfig: ClientConfig = defaultClientConfig,
 ): Promise<ClientState> {
-  const ratchetTree: RatchetTree = [{ nodeType: "leaf", leaf: keyPackage.leafNode }]
+  const ratchetTree: RatchetTree = [{ nodeType: nodeTypes.leaf, leaf: keyPackage.leafNode }]
 
   const privatePath: PrivateKeyPath = {
     leafIndex: 0,

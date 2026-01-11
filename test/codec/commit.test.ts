@@ -1,5 +1,6 @@
 import { encodeCommit, decodeCommit } from "../../src/commit.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { proposalOrRefTypes } from "../../src/proposalOrRefType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Commit roundtrip", () => {
@@ -13,7 +14,7 @@ describe("Commit roundtrip", () => {
     roundtrip({
       proposals: [
         {
-          proposalOrRefType: "proposal",
+          proposalOrRefType: proposalOrRefTypes.proposal,
           proposal: { proposalType: defaultProposalTypes.remove, remove: { removed: 1 } },
         },
       ],

@@ -8,6 +8,7 @@ import { LeafNodeCommit } from "../src/leafNode.js"
 import { protocolVersions } from "../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 import { leafNodeSources } from "../src/leafNodeSource.js"
+import { nodeTypes } from "../src/nodeType.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {
@@ -44,21 +45,22 @@ describe("createUpdatePath", () => {
     }
 
     const originalTree: RatchetTree = [
-      { nodeType: "leaf", leaf: leaf1 },
+      { nodeType: nodeTypes.leaf, leaf: leaf1 },
       {
-        nodeType: "parent",
+        nodeType: nodeTypes.parent,
         parent: {
           hpkePublicKey: impl.rng.randomBytes(32),
           parentHash: new Uint8Array(32),
           unmergedLeaves: [],
         },
       },
-      { nodeType: "leaf", leaf: leaf2 },
+      { nodeType: nodeTypes.leaf, leaf: leaf2 },
     ]
 
-    if (originalTree[0]?.nodeType !== "leaf" || originalTree[2]?.nodeType !== "leaf") throw new Error("Expected leaf")
+    if (originalTree[0]?.nodeType !== nodeTypes.leaf || originalTree[2]?.nodeType !== nodeTypes.leaf)
+      throw new Error("Expected leaf")
 
-    if (originalTree[1]?.nodeType !== "parent") throw new Error("Expected parent")
+    if (originalTree[1]?.nodeType !== nodeTypes.parent) throw new Error("Expected parent")
 
     const originalLeaf0HpkeKey = originalTree[0].leaf.hpkePublicKey.slice()
 
@@ -113,7 +115,7 @@ describe("createUpdatePath", () => {
     })
 
     const createParent = () => ({
-      nodeType: "parent" as const,
+      nodeType: nodeTypes.parent,
       parent: {
         hpkePublicKey: impl.rng.randomBytes(32),
         parentHash: new Uint8Array(32),
@@ -122,27 +124,27 @@ describe("createUpdatePath", () => {
     })
 
     const originalTree: RatchetTree = [
-      { nodeType: "leaf", leaf: createLeaf("user1") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user1") },
       createParent(),
-      { nodeType: "leaf", leaf: createLeaf("user2") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user2") },
       createParent(),
-      { nodeType: "leaf", leaf: createLeaf("user3") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user3") },
       createParent(),
-      { nodeType: "leaf", leaf: createLeaf("user4") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user4") },
     ]
 
     if (
-      originalTree[0]?.nodeType !== "leaf" ||
-      originalTree[2]?.nodeType !== "leaf" ||
-      originalTree[4]?.nodeType !== "leaf" ||
-      originalTree[6]?.nodeType !== "leaf"
+      originalTree[0]?.nodeType !== nodeTypes.leaf ||
+      originalTree[2]?.nodeType !== nodeTypes.leaf ||
+      originalTree[4]?.nodeType !== nodeTypes.leaf ||
+      originalTree[6]?.nodeType !== nodeTypes.leaf
     )
       throw new Error("Expected leaf")
 
     if (
-      originalTree[1]?.nodeType !== "parent" ||
-      originalTree[3]?.nodeType !== "parent" ||
-      originalTree[5]?.nodeType !== "parent"
+      originalTree[1]?.nodeType !== nodeTypes.parent ||
+      originalTree[3]?.nodeType !== nodeTypes.parent ||
+      originalTree[5]?.nodeType !== nodeTypes.parent
     )
       throw new Error("Expected parent")
 

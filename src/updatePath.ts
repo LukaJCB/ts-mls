@@ -22,6 +22,7 @@ import {
   Node,
   RatchetTree,
 } from "./ratchetTree.js"
+import { nodeTypes } from "./nodeType.js"
 import { treeHashRoot } from "./treeHash.js"
 import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
@@ -78,7 +79,7 @@ export async function createUpdatePath(
   cs: CiphersuiteImpl,
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey]> {
   const originalLeafNode = originalTree[leafToNodeIndex(senderLeafIndex)]
-  if (originalLeafNode === undefined || originalLeafNode.nodeType === "parent")
+  if (originalLeafNode === undefined || originalLeafNode.nodeType === nodeTypes.parent)
     throw new InternalError("Expected non-blank leaf node")
 
   const pathSecret = cs.rng.randomBytes(cs.kdf.size)
@@ -117,7 +118,7 @@ export async function createUpdatePath(
   const updatedLeafNode = await signLeafNodeCommit(updatedLeafNodeTbs, signaturePrivateKey, cs.signature)
 
   treeWithHashes[leafToNodeIndex(senderLeafIndex)] = {
-    nodeType: "leaf",
+    nodeType: nodeTypes.leaf,
     leaf: updatedLeafNode,
   }
 
@@ -179,9 +180,9 @@ async function insertParentHashes(
     const { nodeIndex } = fdp[x]!
     const parentHash = await calculateParentHash(tree, nodeIndex, cs.hash)
     const currentNode = tree[nodeIndex]
-    if (currentNode === undefined || currentNode.nodeType === "leaf")
+    if (currentNode === undefined || currentNode.nodeType === nodeTypes.leaf)
       throw new InternalError("Expected non-blank parent node")
-    const updatedNode: Node = { nodeType: "parent", parent: { ...currentNode.parent, parentHash: parentHash[0] } }
+    const updatedNode: Node = { nodeType: nodeTypes.parent, parent: { ...currentNode.parent, parentHash: parentHash[0] } }
     tree[nodeIndex] = updatedNode
   }
   return tree
@@ -207,7 +208,7 @@ async function applyInitialTreeUpdate(
       const { publicKey } = await cs.hpke.deriveKeyPair(nextNodeSecret)
 
       tree[nodeIndex] = {
-        nodeType: "parent",
+        nodeType: nodeTypes.parent,
         parent: {
           hpkePublicKey: await cs.hpke.exportPublicKey(publicKey),
           parentHash: new Uint8Array(),
@@ -235,7 +236,7 @@ export async function applyUpdatePath(
   if (!isExternal) {
     const leafToUpdate = tree[leafToNodeIndex(senderLeafIndex)]
 
-    if (leafToUpdate === undefined || leafToUpdate.nodeType === "parent")
+    if (leafToUpdate === undefined || leafToUpdate.nodeType === nodeTypes.parent)
       throw new InternalError("Leaf node not defined or is parent")
 
     const leafNodePublicKeyNotNew = constantTimeEqual(leafToUpdate.leaf.hpkePublicKey, path.leafNode.hpkePublicKey)
@@ -246,7 +247,7 @@ export async function applyUpdatePath(
 
   const pathNodePublicKeysExistInTree = path.nodes.some((node) =>
     tree.some((treeNode) => {
-      return treeNode?.nodeType === "parent"
+      return treeNode?.nodeType === nodeTypes.parent
         ? constantTimeEqual(treeNode.parent.hpkePublicKey, node.hpkePublicKey)
         : false
     }),
@@ -257,7 +258,7 @@ export async function applyUpdatePath(
 
   const copy = tree.slice()
 
-  copy[leafToNodeIndex(senderLeafIndex)] = { nodeType: "leaf", leaf: path.leafNode }
+  copy[leafToNodeIndex(senderLeafIndex)] = { nodeType: nodeTypes.leaf, leaf: path.leafNode }
 
   const reverseFilteredDirectPath = filteredDirectPath(senderLeafIndex, tree).reverse()
 
@@ -272,7 +273,7 @@ export async function applyUpdatePath(
     const parentHash = await calculateParentHash(copy, nodeIndex, h)
 
     copy[nodeIndex] = {
-      nodeType: "parent",
+      nodeType: nodeTypes.parent,
       parent: { hpkePublicKey: reverseUpdatePath[level]!.hpkePublicKey, unmergedLeaves: [], parentHash: parentHash[0] },
     }
   }

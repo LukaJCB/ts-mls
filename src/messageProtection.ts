@@ -26,6 +26,7 @@ import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
 import { PaddingConfig } from "./paddingConfig.js"
 import { encode } from "./codec/tlsEncoder.js"
+import { nodeTypes } from "./nodeType.js"
 
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -278,6 +279,6 @@ export async function unprotectPrivateMessage(
 }
 
 export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== "leaf")
+  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== nodeTypes.leaf)
     return new ValidationError("SenderData did not point to a non-blank leaf node")
 }

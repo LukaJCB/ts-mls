@@ -31,6 +31,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { nodeTypes } from "../../src/nodeType.js"
 
 describe("Ratchet Tree Validation", () => {
   const suites = Object.keys(ciphersuites)
@@ -93,15 +94,15 @@ async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
   // Make the first node a parent node, which is invalid for a leaf position
   const invalidTree: RatchetTree = [
     {
-      nodeType: "parent",
+      nodeType: nodeTypes.parent,
       parent: {
         unmergedLeaves: [],
         parentHash: new Uint8Array(),
         hpkePublicKey: new Uint8Array(),
       },
     },
-    { nodeType: "leaf", leaf: validLeafNode },
-    { nodeType: "leaf", leaf: validLeafNode },
+    { nodeType: nodeTypes.leaf, leaf: validLeafNode },
+    { nodeType: nodeTypes.leaf, leaf: validLeafNode },
   ]
 
   const groupContext: GroupContext = {
@@ -183,7 +184,7 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
   //modify parent hash
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0]!.nodeType === "parent" || tree[0]!.leaf.leafNodeSource !== leafNodeSources.commit)
+  if (tree[0]!.nodeType === nodeTypes.parent || tree[0]!.leaf.leafNodeSource !== leafNodeSources.commit)
     throw new Error("expected leaf")
 
   // flip a byte in the parent hash to invalidate it
@@ -207,7 +208,7 @@ async function resignLeafNode(
   privateKey: Uint8Array,
   impl: CiphersuiteImpl,
 ) {
-  if (tree[nodeIndex]!.nodeType === "parent") throw new Error("expected leaf")
+  if (tree[nodeIndex]!.nodeType === nodeTypes.parent) throw new Error("expected leaf")
   if (tree[nodeIndex]?.leaf.leafNodeSource === leafNodeSources.commit) {
     const newLeaf = {
       ...tree[nodeIndex].leaf,
@@ -286,7 +287,7 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
   //modify alice's public key
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0]!.nodeType === "parent" || tree[2]!.nodeType === "parent") throw new Error("expected leaf")
+  if (tree[0]!.nodeType === nodeTypes.parent || tree[2]!.nodeType === nodeTypes.parent) throw new Error("expected leaf")
 
   tree[0]!.leaf.hpkePublicKey = tree[2]!.leaf.hpkePublicKey
 
@@ -359,7 +360,7 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
   //tamper with a leaf node signature
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0] === undefined || tree[0].nodeType === "parent") throw new Error("expected leaf")
+  if (tree[0] === undefined || tree[0].nodeType === nodeTypes.parent) throw new Error("expected leaf")
 
   // flip a byte in the signature to invalidate it
   tree[0].leaf.signature[0] = (tree[0].leaf.signature[0]! + 1) & 0xff
@@ -401,7 +402,7 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
 
   if (
     tree[0] === undefined ||
-    tree[0].nodeType === "parent" ||
+    tree[0].nodeType === nodeTypes.parent ||
     tree[0].leaf.leafNodeSource !== leafNodeSources.key_package
   )
     throw new Error("expected key_package leaf source")

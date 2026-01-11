@@ -2,7 +2,7 @@ import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders, encode,
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
 import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
-import { decodeNodeType, nodeTypeEncoder } from "./nodeType.js"
+import { decodeNodeType, nodeTypeEncoder, nodeTypes } from "./nodeType.js"
 import { decodeOptional, optionalEncoder } from "./codec/optional.js"
 import { ParentNode, parentNodeEncoder, decodeParentNode } from "./parentNode.js"
 import {
@@ -29,19 +29,19 @@ import { InternalError, ValidationError } from "./mlsError.js"
 export type Node = NodeParent | NodeLeaf
 
 /** @public */
-export type NodeParent = { nodeType: "parent"; parent: ParentNode }
+export type NodeParent = { nodeType: typeof nodeTypes.parent; parent: ParentNode }
 
 /** @public */
-export type NodeLeaf = { nodeType: "leaf"; leaf: LeafNode }
+export type NodeLeaf = { nodeType: typeof nodeTypes.leaf; leaf: LeafNode }
 
 export const nodeEncoder: BufferEncoder<Node> = (node) => {
   switch (node.nodeType) {
-    case "parent":
+    case nodeTypes.parent:
       return contramapBufferEncoders(
         [nodeTypeEncoder, parentNodeEncoder],
         (n: NodeParent) => [n.nodeType, n.parent] as const,
       )(node)
-    case "leaf":
+    case nodeTypes.leaf:
       return contramapBufferEncoders(
         [nodeTypeEncoder, leafNodeEncoder],
         (n: NodeLeaf) => [n.nodeType, n.leaf] as const,
@@ -53,12 +53,12 @@ export const encodeNode: Encoder<Node> = encode(nodeEncoder)
 
 export const decodeNode: Decoder<Node> = flatMapDecoder(decodeNodeType, (nodeType): Decoder<Node> => {
   switch (nodeType) {
-    case "parent":
+    case nodeTypes.parent:
       return mapDecoder(decodeParentNode, (parent) => ({
         nodeType,
         parent,
       }))
-    case "leaf":
+    case nodeTypes.leaf:
       return mapDecoder(decodeLeafNode, (leaf) => ({
         nodeType,
         leaf,
@@ -68,9 +68,9 @@ export const decodeNode: Decoder<Node> = flatMapDecoder(decodeNodeType, (nodeTyp
 
 export function getHpkePublicKey(n: Node): Uint8Array {
   switch (n.nodeType) {
-    case "parent":
+    case nodeTypes.parent:
       return n.parent.hpkePublicKey
-    case "leaf":
+    case nodeTypes.leaf:
       return n.leaf.hpkePublicKey
   }
 }
@@ -150,7 +150,7 @@ export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree,
   const newTree: RatchetTree = [
     ...tree,
     newRoot,
-    { nodeType: "leaf", leaf: leafNode },
+    { nodeType: nodeTypes.leaf, leaf: leafNode },
     ...new Array<Node | undefined>(tree.length - 1),
   ]
   return [newTree, insertedNodeIndex]
@@ -173,14 +173,14 @@ export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree
       const parentNode = node as NodeParent
 
       const updated: NodeParent = {
-        nodeType: "parent",
+        nodeType: nodeTypes.parent,
         parent: { ...parentNode.parent, unmergedLeaves: [...parentNode.parent.unmergedLeaves, insertedLeafIndex] },
       }
       copy[nodeIndex] = updated
     }
   }
 
-  copy[blankLeaf] = { nodeType: "leaf", leaf: leafNode }
+  copy[blankLeaf] = { nodeType: nodeTypes.leaf, leaf: leafNode }
 
   return [copy, blankLeaf]
 }
@@ -197,7 +197,7 @@ export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex:
       copy[nodeIndex] = undefined
     }
   }
-  copy[leafNodeIndex] = { nodeType: "leaf", leaf: leafNode }
+  copy[leafNodeIndex] = { nodeType: nodeTypes.leaf, leaf: leafNode }
 
   return copy
 }
@@ -245,7 +245,7 @@ export function resolution(tree: (Node | undefined)[], nodeIndex: NodeIndex): No
     return [nodeIndex]
   }
 
-  const unmerged = node.nodeType === "parent" ? node.parent.unmergedLeaves : []
+  const unmerged = node.nodeType === nodeTypes.parent ? node.parent.unmergedLeaves : []
   return [nodeIndex, ...unmerged.map((u) => leafToNodeIndex(toLeafIndex(u)))]
 }
 
@@ -288,7 +288,7 @@ export function removeLeaves(tree: RatchetTree, leafIndices: LeafIndex[]) {
       const nodeIndex = toNodeIndex(i)
       if (isLeaf(nodeIndex) && shouldBeRemoved(nodeToLeafIndex(nodeIndex))) {
         copy[i] = undefined
-      } else if (n.nodeType === "parent") {
+      } else if (n.nodeType === nodeTypes.parent) {
         copy[i] = {
           ...n,
           parent: { ...n.parent, unmergedLeaves: n.parent.unmergedLeaves.filter((l) => !shouldBeRemoved(l)) },
@@ -310,7 +310,7 @@ export function traverseToRoot<T>(
     currentIndex = parent(currentIndex, leafWidth(tree.length))
     const currentNode = tree[currentIndex]
     if (currentNode !== undefined) {
-      if (currentNode.nodeType === "leaf") {
+      if (currentNode.nodeType === nodeTypes.leaf) {
         throw new InternalError("Expected parent node")
       }
 
@@ -331,7 +331,7 @@ export function findFirstNonBlankAncestor(tree: RatchetTree, nodeIndex: NodeInde
 export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | undefined {
   const foundIndex = tree.findIndex((node, nodeIndex) => {
     if (isLeaf(toNodeIndex(nodeIndex)) && node !== undefined) {
-      if (node.nodeType === "parent") throw new InternalError("Found parent node in leaf node position")
+      if (node.nodeType === nodeTypes.parent) throw new InternalError("Found parent node in leaf node position")
       //todo is there a better (faster) comparison method?
       return constantTimeEqual(encode(leafNodeEncoder)(node.leaf), encode(leafNodeEncoder)(leaf))
     }
@@ -345,7 +345,7 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | un
 export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: LeafIndex) {
   const senderLeafNode = ratchetTree[leafToNodeIndex(leafIndex)]
 
-  if (senderLeafNode === undefined || senderLeafNode.nodeType === "parent")
+  if (senderLeafNode === undefined || senderLeafNode.nodeType === nodeTypes.parent)
     throw new ValidationError("Unable to find leafnode for leafIndex")
   return senderLeafNode.leaf.credential
 }
@@ -353,7 +353,7 @@ export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: 
 export function getSignaturePublicKeyFromLeafIndex(ratchetTree: RatchetTree, leafIndex: LeafIndex): Uint8Array {
   const leafNode = ratchetTree[leafToNodeIndex(leafIndex)]
 
-  if (leafNode === undefined || leafNode.nodeType === "parent")
+  if (leafNode === undefined || leafNode.nodeType === nodeTypes.parent)
     throw new ValidationError("Unable to find leafnode for leafIndex")
   return leafNode.leaf.signaturePublicKey
 }

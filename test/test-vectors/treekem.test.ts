@@ -14,6 +14,7 @@ import { PrivateKeyPath, toPrivateKeyPath } from "../../src/privateKeyPath.js"
 import { PathSecrets } from "../../src/pathSecrets.js"
 import { hpkeKeysMatch } from "../crypto/keyMatch.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { nodeTypes } from "../../src/nodeType.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(
   `treekem test vectors %i`,
@@ -193,7 +194,7 @@ async function testTreeKeys(data: TreeKEMState, tree: [RatchetTree, number], imp
     )
 
     const node = tree[0][leafToNodeIndex(toLeafIndex(leaf.index))]
-    if (node === undefined || node.nodeType === "parent") throw new Error("No leaf found at leaf index")
+    if (node === undefined || node.nodeType === nodeTypes.parent) throw new Error("No leaf found at leaf index")
 
     expect(await hpkeKeysMatch(node.leaf.hpkePublicKey, hexToBytes(leaf.encryption_priv), impl.hpke)).toBe(true)
 
