@@ -14,6 +14,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { WireformatName } from "../../src/wireformat.js"
 import { processMessage } from "../../src/processMessages.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
   await leaveProposal(cs as CiphersuiteName, true)
@@ -38,14 +39,14 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
   }
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },
@@ -86,7 +87,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   expect(charlieGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
   const leaveProposal: Proposal = {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: { removed: aliceGroup.privatePath.leafIndex },
   }
 

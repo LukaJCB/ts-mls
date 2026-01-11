@@ -2,6 +2,7 @@ import { Bench } from "tinybench"
 import fs from "fs"
 import {
   Credential,
+  defaultProposalTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
@@ -88,7 +89,7 @@ async function initGroup(impl: CiphersuiteImpl) {
 
 async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
   const removeBobProposal: Proposal = {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: {
       removed: 1,
     },
@@ -113,7 +114,7 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -159,7 +160,7 @@ async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps:
       const member = kps[x]!
 
       proposals.push({
-        proposalType: "add",
+        proposalType: defaultProposalTypes.add,
         add: {
           keyPackage: member,
         },

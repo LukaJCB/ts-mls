@@ -15,6 +15,7 @@ import { PrivateMessage } from "../../src/privateMessage.js"
 import { defaultKeyRetentionConfig, KeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { defaultClientConfig } from "../../src/clientConfig.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 describe("Out of order message processing by generation", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation %s`, async (cs) => {
@@ -52,7 +53,7 @@ async function setupTestParticipants(
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },

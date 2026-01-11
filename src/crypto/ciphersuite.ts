@@ -43,6 +43,7 @@ export const ciphersuites = {
 
 /** @public */
 export type CiphersuiteName = keyof typeof ciphersuites
+/** @public */
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
 export const ciphersuiteEncoder: BufferEncoder<CiphersuiteId> = uint16Encoder

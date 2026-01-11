@@ -12,6 +12,7 @@ import { createProposal } from "../../src/index.js"
 import { processMessage } from "../../src/processMessages.js"
 import { encodeExternalSender } from "../../src/externalSender.js"
 import { WireformatName } from "../../src/wireformat.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
@@ -33,7 +34,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -62,7 +63,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   )
 
   const bobProposeExtensions: Proposal = {
-    proposalType: "group_context_extensions",
+    proposalType: defaultProposalTypes.group_context_extensions,
     groupContextExtensions: {
       extensions: [
         {

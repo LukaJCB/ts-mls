@@ -13,9 +13,11 @@ import {
 } from "./framedContent.js"
 import { GroupContext } from "./groupContext.js"
 import { CodecError, ValidationError } from "./mlsError.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
 import { SenderTypeName } from "./sender.js"
 import { toLeafIndex } from "./treemath.js"
+import { isDefaultProposal } from "./proposal.js"
 
 /** @public */
 export type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
@@ -90,7 +92,10 @@ export function findSignaturePublicKey(
     case "new_member_proposal":
       if (framedContent.contentType !== "proposal")
         throw new ValidationError("Received new_member_proposal but contentType is not proposal")
-      if (framedContent.proposal.proposalType !== "add")
+      if (
+        !isDefaultProposal(framedContent.proposal) ||
+        framedContent.proposal.proposalType !== defaultProposalTypes.add
+      )
         throw new ValidationError("Received new_member_proposal but proposalType was not add")
 
       return framedContent.proposal.add.keyPackage.leafNode.signaturePublicKey

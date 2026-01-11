@@ -11,6 +11,7 @@ import { Capabilities } from "../../src/capabilities.js"
 import { Extension, ExtensionType } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { credentialTypes } from "../../src/credentialType.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom GroupInfoExtensions %s`, async (cs) => {
   await customGroupInfoExtensionTest(cs as CiphersuiteName)
@@ -47,7 +48,7 @@ async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },

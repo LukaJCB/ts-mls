@@ -7,6 +7,7 @@ import { MLSMessage } from "./message.js"
 import { protectExternalProposalPublic } from "./messageProtectionPublic.js"
 import { UsageError, ValidationError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 /** @public */
@@ -24,7 +25,7 @@ export async function proposeAddExternal(
   if (!allExtensionsSupported) throw new UsageError("client does not support every extension in the GroupContext")
 
   const proposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage,
     },

@@ -13,6 +13,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultGreaseConfig, greaseExtensions } from "../../src/grease.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { extensionTypeToNumber } from "../../src/extension.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
   await greaseTest(cs as CiphersuiteName)
@@ -37,7 +38,7 @@ async function greaseTest(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },

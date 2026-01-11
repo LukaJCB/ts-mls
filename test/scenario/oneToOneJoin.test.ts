@@ -13,6 +13,7 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
   await oneToOne(cs as CiphersuiteName)
@@ -45,7 +46,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
 
   // alice creates proposal to add bob
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: decodedKeyPackage.keyPackage,
     },

@@ -15,6 +15,7 @@ import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { UsageError } from "./mlsError.js"
 import { ResumptionPSKUsageName, PreSharedKeyID } from "./presharedkey.js"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
 import { protocolVersions, ProtocolVersionName } from "./protocolVersion.js"
 import { RatchetTree } from "./ratchetTree.js"
 import { Welcome } from "./welcome.js"
@@ -29,7 +30,7 @@ export async function reinitGroup(
   cs: CiphersuiteImpl,
 ): Promise<CreateCommitResult> {
   const reinitProposal: Proposal = {
-    proposalType: "reinit",
+    proposalType: defaultProposalTypes.reinit,
     reinit: {
       groupId,
       version: protocolVersions[version],
@@ -65,14 +66,14 @@ export async function reinitCreateNewGroup(
   const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, cs)
 
   const addProposals: Proposal[] = memberKeyPackages.map((kp) => ({
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: { keyPackage: kp },
   }))
 
   const psk = makeResumptionPsk(state, "reinit", cs)
 
   const resumptionPsk: Proposal = {
-    proposalType: "psk",
+    proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: psk.id,
     },
@@ -126,14 +127,14 @@ export async function branchGroup(
   const newGroup = await createGroup(newGroupId, keyPackage, privateKeyPackage, state.groupContext.extensions, cs)
 
   const addMemberProposals: ProposalAdd[] = memberKeyPackages.map((kp) => ({
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: kp,
     },
   }))
 
   const branchPskProposal: ProposalPSK = {
-    proposalType: "psk",
+    proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: resumptionPsk.id,
     },

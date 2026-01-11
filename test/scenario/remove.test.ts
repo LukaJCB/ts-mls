@@ -12,6 +12,7 @@ import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.j
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
@@ -34,14 +35,14 @@ async function remove(cipherSuite: CiphersuiteName) {
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
   }
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },
@@ -82,7 +83,7 @@ async function remove(cipherSuite: CiphersuiteName) {
   expect(charlieGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
   const removeBobProposal: ProposalRemove = {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: {
       removed: bobGroup.privatePath.leafIndex,
     },

@@ -1,4 +1,4 @@
-import { bytesToBase64 } from "../../src/index.js"
+import { bytesToBase64, defaultProposalTypes } from "../../src/index.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import {
@@ -13,7 +13,7 @@ const key2 = bytesToBase64(new Uint8Array([11, 12, 13, 14, 15, 16, 17, 18]))
 const dummyUnapplied: UnappliedProposals = {
   [key]: {
     proposal: {
-      proposalType: "add",
+      proposalType: defaultProposalTypes.add,
       add: {
         keyPackage: {
           version: protocolVersions.mls10,
@@ -47,7 +47,7 @@ const dummyUnapplied: UnappliedProposals = {
   },
   [key2]: {
     proposal: {
-      proposalType: "remove",
+      proposalType: defaultProposalTypes.remove,
       remove: { removed: 99 },
     },
     senderLeafIndex: undefined,

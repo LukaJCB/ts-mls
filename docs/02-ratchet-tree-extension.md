@@ -23,6 +23,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   emptyPskIndex,
@@ -46,7 +47,7 @@ const bobCredential: Credential = { credentialType: "basic", identity: new TextE
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 

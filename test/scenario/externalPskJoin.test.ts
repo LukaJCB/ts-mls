@@ -10,6 +10,7 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
   await externalPskJoin(cs as CiphersuiteName)
@@ -29,7 +30,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -41,7 +42,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const pskId = new TextEncoder().encode("psk-1")
 
   const pskProposal: Proposal = {
-    proposalType: "psk",
+    proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: {
         psktype: "external",

@@ -18,6 +18,24 @@ export const defaultProposalTypes = {
 export type DefaultProposalTypeName = keyof typeof defaultProposalTypes
 export type DefaultProposalTypeValue = (typeof defaultProposalTypes)[DefaultProposalTypeName]
 
+const defaultProposalTypeValues = new Set<number>(Object.values(defaultProposalTypes))
+
+export function defaultProposalTypeValueFromName(name: DefaultProposalTypeName): DefaultProposalTypeValue {
+  return defaultProposalTypes[name]
+}
+
+export function isDefaultProposalTypeValue(v: number): v is DefaultProposalTypeValue {
+  return defaultProposalTypeValues.has(v)
+}
+
+export const defaultProposalTypeValueEncoder: BufferEncoder<DefaultProposalTypeValue> = uint16Encoder
+
+export const encodeDefaultProposalTypeValue: Encoder<DefaultProposalTypeValue> = encode(defaultProposalTypeValueEncoder)
+
+export const decodeDefaultProposalTypeValue: Decoder<DefaultProposalTypeValue> = mapDecoderOption(decodeUint16, (v) =>
+  defaultProposalTypeValues.has(v) ? (v as DefaultProposalTypeValue) : undefined,
+)
+
 export const defaultProposalTypeEncoder: BufferEncoder<DefaultProposalTypeName> = contramapBufferEncoder(
   uint16Encoder,
   (n) => defaultProposalTypes[n],

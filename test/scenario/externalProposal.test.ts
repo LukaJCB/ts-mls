@@ -14,6 +14,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { encodeExternalSender, ExternalSender } from "../../src/externalSender.js"
 import { Extension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -46,7 +47,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [extension], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -77,7 +78,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
   const removeBobProposal: Proposal = {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: {
       removed: 1,
     },

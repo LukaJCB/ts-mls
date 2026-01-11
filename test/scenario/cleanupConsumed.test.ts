@@ -16,6 +16,7 @@ import { zeroOutUint8Array } from "../../src/util/byteArray.js"
 import { CryptoError } from "../../src/mlsError.js"
 import { PrivateMessage } from "../../src/privateMessage.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
@@ -48,7 +49,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
 
   // alice creates proposal to add bob
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: decodedKeyPackage.keyPackage,
     },

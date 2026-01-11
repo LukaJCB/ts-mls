@@ -25,6 +25,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -48,7 +49,7 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 
 // Alice adds Bob and commits, this is epoch 1
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
@@ -69,7 +70,7 @@ let bobGroup = await joinGroup(
 
 // Alice removes Bob, transitioning to epoch 2
 const removeBobProposal: Proposal = {
-  proposalType: "remove",
+  proposalType: defaultProposalTypes.remove,
   remove: { removed: 1 }, // Bob's leaf index
 }
 const removeBobCommitResult = await createCommit(

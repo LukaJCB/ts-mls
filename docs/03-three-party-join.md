@@ -27,6 +27,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -52,7 +53,7 @@ const charlieCredential: Credential = { credentialType: "basic", identity: new T
 const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 // Alice adds Bob and commits, this is epoch 1
@@ -76,7 +77,7 @@ let bobGroup = await joinGroup(
 )
 
 const addCharlieProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: charlie.publicPackage },
 }
 // Alice adds Charlie, transitioning into epoch 2

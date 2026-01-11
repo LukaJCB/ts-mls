@@ -35,6 +35,7 @@ import { protectPublicMessage } from "./messageProtectionPublic.js"
 import { pathToPathSecrets } from "./pathSecrets.js"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
 import { Proposal, ProposalExternalInit } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
 import { ProposalOrRef } from "./proposalOrRefType.js"
 import { PskIndex } from "./pskIndex.js"
 import {
@@ -576,12 +577,12 @@ export async function joinGroupExternal(
       : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
 
   const externalInitProposal: ProposalExternalInit = {
-    proposalType: "external_init",
+    proposalType: defaultProposalTypes.external_init,
     externalInit: { kemOutput: enc },
   }
   const proposals: Proposal[] =
     formerLeafIndex !== undefined
-      ? [{ proposalType: "remove", remove: { removed: formerLeafIndex } }, externalInitProposal]
+      ? [{ proposalType: defaultProposalTypes.remove, remove: { removed: formerLeafIndex } }, externalInitProposal]
       : [externalInitProposal]
 
   const pskSecret = new Uint8Array(cs.kdf.size)

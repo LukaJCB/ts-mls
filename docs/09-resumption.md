@@ -26,6 +26,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -49,7 +50,7 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 
 // Alice adds Bob
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(

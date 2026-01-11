@@ -1,10 +1,11 @@
 import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const dummyProposalAdd: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: {
     keyPackage: {
       version: protocolVersions.mls10,
@@ -33,7 +34,7 @@ const dummyProposalAdd: Proposal = {
 }
 
 const dummyProposalRemove: Proposal = {
-  proposalType: "remove",
+  proposalType: defaultProposalTypes.remove,
   remove: { removed: 42 },
 }
 

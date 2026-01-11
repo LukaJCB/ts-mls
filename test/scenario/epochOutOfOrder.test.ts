@@ -18,6 +18,7 @@ import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { KeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { defaultClientConfig } from "../../src/clientConfig.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 describe("Out of order message processing by epoch", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
@@ -57,7 +58,7 @@ async function setupTestParticipants(
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -109,7 +110,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   const aliceCreateFirstProposalResult = await createProposal(
     aliceGroup,
     false,
-    { proposalType: 7, proposalData: new Uint8Array() },
+    { proposalType: 1000, proposalData: new Uint8Array() },
     impl,
   )
   aliceGroup = aliceCreateFirstProposalResult.newState

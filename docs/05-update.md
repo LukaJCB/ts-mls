@@ -34,6 +34,7 @@ import {
   processPrivateMessage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   generateKeyPackage,
@@ -53,7 +54,7 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 
 // Alice adds Bob and commits, this is epoch 1
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
@@ -105,7 +106,7 @@ const alice2 = await generateKeyPackage(aliceCredential, defaultCapabilities(), 
 
 // Alice proposes to update her keys
 const updateAliceProposal: Proposal = {
-  proposalType: "update",
+  proposalType: defaultProposalTypes.update,
   update: { leafNode: { ...alice2.publicPackage.leafNode, leafNodeSource: "update" } },
 }
 

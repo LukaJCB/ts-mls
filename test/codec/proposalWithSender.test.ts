@@ -3,13 +3,14 @@ import {
   ProposalWithSender,
   proposalWithSenderEncoder,
 } from "../../src/unappliedProposals.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
 const dummyAddProposal: ProposalWithSender = {
   proposal: {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: {
         version: protocolVersions.mls10,
@@ -44,7 +45,7 @@ const dummyAddProposal: ProposalWithSender = {
 
 const dummyRemoveProposal: ProposalWithSender = {
   proposal: {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: { removed: 3 },
   },
   senderLeafIndex: undefined,

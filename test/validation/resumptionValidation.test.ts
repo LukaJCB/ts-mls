@@ -14,6 +14,7 @@ import { acceptAll } from "../../src/incomingMessageAction.js"
 
 import { ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { ValidationError } from "../../src/mlsError.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
   await reinitValidation(cs as CiphersuiteName)
@@ -33,7 +34,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },

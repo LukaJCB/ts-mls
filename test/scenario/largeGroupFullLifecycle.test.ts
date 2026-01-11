@@ -10,6 +10,7 @@ import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 import { randomInt } from "crypto"
 
@@ -88,7 +89,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
     const removed = memberStates[removedIndex]!
 
     const removeProposal: ProposalRemove = {
-      proposalType: "remove",
+      proposalType: defaultProposalTypes.remove,
       remove: {
         removed: removed.state.privatePath.leafIndex,
       },
@@ -141,7 +142,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
   const adder = memberStates[adderIndex]!
 
   const addProposal: ProposalAdd = {
-    proposalType: "add" as const,
+    proposalType: defaultProposalTypes.add,
     add: { keyPackage: newKP.publicPackage },
   }
 

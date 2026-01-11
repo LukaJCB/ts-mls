@@ -13,6 +13,7 @@ import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requ
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { credentialTypes } from "../../src/credentialType.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -68,7 +69,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
   const charlie = await generateKeyPackage(charlieCredential, minimalCapabilites, defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -98,7 +99,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },

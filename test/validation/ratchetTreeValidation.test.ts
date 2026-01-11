@@ -27,6 +27,7 @@ import { treeHashRoot } from "../../src/treeHash.js"
 import { protocolVersions, ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { signLeafNodeCommit, signLeafNodeKeyPackage } from "../../src/leafNode.js"
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 describe("Ratchet Tree Validation", () => {
   const suites = Object.keys(ciphersuites)
@@ -137,7 +138,7 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -230,7 +231,7 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -294,7 +295,7 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -392,7 +393,7 @@ async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
   bob.publicPackage.signature[0] = (bob.publicPackage.signature[0]! + 1) & 0xff
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -428,7 +429,7 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
   bob.publicPackage.cipherSuite = 0xffff as CiphersuiteId
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -464,7 +465,7 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
   bob.publicPackage.version = 0xffff as ProtocolVersionValue
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -497,7 +498,7 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -604,7 +605,7 @@ async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },

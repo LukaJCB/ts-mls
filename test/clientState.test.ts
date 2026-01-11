@@ -16,6 +16,7 @@ import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { CiphersuiteName, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { createCommit } from "../src/createCommit.js"
 import { processPrivateMessage } from "../src/processMessages.js"
+import { defaultProposalTypes } from "../src/defaultProposalType.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
@@ -34,7 +35,7 @@ async function buildThreeMemberGroup() {
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const addBobProposal: ProposalAdd = { proposalType: "add", add: { keyPackage: bob.publicPackage } }
+  const addBobProposal: ProposalAdd = { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }
   const addBobCommitResult = await createCommit(
     { state: aliceGroup, cipherSuite: impl },
     { extraProposals: [addBobProposal] },
@@ -49,7 +50,10 @@ async function buildThreeMemberGroup() {
     aliceGroup.ratchetTree,
   )
 
-  const addCharlieProposal: ProposalAdd = { proposalType: "add", add: { keyPackage: charlie.publicPackage } }
+  const addCharlieProposal: ProposalAdd = {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: charlie.publicPackage },
+  }
   const addCharlieCommitResult = await createCommit(
     { state: aliceGroup, cipherSuite: impl },
     { extraProposals: [addCharlieProposal] },

@@ -73,6 +73,7 @@ import {
   createApplicationMessage,
   createCommit,
   createGroup,
+  defaultProposalTypes,
   joinGroup,
   processPrivateMessage,
   getCiphersuiteImpl,
@@ -118,7 +119,7 @@ if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expecte
 
 // alice creates proposal to add bob
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: {
     keyPackage: decodedKeyPackage.keyPackage,
   },

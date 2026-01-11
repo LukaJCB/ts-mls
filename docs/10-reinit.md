@@ -26,6 +26,7 @@ import {
   createCommit,
   Credential,
   createGroup,
+  defaultProposalTypes,
   emptyPskIndex,
   joinGroup,
   joinGroupFromReinit,
@@ -54,7 +55,7 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 
 // Alice adds Bob (epoch 1)
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })

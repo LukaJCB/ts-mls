@@ -26,6 +26,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -50,7 +51,7 @@ const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defau
 
 // Alice adds Bob (epoch 1)
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
@@ -75,7 +76,7 @@ const pskNonce = impl.rng.randomBytes(impl.kdf.size)
 const pskId = new TextEncoder().encode("psk-1")
 
 const pskProposal: Proposal = {
-  proposalType: "psk",
+  proposalType: defaultProposalTypes.psk,
   psk: {
     preSharedKeyId: {
       psktype: "external",
@@ -145,6 +146,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -172,7 +174,7 @@ const pskSecret = impl.rng.randomBytes(impl.kdf.size)
 const pskNonce = impl.rng.randomBytes(impl.kdf.size)
 const pskId = new TextEncoder().encode("psk-1")
 const pskProposal: Proposal = {
-  proposalType: "psk",
+  proposalType: defaultProposalTypes.psk,
   psk: {
     preSharedKeyId: {
       psktype: "external",
@@ -186,7 +188,7 @@ const sharedPsks = { [base64PskId]: pskSecret }
 
 // Add Bob and use PSK in the same commit (epoch 1)
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit(
