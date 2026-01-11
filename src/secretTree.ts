@@ -17,6 +17,7 @@ import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
 import { nodeWidth, root, right, isLeaf, left, leafToNodeIndex, NodeIndex, toLeafIndex } from "./treemath.js"
 
+/** @public */
 export interface GenerationSecret {
   secret: Uint8Array
   generation: number
@@ -37,6 +38,7 @@ export const decodeGenerationSecret: Decoder<GenerationSecret> = mapDecoders(
   }),
 )
 
+/** @public */
 export interface SecretTreeNode {
   handshake: GenerationSecret
   application: GenerationSecret
@@ -55,6 +57,7 @@ export const decodeSecretTreeNode: Decoder<SecretTreeNode> = mapDecoders(
   }),
 )
 
+/** @public */
 export type SecretTree = SecretTreeNode[]
 
 export const secretTreeEncoder: BufferEncoder<SecretTree> = varLenTypeEncoder(secretTreeNodeEncoder)

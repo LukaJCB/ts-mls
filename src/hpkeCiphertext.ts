@@ -2,6 +2,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, decodeVarLenData } from "./codec/variableLength.js"
 
+/** @public */
 export interface HPKECiphertext {
   kemOutput: Uint8Array
   ciphertext: Uint8Array

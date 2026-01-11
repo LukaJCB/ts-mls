@@ -27,6 +27,7 @@ import {
   SenderDataAAD,
 } from "./sender.js"
 
+/** @public */
 export interface PrivateMessage {
   groupId: Uint8Array
   epoch: bigint

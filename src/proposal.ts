@@ -10,6 +10,7 @@ import { decodeDefaultProposalType, defaultProposalTypeEncoder } from "./default
 import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
 import { decodeLeafNodeUpdate, leafNodeEncoder, LeafNodeUpdate } from "./leafNode.js"
 
+/** @public */
 export interface Add {
   keyPackage: KeyPackage
 }
@@ -19,6 +20,7 @@ export const addEncoder: BufferEncoder<Add> = contramapBufferEncoder(keyPackageE
 export const encodeAdd: Encoder<Add> = encode(addEncoder)
 export const decodeAdd: Decoder<Add> = mapDecoder(decodeKeyPackage, (keyPackage) => ({ keyPackage }))
 
+/** @public */
 export interface Update {
   leafNode: LeafNodeUpdate
 }
@@ -28,6 +30,7 @@ export const updateEncoder: BufferEncoder<Update> = contramapBufferEncoder(leafN
 export const encodeUpdate: Encoder<Update> = encode(updateEncoder)
 export const decodeUpdate: Decoder<Update> = mapDecoder(decodeLeafNodeUpdate, (leafNode) => ({ leafNode }))
 
+/** @public */
 export interface Remove {
   removed: number
 }
@@ -37,6 +40,7 @@ export const removeEncoder: BufferEncoder<Remove> = contramapBufferEncoder(uint3
 export const encodeRemove: Encoder<Remove> = encode(removeEncoder)
 export const decodeRemove: Decoder<Remove> = mapDecoder(decodeUint32, (removed) => ({ removed }))
 
+/** @public */
 export interface PSK {
   preSharedKeyId: PreSharedKeyID
 }
@@ -46,6 +50,7 @@ export const pskEncoder: BufferEncoder<PSK> = contramapBufferEncoder(pskIdEncode
 export const encodePSK: Encoder<PSK> = encode(pskEncoder)
 export const decodePSK: Decoder<PSK> = mapDecoder(decodePskId, (preSharedKeyId) => ({ preSharedKeyId }))
 
+/** @public */
 export interface Reinit {
   groupId: Uint8Array
   version: ProtocolVersionName
@@ -65,6 +70,7 @@ export const decodeReinit: Decoder<Reinit> = mapDecoders(
   (groupId, version, cipherSuite, extensions) => ({ groupId, version, cipherSuite, extensions }),
 )
 
+/** @public */
 export interface ExternalInit {
   kemOutput: Uint8Array
 }
@@ -77,6 +83,7 @@ export const externalInitEncoder: BufferEncoder<ExternalInit> = contramapBufferE
 export const encodeExternalInit: Encoder<ExternalInit> = encode(externalInitEncoder)
 export const decodeExternalInit: Decoder<ExternalInit> = mapDecoder(decodeVarLenData, (kemOutput) => ({ kemOutput }))
 
+/** @public */
 export interface GroupContextExtensions {
   extensions: Extension[]
 }
@@ -93,46 +100,55 @@ export const decodeGroupContextExtensions: Decoder<GroupContextExtensions> = map
   (extensions) => ({ extensions }),
 )
 
+/** @public */
 export interface ProposalAdd {
   proposalType: "add"
   add: Add
 }
 
+/** @public */
 export interface ProposalUpdate {
   proposalType: "update"
   update: Update
 }
 
+/** @public */
 export interface ProposalRemove {
   proposalType: "remove"
   remove: Remove
 }
 
+/** @public */
 export interface ProposalPSK {
   proposalType: "psk"
   psk: PSK
 }
 
+/** @public */
 export interface ProposalReinit {
   proposalType: "reinit"
   reinit: Reinit
 }
 
+/** @public */
 export interface ProposalExternalInit {
   proposalType: "external_init"
   externalInit: ExternalInit
 }
 
+/** @public */
 export interface ProposalGroupContextExtensions {
   proposalType: "group_context_extensions"
   groupContextExtensions: GroupContextExtensions
 }
 
+/** @public */
 export interface ProposalCustom {
   proposalType: number
   proposalData: Uint8Array
 }
 
+/** @public */
 export type Proposal =
   | ProposalAdd
   | ProposalUpdate

@@ -9,6 +9,7 @@ import { UsageError, ValidationError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
+/** @public */
 export async function proposeAddExternal(
   groupInfo: GroupInfo,
   keyPackage: KeyPackage,
@@ -45,6 +46,7 @@ export async function proposeAddExternal(
   }
 }
 
+/** @public */
 export async function proposeExternal(
   groupInfo: GroupInfo,
   proposal: Proposal,

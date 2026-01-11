@@ -3,12 +3,14 @@ import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
-const contentTypes = {
+/** @public */
+export const contentTypes = {
   application: 1,
   proposal: 2,
   commit: 3,
 } as const
 
+/** @public */
 export type ContentTypeName = keyof typeof contentTypes
 export type ContentTypeValue = (typeof contentTypes)[ContentTypeName]
 

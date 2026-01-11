@@ -7,6 +7,8 @@ import { SecretTree, secretTreeEncoder, decodeSecretTree } from "./secretTree.js
 
 /**
  * This type contains everything necessary to receieve application messages for an earlier epoch
+ *
+ * @public
  */
 export interface EpochReceiverData {
   resumptionPsk: Uint8Array

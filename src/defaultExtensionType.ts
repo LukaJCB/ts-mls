@@ -3,6 +3,7 @@ import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
+/** @public */
 export const defaultExtensionTypes = {
   application_id: 1,
   ratchet_tree: 2,
@@ -11,6 +12,7 @@ export const defaultExtensionTypes = {
   external_senders: 5,
 } as const
 
+/** @public */
 export type DefaultExtensionTypeName = keyof typeof defaultExtensionTypes
 export type DefaultExtensionTypeValue = (typeof defaultExtensionTypes)[DefaultExtensionTypeName]
 

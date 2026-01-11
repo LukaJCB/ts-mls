@@ -5,6 +5,7 @@ import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
 import { decodeProposalOrRef, proposalOrRefEncoder, ProposalOrRef } from "./proposalOrRefType.js"
 import { decodeUpdatePath, updatePathEncoder, UpdatePath } from "./updatePath.js"
 
+/** @public */
 export interface Commit {
   proposals: ProposalOrRef[]
   path: UpdatePath | undefined

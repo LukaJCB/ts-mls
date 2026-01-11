@@ -3,6 +3,7 @@ import { Decoder, flatMapDecoder, succeedDecoder, mapDecoder, failDecoder } from
 import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Reinit, reinitEncoder, decodeReinit } from "./proposal.js"
 
+/** @public */
 export type GroupActiveState =
   | { kind: "active" }
   | { kind: "suspendedPendingReinit"; reinit: Reinit }

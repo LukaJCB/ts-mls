@@ -10,6 +10,7 @@ import {
 } from "./defaultExtensionType.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
+/** @public */
 export type ExtensionType = DefaultExtensionTypeName | number
 
 export const extensionTypeEncoder: BufferEncoder<ExtensionType> = (t) =>
@@ -19,6 +20,7 @@ export const encodeExtensionType: Encoder<ExtensionType> = encode(extensionTypeE
 
 export const decodeExtensionType: Decoder<ExtensionType> = orDecoder(decodeDefaultExtensionType, decodeUint16)
 
+/** @public */
 export interface Extension {
   extensionType: ExtensionType
   extensionData: Uint8Array

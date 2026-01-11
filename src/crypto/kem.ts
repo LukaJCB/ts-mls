@@ -1,3 +1,4 @@
+/** @public */
 export type KemAlgorithm =
   | "DHKEM-P256-HKDF-SHA256"
   | "DHKEM-X25519-HKDF-SHA256"

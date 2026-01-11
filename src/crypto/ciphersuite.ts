@@ -8,6 +8,7 @@ import { Decoder, mapDecoderOption } from "../codec/tlsDecoder.js"
 import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers.js"
 import { Rng } from "./rng.js"
 
+/** @public */
 export interface CiphersuiteImpl {
   hash: Hash
   hpke: Hpke
@@ -17,6 +18,7 @@ export interface CiphersuiteImpl {
   name: CiphersuiteName
 }
 
+/** @public */
 export const ciphersuites = {
   MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519: 1,
   MLS_128_DHKEMP256_AES128GCM_SHA256_P256: 2,
@@ -39,6 +41,7 @@ export const ciphersuites = {
   MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA87: 88,
 } as const
 
+/** @public */
 export type CiphersuiteName = keyof typeof ciphersuites
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
@@ -62,6 +65,7 @@ export function getCiphersuiteFromId(id: CiphersuiteId): Ciphersuite {
   return ciphersuiteValues[id]
 }
 
+/** @public */
 export function getCiphersuiteFromName(name: CiphersuiteName): Ciphersuite {
   return ciphersuiteValues[ciphersuites[name]]
 }
@@ -260,6 +264,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
   },
 } as const
 
+/** @public */
 export type Ciphersuite = {
   hash: HashAlgorithm
   hpke: HpkeAlgorithm

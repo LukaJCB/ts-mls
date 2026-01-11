@@ -25,15 +25,19 @@ export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeName> = mapDecode
   enumNumberToKey(proposalOrRefTypes),
 )
 
+/** @public */
 export interface ProposalOrRefProposal {
   proposalOrRefType: "proposal"
   proposal: Proposal
 }
+
+/** @public */
 export interface ProposalOrRefProposalRef {
   proposalOrRefType: "reference"
   reference: Uint8Array
 }
 
+/** @public */
 export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef
 
 export const proposalOrRefProposalEncoder: BufferEncoder<ProposalOrRefProposal> = contramapBufferEncoders(

@@ -52,6 +52,7 @@
     }
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.52.13",
     "@eslint/js": "^9.33.0",
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
@@ -90,9 +91,11 @@
     "lint": "eslint src/ test/",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
+    "api:extract": "pnpm build && api-extractor run --local",
+    "api:check": "pnpm build && api-extractor run",
     "verify-docs": "typescript-docs-verifier -p tsconfig.docs.json --input-files README.md docs/*.md",
     "verify-madge": "madge --extensions ts --circular src",
-    "verify": "pnpm build && pnpm format:check && pnpm verify-docs && pnpm verify-madge && pnpm lint && pnpm coverage"
+    "verify": "pnpm build && pnpm api:check && pnpm format:check && pnpm verify-docs && pnpm verify-madge && pnpm lint && pnpm coverage"
   },
   "packageManager": "pnpm@10.17.1",
   "keywords": [

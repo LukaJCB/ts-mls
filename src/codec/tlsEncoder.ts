@@ -1,3 +1,4 @@
+/** @public */
 export type Encoder<T> = (t: T) => Uint8Array
 
 export type BufferEncoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void]

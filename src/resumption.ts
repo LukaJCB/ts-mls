@@ -13,6 +13,7 @@ import { ProtocolVersionName } from "./protocolVersion.js"
 import { RatchetTree } from "./ratchetTree.js"
 import { Welcome } from "./welcome.js"
 
+/** @public */
 export async function reinitGroup(
   state: ClientState,
   groupId: Uint8Array,
@@ -43,6 +44,7 @@ export async function reinitGroup(
   )
 }
 
+/** @public */
 export async function reinitCreateNewGroup(
   state: ClientState,
   keyPackage: KeyPackage,
@@ -102,6 +104,7 @@ export function makeResumptionPsk(
   return { id: psk, secret }
 }
 
+/** @public */
 export async function branchGroup(
   state: ClientState,
   keyPackage: KeyPackage,
@@ -142,6 +145,7 @@ export async function branchGroup(
   )
 }
 
+/** @public */
 export async function joinGroupFromBranch(
   oldState: ClientState,
   welcome: Welcome,
@@ -155,6 +159,7 @@ export async function joinGroupFromBranch(
   return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, oldState)
 }
 
+/** @public */
 export async function joinGroupFromReinit(
   suspendedState: ClientState,
   welcome: Welcome,

@@ -3,10 +3,12 @@ import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
+/** @public */
 export const protocolVersions = {
   mls10: 1,
 } as const
 
+/** @public */
 export type ProtocolVersionName = keyof typeof protocolVersions
 export type ProtocolVersionValue = (typeof protocolVersions)[ProtocolVersionName]
 

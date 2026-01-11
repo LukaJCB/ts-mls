@@ -1,8 +1,10 @@
 import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
 import { varLenDataEncoder } from "../codec/variableLength.js"
 
+/** @public */
 export type HashAlgorithm = "SHA-512" | "SHA-384" | "SHA-256"
 
+/** @public */
 export interface Hash {
   digest(data: Uint8Array): Promise<Uint8Array>
   mac(key: Uint8Array, data: Uint8Array): Promise<Uint8Array>

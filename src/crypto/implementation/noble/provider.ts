@@ -6,6 +6,7 @@ import { makeHpke } from "./makeHpke.js"
 import { makeKdfImpl, makeKdf } from "./makeKdfImpl.js"
 import { defaultRng } from "./rng.js"
 
+/** @public */
 export const nobleCryptoProvider = {
   async getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl> {
     return {
