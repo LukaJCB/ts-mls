@@ -12,7 +12,7 @@ import { Extension } from "../../src/extension.js"
 import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requiredCapabilities.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 

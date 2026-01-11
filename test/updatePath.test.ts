@@ -6,7 +6,7 @@ import { ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.
 import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
 import { protocolVersions } from "../src/protocolVersion.js"
-import { defaultCredentialTypes } from "../src/credentialType.js"
+import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {

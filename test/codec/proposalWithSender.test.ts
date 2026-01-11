@@ -6,7 +6,7 @@ import {
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
 const dummyAddProposal: ProposalWithSender = {

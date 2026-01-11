@@ -29,7 +29,7 @@ import { signLeafNodeCommit, signLeafNodeKeyPackage } from "../../src/leafNode.j
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 
 describe("Ratchet Tree Validation", () => {
   const suites = Object.keys(ciphersuites)

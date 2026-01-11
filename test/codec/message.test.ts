@@ -1,7 +1,7 @@
 import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("MLSMessage roundtrip", () => {

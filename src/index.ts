@@ -139,7 +139,7 @@ export { type Brand } from "./util/brand.js"
 export { type ContentTypeName } from "./contentType.js"
 export { type ProtocolVersionName, type ProtocolVersionValue } from "./protocolVersion.js"
 
-export { type DefaultCredentialTypeName, type DefaultCredentialTypeValue } from "./credentialType.js"
+export { type DefaultCredentialTypeName, type DefaultCredentialTypeValue } from "./defaultCredentialType.js"
 export { type CredentialBasic, type CredentialX509 } from "./credential.js"
 
 export { type MLSContext, type CreateCommitOptions } from "./createCommit.js"
@@ -220,7 +220,7 @@ export { type KeyPackageTBS } from "./keyPackage.js"
 export { type MlsMessageProtocol, type MlsMessageContent, type MlsKeyPackage } from "./message.js"
 
 export { contentTypes } from "./contentType.js"
-export { defaultCredentialTypes } from "./credentialType.js"
+export { defaultCredentialTypes } from "./defaultCredentialType.js"
 export { protocolVersions } from "./protocolVersion.js"
 
 export { type GroupInfoTBS } from "./groupInfo.js"

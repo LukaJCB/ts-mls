@@ -1,6 +1,6 @@
 import { createGroup } from "../../src/clientState.js"
 import { Credential } from "../../src/credential.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"

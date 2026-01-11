@@ -17,7 +17,7 @@ import { CiphersuiteName, getCiphersuiteFromName } from "../src/crypto/ciphersui
 import { createCommit } from "../src/createCommit.js"
 import { processPrivateMessage } from "../src/processMessages.js"
 import { defaultProposalTypes } from "../src/defaultProposalType.js"
-import { defaultCredentialTypes } from "../src/credentialType.js"
+import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 import { LeafNode } from "../src/leafNode.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"

@@ -6,7 +6,7 @@ import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl 
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"

@@ -1,7 +1,7 @@
 import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"

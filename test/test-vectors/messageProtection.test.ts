@@ -22,7 +22,7 @@ import { RatchetTree } from "../../src/ratchetTree.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultPaddingConfig } from "../../src/paddingConfig.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

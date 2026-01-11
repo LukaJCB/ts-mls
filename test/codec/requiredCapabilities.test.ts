@@ -3,7 +3,7 @@ import {
   decodeRequiredCapabilities,
   RequiredCapabilities,
 } from "../../src/requiredCapabilities.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("RequiredCapabilities roundtrip", () => {

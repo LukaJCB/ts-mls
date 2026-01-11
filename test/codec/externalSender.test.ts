@@ -1,5 +1,5 @@
 import { encodeExternalSender, decodeExternalSender, ExternalSender } from "../../src/externalSender.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const basic: ExternalSender = {

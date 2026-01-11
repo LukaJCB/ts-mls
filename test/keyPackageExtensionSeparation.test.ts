@@ -6,7 +6,7 @@ import { Extension } from "../src/extension.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { defaultCapabilities } from "../src/defaultCapabilities.js"
-import { defaultCredentialTypes } from "../src/credentialType.js"
+import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`KeyPackage Extension Separation %s`, async (cs) => {
   await keyPackageExtensionSeparationTest(cs as CiphersuiteName)

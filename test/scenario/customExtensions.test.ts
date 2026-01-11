@@ -12,7 +12,7 @@ import { Capabilities } from "../../src/capabilities.js"
 import { Extension } from "../../src/extension.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {

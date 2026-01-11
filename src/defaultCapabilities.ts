@@ -1,5 +1,5 @@
 import { Capabilities } from "./capabilities.js"
-import { defaultCredentialTypes } from "./credentialType.js"
+import { defaultCredentialTypes } from "./defaultCredentialType.js"
 import { ciphersuites, CiphersuiteId } from "./crypto/ciphersuite.js"
 import { greaseCapabilities, defaultGreaseConfig } from "./grease.js"
 import { protocolVersions } from "./protocolVersion.js"

@@ -1,5 +1,5 @@
 import { encodeCredential, decodeCredential, Credential } from "../../src/credential.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const minimal: Credential = { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([1, 2, 3]) }

@@ -15,7 +15,7 @@ import { acceptAll } from "../../src/incomingMessageAction.js"
 import { ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
-import { defaultCredentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
   await reinitValidation(cs as CiphersuiteName)
