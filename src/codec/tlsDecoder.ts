@@ -1,3 +1,4 @@
+/** @public */
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined
 
 export function mapDecoder<T, U>(dec: Decoder<T>, f: (t: T) => U): Decoder<U> {

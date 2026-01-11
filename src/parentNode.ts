@@ -3,6 +3,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, varLenTypeEncoder, decodeVarLenData, decodeVarLenType } from "./codec/variableLength.js"
 
+/** @public */
 export interface ParentNode {
   hpkePublicKey: Uint8Array
   parentHash: Uint8Array

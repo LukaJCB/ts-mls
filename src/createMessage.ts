@@ -7,6 +7,7 @@ import { protectProposalPublic } from "./messageProtectionPublic.js"
 import { Proposal } from "./proposal.js"
 import { addUnappliedProposal } from "./unappliedProposals.js"
 
+/** @public */
 export async function createProposal(
   state: ClientState,
   publicMessage: boolean,
@@ -67,6 +68,7 @@ export async function createProposal(
   }
 }
 
+/** @public */
 export async function createApplicationMessage(
   state: ClientState,
   message: Uint8Array,

@@ -6,6 +6,7 @@ import { base64RecordEncoder, decodeBase64Record } from "./codec/variableLength.
 import { decodeProposal, Proposal, proposalEncoder } from "./proposal.js"
 import { bytesToBase64 } from "./util/byteArray.js"
 
+/** @public */
 export interface ProposalWithSender {
   proposal: Proposal
   senderLeafIndex: number | undefined
@@ -24,6 +25,7 @@ export const decodeProposalWithSender: Decoder<ProposalWithSender> = mapDecoders
   }),
 )
 
+/** @public */
 export type UnappliedProposals = Record<string, ProposalWithSender>
 
 export const unappliedProposalsEncoder: BufferEncoder<UnappliedProposals> =

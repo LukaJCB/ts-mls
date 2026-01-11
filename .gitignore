@@ -27,3 +27,6 @@ dist-ssr
 
 coverage
 .tmp-compiled-docs
+
+# API Extractor
+temp

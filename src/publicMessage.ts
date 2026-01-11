@@ -17,9 +17,12 @@ import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.j
 import { SenderTypeName } from "./sender.js"
 import { toLeafIndex } from "./treemath.js"
 
-type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
-type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }
-type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeName, "member"> }
+/** @public */
+export type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
+/** @public */
+export type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }
+/** @public */
+export type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeName, "member"> }
 
 export const publicMessageInfoEncoder: BufferEncoder<PublicMessageInfo> = (info) => {
   switch (info.senderType) {
@@ -48,6 +51,7 @@ export function decodePublicMessageInfo(senderType: SenderTypeName): Decoder<Pub
   }
 }
 
+/** @public */
 export type PublicMessage = { content: FramedContent; auth: FramedContentAuthData } & PublicMessageInfo
 export type MemberPublicMessage = PublicMessage & PublicMessageInfoMember
 export type ExternalPublicMessage = PublicMessage & PublicMessageInfoMemberOther

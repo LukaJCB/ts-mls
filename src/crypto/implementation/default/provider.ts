@@ -7,6 +7,7 @@ import { makeKdfImpl } from "./makeKdfImpl.js"
 import { defaultRng } from "./rng.js"
 import { makeNobleSignatureImpl } from "./makeNobleSignatureImpl.js"
 
+/** @public */
 export const defaultCryptoProvider = {
   async getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl> {
     const sc = crypto.subtle

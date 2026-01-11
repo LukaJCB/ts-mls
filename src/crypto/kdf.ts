@@ -2,12 +2,14 @@ import { varLenDataEncoder } from "../codec/variableLength.js"
 import { uint16Encoder, uint32Encoder } from "../codec/number.js"
 import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
 
+/** @public */
 export interface Kdf {
   extract(salt: Uint8Array, ikm: Uint8Array): Promise<Uint8Array>
   expand(prk: Uint8Array, info: Uint8Array, len: number): Promise<Uint8Array>
   size: number
 }
 
+/** @public */
 export type KdfAlgorithm = "HKDF-SHA256" | "HKDF-SHA384" | "HKDF-SHA512"
 
 export function expandWithLabel(

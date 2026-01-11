@@ -6,6 +6,7 @@ import { deriveSecret, expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { extractEpochSecret, extractJoinerSecret, GroupContext } from "./groupContext.js"
 import { extractWelcomeSecret } from "./groupInfo.js"
 
+/** @public */
 export interface KeySchedule {
   // epochSecret: Uint8Array
   senderDataSecret: Uint8Array
@@ -93,6 +94,7 @@ export interface EpochSecrets {
   encryptionSecret: Uint8Array
 }
 
+/** @public */
 export async function mlsExporter(
   exporterSecret: Uint8Array,
   label: string,

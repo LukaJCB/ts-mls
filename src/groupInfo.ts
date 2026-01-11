@@ -10,6 +10,7 @@ import { decodeGroupContext, groupContextEncoder, extractEpochSecret, GroupConte
 import { CodecError } from "./mlsError.js"
 import { decodeRatchetTree, RatchetTree } from "./ratchetTree.js"
 
+/** @public */
 export interface GroupInfoTBS {
   groupContext: GroupContext
   extensions: Extension[]
@@ -34,6 +35,7 @@ export const decodeGroupInfoTBS: Decoder<GroupInfoTBS> = mapDecoders(
   }),
 )
 
+/** @public */
 export type GroupInfo = GroupInfoTBS & {
   signature: Uint8Array
 }

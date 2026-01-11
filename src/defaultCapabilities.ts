@@ -2,6 +2,7 @@ import { Capabilities } from "./capabilities.js"
 import { ciphersuites, CiphersuiteName } from "./crypto/ciphersuite.js"
 import { greaseCapabilities, defaultGreaseConfig } from "./grease.js"
 
+/** @public */
 export function defaultCapabilities(): Capabilities {
   return greaseCapabilities(defaultGreaseConfig, {
     versions: ["mls10"],

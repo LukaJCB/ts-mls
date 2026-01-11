@@ -25,9 +25,14 @@ import { LeafNode, leafNodeEncoder, decodeLeafNode } from "./leafNode.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 
+/** @public */
 export type Node = NodeParent | NodeLeaf
-type NodeParent = { nodeType: "parent"; parent: ParentNode }
-type NodeLeaf = { nodeType: "leaf"; leaf: LeafNode }
+
+/** @public */
+export type NodeParent = { nodeType: "parent"; parent: ParentNode }
+
+/** @public */
+export type NodeLeaf = { nodeType: "leaf"; leaf: LeafNode }
 
 export const nodeEncoder: BufferEncoder<Node> = (node) => {
   switch (node.nodeType) {
@@ -70,6 +75,7 @@ export function getHpkePublicKey(n: Node): Uint8Array {
   }
 }
 
+/** @public */
 export type RatchetTree = (Node | undefined)[]
 
 export function extendRatchetTree(tree: RatchetTree): RatchetTree {

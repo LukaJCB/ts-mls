@@ -7,13 +7,15 @@ import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
 
-const senderTypes = {
+/** @public */
+export const senderTypes = {
   member: 1,
   external: 2,
   new_member_proposal: 3,
   new_member_commit: 4,
 } as const
 
+/** @public */
 export type SenderTypeName = keyof typeof senderTypes
 export type SenderTypeValue = (typeof senderTypes)[SenderTypeName]
 
@@ -26,24 +28,32 @@ export const encodeSenderType: Encoder<SenderTypeName> = encode(senderTypeEncode
 
 export const decodeSenderType: Decoder<SenderTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(senderTypes))
 
+/** @public */
 export interface SenderMember {
   senderType: "member"
   leafIndex: number
 }
 
+/** @public */
 export type SenderNonMember = SenderExternal | SenderNewMemberProposal | SenderNewMemberCommit
 
+/** @public */
 export interface SenderExternal {
   senderType: "external"
   senderIndex: number
 }
+
+/** @public */
 export interface SenderNewMemberProposal {
   senderType: "new_member_proposal"
 }
+
+/** @public */
 export interface SenderNewMemberCommit {
   senderType: "new_member_commit"
 }
 
+/** @public */
 export type Sender = SenderMember | SenderNonMember
 
 export const senderEncoder: BufferEncoder<Sender> = (s) => {

@@ -52,6 +52,10 @@ export { createApplicationMessage, createProposal } from "./createMessage.js"
 
 export { zeroOutUint8Array } from "./util/byteArray.js"
 
+export { type ProposalWithSender } from "./unappliedProposals.js"
+
+export { type PublicMessage } from "./publicMessage.js"
+
 export {
   joinGroupExternal,
   createCommit,
@@ -81,7 +85,9 @@ export {
 
 export { type Credential } from "./credential.js"
 
-export { type Proposal } from "./proposal.js"
+export { type Proposal, type Reinit } from "./proposal.js"
+
+export { type LeafIndex } from "./treemath.js"
 
 export { type ClientConfig } from "./clientConfig.js"
 
@@ -96,6 +102,10 @@ export {
   ciphersuites,
   getCiphersuiteFromName,
 } from "./crypto/ciphersuite.js"
+
+export { type HashAlgorithm } from "./crypto/hash.js"
+export { type HpkeAlgorithm } from "./crypto/hpke.js"
+export { type SignatureAlgorithm } from "./crypto/signature.js"
 
 export { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
 
@@ -114,6 +124,128 @@ export {
   type MlsGroupInfo,
   type MlsPrivateMessage,
 } from "./message.js"
+
+export { type FramedContent, type FramedContentAuthData } from "./framedContent.js"
 export { type Lifetime, defaultLifetime } from "./lifetime.js"
 export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
+
+export { type Decoder } from "./codec/tlsDecoder.js"
+export { type Encoder } from "./codec/tlsEncoder.js"
+
+export { type Brand } from "./util/brand.js"
+
+export { type ContentTypeName } from "./contentType.js"
+export { type ProtocolVersionName } from "./protocolVersion.js"
+
+export { type CredentialTypeName } from "./credentialType.js"
+export { type CredentialBasic, type CredentialX509 } from "./credential.js"
+
+export { type MLSContext, type CreateCommitOptions } from "./createCommit.js"
+export { type NewStateWithActionTaken } from "./processMessages.js"
+
+export { type GroupInfo } from "./groupInfo.js"
+export { type EncryptedGroupSecrets } from "./welcome.js"
+export { type PreSharedKeyID, type PSKInfo, type PSKNonce } from "./presharedkey.js"
+
+export {
+  type ProposalAdd,
+  type ProposalUpdate,
+  type ProposalRemove,
+  type ProposalPSK,
+  type ProposalReinit,
+  type ProposalExternalInit,
+  type ProposalGroupContextExtensions,
+  type ProposalCustom,
+} from "./proposal.js"
+
+export {
+  type Add,
+  type Update,
+  type Remove,
+  type PSK,
+  type ExternalInit,
+  type GroupContextExtensions,
+} from "./proposal.js"
+
+export { type UnappliedProposals } from "./unappliedProposals.js"
+
+export { type Node } from "./ratchetTree.js"
+export { type NodeParent, type NodeLeaf } from "./ratchetTree.js"
+export { type LeafNode } from "./leafNode.js"
+export {
+  type LeafNodeData,
+  type LeafNodeInfoOmitted,
+  type LeafNodeKeyPackage,
+  type LeafNodeInfoCommitOmitted,
+  type LeafNodeInfoKeyPackage,
+  type LeafNodeInfoUpdateOmitted,
+  type LeafNodeUpdate,
+  type LeafNodeCommit,
+} from "./leafNode.js"
+export { type SecretTree } from "./secretTree.js"
+export { type SecretTreeNode } from "./secretTree.js"
+export { type GenerationSecret } from "./secretTree.js"
+
+export {
+  type FramedContentData,
+  type FramedContentInfo,
+  type FramedContentAuthDataCommit,
+  type FramedContentAuthDataApplicationOrProposal,
+} from "./framedContent.js"
+
+export {
+  type FramedContentApplicationData,
+  type FramedContentProposalData,
+  type FramedContentCommitData,
+  type FramedContentAuthDataContentCommit,
+  type FramedContentAuthDataContentApplicationOrProposal,
+} from "./framedContent.js"
+
+export { type PublicMessageInfo } from "./publicMessage.js"
+export { type PublicMessageInfoMember, type PublicMessageInfoMemberOther } from "./publicMessage.js"
+
+export { type Hash } from "./crypto/hash.js"
+export { type Hpke } from "./crypto/hpke.js"
+export { type Kdf, type KdfAlgorithm } from "./crypto/kdf.js"
+export { type Rng } from "./crypto/rng.js"
+export { type Signature } from "./crypto/signature.js"
+export { type AeadAlgorithm } from "./crypto/aead.js"
+export { type KemAlgorithm } from "./crypto/kem.js"
+
+export { type KeySchedule } from "./keySchedule.js"
+export { type KeyPackageTBS } from "./keyPackage.js"
+
+export { type MlsMessageProtocol, type MlsMessageContent, type MlsKeyPackage } from "./message.js"
+
+export { contentTypes } from "./contentType.js"
+export { credentialTypes } from "./credentialType.js"
+export { protocolVersions } from "./protocolVersion.js"
+
+export { type GroupInfoTBS } from "./groupInfo.js"
+export { type Sender } from "./sender.js"
+export {
+  senderTypes,
+  type SenderTypeName,
+  type SenderMember,
+  type SenderNonMember,
+  type SenderExternal,
+  type SenderNewMemberProposal,
+  type SenderNewMemberCommit,
+} from "./sender.js"
+export { type HPKECiphertext } from "./hpkeCiphertext.js"
+export { type PublicKey, type PrivateKey } from "./crypto/hpke.js"
+
+export { type Commit } from "./commit.js"
+
+export { type UpdatePath } from "./updatePath.js"
+export { type UpdatePathNode } from "./updatePath.js"
+
+export { type ProposalOrRef } from "./proposalOrRefType.js"
+export { type ProposalOrRefProposal, type ProposalOrRefProposalRef } from "./proposalOrRefType.js"
+
+export { type PSKInfoExternal, type PSKInfoResumption } from "./presharedkey.js"
+
+export { resumptionPSKUsages, type ResumptionPSKUsageName } from "./presharedkey.js"
+
+export { type ParentNode } from "./parentNode.js"

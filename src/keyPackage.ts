@@ -17,7 +17,8 @@ import { Capabilities } from "./capabilities.js"
 import { Lifetime } from "./lifetime.js"
 import { Credential } from "./credential.js"
 
-type KeyPackageTBS = {
+/** @public */
+export type KeyPackageTBS = {
   version: ProtocolVersionName
   cipherSuite: CiphersuiteName
   initKey: Uint8Array
@@ -56,6 +57,7 @@ export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
   }),
 )
 
+/** @public */
 export type KeyPackage = KeyPackageTBS & { signature: Uint8Array }
 
 export const keyPackageEncoder: BufferEncoder<KeyPackage> = contramapBufferEncoders(
@@ -91,12 +93,14 @@ export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Arra
   return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder)(value), h)
 }
 
+/** @public */
 export interface PrivateKeyPackage {
   initPrivateKey: Uint8Array
   hpkePrivateKey: Uint8Array
   signaturePrivateKey: Uint8Array
 }
 
+/** @public */
 export async function generateKeyPackageWithKey(
   credential: Credential,
   capabilities: Capabilities,
@@ -136,6 +140,7 @@ export async function generateKeyPackageWithKey(
   return { publicPackage: await signKeyPackage(tbs, signatureKeyPair.signKey, cs.signature), privatePackage }
 }
 
+/** @public */
 export async function generateKeyPackage(
   credential: Credential,
   capabilities: Capabilities,

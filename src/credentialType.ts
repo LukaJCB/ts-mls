@@ -3,11 +3,13 @@ import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { openEnumNumberEncoder, openEnumNumberToKey } from "./util/enumHelpers.js"
 
-const credentialTypes = {
+/** @public */
+export const credentialTypes = {
   basic: 1,
   x509: 2,
 } as const
 
+/** @public */
 export type CredentialTypeName = keyof typeof credentialTypes
 export type CredentialTypeValue = (typeof credentialTypes)[CredentialTypeName]
 

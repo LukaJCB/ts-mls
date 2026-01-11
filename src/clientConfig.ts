@@ -4,6 +4,7 @@ import { defaultKeyRetentionConfig, KeyRetentionConfig } from "./keyRetentionCon
 import { defaultLifetimeConfig, LifetimeConfig } from "./lifetimeConfig.js"
 import { defaultPaddingConfig, PaddingConfig } from "./paddingConfig.js"
 
+/** @public */
 export interface ClientConfig {
   keyRetentionConfig: KeyRetentionConfig
   lifetimeConfig: LifetimeConfig
