@@ -2,6 +2,7 @@ import { encodeRatchetTree, decodeRatchetTree, RatchetTree } from "../../src/rat
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("RatchetTree roundtrip", () => {
   test("roundtrips single leaf", () => {
@@ -19,7 +20,7 @@ describe("RatchetTree roundtrip", () => {
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([4]),
@@ -46,7 +47,7 @@ describe("RatchetTree roundtrip", () => {
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([4]),
@@ -73,7 +74,7 @@ describe("RatchetTree roundtrip", () => {
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([4]),

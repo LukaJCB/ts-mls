@@ -4,6 +4,7 @@ import { FramedContentCommit } from "../../src/framedContent.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 const minimalContent: FramedContentCommit = {
   groupId: new Uint8Array([1]),
@@ -25,7 +26,7 @@ const minimalContent: FramedContentCommit = {
           proposals: [],
           credentials: [],
         },
-        leafNodeSource: "commit",
+        leafNodeSource: leafNodeSources.commit,
         parentHash: new Uint8Array([6]),
         extensions: [],
         signature: new Uint8Array([7]),

@@ -4,6 +4,7 @@ import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("KeyPackageTBS roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeKeyPackageTBS, decodeKeyPackageTBS)
@@ -24,7 +25,7 @@ describe("KeyPackageTBS roundtrip", () => {
           proposals: [],
           credentials: [],
         },
-        leafNodeSource: "key_package" as const,
+        leafNodeSource: leafNodeSources.key_package,
         lifetime: { notBefore: 0n, notAfter: 0n },
         extensions: [],
         signature: new Uint8Array([13, 14, 15]),
@@ -53,7 +54,7 @@ describe("KeyPackageTBS roundtrip", () => {
           proposals: [9, 10, 11],
           credentials: [defaultCredentialTypes.basic, defaultCredentialTypes.x509],
         },
-        leafNodeSource: "key_package" as const,
+        leafNodeSource: leafNodeSources.key_package,
         lifetime: { notBefore: 1000n, notAfter: 2000n },
         extensions: [
           { extensionType: defaultExtensionTypes.application_id, extensionData: new Uint8Array([36, 37, 38]) },

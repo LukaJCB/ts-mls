@@ -2,6 +2,7 @@ import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/update
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {
@@ -20,7 +21,7 @@ describe("UpdatePath", () => {
           proposals: [],
           credentials: [],
         },
-        leafNodeSource: "commit",
+        leafNodeSource: leafNodeSources.commit,
         parentHash: new Uint8Array([10, 11, 12]),
         extensions: [],
         signature: new Uint8Array([13, 14, 15]),
@@ -49,7 +50,7 @@ describe("UpdatePath", () => {
           proposals: [],
           credentials: [],
         },
-        leafNodeSource: "commit",
+        leafNodeSource: leafNodeSources.commit,
         parentHash: new Uint8Array([31, 32, 33, 34, 35]),
         extensions: [],
         signature: new Uint8Array([36, 37, 38, 39, 40]),

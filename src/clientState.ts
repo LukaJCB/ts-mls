@@ -94,6 +94,7 @@ import {
   verifyLeafNodeSignature,
   verifyLeafNodeSignatureKeyPackage,
 } from "./leafNode.js"
+import { leafNodeSources } from "./leafNodeSource.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities.js"
 import { Capabilities } from "./capabilities.js"
@@ -509,7 +510,7 @@ export async function validateRatchetTree(
       }
 
       const err =
-        n.leaf.leafNodeSource === "key_package"
+        n.leaf.leafNodeSource === leafNodeSources.key_package
           ? await validateLeafNodeKeyPackage(n.leaf, groupContext, false, config, authService, cs.signature)
           : await validateLeafNodeUpdateOrCommit(
               n.leaf,
@@ -625,7 +626,7 @@ async function validateLeafNodeKeyPackage(
 
   //verify lifetime
   if (sentByClient || config.validateLifetimeOnReceive) {
-    if (leafNode.leafNodeSource === "key_package") {
+    if (leafNode.leafNodeSource === leafNodeSources.key_package) {
       const currentTime = BigInt(Math.floor(Date.now() / 1000))
       if (leafNode.lifetime.notBefore > currentTime || leafNode.lifetime.notAfter < currentTime)
         return new ValidationError("Current time not within Lifetime")

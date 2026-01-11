@@ -24,7 +24,6 @@ export function isDefaultCredentialTypeValue(v: number): v is DefaultCredentialT
   return defaultCredentialTypeValues.has(v)
 }
 
-
 export const defaultCredentialTypeValueEncoder: BufferEncoder<DefaultCredentialTypeValue> = uint16Encoder
 
 export const encodeDefaultCredentialTypeValue: Encoder<DefaultCredentialTypeValue> = encode(

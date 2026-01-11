@@ -7,13 +7,14 @@ import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
 import { protocolVersions } from "../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
+import { leafNodeSources } from "../src/leafNodeSource.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
 
     const leaf1: LeafNodeCommit = {
-      leafNodeSource: "commit",
+      leafNodeSource: leafNodeSources.commit,
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
@@ -92,7 +93,7 @@ describe("createUpdatePath", () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
 
     const createLeaf = (identity: string): LeafNodeCommit => ({
-      leafNodeSource: "commit",
+      leafNodeSource: leafNodeSources.commit,
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {

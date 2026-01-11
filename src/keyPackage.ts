@@ -18,6 +18,7 @@ import {
   LeafNodeTBSKeyPackage,
   signLeafNodeKeyPackage,
 } from "./leafNode.js"
+import { leafNodeSources } from "./leafNodeSource.js"
 import { Capabilities } from "./capabilities.js"
 import { Lifetime } from "./lifetime.js"
 import { Credential } from "./credential.js"
@@ -125,7 +126,7 @@ export async function generateKeyPackageWithKey(
   }
 
   const leafNodeTbs: LeafNodeTBSKeyPackage = {
-    leafNodeSource: "key_package",
+    leafNodeSource: leafNodeSources.key_package,
     hpkePublicKey: await cs.hpke.exportPublicKey(hpkeKeys.publicKey),
     signaturePublicKey: signatureKeyPair.publicKey,
     extensions: leafNodeExtensions ?? [],

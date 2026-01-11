@@ -6,6 +6,7 @@ import { InternalError } from "./mlsError.js"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
 import { treeHash } from "./treeHash.js"
 import { isLeaf, LeafIndex, leafWidth, left, NodeIndex, right, root, toNodeIndex } from "./treemath.js"
+import { leafNodeSources } from "./leafNodeSource.js"
 
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
@@ -103,7 +104,7 @@ function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, 
 
 function getParentHash(node: Node): Uint8Array | undefined {
   if (node.nodeType === "parent") return node.parent.parentHash
-  else if (node.leaf.leafNodeSource === "commit") return node.leaf.parentHash
+  else if (node.leaf.leafNodeSource === leafNodeSources.commit) return node.leaf.parentHash
 }
 
 /**

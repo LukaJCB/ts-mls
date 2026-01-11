@@ -34,4 +34,3 @@ export const encodeDefaultProposalTypeValue: Encoder<DefaultProposalTypeValue> =
 export const decodeDefaultProposalTypeValue: Decoder<DefaultProposalTypeValue> = mapDecoderOption(decodeUint16, (v) =>
   defaultProposalTypeValues.has(v) ? (v as DefaultProposalTypeValue) : undefined,
 )
-

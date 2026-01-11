@@ -114,7 +114,7 @@ const alice2 = await generateKeyPackage(aliceCredential, defaultCapabilities(), 
 // Alice proposes to update her keys
 const updateAliceProposal: Proposal = {
   proposalType: defaultProposalTypes.update,
-  update: { leafNode: { ...alice2.publicPackage.leafNode, leafNodeSource: "update" } },
+  update: { leafNode: { ...alice2.publicPackage.leafNode, leafNodeSource: leafNodeSources.update } },
 }
 
 // Bob commits to Alice's proposal and transitions to epoch 4

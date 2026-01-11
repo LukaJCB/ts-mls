@@ -30,6 +30,7 @@ import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("Ratchet Tree Validation", () => {
   const suites = Object.keys(ciphersuites)
@@ -182,7 +183,8 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
   //modify parent hash
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0]!.nodeType === "parent" || tree[0]!.leaf.leafNodeSource !== "commit") throw new Error("expected leaf")
+  if (tree[0]!.nodeType === "parent" || tree[0]!.leaf.leafNodeSource !== leafNodeSources.commit)
+    throw new Error("expected leaf")
 
   // flip a byte in the parent hash to invalidate it
   tree[0]!.leaf.parentHash[0] = (tree[0]!.leaf.parentHash[0]! + 1) & 0xff
@@ -206,7 +208,7 @@ async function resignLeafNode(
   impl: CiphersuiteImpl,
 ) {
   if (tree[nodeIndex]!.nodeType === "parent") throw new Error("expected leaf")
-  if (tree[nodeIndex]?.leaf.leafNodeSource === "commit") {
+  if (tree[nodeIndex]?.leaf.leafNodeSource === leafNodeSources.commit) {
     const newLeaf = {
       ...tree[nodeIndex].leaf,
 
@@ -216,9 +218,9 @@ async function resignLeafNode(
     }
     const signed = await signLeafNodeCommit(newLeaf, privateKey, impl.signature)
     tree[nodeIndex].leaf.signature = signed.signature
-  } else if (tree[nodeIndex]?.leaf.leafNodeSource === "key_package") {
+  } else if (tree[nodeIndex]?.leaf.leafNodeSource === leafNodeSources.key_package) {
     const signed = await signLeafNodeKeyPackage(
-      { ...tree[nodeIndex]?.leaf, leafNodeSource: "key_package" },
+      { ...tree[nodeIndex]?.leaf, leafNodeSource: leafNodeSources.key_package },
       privateKey,
       impl.signature,
     )
@@ -397,7 +399,11 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
   // tamper with the key_package leaf node signature
   const tree = ratchetTreeFromExtension(groupInfo)!
 
-  if (tree[0] === undefined || tree[0].nodeType === "parent" || tree[0].leaf.leafNodeSource !== "key_package")
+  if (
+    tree[0] === undefined ||
+    tree[0].nodeType === "parent" ||
+    tree[0].leaf.leafNodeSource !== leafNodeSources.key_package
+  )
     throw new Error("expected key_package leaf source")
 
   // flip a byte in the signature to invalidate it

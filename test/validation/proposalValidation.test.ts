@@ -21,6 +21,7 @@ import { proposeExternal } from "../../src/index.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -269,7 +270,7 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup, alice } = await setupThreeMembers(cs as CiphersuiteName)
 
     const updateLeafNode: LeafNode = {
-      leafNodeSource: "update",
+      leafNodeSource: leafNodeSources.update,
       signaturePublicKey: alice.publicPackage.leafNode.signaturePublicKey,
       hpkePublicKey: alice.publicPackage.leafNode.hpkePublicKey,
       credential: alice.publicPackage.leafNode.credential,

@@ -4,6 +4,7 @@ import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 const minimalLeafNode: LeafNode = {
   hpkePublicKey: new Uint8Array([]),
@@ -16,7 +17,7 @@ const minimalLeafNode: LeafNode = {
     proposals: [],
     credentials: [],
   },
-  leafNodeSource: "update",
+  leafNodeSource: leafNodeSources.update,
   extensions: [],
   signature: new Uint8Array([]),
 }
@@ -32,7 +33,7 @@ const nontrivialLeafNode: LeafNode = {
     proposals: [71],
     credentials: [defaultCredentialTypes.basic],
   },
-  leafNodeSource: "commit",
+  leafNodeSource: leafNodeSources.commit,
   parentHash: new Uint8Array([9, 10]),
   extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([11, 12]) }],
   signature: new Uint8Array([13, 14]),

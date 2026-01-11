@@ -1,4 +1,3 @@
-
 import { ciphersuiteEncoder, CiphersuiteId, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"

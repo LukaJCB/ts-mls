@@ -23,6 +23,7 @@ import { UsageError } from "../../src/mlsError.js"
 import { defaultPaddingConfig } from "../../src/paddingConfig.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -86,7 +87,7 @@ const treeForLeafIndex1: RatchetTree = [
   {
     nodeType: "leaf",
     leaf: {
-      leafNodeSource: "commit",
+      leafNodeSource: leafNodeSources.commit,
       hpkePublicKey: new Uint8Array(),
       signaturePublicKey: new Uint8Array(),
       capabilities: defaultCapabilities(),
@@ -432,7 +433,7 @@ async function proposal(data: MessageProtectionData, gc: GroupContext, impl: Cip
       {
         nodeType: "leaf",
         leaf: {
-          leafNodeSource: "commit",
+          leafNodeSource: leafNodeSources.commit,
           hpkePublicKey: new Uint8Array(),
           signaturePublicKey: new Uint8Array(),
           capabilities: defaultCapabilities(),

@@ -1,4 +1,3 @@
-
 import { varLenTypeEncoder, decodeVarLenType } from "./codec/variableLength.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"

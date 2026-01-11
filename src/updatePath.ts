@@ -13,6 +13,7 @@ import {
   LeafNodeTBSCommit,
   signLeafNodeCommit,
 } from "./leafNode.js"
+import { leafNodeSources } from "./leafNodeSource.js"
 import { calculateParentHash } from "./parentHash.js"
 import {
   filteredDirectPath,
@@ -102,7 +103,7 @@ export async function createUpdatePath(
   const leafParentHash = await calculateParentHash(treeWithHashes, leafToNodeIndex(senderLeafIndex), cs.hash)
 
   const updatedLeafNodeTbs: LeafNodeTBSCommit = {
-    leafNodeSource: "commit",
+    leafNodeSource: leafNodeSources.commit,
     hpkePublicKey: await cs.hpke.exportPublicKey(leafKeypair.publicKey),
     extensions: originalLeafNode.leaf.extensions,
     capabilities: originalLeafNode.leaf.capabilities,

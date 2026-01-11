@@ -4,6 +4,7 @@ import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 const minimalKeyPackage: KeyPackage = {
   version: protocolVersions.mls10,
@@ -20,7 +21,7 @@ const minimalKeyPackage: KeyPackage = {
       proposals: [],
       credentials: [],
     },
-    leafNodeSource: "key_package",
+    leafNodeSource: leafNodeSources.key_package,
     lifetime: { notBefore: 0n, notAfter: 0n },
     extensions: [],
     signature: new Uint8Array([]),
@@ -44,7 +45,7 @@ const nontrivialKeyPackage: KeyPackage = {
       proposals: [9],
       credentials: [defaultCredentialTypes.basic],
     },
-    leafNodeSource: "key_package",
+    leafNodeSource: leafNodeSources.key_package,
     lifetime: { notBefore: 1n, notAfter: 2n },
     extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([10, 11]) }],
     signature: new Uint8Array([12, 13]),
