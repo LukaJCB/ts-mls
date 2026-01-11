@@ -5,13 +5,14 @@ import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { contentTypes } from "../../src/contentType.js"
 
 const minimalContent: FramedContentCommit = {
   groupId: new Uint8Array([1]),
   epoch: 0n,
   sender: { senderType: "member", leafIndex: 0 },
   authenticatedData: new Uint8Array([2]),
-  contentType: "commit",
+  contentType: contentTypes.commit,
   commit: {
     proposals: [],
     path: {

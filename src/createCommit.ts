@@ -19,6 +19,7 @@ import {
   FramedContentAuthDataCommit,
   FramedContentCommit,
 } from "./framedContent.js"
+import { contentTypes } from "./contentType.js"
 import { GroupContext, groupContextEncoder } from "./groupContext.js"
 import {
   GroupInfo,
@@ -637,7 +638,7 @@ export async function joinGroupExternal(
 
   const authenticatedContent: AuthenticatedContentCommit = {
     content: framedContent,
-    auth: { signature, confirmationTag, contentType: "commit" },
+    auth: { signature, confirmationTag, contentType: contentTypes.commit },
     wireformat: "mls_public_message",
   }
 

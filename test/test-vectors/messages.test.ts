@@ -3,6 +3,7 @@ import json from "../../test_vectors/messages.json"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
 import { decodeCommit, encodeCommit } from "../../src/commit.js"
+import { contentTypes } from "../../src/contentType.js"
 import { Encoder } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
 import {
@@ -123,7 +124,7 @@ function publicMessageApplication(s: string) {
   if (p === undefined || p[0].wireformat !== "mls_public_message") {
     throw new Error("could not decode mls_public_message")
   } else {
-    expect(p[0].publicMessage.content.contentType).toBe("application")
+    expect(p[0].publicMessage.content.contentType).toBe(contentTypes.application)
     const reEncoded = encodeMlsMessage(p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
@@ -136,7 +137,7 @@ function publicMessageProposal(s: string) {
   if (p === undefined || p[0].wireformat !== "mls_public_message") {
     throw new Error("could not decode mls_public_message")
   } else {
-    expect(p[0].publicMessage.content.contentType).toBe("proposal")
+    expect(p[0].publicMessage.content.contentType).toBe(contentTypes.proposal)
     const reEncoded = encodeMlsMessage(p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
@@ -149,7 +150,7 @@ function publicMessageCommit(s: string) {
   if (p === undefined || p[0].wireformat !== "mls_public_message") {
     throw new Error("could not decode mls_public_message")
   } else {
-    expect(p[0].publicMessage.content.contentType).toBe("commit")
+    expect(p[0].publicMessage.content.contentType).toBe(contentTypes.commit)
     const reEncoded = encodeMlsMessage(p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }

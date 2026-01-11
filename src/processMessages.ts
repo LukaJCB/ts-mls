@@ -44,6 +44,7 @@ import { UpdatePath, applyUpdatePath } from "./updatePath.js"
 import { addToMap } from "./util/addToMap.js"
 import { WireformatName } from "./wireformat.js"
 import { zeroOutUint8Array } from "./util/byteArray.js"
+import { contentTypes } from "./contentType.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -88,7 +89,7 @@ export async function processPrivateMessage(
 
       const newState = { ...state, historicalReceiverData: newHistoricalReceiverData }
 
-      if (result.content.content.contentType === "application") {
+      if (result.content.content.contentType === contentTypes.application) {
         return {
           kind: "applicationMessage",
           message: result.content.content.applicationData,
@@ -115,14 +116,14 @@ export async function processPrivateMessage(
 
   const updatedState = { ...state, secretTree: result.tree }
 
-  if (result.content.content.contentType === "application") {
+  if (result.content.content.contentType === contentTypes.application) {
     return {
       kind: "applicationMessage",
       message: result.content.content.applicationData,
       newState: updatedState,
       consumed: result.consumed,
     }
-  } else if (result.content.content.contentType === "commit") {
+  } else if (result.content.content.contentType === contentTypes.commit) {
     const { newState, actionTaken, consumed } = await processCommit(
       updatedState,
       result.content as AuthenticatedContentCommit,
@@ -187,7 +188,7 @@ export async function processPublicMessage(
     cs,
   )
 
-  if (content.content.contentType === "proposal") {
+  if (content.content.contentType === contentTypes.proposal) {
     const action = callback({
       kind: "proposal",
       proposal: { proposal: content.content.proposal, senderLeafIndex: getSenderLeafNodeIndex(content.content.sender) },
@@ -279,7 +280,8 @@ async function processCommit(
 
   const newTreeHash = await treeHashRoot(tree, cs.hash)
 
-  if (content.auth.contentType !== "commit") throw new ValidationError("Received content as commit, but not auth") //todo solve this with types?
+  if (content.auth.contentType !== contentTypes.commit)
+    throw new ValidationError("Received content as commit, but not auth") //todo solve this with types?
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
     wireformat,

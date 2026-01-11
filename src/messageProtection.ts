@@ -27,6 +27,7 @@ import { CryptoVerificationError, CodecError, ValidationError, MlsError, Interna
 import { PaddingConfig } from "./paddingConfig.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { nodeTypes } from "./nodeType.js"
+import { contentTypes } from "./contentType.js"
 
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -49,7 +50,7 @@ export async function protectApplicationData(
     protocolVersion: groupContext.version,
     wireformat: "mls_private_message",
     content: {
-      contentType: "application",
+      contentType: contentTypes.application,
       applicationData,
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
@@ -106,7 +107,7 @@ export async function protectProposal(
     protocolVersion: groupContext.version,
     wireformat: "mls_private_message" as const,
     content: {
-      contentType: "proposal" as const,
+      contentType: contentTypes.proposal,
       proposal: p,
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,

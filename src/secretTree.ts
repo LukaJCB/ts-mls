@@ -9,7 +9,7 @@ import {
   varLenDataEncoder,
   varLenTypeEncoder,
 } from "./codec/variableLength.js"
-import { ContentTypeName } from "./contentType.js"
+import { ContentTypeValue, contentTypes } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
@@ -224,7 +224,7 @@ export async function derivePrivateMessageNonce(
 export async function ratchetToGeneration(
   tree: SecretTree,
   senderData: SenderData,
-  contentType: ContentTypeName,
+  contentType: ContentTypeValue,
   config: KeyRetentionConfig,
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
@@ -270,7 +270,7 @@ export async function ratchetToGeneration(
 export async function consumeRatchet(
   tree: SecretTree,
   index: number,
-  contentType: ContentTypeName,
+  contentType: ContentTypeValue,
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
   const node = tree[index]
@@ -288,7 +288,7 @@ async function createRatchetResult(
   currentSecret: GenerationSecret,
   reuseGuard: ReuseGuard,
   tree: SecretTree,
-  contentType: ContentTypeName,
+  contentType: ContentTypeValue,
   consumed: Uint8Array[],
   cs: CiphersuiteImpl,
 ): Promise<ConsumeRatchetResult> {
@@ -323,7 +323,7 @@ async function createRatchetResultWithSecret(
   generation: number,
   reuseGuard: ReuseGuard,
   tree: SecretTree,
-  contentType: ContentTypeName,
+  contentType: ContentTypeValue,
   consumed: Uint8Array[],
   cs: CiphersuiteImpl,
   ratchetState: GenerationSecret,
@@ -331,7 +331,7 @@ async function createRatchetResultWithSecret(
   const { nonce, key } = await createKeyAndNonce(secret, generation, reuseGuard, cs)
 
   const newNode =
-    contentType === "application" ? { ...node, application: ratchetState } : { ...node, handshake: ratchetState }
+    contentType === contentTypes.application ? { ...node, application: ratchetState } : { ...node, handshake: ratchetState }
 
   const newTree = tree.slice()
   newTree[index] = newNode
@@ -352,13 +352,13 @@ async function createKeyAndNonce(secret: Uint8Array, generation: number, reuseGu
   return { nonce, key }
 }
 
-function ratchetForContentType(node: SecretTreeNode, contentType: ContentTypeName): GenerationSecret {
+function ratchetForContentType(node: SecretTreeNode, contentType: ContentTypeValue): GenerationSecret {
   switch (contentType) {
-    case "application":
+    case contentTypes.application:
       return node.application
-    case "proposal":
+    case contentTypes.proposal:
       return node.handshake
-    case "commit":
+    case contentTypes.commit:
       return node.handshake
   }
 }

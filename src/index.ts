@@ -136,7 +136,7 @@ export { type Encoder } from "./codec/tlsEncoder.js"
 
 export { type Brand } from "./util/brand.js"
 
-export { type ContentTypeName } from "./contentType.js"
+export { type ContentTypeName, type ContentTypeValue } from "./contentType.js"
 export { type ProtocolVersionName, type ProtocolVersionValue } from "./protocolVersion.js"
 
 export { type DefaultCredentialTypeName, type DefaultCredentialTypeValue } from "./defaultCredentialType.js"

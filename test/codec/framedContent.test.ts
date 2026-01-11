@@ -1,4 +1,5 @@
 import { encodeFramedContent, decodeFramedContent } from "../../src/framedContent.js"
+import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("FramedContent roundtrip", () => {
@@ -6,7 +7,7 @@ describe("FramedContent roundtrip", () => {
 
   test("roundtrips application", () => {
     roundtrip({
-      contentType: "application",
+      contentType: contentTypes.application,
       groupId: new Uint8Array([1]),
       epoch: 0n,
       sender: { senderType: "member", leafIndex: 0 },
@@ -17,7 +18,7 @@ describe("FramedContent roundtrip", () => {
 
   test("roundtrips commit", () => {
     roundtrip({
-      contentType: "commit",
+      contentType: contentTypes.commit,
       groupId: new Uint8Array([4, 5]),
       epoch: 1n,
       sender: { senderType: "external", senderIndex: 1 },

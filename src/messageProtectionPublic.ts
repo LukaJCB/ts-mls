@@ -18,6 +18,7 @@ import { Proposal } from "./proposal.js"
 import { ExternalPublicMessage, findSignaturePublicKey, PublicMessage } from "./publicMessage.js"
 import { RatchetTree } from "./ratchetTree.js"
 import { SenderNonMember } from "./sender.js"
+import { contentTypes } from "./contentType.js"
 
 export interface ProtectProposalPublicResult {
   publicMessage: PublicMessage
@@ -36,7 +37,7 @@ export async function protectProposalPublic(
     groupId: groupContext.groupId,
     epoch: groupContext.epoch,
     sender: { senderType: "member", leafIndex },
-    contentType: "proposal",
+    contentType: contentTypes.proposal,
     authenticatedData,
     proposal,
   }
@@ -74,7 +75,7 @@ export async function protectExternalProposalPublic(
     groupId: groupContext.groupId,
     epoch: groupContext.epoch,
     sender,
-    contentType: "proposal",
+    contentType: contentTypes.proposal,
     authenticatedData,
     proposal,
   }
@@ -104,7 +105,8 @@ export async function protectPublicMessage(
   content: AuthenticatedContent,
   cs: CiphersuiteImpl,
 ): Promise<PublicMessage> {
-  if (content.content.contentType === "application") throw new UsageError("Can't make an application message public")
+  if (content.content.contentType === contentTypes.application)
+    throw new UsageError("Can't make an application message public")
 
   if (content.content.sender.senderType == "member") {
     const authenticatedContent: AuthenticatedContentTBM = {
@@ -140,7 +142,8 @@ export async function unprotectPublicMessage(
   cs: CiphersuiteImpl,
   overrideSignatureKey?: Uint8Array,
 ): Promise<AuthenticatedContentProposalOrCommit> {
-  if (msg.content.contentType === "application") throw new UsageError("Can't make an application message public")
+  if (msg.content.contentType === contentTypes.application)
+    throw new UsageError("Can't make an application message public")
 
   if (msg.senderType === "member") {
     const authenticatedContent: AuthenticatedContentTBM = {

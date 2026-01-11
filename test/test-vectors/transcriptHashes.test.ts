@@ -4,6 +4,7 @@ import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/transcript-hashes.json"
 import { decodeAuthenticatedContent } from "../../src/authenticatedContent.js"
 import { createConfirmedHash, createInterimHash } from "../../src/transcriptHash.js"
+import { contentTypes } from "../../src/contentType.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`transcript-hashes test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -26,7 +27,11 @@ async function testTranscriptHash(
   impl: CiphersuiteImpl,
 ) {
   const auth = decodeAuthenticatedContent(hexToBytes(authenticatedContent), 0)
-  if (auth === undefined || auth[0].content.contentType !== "commit" || auth[0].auth.contentType !== "commit") {
+  if (
+    auth === undefined ||
+    auth[0].content.contentType !== contentTypes.commit ||
+    auth[0].auth.contentType !== contentTypes.commit
+  ) {
     throw new Error("Could not decode authenticated content")
   }
 

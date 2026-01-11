@@ -1,7 +1,6 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 
 /** @public */
 export const protocolVersions = {
@@ -21,16 +20,4 @@ export const encodeProtocolVersion: Encoder<ProtocolVersionValue> = encode(proto
 
 export const decodeProtocolVersion: Decoder<ProtocolVersionValue> = mapDecoderOption(decodeUint16, (v) =>
   protocolVersionValues.has(v) ? (v as ProtocolVersionValue) : undefined,
-)
-
-export const protocolVersionNameEncoder: BufferEncoder<ProtocolVersionName> = contramapBufferEncoder(
-  uint16Encoder,
-  (t) => protocolVersions[t],
-)
-
-export const encodeProtocolVersionName: Encoder<ProtocolVersionName> = encode(protocolVersionNameEncoder)
-
-export const decodeProtocolVersionName: Decoder<ProtocolVersionName> = mapDecoderOption(
-  decodeUint16,
-  enumNumberToKey(protocolVersions),
 )

@@ -2,7 +2,7 @@ import { decodeUint32, decodeUint64, decodeUint8, uint32Encoder, uint64Encoder, 
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import { ContentTypeName, contentTypeEncoder, decodeContentType } from "./contentType.js"
+import { ContentTypeValue, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 import { enumNumberToKey } from "./util/enumHelpers.js"
@@ -150,7 +150,7 @@ export const decodeSenderData: Decoder<SenderData> = mapDecoders(
 export interface SenderDataAAD {
   groupId: Uint8Array
   epoch: bigint
-  contentType: ContentTypeName
+  contentType: ContentTypeValue
 }
 
 export const senderDataAADEncoder: BufferEncoder<SenderDataAAD> = contramapBufferEncoders(

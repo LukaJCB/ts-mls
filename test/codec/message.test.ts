@@ -4,6 +4,7 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { contentTypes } from "../../src/contentType.js"
 
 describe("MLSMessage roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeMlsMessage, decodeMlsMessage)
@@ -14,14 +15,14 @@ describe("MLSMessage roundtrip", () => {
       wireformat: "mls_public_message",
       publicMessage: {
         content: {
-          contentType: "application",
+          contentType: contentTypes.application,
           groupId: new Uint8Array([1]),
           epoch: 0n,
           sender: { senderType: "member", leafIndex: 0 },
           authenticatedData: new Uint8Array([2]),
           applicationData: new Uint8Array([3]),
         },
-        auth: { contentType: "application", signature: new Uint8Array([4, 5, 6]) },
+        auth: { contentType: contentTypes.application, signature: new Uint8Array([4, 5, 6]) },
         senderType: "member",
         membershipTag: new Uint8Array([7, 8, 9]),
       },
@@ -33,7 +34,7 @@ describe("MLSMessage roundtrip", () => {
       version: protocolVersions.mls10,
       wireformat: "mls_private_message",
       privateMessage: {
-        contentType: "proposal",
+        contentType: contentTypes.proposal,
         groupId: new Uint8Array([1]),
         epoch: 0n,
         authenticatedData: new Uint8Array([2, 3]),

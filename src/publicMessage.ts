@@ -19,6 +19,7 @@ import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.j
 import { SenderTypeName } from "./sender.js"
 import { toLeafIndex } from "./treemath.js"
 import { isDefaultProposal } from "./proposal.js"
+import { contentTypes } from "./contentType.js"
 
 /** @public */
 export type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
@@ -91,7 +92,7 @@ export function findSignaturePublicKey(
       return sender.signaturePublicKey
     }
     case "new_member_proposal":
-      if (framedContent.contentType !== "proposal")
+      if (framedContent.contentType !== contentTypes.proposal)
         throw new ValidationError("Received new_member_proposal but contentType is not proposal")
       if (
         !isDefaultProposal(framedContent.proposal) ||
@@ -101,7 +102,7 @@ export function findSignaturePublicKey(
 
       return framedContent.proposal.add.keyPackage.leafNode.signaturePublicKey
     case "new_member_commit": {
-      if (framedContent.contentType !== "commit")
+      if (framedContent.contentType !== contentTypes.commit)
         throw new ValidationError("Received new_member_commit but contentType is not commit")
 
       if (framedContent.commit.path === undefined) throw new ValidationError("Commit contains no update path")
