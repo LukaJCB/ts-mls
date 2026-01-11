@@ -6,6 +6,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 
+/** @public */
 export interface Capabilities {
   versions: ProtocolVersionName[]
   ciphersuites: CiphersuiteName[]

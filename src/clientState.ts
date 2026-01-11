@@ -109,8 +109,10 @@ import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } 
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { deriveSecret } from "./crypto/kdf.js"
 
+/** @public */
 export type ClientState = GroupState & { clientConfig: ClientConfig }
 
+/** @public */
 export interface GroupState {
   groupContext: GroupContext
   keySchedule: KeySchedule
@@ -152,8 +154,10 @@ export const groupStateEncoder: BufferEncoder<GroupState> = contramapBufferEncod
     ] as const,
 )
 
+/** @public */
 export const encodeGroupState: Encoder<GroupState> = encode(groupStateEncoder)
 
+/** @public */
 export const decodeGroupState: Decoder<GroupState> = mapDecoders(
   [
     decodeGroupContext,
@@ -862,6 +866,7 @@ export async function applyProposals(
   }
 }
 
+/** @public */
 export function makePskIndex(state: ClientState | undefined, externalPsks: Record<string, Uint8Array>): PskIndex {
   return {
     findPsk(preSharedKeyId) {
@@ -897,6 +902,7 @@ export async function nextEpochContext(
   }
 }
 
+/** @public */
 export async function joinGroup(
   welcome: Welcome,
   keyPackage: KeyPackage,
@@ -921,6 +927,7 @@ export async function joinGroup(
   return res[0]
 }
 
+/** @public */
 export async function joinGroupWithExtensions(
   welcome: Welcome,
   keyPackage: KeyPackage,
@@ -1075,6 +1082,7 @@ export async function joinGroupWithExtensions(
   ]
 }
 
+/** @public */
 export async function createGroup(
   groupId: Uint8Array,
   keyPackage: KeyPackage,

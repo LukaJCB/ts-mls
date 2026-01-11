@@ -4,10 +4,15 @@ import { KemAlgorithm } from "./kem.js"
 import { varLenDataEncoder } from "../codec/variableLength.js"
 import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
 
+/** @public */
 export type PublicKey = CryptoKey & { type: "public" }
+
 export type SecretKey = CryptoKey & { type: "secret" }
+
+/** @public */
 export type PrivateKey = CryptoKey & { type: "private" }
 
+/** @public */
 export interface HpkeAlgorithm {
   kem: KemAlgorithm
   kdf: KdfAlgorithm
@@ -51,6 +56,7 @@ export function decryptWithLabel(
   )
 }
 
+/** @public */
 export interface Hpke {
   open(
     privateKey: PrivateKey,

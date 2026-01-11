@@ -3,17 +3,22 @@ import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CredentialTypeName, decodeCredentialType, credentialTypeEncoder } from "./credentialType.js"
 
+/** @public */
 export type Credential = CredentialBasic | CredentialX509
 
+/** @public */
 export interface CredentialBasic {
   credentialType: "basic"
   identity: Uint8Array
 }
+
+/** @public */
 export interface CredentialX509 {
   credentialType: "x509"
   certificates: Uint8Array[]
 }
 
+/** @public */
 export interface CredentialCustom {
   credentialType: CredentialTypeName
   data: Uint8Array

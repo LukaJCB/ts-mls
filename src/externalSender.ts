@@ -3,6 +3,7 @@ import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Credential, decodeCredential, credentialEncoder } from "./credential.js"
 
+/** @public */
 export interface ExternalSender {
   signaturePublicKey: Uint8Array
   credential: Credential
@@ -13,8 +14,10 @@ export const externalSenderEncoder: BufferEncoder<ExternalSender> = contramapBuf
   (e) => [e.signaturePublicKey, e.credential] as const,
 )
 
+/** @public */
 export const encodeExternalSender: Encoder<ExternalSender> = encode(externalSenderEncoder)
 
+/** @public */
 export const decodeExternalSender: Decoder<ExternalSender> = mapDecoders(
   [decodeVarLenData, decodeCredential],
   (signaturePublicKey, credential) => ({ signaturePublicKey, credential }),

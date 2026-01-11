@@ -7,6 +7,7 @@ import { deriveSecret } from "./crypto/kdf.js"
 import { PathSecrets } from "./pathSecrets.js"
 import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
 
+/** @public */
 export interface PrivateKeyPath {
   leafIndex: number
   privateKeys: Record<number, Uint8Array>

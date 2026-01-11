@@ -10,6 +10,7 @@ import { HPKECiphertext, hpkeCiphertextEncoder, decodeHpkeCiphertext } from "./h
 import { ValidationError } from "./mlsError.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
+/** @public */
 export interface EncryptedGroupSecrets {
   newMember: Uint8Array
   encryptedGroupSecrets: HPKECiphertext
@@ -27,6 +28,7 @@ export const decodeEncryptedGroupSecrets: Decoder<EncryptedGroupSecrets> = mapDe
   (newMember, encryptedGroupSecrets) => ({ newMember, encryptedGroupSecrets }),
 )
 
+/** @public */
 export interface Welcome {
   cipherSuite: CiphersuiteName
   secrets: EncryptedGroupSecrets[]

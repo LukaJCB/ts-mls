@@ -28,16 +28,20 @@ import {
   SenderNewMemberProposal,
 } from "./sender.js"
 
+/** @public */
 export type FramedContentInfo = FramedContentApplicationData | FramedContentProposalData | FramedContentCommitData
 
+/** @public */
 export interface FramedContentApplicationData {
   contentType: "application"
   applicationData: Uint8Array
 }
+/** @public */
 export interface FramedContentProposalData {
   contentType: "proposal"
   proposal: Proposal
 }
+/** @public */
 export interface FramedContentCommitData {
   contentType: "commit"
   commit: Commit
@@ -114,7 +118,9 @@ export function toTbs(content: FramedContent, wireformat: WireformatName, contex
   return { protocolVersion: context.version, wireformat, content, senderType: content.sender.senderType, context }
 }
 
+/** @public */
 export type FramedContent = FramedContentData & FramedContentInfo
+/** @public */
 export interface FramedContentData {
   groupId: Uint8Array
   epoch: bigint
@@ -187,16 +193,21 @@ export const framedContentTBSEncoder: BufferEncoder<FramedContentTBS> = contrama
 
 export const encodeFramedContentTBS: Encoder<FramedContentTBS> = encode(framedContentTBSEncoder)
 
+/** @public */
 export type FramedContentAuthData = FramedContentAuthDataCommit | FramedContentAuthDataApplicationOrProposal
+/** @public */
 export type FramedContentAuthDataCommit = { signature: Uint8Array } & FramedContentAuthDataContentCommit
+/** @public */
 export type FramedContentAuthDataApplicationOrProposal = {
   signature: Uint8Array
 } & FramedContentAuthDataContentApplicationOrProposal
 type FramedContentAuthDataContent =
   | FramedContentAuthDataContentCommit
   | FramedContentAuthDataContentApplicationOrProposal
-type FramedContentAuthDataContentCommit = { contentType: "commit"; confirmationTag: Uint8Array }
-type FramedContentAuthDataContentApplicationOrProposal = { contentType: Exclude<ContentTypeName, "commit"> }
+/** @public */
+export type FramedContentAuthDataContentCommit = { contentType: "commit"; confirmationTag: Uint8Array }
+/** @public */
+export type FramedContentAuthDataContentApplicationOrProposal = { contentType: Exclude<ContentTypeName, "commit"> }
 
 const encodeFramedContentAuthDataContent: BufferEncoder<FramedContentAuthDataContent> = (authData) => {
   switch (authData.contentType) {

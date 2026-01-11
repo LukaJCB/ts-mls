@@ -9,6 +9,7 @@ import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 
 import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
 
+/** @public */
 export interface GroupContext {
   version: ProtocolVersionName
   cipherSuite: CiphersuiteName

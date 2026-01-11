@@ -52,6 +52,7 @@
     }
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.52.13",
     "@eslint/js": "^9.33.0",
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
@@ -61,7 +62,8 @@
     "@noble/hashes": "2.0.1",
     "@noble/post-quantum": "0.5.4",
     "@types/jest": "30.0.0",
-    "@vitest/coverage-v8": "3.2.4",
+    "@types/node": "^25.0.6",
+    "@vitest/coverage-v8": "4.0.16",
     "eslint": "9.39.2",
     "eslint-plugin-import": "2.32.0",
     "madge": "8.0.0",
@@ -70,8 +72,8 @@
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "typescript-docs-verifier": "3.0.1",
-    "typescript-eslint": "8.52.0",
-    "vitest": "3.2.4"
+    "typescript-eslint": "8.53.0",
+    "vitest": "4.0.16"
   },
   "repository": {
     "type": "git",
@@ -89,9 +91,11 @@
     "lint": "eslint src/ test/",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
+    "api:extract": "pnpm build && api-extractor run --local",
+    "api:check": "pnpm build && api-extractor run",
     "verify-docs": "typescript-docs-verifier -p tsconfig.docs.json --input-files README.md docs/*.md",
     "verify-madge": "madge --extensions ts --circular src",
-    "verify": "pnpm build && pnpm format:check && pnpm verify-docs && pnpm verify-madge && pnpm lint && pnpm coverage"
+    "verify": "pnpm build && pnpm api:check && pnpm format:check && pnpm verify-docs && pnpm verify-madge && pnpm lint && pnpm coverage"
   },
   "packageManager": "pnpm@10.17.1",
   "keywords": [

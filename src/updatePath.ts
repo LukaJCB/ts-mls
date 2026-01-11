@@ -27,6 +27,7 @@ import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decodeHpkeCiphertext, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 
+/** @public */
 export interface UpdatePathNode {
   hpkePublicKey: Uint8Array
   encryptedPathSecret: HPKECiphertext[]
@@ -44,6 +45,7 @@ export const decodeUpdatePathNode: Decoder<UpdatePathNode> = mapDecoders(
   (hpkePublicKey, encryptedPathSecret) => ({ hpkePublicKey, encryptedPathSecret }),
 )
 
+/** @public */
 export interface UpdatePath {
   leafNode: LeafNodeCommit
   nodes: UpdatePathNode[]

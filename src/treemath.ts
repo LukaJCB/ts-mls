@@ -1,14 +1,18 @@
 import { InternalError } from "./mlsError.js"
 import { Brand } from "./util/brand.js"
 
+/** @public */
 export type NodeIndex = Brand<number, "NodeIndex">
 
+/** @public */
 export function toNodeIndex(n: number): NodeIndex {
   return n as NodeIndex
 }
 
+/** @public */
 export type LeafIndex = Brand<number, "LeafIndex">
 
+/** @public */
 export function toLeafIndex(n: number): LeafIndex {
   return n as LeafIndex
 }

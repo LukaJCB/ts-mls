@@ -4,6 +4,7 @@ import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 
+/** @public */
 export interface RequiredCapabilities {
   extensionTypes: number[]
   proposalTypes: number[]
@@ -15,8 +16,10 @@ export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities> = 
   (rc) => [rc.extensionTypes, rc.proposalTypes, rc.credentialTypes] as const,
 )
 
+/** @public */
 export const encodeRequiredCapabilities: Encoder<RequiredCapabilities> = encode(requiredCapabilitiesEncoder)
 
+/** @public */
 export const decodeRequiredCapabilities: Decoder<RequiredCapabilities> = mapDecoders(
   [decodeVarLenType(decodeUint16), decodeVarLenType(decodeUint16), decodeVarLenType(decodeCredentialType)],
   (extensionTypes, proposalTypes, credentialTypes) => ({ extensionTypes, proposalTypes, credentialTypes }),

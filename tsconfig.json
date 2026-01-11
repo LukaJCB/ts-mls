@@ -4,13 +4,14 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
     "noEmit": true,
     "outDir": "dist",
     "declaration": true,
     "incremental": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals", "node"],
 
     /* Linting */
     "strict": true,

@@ -20,6 +20,7 @@ export function toBufferSource(b: Uint8Array): BufferSource {
   return ab
 }
 
+/** @public */
 export function bytesToBase64(bytes: Uint8Array): string {
   if (typeof Buffer !== "undefined") {
     return Buffer.from(bytes).toString("base64")
@@ -50,6 +51,7 @@ export function concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
   return result
 }
 
+/** @public */
 export function zeroOutUint8Array(buf: Uint8Array): void {
   crypto.getRandomValues(buf)
   for (let i = 0; i < buf.length; i++) {

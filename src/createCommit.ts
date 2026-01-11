@@ -56,12 +56,14 @@ import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
 
+/** @public */
 export interface MLSContext {
   state: ClientState
   cipherSuite: CiphersuiteImpl
   pskIndex?: PskIndex
 }
 
+/** @public */
 export interface CreateCommitResult {
   newState: ClientState
   welcome: Welcome | undefined
@@ -69,6 +71,7 @@ export interface CreateCommitResult {
   consumed: Uint8Array[]
 }
 
+/** @public */
 export interface CreateCommitOptions {
   wireAsPublicMessage?: boolean
   extraProposals?: Proposal[]
@@ -77,6 +80,7 @@ export interface CreateCommitOptions {
   authenticatedData?: Uint8Array
 }
 
+/** @public */
 export async function createCommit(context: MLSContext, options?: CreateCommitOptions): Promise<CreateCommitResult> {
   const { state, pskIndex = makePskIndex(state, {}), cipherSuite } = context
   const {
@@ -352,6 +356,7 @@ export async function createGroupInfoWithRatchetTree(
   return gi
 }
 
+/** @public */
 export async function createGroupInfoWithExternalPub(
   state: ClientState,
   extensions: Extension[],
@@ -371,6 +376,7 @@ export async function createGroupInfoWithExternalPub(
   return gi
 }
 
+/** @public */
 export async function createGroupInfoWithExternalPubAndRatchetTree(
   state: ClientState,
   extensions: Extension[],
@@ -476,6 +482,7 @@ export async function applyUpdatePathSecret(
   throw new InternalError("No overlap between provided private keys and update path")
 }
 
+/** @public */
 export async function joinGroupExternal(
   groupInfo: GroupInfo,
   keyPackage: KeyPackage,

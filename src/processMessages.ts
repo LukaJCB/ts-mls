@@ -45,6 +45,7 @@ import { addToMap } from "./util/addToMap.js"
 import { WireformatName } from "./wireformat.js"
 import { zeroOutUint8Array } from "./util/byteArray.js"
 
+/** @public */
 export type ProcessMessageResult =
   | {
       kind: "newState"
@@ -56,6 +57,8 @@ export type ProcessMessageResult =
 
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
+ *
+ * @public
  */
 export async function processPrivateMessage(
   state: ClientState,
@@ -159,12 +162,14 @@ export async function processPrivateMessage(
   }
 }
 
+/** @public */
 export interface NewStateWithActionTaken {
   newState: ClientState
   actionTaken: IncomingMessageAction
   consumed: Uint8Array[]
 }
 
+/** @public */
 export async function processPublicMessage(
   state: ClientState,
   pm: PublicMessage,
@@ -411,6 +416,7 @@ async function updatePrivateKeyPath(
   return [newPkp, commitSecret] as const
 }
 
+/** @public */
 export async function processMessage(
   message: MlsPrivateMessage | MlsPublicMessage,
   state: ClientState,
