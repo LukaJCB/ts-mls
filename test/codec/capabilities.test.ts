@@ -1,4 +1,5 @@
 import { encodeCapabilities, decodeCapabilities, Capabilities } from "../../src/capabilities.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Capabilities roundtrip", () => {
@@ -18,7 +19,7 @@ describe("Capabilities roundtrip", () => {
   test("roundtrips nontrivial", () => {
     const c: Capabilities = {
       versions: ["mls10"],
-      ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519"],
+      ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
       extensions: [8, 9],
       proposals: [10, 21],
       credentials: ["basic", "x509"],

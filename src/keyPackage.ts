@@ -1,7 +1,7 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteImpl, CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
@@ -20,7 +20,7 @@ import { Credential } from "./credential.js"
 /** @public */
 export type KeyPackageTBS = {
   version: ProtocolVersionName
-  cipherSuite: CiphersuiteName
+  cipherSuite: CiphersuiteId
   initKey: Uint8Array
   leafNode: LeafNodeKeyPackage
   extensions: Extension[]

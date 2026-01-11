@@ -2,7 +2,7 @@ import { createUpdatePath } from "../src/updatePath.js"
 import { RatchetTree } from "../src/ratchetTree.js"
 import { GroupContext } from "../src/groupContext.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
-import { getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
+import { ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
 
@@ -20,7 +20,7 @@ describe("createUpdatePath", () => {
       },
       capabilities: {
         versions: ["mls10"],
-        ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+        ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
         extensions: [],
         proposals: [],
         credentials: [],
@@ -67,7 +67,7 @@ describe("createUpdatePath", () => {
 
     const groupContext: GroupContext = {
       version: "mls10",
-      cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       groupId: new Uint8Array(16),
       epoch: 1n,
       treeHash: new Uint8Array(32),
@@ -99,7 +99,7 @@ describe("createUpdatePath", () => {
       },
       capabilities: {
         versions: ["mls10"],
-        ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+        ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
         extensions: [],
         proposals: [],
         credentials: [],
@@ -157,7 +157,7 @@ describe("createUpdatePath", () => {
 
     const groupContext: GroupContext = {
       version: "mls10",
-      cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       groupId: new Uint8Array(16),
       epoch: 1n,
       treeHash: new Uint8Array(32),

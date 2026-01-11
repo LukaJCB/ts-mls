@@ -1,4 +1,5 @@
 import { bytesToBase64 } from "../../src/index.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import {
   decodeUnappliedProposals,
   UnappliedProposals,
@@ -15,7 +16,7 @@ const dummyUnapplied: UnappliedProposals = {
       add: {
         keyPackage: {
           version: "mls10",
-          cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+          cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
           initKey: new Uint8Array([]),
           leafNode: {
             hpkePublicKey: new Uint8Array([]),

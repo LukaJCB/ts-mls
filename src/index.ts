@@ -97,6 +97,7 @@ export { mlsExporter } from "./keySchedule.js"
 
 export {
   type Ciphersuite,
+  type CiphersuiteId,
   type CiphersuiteName,
   type CiphersuiteImpl,
   ciphersuites,

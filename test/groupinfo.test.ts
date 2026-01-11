@@ -1,4 +1,4 @@
-import { getCiphersuiteFromId } from "../src/crypto/ciphersuite.js"
+import { ciphersuites, getCiphersuiteFromId } from "../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { GroupContext } from "../src/groupContext.js"
 import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo.js"
@@ -10,7 +10,7 @@ describe("GroupInfo signing and verification", () => {
 
   const groupContext: GroupContext = {
     version: "mls10",
-    cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+    cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
     groupId: new Uint8Array([0x01, 0x02]),
     epoch: BigInt(42),
     treeHash: new Uint8Array([0xaa]),

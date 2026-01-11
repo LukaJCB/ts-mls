@@ -22,7 +22,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     credentials: ["basic"],
     proposals: [],
     versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }

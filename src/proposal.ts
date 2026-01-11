@@ -2,7 +2,7 @@ import { decodeUint16, decodeUint32, uint16Encoder, uint32Encoder } from "./code
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 import { decodeKeyPackage, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { decodePskId, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
@@ -54,7 +54,7 @@ export const decodePSK: Decoder<PSK> = mapDecoder(decodePskId, (preSharedKeyId) 
 export interface Reinit {
   groupId: Uint8Array
   version: ProtocolVersionName
-  cipherSuite: CiphersuiteName
+  cipherSuite: CiphersuiteId
   extensions: Extension[]
 }
 

@@ -1,4 +1,5 @@
 import { encodeKeyPackageTBS, decodeKeyPackageTBS } from "../../src/keyPackage.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("KeyPackageTBS roundtrip", () => {
@@ -7,7 +8,7 @@ describe("KeyPackageTBS roundtrip", () => {
   test("roundtrips minimal", () => {
     const tbs = {
       version: "mls10" as const,
-      cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519" as const,
+      cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
       initKey: new Uint8Array([1, 2, 3]),
       leafNode: {
         hpkePublicKey: new Uint8Array([4, 5, 6]),
@@ -33,7 +34,7 @@ describe("KeyPackageTBS roundtrip", () => {
   test("roundtrips nontrivial", () => {
     const tbs = {
       version: "mls10" as const,
-      cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519" as const,
+      cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
       initKey: new Uint8Array([16, 17, 18, 19, 20]),
       leafNode: {
         hpkePublicKey: new Uint8Array([21, 22, 23, 24, 25]),
@@ -44,7 +45,7 @@ describe("KeyPackageTBS roundtrip", () => {
         },
         capabilities: {
           versions: ["mls10" as const],
-          ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519" as const],
+          ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
           extensions: [7, 8, 9],
           proposals: [9, 10, 11],
           credentials: ["basic" as const, "x509" as const],

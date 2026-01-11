@@ -1,12 +1,7 @@
 import json from "../../test_vectors/message-protection.json"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import { GroupContext } from "../../src/groupContext.js"
-import {
-  CiphersuiteId,
-  CiphersuiteImpl,
-  getCiphersuiteFromId,
-  getCiphersuiteNameFromId,
-} from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { decodeMlsMessage } from "../../src/message.js"
 import { protect, unprotectPrivateMessage } from "../../src/messageProtection.js"
@@ -56,7 +51,7 @@ type MessageProtectionData = {
 async function testMessageProtection(data: MessageProtectionData, impl: CiphersuiteImpl) {
   const gc: GroupContext = {
     version: "mls10",
-    cipherSuite: getCiphersuiteNameFromId(data.cipher_suite as CiphersuiteId),
+    cipherSuite: data.cipher_suite as CiphersuiteId,
     groupId: hexToBytes(data.group_id),
     epoch: BigInt(data.epoch),
     treeHash: hexToBytes(data.tree_hash),

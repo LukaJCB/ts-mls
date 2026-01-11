@@ -2,7 +2,7 @@ import { decodeUint64, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 
 import { expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
@@ -12,7 +12,7 @@ import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } fr
 /** @public */
 export interface GroupContext {
   version: ProtocolVersionName
-  cipherSuite: CiphersuiteName
+  cipherSuite: CiphersuiteId
   groupId: Uint8Array
   epoch: bigint
   treeHash: Uint8Array

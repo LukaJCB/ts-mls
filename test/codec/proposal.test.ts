@@ -1,4 +1,5 @@
 import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const dummyProposalAdd: Proposal = {
@@ -6,7 +7,7 @@ const dummyProposalAdd: Proposal = {
   add: {
     keyPackage: {
       version: "mls10",
-      cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+      cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
       initKey: new Uint8Array([]),
       leafNode: {
         hpkePublicKey: new Uint8Array([]),

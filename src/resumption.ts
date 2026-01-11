@@ -1,6 +1,12 @@
 import { ClientState, makePskIndex, createGroup, joinGroup } from "./clientState.js"
 import { CreateCommitResult, createCommit } from "./createCommit.js"
-import { CiphersuiteName, CiphersuiteImpl, getCiphersuiteFromName } from "./crypto/ciphersuite.js"
+import {
+  ciphersuites,
+  CiphersuiteName,
+  CiphersuiteImpl,
+  getCiphersuiteFromId,
+  getCiphersuiteFromName,
+} from "./crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
 import { defaultCryptoProvider } from "./crypto/implementation/default/provider.js"
 import { CryptoProvider } from "./crypto/provider.js"
@@ -27,7 +33,7 @@ export async function reinitGroup(
     reinit: {
       groupId,
       version,
-      cipherSuite,
+      cipherSuite: ciphersuites[cipherSuite],
       extensions,
     },
   }
@@ -173,7 +179,7 @@ export async function joinGroupFromReinit(
     throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
   const cs = await getCiphersuiteImpl(
-    getCiphersuiteFromName(suspendedState.groupActiveState.reinit.cipherSuite),
+    getCiphersuiteFromId(suspendedState.groupActiveState.reinit.cipherSuite),
     provider,
   )
 

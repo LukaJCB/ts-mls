@@ -30,7 +30,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     credentials: ["x509", "basic"],
     proposals: [],
     versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
   const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
@@ -59,7 +59,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     credentials: ["basic"],
     proposals: [],
     versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
   const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }

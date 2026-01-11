@@ -1,4 +1,5 @@
 import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {
@@ -12,7 +13,7 @@ describe("UpdatePath", () => {
         },
         capabilities: {
           versions: ["mls10"],
-          ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+          ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
           extensions: [],
           proposals: [],
           credentials: [],
@@ -41,7 +42,7 @@ describe("UpdatePath", () => {
         },
         capabilities: {
           versions: ["mls10"],
-          ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+          ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
           extensions: [],
           proposals: [],
           credentials: [],

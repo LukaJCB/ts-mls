@@ -1,9 +1,4 @@
-import {
-  CiphersuiteId,
-  CiphersuiteImpl,
-  getCiphersuiteFromId,
-  getCiphersuiteNameFromId,
-} from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { encodeGroupContext, GroupContext } from "../../src/groupContext.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
@@ -30,7 +25,7 @@ async function testKeySchedule(
 
       const gc: GroupContext = {
         version: "mls10",
-        cipherSuite: getCiphersuiteNameFromId(cipher_suite),
+        cipherSuite: cipher_suite,
         groupId: hexToBytes(group_id),
         epoch: BigInt(index),
         treeHash: hexToBytes(epoch.tree_hash),

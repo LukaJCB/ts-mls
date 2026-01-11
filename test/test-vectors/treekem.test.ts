@@ -1,9 +1,4 @@
-import {
-  CiphersuiteId,
-  CiphersuiteImpl,
-  getCiphersuiteFromId,
-  getCiphersuiteNameFromId,
-} from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { decodeRatchetTree, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
@@ -66,7 +61,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
 
   const gc: GroupContext = {
     version: "mls10",
-    cipherSuite: getCiphersuiteNameFromId(data.cipher_suite as CiphersuiteId),
+    cipherSuite: data.cipher_suite as CiphersuiteId,
     groupId: hexToBytes(data.group_id),
     epoch: BigInt(data.epoch),
     treeHash: th,

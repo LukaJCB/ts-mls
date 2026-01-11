@@ -1,7 +1,13 @@
 import { createGroup, validateRatchetTree } from "../../src/clientState.js"
 import { generateKeyPackage, generateKeyPackageWithKey } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
-import { CiphersuiteName, getCiphersuiteFromName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import {
+  CiphersuiteId,
+  CiphersuiteImpl,
+  CiphersuiteName,
+  ciphersuites,
+  getCiphersuiteFromName,
+} from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
@@ -93,7 +99,7 @@ async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
 
   const groupContext: GroupContext = {
     version: "mls10",
-    cipherSuite: cipherSuite,
+    cipherSuite: ciphersuites[cipherSuite],
     epoch: 0n,
     treeHash: new Uint8Array(),
     groupId: new Uint8Array(),
@@ -418,8 +424,8 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
   const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-  // tamper with the KeyPackage cipherSuite string to mismatch the group's cipher suite
-  bob.publicPackage.cipherSuite = "bogus-cipher" as CiphersuiteName
+  // tamper with the KeyPackage cipherSuite id to mismatch the group's cipher suite
+  bob.publicPackage.cipherSuite = 0xffff as CiphersuiteId
 
   const addBobProposal: Proposal = {
     proposalType: "add",
