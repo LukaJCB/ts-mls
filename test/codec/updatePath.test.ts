@@ -1,6 +1,7 @@
 import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {
@@ -9,7 +10,7 @@ describe("UpdatePath", () => {
         hpkePublicKey: new Uint8Array([1, 2, 3]),
         signaturePublicKey: new Uint8Array([4, 5, 6]),
         credential: {
-          credentialType: "basic",
+          credentialType: defaultCredentialTypes.basic,
           identity: new Uint8Array([7, 8, 9]),
         },
         capabilities: {
@@ -38,7 +39,7 @@ describe("UpdatePath", () => {
         hpkePublicKey: new Uint8Array([16, 17, 18, 19, 20]),
         signaturePublicKey: new Uint8Array([21, 22, 23, 24, 25]),
         credential: {
-          credentialType: "basic",
+          credentialType: defaultCredentialTypes.basic,
           identity: new Uint8Array([26, 27, 28, 29, 30]),
         },
         capabilities: {

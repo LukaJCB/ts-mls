@@ -22,6 +22,7 @@ import { RatchetTree } from "../../src/ratchetTree.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultPaddingConfig } from "../../src/paddingConfig.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -92,7 +93,7 @@ const treeForLeafIndex1: RatchetTree = [
       parentHash: new Uint8Array(),
       extensions: [],
       signature: new Uint8Array(),
-      credential: { credentialType: "basic", identity: new Uint8Array() },
+      credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
     },
   },
 ]
@@ -438,7 +439,7 @@ async function proposal(data: MessageProtectionData, gc: GroupContext, impl: Cip
           parentHash: new Uint8Array(),
           extensions: [],
           signature: new Uint8Array(),
-          credential: { credentialType: "basic", identity: new Uint8Array() },
+          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
         },
       },
     ],

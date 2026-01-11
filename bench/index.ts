@@ -2,6 +2,7 @@ import { Bench } from "tinybench"
 import fs from "fs"
 import {
   Credential,
+  defaultCredentialTypes,
   defaultProposalTypes,
   generateKeyPackage,
   defaultCapabilities,
@@ -45,7 +46,10 @@ function parseTable(row: Record<string, string | number | undefined> | null): {
 }
 
 async function createKeyPackageBench(impl: CiphersuiteImpl) {
-  const aliceCredential: Credential = { credentialType: "basic", identity: new Uint8Array([0, 1, 2]) }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new Uint8Array([0, 1, 2]),
+  }
   return await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 }
 
@@ -77,7 +81,10 @@ async function processCommitBench(impl: CiphersuiteImpl, bobGroup: ClientState, 
 }
 
 async function initGroup(impl: CiphersuiteImpl) {
-  const aliceCredential: Credential = { credentialType: "basic", identity: new Uint8Array([0, 1, 2]) }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new Uint8Array([0, 1, 2]),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new Uint8Array([0, 1, 2])
@@ -110,7 +117,10 @@ async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
 }
 
 async function addMember(impl: CiphersuiteImpl, state: ClientState) {
-  const bobCredential: Credential = { credentialType: "basic", identity: new Uint8Array([0, 1, 3]) }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new Uint8Array([0, 1, 3]),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
@@ -138,7 +148,7 @@ async function generateKeyPackages(impl: CiphersuiteImpl, members: number): Prom
   const kps: KeyPackage[] = []
   for (let i = 0; i < members; i++) {
     const cred: Credential = {
-      credentialType: "basic",
+      credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode(i.toString()),
     }
 

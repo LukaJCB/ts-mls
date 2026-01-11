@@ -6,6 +6,7 @@ import { ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.
 import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
 import { protocolVersions } from "../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../src/credentialType.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {
@@ -16,7 +17,7 @@ describe("createUpdatePath", () => {
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
-        credentialType: "basic",
+        credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode("user1"),
       },
       capabilities: {
@@ -36,7 +37,7 @@ describe("createUpdatePath", () => {
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
-        credentialType: "basic",
+        credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode("user2"),
       },
     }
@@ -95,7 +96,7 @@ describe("createUpdatePath", () => {
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
-        credentialType: "basic",
+        credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode(identity),
       },
       capabilities: {

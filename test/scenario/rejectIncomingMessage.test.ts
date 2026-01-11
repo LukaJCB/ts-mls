@@ -2,6 +2,7 @@ import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -23,7 +24,10 @@ test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, as
 async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
@@ -31,7 +35,10 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
@@ -70,7 +77,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
         {
           extensionType: defaultExtensionTypes.external_senders,
           extensionData: encodeExternalSender({
-            credential: { credentialType: "basic", identity: new Uint8Array() },
+            credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
             signaturePublicKey: new Uint8Array(),
           }),
         },

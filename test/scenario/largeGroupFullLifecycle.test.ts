@@ -6,6 +6,7 @@ import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl 
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
@@ -29,7 +30,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
   const groupId = new TextEncoder().encode("dynamic-group")
 
   const makeCredential = (name: string): Credential => ({
-    credentialType: "basic",
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode(name),
   })
 
@@ -134,7 +135,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
 async function addMember(memberStates: MemberState[], index: number, impl: CiphersuiteImpl, adderIndex = 0) {
   const newName = `member-${index}`
   const newCred = {
-    credentialType: "basic" as const,
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode(newName),
   }
   const newKP = await generateKeyPackage(newCred, defaultCapabilities(), defaultLifetime, [], impl)

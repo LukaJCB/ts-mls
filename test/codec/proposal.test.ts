@@ -2,6 +2,7 @@ import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const dummyProposalAdd: Proposal = {
@@ -14,7 +15,7 @@ const dummyProposalAdd: Proposal = {
       leafNode: {
         hpkePublicKey: new Uint8Array([]),
         signaturePublicKey: new Uint8Array([]),
-        credential: { credentialType: "basic", identity: new Uint8Array([]) },
+        credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([]) },
         capabilities: {
           versions: [],
           ciphersuites: [],

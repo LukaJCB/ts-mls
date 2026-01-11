@@ -23,6 +23,7 @@ This scenario demonstrates how to use an external pre-shared key (PSK) in a grou
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
@@ -39,14 +40,20 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // Alice adds Bob (epoch 1)
@@ -143,6 +150,7 @@ It's also possible to use an external PSK when inviting a new member to the grou
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
@@ -159,14 +167,20 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // Prepare external PSK and share it out-of-band

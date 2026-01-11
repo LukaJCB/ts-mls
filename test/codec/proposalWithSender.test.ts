@@ -6,6 +6,7 @@ import {
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
 const dummyAddProposal: ProposalWithSender = {
@@ -20,7 +21,7 @@ const dummyAddProposal: ProposalWithSender = {
           hpkePublicKey: new Uint8Array([]),
           signaturePublicKey: new Uint8Array([]),
           credential: {
-            credentialType: "basic",
+            credentialType: defaultCredentialTypes.basic,
             identity: new Uint8Array([]),
           },
           capabilities: {

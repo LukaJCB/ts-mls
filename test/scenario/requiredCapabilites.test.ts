@@ -12,7 +12,7 @@ import { Extension } from "../../src/extension.js"
 import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requiredCapabilities.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { credentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
@@ -25,19 +25,22 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
 
   const requiredCapabilities: RequiredCapabilities = {
     extensionTypes: [7, 8],
-    credentialTypes: [credentialTypes.x509, credentialTypes.basic],
+    credentialTypes: [defaultCredentialTypes.x509, defaultCredentialTypes.basic],
     proposalTypes: [],
   }
 
   const capabilities: Capabilities = {
     extensions: [7, 8, 9],
-    credentials: [credentialTypes.x509, credentialTypes.basic],
+    credentials: [defaultCredentialTypes.x509, defaultCredentialTypes.basic],
     proposals: [],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
@@ -55,18 +58,24 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     impl,
   )
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
 
   const minimalCapabilites: Capabilities = {
     extensions: [],
-    credentials: [credentialTypes.basic],
+    credentials: [defaultCredentialTypes.basic],
     proposals: [],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
   const charlie = await generateKeyPackage(charlieCredential, minimalCapabilites, defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {

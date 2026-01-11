@@ -8,7 +8,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { Extension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { credentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
@@ -21,13 +21,16 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const capabilities: Capabilities = {
     extensions: [customExtensionType],
-    credentials: [credentialTypes.basic],
+    credentials: [defaultCredentialTypes.basic],
     proposals: [],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")

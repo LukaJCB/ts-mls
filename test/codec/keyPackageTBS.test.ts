@@ -1,5 +1,5 @@
 import { encodeKeyPackageTBS, decodeKeyPackageTBS } from "../../src/keyPackage.js"
-import { credentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
@@ -16,7 +16,7 @@ describe("KeyPackageTBS roundtrip", () => {
       leafNode: {
         hpkePublicKey: new Uint8Array([4, 5, 6]),
         signaturePublicKey: new Uint8Array([7, 8, 9]),
-        credential: { credentialType: "basic" as const, identity: new Uint8Array([10, 11, 12]) },
+        credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([10, 11, 12]) },
         capabilities: {
           versions: [],
           ciphersuites: [],
@@ -43,7 +43,7 @@ describe("KeyPackageTBS roundtrip", () => {
         hpkePublicKey: new Uint8Array([21, 22, 23, 24, 25]),
         signaturePublicKey: new Uint8Array([26, 27, 28, 29, 30]),
         credential: {
-          credentialType: "x509" as const,
+          credentialType: defaultCredentialTypes.x509,
           certificates: [new Uint8Array([31, 32]), new Uint8Array([33, 34, 35])],
         },
         capabilities: {
@@ -51,7 +51,7 @@ describe("KeyPackageTBS roundtrip", () => {
           ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
           extensions: [7, 8, 9],
           proposals: [9, 10, 11],
-          credentials: [credentialTypes.basic, credentialTypes.x509],
+          credentials: [defaultCredentialTypes.basic, defaultCredentialTypes.x509],
         },
         leafNodeSource: "key_package" as const,
         lifetime: { notBefore: 1000n, notAfter: 2000n },

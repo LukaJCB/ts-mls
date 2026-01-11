@@ -24,6 +24,7 @@ This scenario demonstrates a more advanced workflow in MLS: creating a group, ad
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
@@ -39,17 +40,26 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+const charlieCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("charlie"),
+}
 const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 const addBobProposal: Proposal = {

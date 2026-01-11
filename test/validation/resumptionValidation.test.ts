@@ -15,6 +15,7 @@ import { acceptAll } from "../../src/incomingMessageAction.js"
 import { ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
   await reinitValidation(cs as CiphersuiteName)
@@ -23,14 +24,20 @@ test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (c
 async function reinitValidation(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {

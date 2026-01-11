@@ -1,4 +1,4 @@
-import { CredentialTypeValue, decodeCredentialType, credentialTypeEncoder } from "./credentialType.js"
+import { decodeCredentialType, credentialTypeEncoder } from "./credentialType.js"
 import { ciphersuiteEncoder, CiphersuiteId, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
@@ -12,7 +12,7 @@ export interface Capabilities {
   ciphersuites: CiphersuiteId[]
   extensions: number[]
   proposals: number[]
-  credentials: CredentialTypeValue[]
+  credentials: number[]
 }
 
 export const capabilitiesEncoder: BufferEncoder<Capabilities> = contramapBufferEncoders(

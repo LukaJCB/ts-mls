@@ -1,6 +1,7 @@
 import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("MLSMessage roundtrip", () => {
@@ -52,7 +53,7 @@ describe("MLSMessage roundtrip", () => {
         leafNode: {
           hpkePublicKey: new Uint8Array([]),
           signaturePublicKey: new Uint8Array([]),
-          credential: { credentialType: "basic", identity: new Uint8Array([]) },
+          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([]) },
           capabilities: {
             versions: [],
             ciphersuites: [],

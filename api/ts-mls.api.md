@@ -193,7 +193,7 @@ export { Credential_2 as Credential }
 // @public (undocumented)
 export interface CredentialBasic {
     // (undocumented)
-    credentialType: "basic";
+    credentialType: defaultCredentialTypes.basic;
     // (undocumented)
     identity: Uint8Array;
 }

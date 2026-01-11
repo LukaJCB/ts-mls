@@ -1,5 +1,5 @@
 import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
-import { credentialTypes } from "../../src/credentialType.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
@@ -12,7 +12,7 @@ const minimalKeyPackage: KeyPackage = {
   leafNode: {
     hpkePublicKey: new Uint8Array([]),
     signaturePublicKey: new Uint8Array([]),
-    credential: { credentialType: "basic", identity: new Uint8Array([]) },
+    credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([]) },
     capabilities: {
       versions: [],
       ciphersuites: [],
@@ -36,13 +36,13 @@ const nontrivialKeyPackage: KeyPackage = {
   leafNode: {
     hpkePublicKey: new Uint8Array([4, 5]),
     signaturePublicKey: new Uint8Array([6, 7]),
-    credential: { credentialType: "basic", identity: new Uint8Array([8, 9]) },
+    credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([8, 9]) },
     capabilities: {
       versions: [protocolVersions.mls10],
       ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
       extensions: [8],
       proposals: [9],
-      credentials: [credentialTypes.basic],
+      credentials: [defaultCredentialTypes.basic],
     },
     leafNodeSource: "key_package",
     lifetime: { notBefore: 1n, notAfter: 2n },

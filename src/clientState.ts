@@ -105,7 +105,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
-import { credentialTypeValueFromName, CredentialTypeValue } from "./credentialType.js"
+
 import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
 import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
@@ -490,7 +490,7 @@ export async function validateRatchetTree(
 ): Promise<MlsError | undefined> {
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
-  const credentialTypes = new Set<CredentialTypeValue>()
+  const credentialTypes = new Set<number>()
   for (const [i, n] of tree.entries()) {
     const nodeIndex = toNodeIndex(i)
     if (n?.nodeType === "leaf") {
@@ -505,10 +505,7 @@ export async function validateRatchetTree(
       else signatureKeys.add(signatureKey)
 
       {
-        const credentialType = n.leaf.credential.credentialType
-        credentialTypes.add(
-          typeof credentialType === "number" ? credentialType : credentialTypeValueFromName(credentialType),
-        )
+        credentialTypes.add(n.leaf.credential.credentialType)
       }
 
       const err =
@@ -650,9 +647,7 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
   for (const [nodeIndex, node] of tree.entries()) {
     if (node?.nodeType === "leaf") {
       const credentialType = leafNode.credential.credentialType
-      const credentialTypeValue =
-        typeof credentialType === "number" ? credentialType : credentialTypeValueFromName(credentialType)
-      if (!node.leaf.capabilities.credentials.includes(credentialTypeValue)) {
+      if (!node.leaf.capabilities.credentials.includes(credentialType)) {
         return new ValidationError("LeafNode has credential that is not supported by member of the group")
       }
 

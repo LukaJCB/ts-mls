@@ -1,4 +1,4 @@
-import { bytesToBase64, defaultProposalTypes } from "../../src/index.js"
+import { bytesToBase64, defaultProposalTypes, defaultCredentialTypes } from "../../src/index.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import {
@@ -23,7 +23,7 @@ const dummyUnapplied: UnappliedProposals = {
             hpkePublicKey: new Uint8Array([]),
             signaturePublicKey: new Uint8Array([]),
             credential: {
-              credentialType: "basic",
+              credentialType: defaultCredentialTypes.basic,
               identity: new Uint8Array([]),
             },
             capabilities: {

@@ -3,6 +3,7 @@ import { createRoundtripTest } from "./roundtrip.js"
 import { FramedContentCommit } from "../../src/framedContent.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/credentialType.js"
 
 const minimalContent: FramedContentCommit = {
   groupId: new Uint8Array([1]),
@@ -16,7 +17,7 @@ const minimalContent: FramedContentCommit = {
       leafNode: {
         hpkePublicKey: new Uint8Array([3]),
         signaturePublicKey: new Uint8Array([4]),
-        credential: { credentialType: "basic", identity: new Uint8Array([5]) },
+        credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([5]) },
         capabilities: {
           versions: [protocolVersions.mls10],
           ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],

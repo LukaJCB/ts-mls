@@ -1,40 +1,54 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
-import { openEnumNumberEncoder, openEnumNumberToKey } from "./util/enumHelpers.js"
+import { enumNumberToKey } from "./util/enumHelpers.js"
 
 /** @public */
-export const credentialTypes = {
+export const defaultCredentialTypes = {
   basic: 1,
   x509: 2,
 } as const
 
 /** @public */
-export type CredentialTypeName = keyof typeof credentialTypes
+export type DefaultCredentialTypeName = keyof typeof defaultCredentialTypes
 /** @public */
-export type CredentialTypeValue = (typeof credentialTypes)[CredentialTypeName]
+export type DefaultCredentialTypeValue = (typeof defaultCredentialTypes)[DefaultCredentialTypeName]
 
-export function credentialTypeValueFromName(name: CredentialTypeName): CredentialTypeValue {
-  return openEnumNumberEncoder(credentialTypes)(name) as CredentialTypeValue
+const defaultCredentialTypeValues = new Set<number>(Object.values(defaultCredentialTypes))
+
+export function defaultCredentialTypeValueFromName(name: DefaultCredentialTypeName): DefaultCredentialTypeValue {
+  return defaultCredentialTypes[name]
 }
 
-export const credentialTypeEncoder: BufferEncoder<CredentialTypeValue> = uint16Encoder
-
-export const encodeCredentialType: Encoder<CredentialTypeValue> = encode(credentialTypeEncoder)
-
-export const decodeCredentialType: Decoder<CredentialTypeValue> = (b, offset) => {
-  const decoded = decodeUint16(b, offset)
-  return decoded === undefined ? undefined : [decoded[0] as CredentialTypeValue, decoded[1]]
+export function isDefaultCredentialTypeValue(v: number): v is DefaultCredentialTypeValue {
+  return defaultCredentialTypeValues.has(v)
 }
 
-export const credentialTypeNameEncoder: BufferEncoder<CredentialTypeName> = contramapBufferEncoder(
-  uint16Encoder,
-  openEnumNumberEncoder(credentialTypes),
+export const credentialTypeEncoder: BufferEncoder<number> = uint16Encoder
+
+export const encodeCredentialType: Encoder<number> = encode(credentialTypeEncoder)
+
+export const decodeCredentialType: Decoder<number> = decodeUint16
+
+export const defaultCredentialTypeValueEncoder: BufferEncoder<DefaultCredentialTypeValue> = uint16Encoder
+
+export const encodeDefaultCredentialTypeValue: Encoder<DefaultCredentialTypeValue> = encode(
+  defaultCredentialTypeValueEncoder,
 )
 
-export const encodeCredentialTypeName: Encoder<CredentialTypeName> = encode(credentialTypeNameEncoder)
-
-export const decodeCredentialTypeName: Decoder<CredentialTypeName> = mapDecoderOption(
+export const decodeDefaultCredentialTypeValue: Decoder<DefaultCredentialTypeValue> = mapDecoderOption(
   decodeUint16,
-  openEnumNumberToKey(credentialTypes),
+  (v) => (defaultCredentialTypeValues.has(v) ? (v as DefaultCredentialTypeValue) : undefined),
+)
+
+export const defaultCredentialTypeEncoder: BufferEncoder<DefaultCredentialTypeName> = contramapBufferEncoder(
+  uint16Encoder,
+  (n) => defaultCredentialTypes[n],
+)
+
+export const encodeDefaultCredentialType: Encoder<DefaultCredentialTypeName> = encode(defaultCredentialTypeEncoder)
+
+export const decodeDefaultCredentialType: Decoder<DefaultCredentialTypeName> = mapDecoderOption(
+  decodeUint16,
+  enumNumberToKey(defaultCredentialTypes),
 )
