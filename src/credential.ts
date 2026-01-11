@@ -3,7 +3,6 @@ import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import {
-  defaultCredentialTypeValueEncoder,
   defaultCredentialTypes,
   isDefaultCredentialTypeValue,
 } from "./defaultCredentialType.js"
@@ -37,14 +36,14 @@ export function isDefaultCredential(c: Credential): c is DefaultCredential {
 }
 
 export const credentialBasicEncoder: BufferEncoder<CredentialBasic> = contramapBufferEncoders(
-  [defaultCredentialTypeValueEncoder, varLenDataEncoder],
+  [uint16Encoder, varLenDataEncoder],
   (c) => [c.credentialType, c.identity] as const,
 )
 
 export const encodeCredentialBasic: Encoder<CredentialBasic> = encode(credentialBasicEncoder)
 
 export const credentialX509Encoder: BufferEncoder<CredentialX509> = contramapBufferEncoders(
-  [defaultCredentialTypeValueEncoder, varLenTypeEncoder(varLenDataEncoder)],
+  [uint16Encoder, varLenTypeEncoder(varLenDataEncoder)],
   (c) => [c.credentialType, c.certificates] as const,
 )
 
