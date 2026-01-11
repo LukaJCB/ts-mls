@@ -14,6 +14,7 @@ import { encodeExternalSender } from "../../src/externalSender.js"
 import { AuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { createCustomCredential } from "../../src/customCredential.js"
+import { credentialTypes } from "../../src/credentialType.js"
 import { Extension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
@@ -88,7 +89,7 @@ describe("Proposal Validation", () => {
       const dianaCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("diana") }
       const diana = await generateKeyPackage(
         dianaCredential,
-        { ...defaultCapabilities(), credentials: ["basic"] },
+        { ...defaultCapabilities(), credentials: [credentialTypes.basic] },
         defaultLifetime,
         [],
         impl,
@@ -105,7 +106,7 @@ describe("Proposal Validation", () => {
               extensionData: encodeRequiredCapabilities({
                 extensionTypes: [],
                 proposalTypes: [],
-                credentialTypes: ["x509"],
+                credentialTypes: [credentialTypes.x509],
               }),
             },
           ],
@@ -187,7 +188,7 @@ describe("Proposal Validation", () => {
     const edwardCredential = { credentialType: "basic" as const, identity: new TextEncoder().encode("edward") }
     const edward = await generateKeyPackage(
       edwardCredential,
-      { ...defaultCapabilities(), credentials: ["basic"] },
+      { ...defaultCapabilities(), credentials: [credentialTypes.basic] },
       defaultLifetime,
       [],
       impl,

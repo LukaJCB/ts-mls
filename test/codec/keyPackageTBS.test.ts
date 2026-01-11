@@ -1,4 +1,5 @@
 import { encodeKeyPackageTBS, decodeKeyPackageTBS } from "../../src/keyPackage.js"
+import { credentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
@@ -49,7 +50,7 @@ describe("KeyPackageTBS roundtrip", () => {
           ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
           extensions: [7, 8, 9],
           proposals: [9, 10, 11],
-          credentials: ["basic" as const, "x509" as const],
+          credentials: [credentialTypes.basic, credentialTypes.x509],
         },
         leafNodeSource: "key_package" as const,
         lifetime: { notBefore: 1000n, notAfter: 2000n },

@@ -1,14 +1,24 @@
-import { encodeCredentialType, decodeCredentialType, CredentialTypeName } from "../../src/credentialType.js"
+import {
+  credentialTypes,
+  decodeCredentialType,
+  decodeCredentialTypeName,
+  encodeCredentialType,
+  encodeCredentialTypeName,
+  CredentialTypeName,
+} from "../../src/credentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
-describe("CredentialTypeName roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeCredentialType, decodeCredentialType)
+describe("CredentialType roundtrip", () => {
+  const roundtripValue = createRoundtripTest(encodeCredentialType, decodeCredentialType)
+  const roundtripName = createRoundtripTest(encodeCredentialTypeName, decodeCredentialTypeName)
 
   test("roundtrips basic", () => {
-    roundtrip("basic" as CredentialTypeName)
+    roundtripValue(credentialTypes.basic)
+    roundtripName("basic" as CredentialTypeName)
   })
 
   test("roundtrips x509", () => {
-    roundtrip("x509" as CredentialTypeName)
+    roundtripValue(credentialTypes.x509)
+    roundtripName("x509" as CredentialTypeName)
   })
 })

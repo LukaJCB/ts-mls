@@ -139,7 +139,7 @@ export { type Brand } from "./util/brand.js"
 export { type ContentTypeName } from "./contentType.js"
 export { type ProtocolVersionName, type ProtocolVersionValue } from "./protocolVersion.js"
 
-export { type CredentialTypeName } from "./credentialType.js"
+export { type CredentialTypeName, type CredentialTypeValue } from "./credentialType.js"
 export { type CredentialBasic, type CredentialX509 } from "./credential.js"
 
 export { type MLSContext, type CreateCommitOptions } from "./createCommit.js"

@@ -10,6 +10,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { Extension, ExtensionType } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { credentialTypes } from "../../src/credentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom GroupInfoExtensions %s`, async (cs) => {
   await customGroupInfoExtensionTest(cs as CiphersuiteName)
@@ -22,7 +23,7 @@ async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
 
   const capabilities: Capabilities = {
     extensions: [customExtensionType],
-    credentials: ["basic"],
+    credentials: [credentialTypes.basic],
     proposals: [],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],

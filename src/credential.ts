@@ -1,10 +1,15 @@
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CredentialTypeName, decodeCredentialType, credentialTypeEncoder } from "./credentialType.js"
+import {
+  CredentialTypeValue,
+  decodeCredentialTypeName,
+  credentialTypeEncoder,
+  credentialTypeNameEncoder,
+} from "./credentialType.js"
 
 /** @public */
-export type Credential = CredentialBasic | CredentialX509
+export type Credential = CredentialBasic | CredentialX509 | CredentialCustom
 
 /** @public */
 export interface CredentialBasic {
@@ -20,19 +25,19 @@ export interface CredentialX509 {
 
 /** @public */
 export interface CredentialCustom {
-  credentialType: CredentialTypeName
+  credentialType: CredentialTypeValue
   data: Uint8Array
 }
 
 export const credentialBasicEncoder: BufferEncoder<CredentialBasic> = contramapBufferEncoders(
-  [credentialTypeEncoder, varLenDataEncoder],
+  [credentialTypeNameEncoder, varLenDataEncoder],
   (c) => [c.credentialType, c.identity] as const,
 )
 
 export const encodeCredentialBasic: Encoder<CredentialBasic> = encode(credentialBasicEncoder)
 
 export const credentialX509Encoder: BufferEncoder<CredentialX509> = contramapBufferEncoders(
-  [credentialTypeEncoder, varLenTypeEncoder(varLenDataEncoder)],
+  [credentialTypeNameEncoder, varLenTypeEncoder(varLenDataEncoder)],
   (c) => [c.credentialType, c.certificates] as const,
 )
 
@@ -52,7 +57,7 @@ export const credentialEncoder: BufferEncoder<Credential> = (c) => {
     case "x509":
       return credentialX509Encoder(c)
     default:
-      return credentialCustomEncoder(c as CredentialCustom)
+      return credentialCustomEncoder(c)
   }
 }
 
@@ -69,7 +74,7 @@ const decodeCredentialX509: Decoder<CredentialX509> = mapDecoder(
 )
 
 export const decodeCredential: Decoder<Credential> = flatMapDecoder(
-  decodeCredentialType,
+  decodeCredentialTypeName,
   (credentialType): Decoder<Credential> => {
     switch (credentialType) {
       case "basic":

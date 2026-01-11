@@ -1,5 +1,5 @@
 import { Capabilities } from "./capabilities.js"
-import { CredentialTypeName } from "./credentialType.js"
+import { CredentialTypeValue } from "./credentialType.js"
 import { CiphersuiteId } from "./crypto/ciphersuite.js"
 import { Extension } from "./extension.js"
 
@@ -24,8 +24,8 @@ export function greaseCiphersuites(greaseConfig: GreaseConfig): CiphersuiteId[] 
   return grease(greaseConfig).map((n) => n as CiphersuiteId)
 }
 
-export function greaseCredentials(greaseConfig: GreaseConfig): CredentialTypeName[] {
-  return grease(greaseConfig).map((n) => n.toString() as CredentialTypeName)
+export function greaseCredentials(greaseConfig: GreaseConfig): CredentialTypeValue[] {
+  return grease(greaseConfig).map((n) => n as CredentialTypeValue)
 }
 
 export function greaseExtensions(greaseConfig: GreaseConfig): Extension[] {

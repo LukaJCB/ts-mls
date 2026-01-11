@@ -1,4 +1,5 @@
 import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode.js"
+import { credentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
@@ -28,7 +29,7 @@ const nontrivialLeafNode: LeafNode = {
     ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
     extensions: [7],
     proposals: [71],
-    credentials: ["basic"],
+    credentials: [credentialTypes.basic],
   },
   leafNodeSource: "commit",
   parentHash: new Uint8Array([9, 10]),

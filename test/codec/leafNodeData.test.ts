@@ -1,4 +1,5 @@
 import { encodeLeafNodeData, decodeLeafNodeData, LeafNodeData } from "../../src/leafNode.js"
+import { credentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
@@ -32,7 +33,7 @@ describe("LeafNodeData roundtrip", () => {
         ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
         extensions: [],
         proposals: [73, 101],
-        credentials: ["basic", "x509"],
+        credentials: [credentialTypes.basic, credentialTypes.x509],
       },
     }
     roundtrip(data)

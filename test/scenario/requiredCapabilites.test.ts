@@ -12,6 +12,7 @@ import { Extension } from "../../src/extension.js"
 import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requiredCapabilities.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { credentialTypes } from "../../src/credentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -22,13 +23,13 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
 
   const requiredCapabilities: RequiredCapabilities = {
     extensionTypes: [7, 8],
-    credentialTypes: ["x509", "basic"],
+    credentialTypes: [credentialTypes.x509, credentialTypes.basic],
     proposalTypes: [],
   }
 
   const capabilities: Capabilities = {
     extensions: [7, 8, 9],
-    credentials: ["x509", "basic"],
+    credentials: [credentialTypes.x509, credentialTypes.basic],
     proposals: [],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],
@@ -57,7 +58,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
 
   const minimalCapabilites: Capabilities = {
     extensions: [],
-    credentials: ["basic"],
+    credentials: [credentialTypes.basic],
     proposals: [],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],

@@ -1,4 +1,5 @@
 import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
+import { credentialTypes } from "../../src/credentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
@@ -40,7 +41,7 @@ const nontrivialKeyPackage: KeyPackage = {
       ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
       extensions: [8],
       proposals: [9],
-      credentials: ["basic"],
+      credentials: [credentialTypes.basic],
     },
     leafNodeSource: "key_package",
     lifetime: { notBefore: 1n, notAfter: 2n },

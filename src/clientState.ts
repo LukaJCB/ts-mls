@@ -102,7 +102,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
-import { CredentialTypeName } from "./credentialType.js"
+import { credentialTypeValueFromName, CredentialTypeValue } from "./credentialType.js"
 import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
 import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
@@ -476,7 +476,7 @@ export async function validateRatchetTree(
 ): Promise<MlsError | undefined> {
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
-  const credentialTypes = new Set<CredentialTypeName>()
+  const credentialTypes = new Set<CredentialTypeValue>()
   for (const [i, n] of tree.entries()) {
     const nodeIndex = toNodeIndex(i)
     if (n?.nodeType === "leaf") {
@@ -490,7 +490,10 @@ export async function validateRatchetTree(
       if (signatureKeys.has(signatureKey)) return new ValidationError("signature keys not unique")
       else signatureKeys.add(signatureKey)
 
-      credentialTypes.add(n.leaf.credential.credentialType)
+      {
+        const credentialType = n.leaf.credential.credentialType
+        credentialTypes.add(typeof credentialType === "number" ? credentialType : credentialTypeValueFromName(credentialType))
+      }
 
       const err =
         n.leaf.leafNodeSource === "key_package"
@@ -628,9 +631,14 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
   const signatureKeys = new Set<string>()
   for (const [nodeIndex, node] of tree.entries()) {
     if (node?.nodeType === "leaf") {
-      if (!node.leaf.capabilities.credentials.includes(leafNode.credential.credentialType)) {
+      
+        const credentialType = leafNode.credential.credentialType
+        const credentialTypeValue =
+          typeof credentialType === "number" ? credentialType : credentialTypeValueFromName(credentialType)
+        if (!node.leaf.capabilities.credentials.includes(credentialTypeValue)) {
         return new ValidationError("LeafNode has credential that is not supported by member of the group")
       }
+      
 
       const hpkeKey = bytesToBase64(node.leaf.hpkePublicKey)
       if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")

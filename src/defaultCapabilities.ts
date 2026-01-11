@@ -1,4 +1,5 @@
 import { Capabilities } from "./capabilities.js"
+import { credentialTypes, CredentialTypeValue } from "./credentialType.js"
 import { ciphersuites, CiphersuiteId } from "./crypto/ciphersuite.js"
 import { greaseCapabilities, defaultGreaseConfig } from "./grease.js"
 import { protocolVersions } from "./protocolVersion.js"
@@ -10,6 +11,6 @@ export function defaultCapabilities(): Capabilities {
     ciphersuites: Object.values(ciphersuites) as CiphersuiteId[],
     extensions: [],
     proposals: [],
-    credentials: ["basic", "x509"],
+    credentials: Object.values(credentialTypes) as CredentialTypeValue[],
   })
 }

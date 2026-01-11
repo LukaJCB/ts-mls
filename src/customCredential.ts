@@ -1,8 +1,8 @@
 import { Credential, CredentialCustom } from "./credential.js"
-import { CredentialTypeName } from "./credentialType.js"
+import { CredentialTypeValue } from "./credentialType.js"
 
-function createCustomCredentialType(credentialId: number): CredentialTypeName {
-  return credentialId.toString() as CredentialTypeName
+function createCustomCredentialType(credentialId: number): CredentialTypeValue {
+  return credentialId as CredentialTypeValue
 }
 
 export function createCustomCredential(credentialId: number, data: Uint8Array): Credential {

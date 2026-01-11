@@ -12,6 +12,7 @@ import { Capabilities } from "../../src/capabilities.js"
 import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src/index.js"
 import { UsageError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { credentialTypes } from "../../src/credentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
   await customProposalTest(cs as CiphersuiteName)
@@ -24,7 +25,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   const capabilities: Capabilities = {
     extensions: [],
-    credentials: ["basic"],
+    credentials: [credentialTypes.basic],
     proposals: [customProposalType],
     versions: [protocolVersions.mls10],
     ciphersuites: [ciphersuites[cipherSuite]],
