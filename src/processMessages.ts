@@ -28,7 +28,7 @@ import { emptyPskIndex, PskIndex } from "./pskIndex.js"
 import { PublicMessage } from "./publicMessage.js"
 import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree.js"
 import { createSecretTree } from "./secretTree.js"
-import { getSenderLeafNodeIndex, Sender } from "./sender.js"
+import { getSenderLeafNodeIndex, Sender, senderTypes } from "./sender.js"
 import { treeHashRoot } from "./treeHash.js"
 import {
   LeafIndex,
@@ -221,7 +221,7 @@ async function processCommit(
   if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
 
   const senderLeafIndex =
-    content.content.sender.senderType === "member" ? toLeafIndex(content.content.sender.leafIndex) : undefined
+    content.content.sender.senderType === senderTypes.member ? toLeafIndex(content.content.sender.leafIndex) : undefined
 
   const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, false, cs)
 
@@ -355,7 +355,7 @@ async function applyTreeUpdate(
   kdf: Kdf,
 ): Promise<[PrivateKeyPath, Uint8Array, RatchetTree]> {
   if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree] as const
-  if (sender.senderType === "member") {
+  if (sender.senderType === senderTypes.member) {
     const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(

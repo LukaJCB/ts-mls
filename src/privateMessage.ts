@@ -23,6 +23,7 @@ import {
   senderDataAADEncoder,
   expandSenderDataKey,
   expandSenderDataNonce,
+  senderTypes,
   SenderData,
   SenderDataAAD,
 } from "./sender.js"
@@ -202,7 +203,7 @@ export function toAuthenticatedContent(
       groupId: msg.groupId,
       epoch: msg.epoch,
       sender: {
-        senderType: "member",
+        senderType: senderTypes.member,
         leafIndex: senderLeafIndex,
       },
       authenticatedData: msg.authenticatedData,

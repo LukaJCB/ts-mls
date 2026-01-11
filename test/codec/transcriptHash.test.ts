@@ -6,11 +6,12 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { contentTypes } from "../../src/contentType.js"
+import { senderTypes } from "../../src/sender.js"
 
 const minimalContent: FramedContentCommit = {
   groupId: new Uint8Array([1]),
   epoch: 0n,
-  sender: { senderType: "member", leafIndex: 0 },
+  sender: { senderType: senderTypes.member, leafIndex: 0 },
   authenticatedData: new Uint8Array([2]),
   contentType: contentTypes.commit,
   commit: {

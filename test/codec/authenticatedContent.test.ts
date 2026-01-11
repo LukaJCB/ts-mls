@@ -1,6 +1,7 @@
 import { encodeAuthenticatedContent, decodeAuthenticatedContent } from "../../src/authenticatedContent.js"
 import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { senderTypes } from "../../src/sender.js"
 
 describe("AuthenticatedContent roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeAuthenticatedContent, decodeAuthenticatedContent)
@@ -12,7 +13,7 @@ describe("AuthenticatedContent roundtrip", () => {
         contentType: contentTypes.application,
         groupId: new Uint8Array([1]),
         epoch: 0n,
-        sender: { senderType: "member", leafIndex: 0 },
+        sender: { senderType: senderTypes.member, leafIndex: 0 },
         authenticatedData: new Uint8Array([2]),
         applicationData: new Uint8Array([3]),
       },
@@ -27,7 +28,7 @@ describe("AuthenticatedContent roundtrip", () => {
         contentType: contentTypes.commit,
         groupId: new Uint8Array([7, 8, 9]),
         epoch: 123n,
-        sender: { senderType: "external", senderIndex: 1 },
+        sender: { senderType: senderTypes.external, senderIndex: 1 },
         authenticatedData: new Uint8Array([10, 11, 12]),
         commit: { proposals: [], path: undefined },
       },

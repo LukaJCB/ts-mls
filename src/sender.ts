@@ -1,11 +1,11 @@
 import { decodeUint32, decodeUint64, decodeUint8, uint32Encoder, uint64Encoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { enumNumberParse } from "./util/enumHelpers.js"
 
 /** @public */
 export const senderTypes = {
@@ -19,18 +19,15 @@ export const senderTypes = {
 export type SenderTypeName = keyof typeof senderTypes
 export type SenderTypeValue = (typeof senderTypes)[SenderTypeName]
 
-export const senderTypeEncoder: BufferEncoder<SenderTypeName> = contramapBufferEncoder(
-  uint8Encoder,
-  (t) => senderTypes[t],
-)
+export const senderTypeEncoder: BufferEncoder<SenderTypeValue> = uint8Encoder
 
-export const encodeSenderType: Encoder<SenderTypeName> = encode(senderTypeEncoder)
+export const encodeSenderType: Encoder<SenderTypeValue> = encode(senderTypeEncoder)
 
-export const decodeSenderType: Decoder<SenderTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(senderTypes))
+export const decodeSenderType: Decoder<SenderTypeValue> = mapDecoderOption(decodeUint8, enumNumberParse(senderTypes))
 
 /** @public */
 export interface SenderMember {
-  senderType: "member"
+  senderType: typeof senderTypes.member
   leafIndex: number
 }
 
@@ -39,18 +36,18 @@ export type SenderNonMember = SenderExternal | SenderNewMemberProposal | SenderN
 
 /** @public */
 export interface SenderExternal {
-  senderType: "external"
+  senderType: typeof senderTypes.external
   senderIndex: number
 }
 
 /** @public */
 export interface SenderNewMemberProposal {
-  senderType: "new_member_proposal"
+  senderType: typeof senderTypes.new_member_proposal
 }
 
 /** @public */
 export interface SenderNewMemberCommit {
-  senderType: "new_member_commit"
+  senderType: typeof senderTypes.new_member_commit
 }
 
 /** @public */
@@ -58,18 +55,18 @@ export type Sender = SenderMember | SenderNonMember
 
 export const senderEncoder: BufferEncoder<Sender> = (s) => {
   switch (s.senderType) {
-    case "member":
+    case senderTypes.member:
       return contramapBufferEncoders(
         [senderTypeEncoder, uint32Encoder],
         (s: SenderMember) => [s.senderType, s.leafIndex] as const,
       )(s)
-    case "external":
+    case senderTypes.external:
       return contramapBufferEncoders(
         [senderTypeEncoder, uint32Encoder],
         (s: SenderExternal) => [s.senderType, s.senderIndex] as const,
       )(s)
-    case "new_member_proposal":
-    case "new_member_commit":
+    case senderTypes.new_member_proposal:
+    case senderTypes.new_member_commit:
       return senderTypeEncoder(s.senderType)
   }
 }
@@ -78,24 +75,24 @@ export const encodeSender: Encoder<Sender> = encode(senderEncoder)
 
 export const decodeSender: Decoder<Sender> = flatMapDecoder(decodeSenderType, (senderType): Decoder<Sender> => {
   switch (senderType) {
-    case "member":
+    case senderTypes.member:
       return mapDecoder(decodeUint32, (leafIndex) => ({
         senderType,
         leafIndex,
       }))
-    case "external":
+    case senderTypes.external:
       return mapDecoder(decodeUint32, (senderIndex) => ({
         senderType,
         senderIndex,
       }))
-    case "new_member_proposal":
+    case senderTypes.new_member_proposal:
       return mapDecoder(
         () => [undefined, 0],
         () => ({
           senderType,
         }),
       )
-    case "new_member_commit":
+    case senderTypes.new_member_commit:
       return mapDecoder(
         () => [undefined, 0],
         () => ({
@@ -106,7 +103,7 @@ export const decodeSender: Decoder<Sender> = flatMapDecoder(decodeSenderType, (s
 })
 
 export function getSenderLeafNodeIndex(sender: Sender): number | undefined {
-  return sender.senderType === "member" ? sender.leafIndex : undefined
+  return sender.senderType === senderTypes.member ? sender.leafIndex : undefined
 }
 
 export interface SenderData {

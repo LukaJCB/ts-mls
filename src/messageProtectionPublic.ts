@@ -17,7 +17,7 @@ import { CryptoVerificationError, UsageError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
 import { ExternalPublicMessage, findSignaturePublicKey, PublicMessage } from "./publicMessage.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { SenderNonMember } from "./sender.js"
+import { senderTypes, SenderNonMember } from "./sender.js"
 import { contentTypes } from "./contentType.js"
 
 export interface ProtectProposalPublicResult {
@@ -36,7 +36,7 @@ export async function protectProposalPublic(
   const framedContent: FramedContent = {
     groupId: groupContext.groupId,
     epoch: groupContext.epoch,
-    sender: { senderType: "member", leafIndex },
+    sender: { senderType: senderTypes.member, leafIndex },
     contentType: contentTypes.proposal,
     authenticatedData,
     proposal,
@@ -46,7 +46,7 @@ export async function protectProposalPublic(
     protocolVersion: groupContext.version,
     wireformat: "mls_public_message",
     content: framedContent,
-    senderType: "member",
+    senderType: senderTypes.member,
     context: groupContext,
   } as const
 
@@ -108,7 +108,7 @@ export async function protectPublicMessage(
   if (content.content.contentType === contentTypes.application)
     throw new UsageError("Can't make an application message public")
 
-  if (content.content.sender.senderType == "member") {
+  if (content.content.sender.senderType === senderTypes.member) {
     const authenticatedContent: AuthenticatedContentTBM = {
       contentTbs: toTbs(content.content, "mls_public_message", groupContext),
       auth: content.auth,
@@ -118,7 +118,7 @@ export async function protectPublicMessage(
     return {
       content: content.content,
       auth: content.auth,
-      senderType: "member",
+      senderType: senderTypes.member,
       membershipTag: tag,
     }
   }
@@ -145,7 +145,7 @@ export async function unprotectPublicMessage(
   if (msg.content.contentType === contentTypes.application)
     throw new UsageError("Can't make an application message public")
 
-  if (msg.senderType === "member") {
+  if (msg.senderType === senderTypes.member) {
     const authenticatedContent: AuthenticatedContentTBM = {
       contentTbs: toTbs(msg.content, "mls_public_message", groupContext),
       auth: msg.auth,

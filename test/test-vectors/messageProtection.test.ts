@@ -26,6 +26,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { nodeTypes } from "../../src/nodeType.js"
 import { contentTypes } from "../../src/contentType.js"
+import { senderTypes } from "../../src/sender.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -144,7 +145,7 @@ async function protectThenUnprotectCommitPublic(data: MessageProtectionData, gc:
     gc,
     "mls_public_message",
     c[0],
-    { leafIndex: 1, senderType: "member" },
+    { leafIndex: 1, senderType: senderTypes.member },
     new Uint8Array(),
     hexToBytes(data.signature_priv),
     impl.signature,
@@ -237,7 +238,7 @@ async function publicApplicationFails(data: MessageProtectionData, gc: GroupCont
       ...unprotected.content.content,
       contentType: contentTypes.application,
       groupId: gc.groupId,
-      sender: { leafIndex: 0, senderType: "member" },
+      sender: { leafIndex: 0, senderType: senderTypes.member },
       epoch: gc.epoch,
       authenticatedData: new Uint8Array(),
     },
@@ -375,7 +376,7 @@ async function protectThenUnprotectCommit(data: MessageProtectionData, gc: Group
     gc,
     "mls_private_message",
     c[0],
-    { leafIndex: 1, senderType: "member" },
+    { leafIndex: 1, senderType: senderTypes.member },
     new Uint8Array(),
     hexToBytes(data.signature_priv),
     impl.signature,

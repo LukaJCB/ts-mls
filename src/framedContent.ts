@@ -27,6 +27,7 @@ import {
   SenderNewMemberCommit,
   SenderNewMemberProposal,
 } from "./sender.js"
+import { senderTypes } from "./sender.js"
 
 /** @public */
 export type FramedContentInfo = FramedContentApplicationData | FramedContentProposalData | FramedContentCommitData
@@ -157,18 +158,18 @@ export const decodeFramedContent: Decoder<FramedContent> = mapDecoders(
 )
 
 type SenderInfo = SenderInfoMember | SenderInfoNewMemberCommit | SenderInfoExternal | SenderInfoNewMemberProposal
-type SenderInfoMember = { senderType: "member"; context: GroupContext }
-type SenderInfoNewMemberCommit = { senderType: "new_member_commit"; context: GroupContext }
-type SenderInfoExternal = { senderType: "external" }
-type SenderInfoNewMemberProposal = { senderType: "new_member_proposal" }
+type SenderInfoMember = { senderType: typeof senderTypes.member; context: GroupContext }
+type SenderInfoNewMemberCommit = { senderType: typeof senderTypes.new_member_commit; context: GroupContext }
+type SenderInfoExternal = { senderType: typeof senderTypes.external }
+type SenderInfoNewMemberProposal = { senderType: typeof senderTypes.new_member_proposal }
 
 export const senderInfoEncoder: BufferEncoder<SenderInfo> = (info) => {
   switch (info.senderType) {
-    case "member":
-    case "new_member_commit":
+    case senderTypes.member:
+    case senderTypes.new_member_commit:
       return groupContextEncoder(info.context)
-    case "external":
-    case "new_member_proposal":
+    case senderTypes.external:
+    case senderTypes.new_member_proposal:
       return encVoid
   }
 }
@@ -326,7 +327,7 @@ export async function createContentCommitSignature(
       sender,
       authenticatedData,
     },
-    senderType: "member",
+    senderType: sender.senderType,
     context: groupContext,
   }
 

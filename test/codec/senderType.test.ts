@@ -1,22 +1,22 @@
-import { encodeSenderType, decodeSenderType, SenderTypeName } from "../../src/sender.js"
+import { decodeSenderType, encodeSenderType, senderTypes, SenderTypeValue } from "../../src/sender.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
-describe("SenderTypeName roundtrip", () => {
+describe("SenderTypeValue roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeSenderType, decodeSenderType)
 
   test("roundtrips member", () => {
-    roundtrip("member" as SenderTypeName)
+    roundtrip(senderTypes.member as SenderTypeValue)
   })
 
   test("roundtrips external", () => {
-    roundtrip("external" as SenderTypeName)
+    roundtrip(senderTypes.external as SenderTypeValue)
   })
 
   test("roundtrips new_member_proposal", () => {
-    roundtrip("new_member_proposal" as SenderTypeName)
+    roundtrip(senderTypes.new_member_proposal as SenderTypeValue)
   })
 
   test("roundtrips new_member_commit", () => {
-    roundtrip("new_member_commit" as SenderTypeName)
+    roundtrip(senderTypes.new_member_commit as SenderTypeValue)
   })
 })

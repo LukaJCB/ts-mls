@@ -9,6 +9,7 @@ import { UsageError, ValidationError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
+import { senderTypes } from "./sender.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 /** @public */
@@ -37,7 +38,7 @@ export async function proposeAddExternal(
     groupInfo.groupContext,
     authenticatedData,
     proposal,
-    { senderType: "new_member_proposal" },
+    { senderType: senderTypes.new_member_proposal },
     cs,
   )
 
@@ -74,7 +75,7 @@ export async function proposeExternal(
     groupInfo.groupContext,
     authenticatedData,
     proposal,
-    { senderType: "external", senderIndex: externalSenderExtensionIndex },
+    { senderType: senderTypes.external, senderIndex: externalSenderExtensionIndex },
     cs,
   )
 

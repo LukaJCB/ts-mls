@@ -228,6 +228,7 @@ export { type Sender } from "./sender.js"
 export {
   senderTypes,
   type SenderTypeName,
+  type SenderTypeValue,
   type SenderMember,
   type SenderNonMember,
   type SenderExternal,
@@ -247,6 +248,6 @@ export { type ProposalOrRefProposal, type ProposalOrRefProposalRef } from "./pro
 
 export { type PSKInfoExternal, type PSKInfoResumption } from "./presharedkey.js"
 
-export { resumptionPSKUsages, type ResumptionPSKUsageName } from "./presharedkey.js"
+export { resumptionPSKUsages, type ResumptionPSKUsageName, type ResumptionPSKUsageValue } from "./presharedkey.js"
 
 export { type ParentNode } from "./parentNode.js"

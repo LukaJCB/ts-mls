@@ -13,7 +13,7 @@ import { CryptoProvider } from "./crypto/provider.js"
 import { Extension } from "./extension.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { UsageError } from "./mlsError.js"
-import { ResumptionPSKUsageName, PreSharedKeyID } from "./presharedkey.js"
+import { resumptionPSKUsages, type ResumptionPSKUsageValue, PreSharedKeyID } from "./presharedkey.js"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { protocolVersions, ProtocolVersionName } from "./protocolVersion.js"
@@ -70,7 +70,7 @@ export async function reinitCreateNewGroup(
     add: { keyPackage: kp },
   }))
 
-  const psk = makeResumptionPsk(state, "reinit", cs)
+  const psk = makeResumptionPsk(state, resumptionPSKUsages.reinit, cs)
 
   const resumptionPsk: Proposal = {
     proposalType: defaultProposalTypes.psk,
@@ -93,7 +93,7 @@ export async function reinitCreateNewGroup(
 
 export function makeResumptionPsk(
   state: ClientState,
-  usage: ResumptionPSKUsageName,
+  usage: ResumptionPSKUsageValue,
   cs: CiphersuiteImpl,
 ): { id: PreSharedKeyID; secret: Uint8Array } {
   const secret = state.keySchedule.resumptionPsk
@@ -120,7 +120,7 @@ export async function branchGroup(
   newGroupId: Uint8Array,
   cs: CiphersuiteImpl,
 ): Promise<CreateCommitResult> {
-  const resumptionPsk = makeResumptionPsk(state, "branch", cs)
+  const resumptionPsk = makeResumptionPsk(state, resumptionPSKUsages.branch, cs)
 
   const pskSearch = makePskIndex(state, {})
 

@@ -13,7 +13,7 @@ import {
   KeySchedule,
   keyScheduleEncoder,
 } from "./keySchedule.js"
-import { pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
+import { pskIdEncoder, PreSharedKeyID, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -990,7 +990,7 @@ export async function joinGroupWithExtensions(
 
     if (gi.groupContext.epoch !== 1n) throw new ValidationError("Resumption must be started at epoch 1")
 
-    if (resumptionPsk.usage === "reinit") {
+    if (resumptionPsk.usage === resumptionPSKUsages.reinit) {
       if (resumingFromState.groupActiveState.kind !== "suspendedPendingReinit")
         throw new ValidationError("Found reinit psk but no old suspended clientState")
 

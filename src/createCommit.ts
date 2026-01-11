@@ -20,6 +20,7 @@ import {
   FramedContentCommit,
 } from "./framedContent.js"
 import { contentTypes } from "./contentType.js"
+import { senderTypes } from "./sender.js"
 import { GroupContext, groupContextEncoder } from "./groupContext.js"
 import {
   GroupInfo,
@@ -150,7 +151,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     state.groupContext,
     wireformat,
     { proposals: allProposals, path: updatePath },
-    { senderType: "member", leafIndex: state.privatePath.leafIndex },
+    { senderType: senderTypes.member, leafIndex: state.privatePath.leafIndex },
     authenticatedData,
     state.signaturePrivateKey,
     cipherSuite.signature,
@@ -595,7 +596,7 @@ export async function joinGroupExternal(
     "mls_public_message",
     { proposals: proposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p })), path: updatePath },
     {
-      senderType: "new_member_commit",
+      senderType: senderTypes.new_member_commit,
     },
     authenticatedData,
     privateKeys.signaturePrivateKey,

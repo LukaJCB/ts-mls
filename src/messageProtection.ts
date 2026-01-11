@@ -20,7 +20,7 @@ import {
 } from "./privateMessage.js"
 import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree.js"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
-import { SenderData, SenderDataAAD } from "./sender.js"
+import { senderTypes, SenderData, SenderDataAAD } from "./sender.js"
 import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
@@ -55,12 +55,12 @@ export async function protectApplicationData(
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
       sender: {
-        senderType: "member",
+        senderType: senderTypes.member,
         leafIndex: leafIndex,
       },
       authenticatedData,
     },
-    senderType: "member",
+    senderType: senderTypes.member,
     context: groupContext,
   }
 
@@ -112,12 +112,12 @@ export async function protectProposal(
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
       sender: {
-        senderType: "member" as const,
+        senderType: senderTypes.member,
         leafIndex,
       },
       authenticatedData,
     },
-    senderType: "member" as const,
+    senderType: senderTypes.member,
     context: groupContext,
   }
 

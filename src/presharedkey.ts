@@ -5,7 +5,7 @@ import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { enumNumberParse, enumNumberToKey } from "./util/enumHelpers.js"
 
 export const pskTypes = {
   external: 1,
@@ -29,18 +29,16 @@ export const resumptionPSKUsages = {
 
 /** @public */
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages
-export type ResumptionPSKUsage = (typeof resumptionPSKUsages)[ResumptionPSKUsageName]
+/** @public */
+export type ResumptionPSKUsageValue = (typeof resumptionPSKUsages)[ResumptionPSKUsageName]
 
-export const resumptionPSKUsageEncoder: BufferEncoder<ResumptionPSKUsageName> = contramapBufferEncoder(
-  uint8Encoder,
-  (u) => resumptionPSKUsages[u],
-)
+export const resumptionPSKUsageEncoder: BufferEncoder<ResumptionPSKUsageValue> = uint8Encoder
 
-export const encodeResumptionPSKUsage: Encoder<ResumptionPSKUsageName> = encode(resumptionPSKUsageEncoder)
+export const encodeResumptionPSKUsage: Encoder<ResumptionPSKUsageValue> = encode(resumptionPSKUsageEncoder)
 
-export const decodeResumptionPSKUsage: Decoder<ResumptionPSKUsageName> = mapDecoderOption(
+export const decodeResumptionPSKUsage: Decoder<ResumptionPSKUsageValue> = mapDecoderOption(
   decodeUint8,
-  enumNumberToKey(resumptionPSKUsages),
+  enumNumberParse(resumptionPSKUsages),
 )
 
 /** @public */
@@ -51,7 +49,7 @@ export interface PSKInfoExternal {
 /** @public */
 export interface PSKInfoResumption {
   psktype: "resumption"
-  usage: ResumptionPSKUsageName
+  usage: ResumptionPSKUsageValue
   pskGroupId: Uint8Array
   pskEpoch: bigint
 }

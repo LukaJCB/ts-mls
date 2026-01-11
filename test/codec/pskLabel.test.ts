@@ -1,4 +1,4 @@
-import { encodePskLabel, decodePskLabel } from "../../src/presharedkey.js"
+import { decodePskLabel, encodePskLabel, resumptionPSKUsages } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PSKLabel roundtrip", () => {
@@ -16,7 +16,7 @@ describe("PSKLabel roundtrip", () => {
     roundtrip({
       id: {
         psktype: "resumption",
-        usage: "application",
+        usage: resumptionPSKUsages.application,
         pskGroupId: new Uint8Array([6, 7, 8]),
         pskEpoch: 123n,
         pskNonce: new Uint8Array([9, 10, 11, 12]),
