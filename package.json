@@ -72,7 +72,7 @@
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "typescript-docs-verifier": "3.0.1",
-    "typescript-eslint": "8.52.0",
+    "typescript-eslint": "8.53.0",
     "vitest": "4.0.16"
   },
   "repository": {
