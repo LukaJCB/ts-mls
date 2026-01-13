@@ -1,6 +1,6 @@
 import { Capabilities } from "./capabilities.js"
-import { CredentialTypeName } from "./credentialType.js"
-import { CiphersuiteName } from "./crypto/ciphersuite.js"
+
+import { CiphersuiteId } from "./crypto/ciphersuite.js"
 import { Extension } from "./extension.js"
 
 export const greaseValues = [
@@ -20,12 +20,12 @@ export function grease(greaseConfig: GreaseConfig): number[] {
   return greaseValues.filter(() => greaseConfig.probabilityPerGreaseValue > Math.random())
 }
 
-export function greaseCiphersuites(greaseConfig: GreaseConfig): CiphersuiteName[] {
-  return grease(greaseConfig).map((n) => n.toString() as CiphersuiteName)
+export function greaseCiphersuites(greaseConfig: GreaseConfig): CiphersuiteId[] {
+  return grease(greaseConfig).map((n) => n as CiphersuiteId)
 }
 
-export function greaseCredentials(greaseConfig: GreaseConfig): CredentialTypeName[] {
-  return grease(greaseConfig).map((n) => n.toString() as CredentialTypeName)
+export function greaseCredentials(greaseConfig: GreaseConfig): number[] {
+  return grease(greaseConfig)
 }
 
 export function greaseExtensions(greaseConfig: GreaseConfig): Extension[] {

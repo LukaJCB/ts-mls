@@ -1,15 +1,17 @@
 import { encodeFramedContent, decodeFramedContent } from "../../src/framedContent.js"
+import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { senderTypes } from "../../src/sender.js"
 
 describe("FramedContent roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeFramedContent, decodeFramedContent)
 
   test("roundtrips application", () => {
     roundtrip({
-      contentType: "application",
+      contentType: contentTypes.application,
       groupId: new Uint8Array([1]),
       epoch: 0n,
-      sender: { senderType: "member", leafIndex: 0 },
+      sender: { senderType: senderTypes.member, leafIndex: 0 },
       authenticatedData: new Uint8Array([2]),
       applicationData: new Uint8Array([3]),
     })
@@ -17,10 +19,10 @@ describe("FramedContent roundtrip", () => {
 
   test("roundtrips commit", () => {
     roundtrip({
-      contentType: "commit",
+      contentType: contentTypes.commit,
       groupId: new Uint8Array([4, 5]),
       epoch: 1n,
-      sender: { senderType: "external", senderIndex: 1 },
+      sender: { senderType: senderTypes.external, senderIndex: 1 },
       authenticatedData: new Uint8Array([6, 7]),
       commit: { proposals: [], path: undefined },
     })

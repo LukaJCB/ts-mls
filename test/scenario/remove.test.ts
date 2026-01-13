@@ -3,6 +3,7 @@ import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -12,7 +13,8 @@ import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.j
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
-
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
@@ -20,28 +22,37 @@ test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
 async function remove(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
   }
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },
@@ -82,7 +93,7 @@ async function remove(cipherSuite: CiphersuiteName) {
   expect(charlieGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
   const removeBobProposal: ProposalRemove = {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: {
       removed: bobGroup.privatePath.leafIndex,
     },
@@ -100,7 +111,8 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   aliceGroup = removeBobCommitResult.newState
 
-  if (removeBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const bobProcessCommitResult = await processPrivateMessage(
     bobGroup,

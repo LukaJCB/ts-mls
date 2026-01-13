@@ -1,10 +1,15 @@
 import { encodeLeafNode, decodeLeafNode, LeafNode } from "../../src/leafNode.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 const minimalLeafNode: LeafNode = {
   hpkePublicKey: new Uint8Array([]),
   signaturePublicKey: new Uint8Array([]),
-  credential: { credentialType: "basic", identity: new Uint8Array([]) },
+  credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([]) },
   capabilities: {
     versions: [],
     ciphersuites: [],
@@ -12,7 +17,7 @@ const minimalLeafNode: LeafNode = {
     proposals: [],
     credentials: [],
   },
-  leafNodeSource: "update",
+  leafNodeSource: leafNodeSources.update,
   extensions: [],
   signature: new Uint8Array([]),
 }
@@ -20,17 +25,17 @@ const minimalLeafNode: LeafNode = {
 const nontrivialLeafNode: LeafNode = {
   hpkePublicKey: new Uint8Array([1, 2, 3]),
   signaturePublicKey: new Uint8Array([4, 5, 6]),
-  credential: { credentialType: "basic", identity: new Uint8Array([7, 8]) },
+  credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([7, 8]) },
   capabilities: {
-    versions: ["mls10"],
-    ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519"],
+    versions: [protocolVersions.mls10],
+    ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
     extensions: [7],
     proposals: [71],
-    credentials: ["basic"],
+    credentials: [defaultCredentialTypes.basic],
   },
-  leafNodeSource: "commit",
+  leafNodeSource: leafNodeSources.commit,
   parentHash: new Uint8Array([9, 10]),
-  extensions: [{ extensionType: "ratchet_tree", extensionData: new Uint8Array([11, 12]) }],
+  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([11, 12]) }],
   signature: new Uint8Array([13, 14]),
 }
 

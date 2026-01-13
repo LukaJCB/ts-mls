@@ -13,40 +13,44 @@ import {
 } from "./framedContent.js"
 import { GroupContext } from "./groupContext.js"
 import { CodecError, ValidationError } from "./mlsError.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
-import { SenderTypeName } from "./sender.js"
+import { senderTypes, SenderTypeValue } from "./sender.js"
 import { toLeafIndex } from "./treemath.js"
+import { isDefaultProposal } from "./proposal.js"
+import { contentTypes } from "./contentType.js"
 
 /** @public */
 export type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMemberOther
 /** @public */
-export type PublicMessageInfoMember = { senderType: "member"; membershipTag: Uint8Array }
+export type PublicMessageInfoMember = { senderType: typeof senderTypes.member; membershipTag: Uint8Array }
 /** @public */
-export type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeName, "member"> }
+export type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeValue, typeof senderTypes.member> }
 
 export const publicMessageInfoEncoder: BufferEncoder<PublicMessageInfo> = (info) => {
   switch (info.senderType) {
-    case "member":
+    case senderTypes.member:
       return varLenDataEncoder(info.membershipTag)
-    case "external":
-    case "new_member_proposal":
-    case "new_member_commit":
+    case senderTypes.external:
+    case senderTypes.new_member_proposal:
+    case senderTypes.new_member_commit:
       return encVoid
   }
 }
 
 export const encodePublicMessageInfo: Encoder<PublicMessageInfo> = encode(publicMessageInfoEncoder)
 
-export function decodePublicMessageInfo(senderType: SenderTypeName): Decoder<PublicMessageInfo> {
+export function decodePublicMessageInfo(senderType: SenderTypeValue): Decoder<PublicMessageInfo> {
   switch (senderType) {
-    case "member":
+    case senderTypes.member:
       return mapDecoder(decodeVarLenData, (membershipTag) => ({
         senderType,
         membershipTag,
       }))
-    case "external":
-    case "new_member_proposal":
-    case "new_member_commit":
+    case senderTypes.external:
+    case senderTypes.new_member_proposal:
+    case senderTypes.new_member_commit:
       return succeedDecoder({ senderType })
   }
 }
@@ -80,22 +84,25 @@ export function findSignaturePublicKey(
   framedContent: FramedContent,
 ): Uint8Array {
   switch (framedContent.sender.senderType) {
-    case "member":
+    case senderTypes.member:
       return getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(framedContent.sender.leafIndex))
-    case "external": {
+    case senderTypes.external: {
       const sender = senderFromExtension(groupContext.extensions, framedContent.sender.senderIndex)
       if (sender === undefined) throw new ValidationError("Received external but no external_sender extension")
       return sender.signaturePublicKey
     }
-    case "new_member_proposal":
-      if (framedContent.contentType !== "proposal")
+    case senderTypes.new_member_proposal:
+      if (framedContent.contentType !== contentTypes.proposal)
         throw new ValidationError("Received new_member_proposal but contentType is not proposal")
-      if (framedContent.proposal.proposalType !== "add")
+      if (
+        !isDefaultProposal(framedContent.proposal) ||
+        framedContent.proposal.proposalType !== defaultProposalTypes.add
+      )
         throw new ValidationError("Received new_member_proposal but proposalType was not add")
 
       return framedContent.proposal.add.keyPackage.leafNode.signaturePublicKey
-    case "new_member_commit": {
-      if (framedContent.contentType !== "commit")
+    case senderTypes.new_member_commit: {
+      if (framedContent.contentType !== contentTypes.commit)
         throw new ValidationError("Received new_member_commit but contentType is not commit")
 
       if (framedContent.commit.path === undefined) throw new ValidationError("Commit contains no update path")
@@ -105,7 +112,9 @@ export function findSignaturePublicKey(
 }
 
 export function senderFromExtension(extensions: Extension[], senderIndex: number): ExternalSender | undefined {
-  const externalSenderExtensions = extensions.filter((ex) => ex.extensionType === "external_senders")
+  const externalSenderExtensions = extensions.filter(
+    (ex) => ex.extensionType === defaultExtensionTypes.external_senders,
+  )
 
   const externalSenderExtension = externalSenderExtensions[senderIndex]
 

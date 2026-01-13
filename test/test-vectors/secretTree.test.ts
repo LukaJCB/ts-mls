@@ -6,6 +6,7 @@ import { expandSenderDataKey, expandSenderDataNonce, ReuseGuard } from "../../sr
 import { createSecretTree, ratchetToGeneration } from "../../src/secretTree.js"
 import { toLeafIndex } from "../../src/treemath.js"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
+import { contentTypes } from "../../src/contentType.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -50,7 +51,7 @@ async function testSecretTree(
     const leafIndex = toLeafIndex(index)
     for (const gen of leaf) {
       const senderData = { leafIndex, generation: gen.generation, reuseGuard: new Uint8Array(4) as ReuseGuard }
-      const app = await ratchetToGeneration(tree, senderData, "application", defaultKeyRetentionConfig, impl)
+      const app = await ratchetToGeneration(tree, senderData, contentTypes.application, defaultKeyRetentionConfig, impl)
 
       expect(app.generation).toBe(gen.generation)
       // application_key = application_ratchet_key_[i]_[generation]
@@ -58,7 +59,13 @@ async function testSecretTree(
       // application_nonce = application_ratchet_nonce_[i]_[generation]
       expect(app.nonce).toStrictEqual(hexToBytes(gen.application_nonce))
 
-      const handshake = await ratchetToGeneration(app.newTree, senderData, "commit", defaultKeyRetentionConfig, impl)
+      const handshake = await ratchetToGeneration(
+        app.newTree,
+        senderData,
+        contentTypes.commit,
+        defaultKeyRetentionConfig,
+        impl,
+      )
 
       expect(handshake.generation).toBe(gen.generation)
       //handshake_key = handshake_ratchet_key_[i]_[generation]

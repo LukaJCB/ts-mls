@@ -6,11 +6,13 @@ import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl 
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 import { randomInt } from "crypto"
 
 test.concurrent.each(Object.keys(ciphersuites))(
@@ -28,7 +30,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
   const groupId = new TextEncoder().encode("dynamic-group")
 
   const makeCredential = (name: string): Credential => ({
-    credentialType: "basic",
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode(name),
   })
 
@@ -88,7 +90,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
     const removed = memberStates[removedIndex]!
 
     const removeProposal: ProposalRemove = {
-      proposalType: "remove",
+      proposalType: defaultProposalTypes.remove,
       remove: {
         removed: removed.state.privatePath.leafIndex,
       },
@@ -104,7 +106,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       },
     )
 
-    if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+    if (commitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
     remover.state = commitResult.newState
 
     // Apply the commit to all members (except removed and remover)
@@ -133,7 +135,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
 async function addMember(memberStates: MemberState[], index: number, impl: CiphersuiteImpl, adderIndex = 0) {
   const newName = `member-${index}`
   const newCred = {
-    credentialType: "basic" as const,
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode(newName),
   }
   const newKP = await generateKeyPackage(newCred, defaultCapabilities(), defaultLifetime, [], impl)
@@ -141,7 +143,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
   const adder = memberStates[adderIndex]!
 
   const addProposal: ProposalAdd = {
-    proposalType: "add" as const,
+    proposalType: defaultProposalTypes.add,
     add: { keyPackage: newKP.publicPackage },
   }
 
@@ -155,7 +157,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     },
   )
 
-  if (commitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (commitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
   adder.state = commitResult.newState
 
@@ -196,7 +198,8 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
 
   updater.state = emptyCommitResult.newState
 
-  if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   // Update all existing members (including adder)
   for (let i = 0; i < memberStates.length; i++) {

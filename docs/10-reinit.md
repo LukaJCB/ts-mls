@@ -25,7 +25,9 @@ This scenario demonstrates how a group can be reinitialized with a new group ID 
 import {
   createCommit,
   Credential,
+  defaultCredentialTypes,
   createGroup,
+  defaultProposalTypes,
   emptyPskIndex,
   joinGroup,
   joinGroupFromReinit,
@@ -39,22 +41,29 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // Alice adds Bob (epoch 1)
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
@@ -76,7 +85,8 @@ const newGroupId = new TextEncoder().encode("new-group1")
 const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", newCiphersuite, [], impl)
 aliceGroup = reinitCommitResult.newState
 
-if (reinitCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // Bob processes the reinit commit and prepares to join the new group
 const processReinitResult = await processPrivateMessage(

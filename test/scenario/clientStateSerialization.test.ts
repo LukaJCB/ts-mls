@@ -5,6 +5,7 @@ import {
   createGroup,
   Credential,
   defaultCapabilities,
+  defaultCredentialTypes,
   defaultLifetime,
   generateKeyPackage,
   getCiphersuiteFromName,
@@ -13,6 +14,7 @@ import {
   decodeGroupState,
   encodeGroupState,
   createApplicationMessage,
+  defaultProposalTypes,
 } from "../../src/index.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serialization round-trip %s", async (cs) => {
@@ -23,7 +25,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = {
-    credentialType: "basic",
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
 
@@ -47,21 +49,27 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   expect(firstState).toEqual(decoded[0])
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
   }
 
   const addCharlieProposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },

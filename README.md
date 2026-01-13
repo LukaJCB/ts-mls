@@ -73,6 +73,8 @@ import {
   createApplicationMessage,
   createCommit,
   createGroup,
+  defaultProposalTypes,
+  defaultCredentialTypes,
   joinGroup,
   processPrivateMessage,
   getCiphersuiteImpl,
@@ -84,6 +86,8 @@ import {
   generateKeyPackage,
   encodeMlsMessage,
   decodeMlsMessage,
+  protocolVersions,
+  wireformats,
   Proposal,
   zeroOutUint8Array,
 } from "ts-mls"
@@ -91,7 +95,10 @@ import {
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
 
 // alice generates her key package
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 const groupId = new TextEncoder().encode("group1")
@@ -100,24 +107,27 @@ const groupId = new TextEncoder().encode("group1")
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
 // bob generates his key package
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // bob sends keyPackage to alice
 const keyPackageMessage = encodeMlsMessage({
   keyPackage: bob.publicPackage,
-  wireformat: "mls_key_package",
-  version: "mls10",
+  wireformat: wireformats.mls_key_package,
+  version: protocolVersions.mls10,
 })
 
 // alice decodes bob's keyPackage
 const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
 
-if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expected key package")
+if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
 // alice creates proposal to add bob
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: {
     keyPackage: decodedKeyPackage.keyPackage,
   },
@@ -134,14 +144,14 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 // alice sends welcome message to bob
 const encodedWelcome = encodeMlsMessage({
   welcome: commitResult.welcome!,
-  wireformat: "mls_welcome",
-  version: "mls10",
+  wireformat: wireformats.mls_welcome,
+  version: protocolVersions.mls10,
 })
 
 // bob decodes the welcome message
 const decodedWelcome = decodeMlsMessage(encodedWelcome, 0)![0]
 
-if (decodedWelcome.wireformat !== "mls_welcome") throw new Error("Expected welcome")
+if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
 // bob creates his own group state
 let bobGroup = await joinGroup(
@@ -166,14 +176,15 @@ aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 // alice sends the message to bob
 const encodedPrivateMessageAlice = encodeMlsMessage({
   privateMessage: aliceCreateMessageResult.privateMessage,
-  wireformat: "mls_private_message",
-  version: "mls10",
+  wireformat: wireformats.mls_private_message,
+  version: protocolVersions.mls10,
 })
 
 // bob decodes the message
 const decodedPrivateMessageAlice = decodeMlsMessage(encodedPrivateMessageAlice, 0)![0]
 
-if (decodedPrivateMessageAlice.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (decodedPrivateMessageAlice.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // bob receives the message
 const bobProcessMessageResult = await processPrivateMessage(

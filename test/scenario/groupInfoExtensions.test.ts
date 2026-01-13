@@ -6,7 +6,9 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension, ExtensionType } from "../../src/extension.js"
+import { Extension } from "../../src/extension.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
@@ -15,17 +17,20 @@ test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const customExtensionType: ExtensionType = 7
+  const customExtensionType: number = 7
 
   const capabilities: Capabilities = {
     extensions: [customExtensionType],
-    credentials: ["basic"],
+    credentials: [defaultCredentialTypes.basic],
     proposals: [],
-    versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    versions: [protocolVersions.mls10],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")

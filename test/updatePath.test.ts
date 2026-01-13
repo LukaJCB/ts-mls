@@ -2,25 +2,29 @@ import { createUpdatePath } from "../src/updatePath.js"
 import { RatchetTree } from "../src/ratchetTree.js"
 import { GroupContext } from "../src/groupContext.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
-import { getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
+import { ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
+import { protocolVersions } from "../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
+import { leafNodeSources } from "../src/leafNodeSource.js"
+import { nodeTypes } from "../src/nodeType.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
 
     const leaf1: LeafNodeCommit = {
-      leafNodeSource: "commit",
+      leafNodeSource: leafNodeSources.commit,
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
-        credentialType: "basic",
+        credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode("user1"),
       },
       capabilities: {
-        versions: ["mls10"],
-        ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+        versions: [protocolVersions.mls10],
+        ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
         extensions: [],
         proposals: [],
         credentials: [],
@@ -35,27 +39,28 @@ describe("createUpdatePath", () => {
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
-        credentialType: "basic",
+        credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode("user2"),
       },
     }
 
     const originalTree: RatchetTree = [
-      { nodeType: "leaf", leaf: leaf1 },
+      { nodeType: nodeTypes.leaf, leaf: leaf1 },
       {
-        nodeType: "parent",
+        nodeType: nodeTypes.parent,
         parent: {
           hpkePublicKey: impl.rng.randomBytes(32),
           parentHash: new Uint8Array(32),
           unmergedLeaves: [],
         },
       },
-      { nodeType: "leaf", leaf: leaf2 },
+      { nodeType: nodeTypes.leaf, leaf: leaf2 },
     ]
 
-    if (originalTree[0]?.nodeType !== "leaf" || originalTree[2]?.nodeType !== "leaf") throw new Error("Expected leaf")
+    if (originalTree[0]?.nodeType !== nodeTypes.leaf || originalTree[2]?.nodeType !== nodeTypes.leaf)
+      throw new Error("Expected leaf")
 
-    if (originalTree[1]?.nodeType !== "parent") throw new Error("Expected parent")
+    if (originalTree[1]?.nodeType !== nodeTypes.parent) throw new Error("Expected parent")
 
     const originalLeaf0HpkeKey = originalTree[0].leaf.hpkePublicKey.slice()
 
@@ -66,8 +71,8 @@ describe("createUpdatePath", () => {
     const originalLeaf2HpkeKey = originalTree[2].leaf.hpkePublicKey.slice()
 
     const groupContext: GroupContext = {
-      version: "mls10",
-      cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      version: protocolVersions.mls10,
+      cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       groupId: new Uint8Array(16),
       epoch: 1n,
       treeHash: new Uint8Array(32),
@@ -90,16 +95,16 @@ describe("createUpdatePath", () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
 
     const createLeaf = (identity: string): LeafNodeCommit => ({
-      leafNodeSource: "commit",
+      leafNodeSource: leafNodeSources.commit,
       hpkePublicKey: impl.rng.randomBytes(32),
       signaturePublicKey: impl.rng.randomBytes(32),
       credential: {
-        credentialType: "basic",
+        credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode(identity),
       },
       capabilities: {
-        versions: ["mls10"],
-        ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+        versions: [protocolVersions.mls10],
+        ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
         extensions: [],
         proposals: [],
         credentials: [],
@@ -110,7 +115,7 @@ describe("createUpdatePath", () => {
     })
 
     const createParent = () => ({
-      nodeType: "parent" as const,
+      nodeType: nodeTypes.parent,
       parent: {
         hpkePublicKey: impl.rng.randomBytes(32),
         parentHash: new Uint8Array(32),
@@ -119,27 +124,27 @@ describe("createUpdatePath", () => {
     })
 
     const originalTree: RatchetTree = [
-      { nodeType: "leaf", leaf: createLeaf("user1") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user1") },
       createParent(),
-      { nodeType: "leaf", leaf: createLeaf("user2") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user2") },
       createParent(),
-      { nodeType: "leaf", leaf: createLeaf("user3") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user3") },
       createParent(),
-      { nodeType: "leaf", leaf: createLeaf("user4") },
+      { nodeType: nodeTypes.leaf, leaf: createLeaf("user4") },
     ]
 
     if (
-      originalTree[0]?.nodeType !== "leaf" ||
-      originalTree[2]?.nodeType !== "leaf" ||
-      originalTree[4]?.nodeType !== "leaf" ||
-      originalTree[6]?.nodeType !== "leaf"
+      originalTree[0]?.nodeType !== nodeTypes.leaf ||
+      originalTree[2]?.nodeType !== nodeTypes.leaf ||
+      originalTree[4]?.nodeType !== nodeTypes.leaf ||
+      originalTree[6]?.nodeType !== nodeTypes.leaf
     )
       throw new Error("Expected leaf")
 
     if (
-      originalTree[1]?.nodeType !== "parent" ||
-      originalTree[3]?.nodeType !== "parent" ||
-      originalTree[5]?.nodeType !== "parent"
+      originalTree[1]?.nodeType !== nodeTypes.parent ||
+      originalTree[3]?.nodeType !== nodeTypes.parent ||
+      originalTree[5]?.nodeType !== nodeTypes.parent
     )
       throw new Error("Expected parent")
 
@@ -156,8 +161,8 @@ describe("createUpdatePath", () => {
     const originalParent5HpkeKey = originalTree[5].parent.hpkePublicKey.slice()
 
     const groupContext: GroupContext = {
-      version: "mls10",
-      cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      version: protocolVersions.mls10,
+      cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       groupId: new Uint8Array(16),
       epoch: 1n,
       treeHash: new Uint8Array(32),

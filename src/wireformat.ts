@@ -1,8 +1,9 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { numberToEnum } from "./util/enumHelpers.js"
 
+/** @public */
 export const wireformats = {
   mls_public_message: 1,
   mls_private_message: 2,
@@ -11,12 +12,13 @@ export const wireformats = {
   mls_key_package: 5,
 } as const
 
+/** @public */
 export type WireformatName = keyof typeof wireformats
+/** @public */
 export type WireformatValue = (typeof wireformats)[WireformatName]
 
-export const wireformatEncoder: BufferEncoder<WireformatName> = (s) =>
-  contramapBufferEncoder(uint16Encoder, (t: WireformatName) => wireformats[t])(s)
+export const wireformatEncoder: BufferEncoder<WireformatValue> = uint16Encoder
 
-export const encodeWireformat: Encoder<WireformatName> = encode(wireformatEncoder)
+export const encodeWireformat: Encoder<WireformatValue> = encode(wireformatEncoder)
 
-export const decodeWireformat: Decoder<WireformatName> = mapDecoderOption(decodeUint16, enumNumberToKey(wireformats))
+export const decodeWireformat: Decoder<WireformatValue> = mapDecoderOption(decodeUint16, numberToEnum(wireformats))

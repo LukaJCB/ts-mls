@@ -4,6 +4,7 @@ import { decodeEpochReceiverData, epochReceiverDataEncoder } from "../../src/epo
 import {
   createGroup,
   defaultCapabilities,
+  defaultCredentialTypes,
   defaultLifetime,
   generateKeyPackage,
   getCiphersuiteFromName,
@@ -23,7 +24,7 @@ describe("EpochReceiverData roundtrip", () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
 
     const aliceCredential = {
-      credentialType: "basic" as const,
+      credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("alice"),
     }
 

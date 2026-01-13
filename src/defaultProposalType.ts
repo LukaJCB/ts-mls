@@ -1,7 +1,6 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 
 /** @public */
 export const defaultProposalTypes = {
@@ -18,14 +17,20 @@ export const defaultProposalTypes = {
 export type DefaultProposalTypeName = keyof typeof defaultProposalTypes
 export type DefaultProposalTypeValue = (typeof defaultProposalTypes)[DefaultProposalTypeName]
 
-export const defaultProposalTypeEncoder: BufferEncoder<DefaultProposalTypeName> = contramapBufferEncoder(
-  uint16Encoder,
-  (n) => defaultProposalTypes[n],
-)
+const defaultProposalTypeValues = new Set<number>(Object.values(defaultProposalTypes))
 
-export const encodeDefaultProposalType: Encoder<DefaultProposalTypeName> = encode(defaultProposalTypeEncoder)
+export function defaultProposalTypeValueFromName(name: DefaultProposalTypeName): DefaultProposalTypeValue {
+  return defaultProposalTypes[name]
+}
 
-export const decodeDefaultProposalType: Decoder<DefaultProposalTypeName> = mapDecoderOption(
-  decodeUint16,
-  enumNumberToKey(defaultProposalTypes),
+export function isDefaultProposalTypeValue(v: number): v is DefaultProposalTypeValue {
+  return defaultProposalTypeValues.has(v)
+}
+
+export const defaultProposalTypeValueEncoder: BufferEncoder<DefaultProposalTypeValue> = uint16Encoder
+
+export const encodeDefaultProposalTypeValue: Encoder<DefaultProposalTypeValue> = encode(defaultProposalTypeValueEncoder)
+
+export const decodeDefaultProposalTypeValue: Decoder<DefaultProposalTypeValue> = mapDecoderOption(decodeUint16, (v) =>
+  defaultProposalTypeValues.has(v) ? (v as DefaultProposalTypeValue) : undefined,
 )

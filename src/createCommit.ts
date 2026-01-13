@@ -10,6 +10,7 @@ import {
 } from "./clientState.js"
 import { GroupActiveState } from "./groupActiveState.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
+import { protocolVersions } from "./protocolVersion.js"
 import { decryptWithLabel } from "./crypto/hpke.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import {
@@ -18,6 +19,8 @@ import {
   FramedContentAuthDataCommit,
   FramedContentCommit,
 } from "./framedContent.js"
+import { contentTypes } from "./contentType.js"
+import { senderTypes } from "./sender.js"
 import { GroupContext, groupContextEncoder } from "./groupContext.js"
 import {
   GroupInfo,
@@ -34,7 +37,10 @@ import { protectPublicMessage } from "./messageProtectionPublic.js"
 import { pathToPathSecrets } from "./pathSecrets.js"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
 import { Proposal, ProposalExternalInit } from "./proposal.js"
-import { ProposalOrRef } from "./proposalOrRefType.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
+import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
+import { nodeTypes } from "./nodeType.js"
 import { PskIndex } from "./pskIndex.js"
 import {
   RatchetTree,
@@ -55,6 +61,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export interface MLSContext {
@@ -145,7 +152,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     state.groupContext,
     wireformat,
     { proposals: allProposals, path: updatePath },
-    { senderType: "member", leafIndex: state.privatePath.leafIndex },
+    { senderType: senderTypes.member, leafIndex: state.privatePath.leafIndex },
     authenticatedData,
     state.signaturePrivateKey,
     cipherSuite.signature,
@@ -237,11 +244,14 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
 
 function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): ProposalOrRef[] {
   const refs: ProposalOrRef[] = Object.keys(state.unappliedProposals).map((p) => ({
-    proposalOrRefType: "reference",
+    proposalOrRefType: proposalOrRefTypes.reference,
     reference: base64ToBytes(p),
   }))
 
-  const proposals: ProposalOrRef[] = extraProposals.map((p) => ({ proposalOrRefType: "proposal", proposal: p }))
+  const proposals: ProposalOrRef[] = extraProposals.map((p) => ({
+    proposalOrRefType: proposalOrRefTypes.proposal,
+    proposal: p,
+  }))
 
   return [...refs, ...proposals]
 }
@@ -349,7 +359,7 @@ export async function createGroupInfoWithRatchetTree(
     groupContext,
     confirmationTag,
     state,
-    [...extensions, { extensionType: "ratchet_tree", extensionData: encodedTree }],
+    [...extensions, { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encodedTree }],
     cs,
   )
 
@@ -369,7 +379,7 @@ export async function createGroupInfoWithExternalPub(
     state.groupContext,
     state.confirmationTag,
     state,
-    [...extensions, { extensionType: "external_pub", extensionData: externalPub }],
+    [...extensions, { extensionType: defaultExtensionTypes.external_pub, extensionData: externalPub }],
     cs,
   )
 
@@ -393,8 +403,8 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
     state,
     [
       ...extensions,
-      { extensionType: "external_pub", extensionData: externalPub },
-      { extensionType: "ratchet_tree", extensionData: encodedTree },
+      { extensionType: defaultExtensionTypes.external_pub, extensionData: externalPub },
+      { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encodedTree },
     ],
     cs,
   )
@@ -410,7 +420,7 @@ async function protectCommit(
   authData: FramedContentAuthDataCommit,
   cs: CiphersuiteImpl,
 ): Promise<[MLSMessage, SecretTree, Uint8Array[]]> {
-  const wireformat = publicMessage ? "mls_public_message" : "mls_private_message"
+  const wireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
   const authenticatedContent: AuthenticatedContentCommit = {
     wireformat,
@@ -426,7 +436,11 @@ async function protectCommit(
       cs,
     )
 
-    return [{ version: "mls10", wireformat: "mls_public_message", publicMessage: msg }, state.secretTree, []]
+    return [
+      { version: protocolVersions.mls10, wireformat: wireformats.mls_public_message, publicMessage: msg },
+      state.secretTree,
+      [],
+    ]
   } else {
     const res = await protect(
       state.keySchedule.senderDataSecret,
@@ -440,7 +454,11 @@ async function protectCommit(
     )
 
     return [
-      { version: "mls10", wireformat: "mls_private_message", privateMessage: res.privateMessage },
+      {
+        version: protocolVersions.mls10,
+        wireformat: wireformats.mls_private_message,
+        privateMessage: res.privateMessage,
+      },
       res.tree,
       res.consumed,
     ]
@@ -493,7 +511,7 @@ export async function joinGroupExternal(
   clientConfig: ClientConfig = defaultClientConfig,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
-  const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === "external_pub")
+  const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.external_pub)
 
   if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
 
@@ -536,7 +554,7 @@ export async function joinGroupExternal(
     ? nodeToLeafIndex(
         toNodeIndex(
           ratchetTree.findIndex((n) => {
-            if (n !== undefined && n.nodeType === "leaf") {
+            if (n !== undefined && n.nodeType === nodeTypes.leaf) {
               return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
             }
             return false
@@ -570,12 +588,12 @@ export async function joinGroupExternal(
       : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
 
   const externalInitProposal: ProposalExternalInit = {
-    proposalType: "external_init",
+    proposalType: defaultProposalTypes.external_init,
     externalInit: { kemOutput: enc },
   }
   const proposals: Proposal[] =
     formerLeafIndex !== undefined
-      ? [{ proposalType: "remove", remove: { removed: formerLeafIndex } }, externalInitProposal]
+      ? [{ proposalType: defaultProposalTypes.remove, remove: { removed: formerLeafIndex } }, externalInitProposal]
       : [externalInitProposal]
 
   const pskSecret = new Uint8Array(cs.kdf.size)
@@ -583,9 +601,12 @@ export async function joinGroupExternal(
   const { signature, framedContent } = await createContentCommitSignature(
     groupInfo.groupContext,
     "mls_public_message",
-    { proposals: proposals.map((p) => ({ proposalOrRefType: "proposal", proposal: p })), path: updatePath },
     {
-      senderType: "new_member_commit",
+      proposals: proposals.map((p) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal: p })),
+      path: updatePath,
+    },
+    {
+      senderType: senderTypes.new_member_commit,
     },
     authenticatedData,
     privateKeys.signaturePrivateKey,
@@ -628,8 +649,8 @@ export async function joinGroupExternal(
 
   const authenticatedContent: AuthenticatedContentCommit = {
     content: framedContent,
-    auth: { signature, confirmationTag, contentType: "commit" },
-    wireformat: "mls_public_message",
+    auth: { signature, confirmationTag, contentType: contentTypes.commit },
+    wireformat: wireformats.mls_public_message,
   }
 
   const msg = await protectPublicMessage(epochSecrets.keySchedule.membershipKey, groupContext, authenticatedContent, cs)

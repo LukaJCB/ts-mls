@@ -1,24 +1,26 @@
 import { decodeUint16, decodeUint64, decodeUint8, uint16Encoder, uint64Encoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { numberToEnum } from "./util/enumHelpers.js"
 
+/** @public */
 export const pskTypes = {
   external: 1,
   resumption: 2,
 } as const
-
+/** @public */
 export type PSKTypeName = keyof typeof pskTypes
-export type PSKType = (typeof pskTypes)[PSKTypeName]
+/** @public */
+export type PSKTypeValue = (typeof pskTypes)[PSKTypeName]
 
-export const pskTypeEncoder: BufferEncoder<PSKTypeName> = contramapBufferEncoder(uint8Encoder, (t) => pskTypes[t])
+export const pskTypeEncoder: BufferEncoder<PSKTypeValue> = uint8Encoder
 
-export const encodePskType: Encoder<PSKTypeName> = encode(pskTypeEncoder)
-export const decodePskType: Decoder<PSKTypeName> = mapDecoderOption(decodeUint8, enumNumberToKey(pskTypes))
+export const encodePskType: Encoder<PSKTypeValue> = encode(pskTypeEncoder)
+export const decodePskType: Decoder<PSKTypeValue> = mapDecoderOption(decodeUint8, numberToEnum(pskTypes))
 
 /** @public */
 export const resumptionPSKUsages = {
@@ -29,29 +31,27 @@ export const resumptionPSKUsages = {
 
 /** @public */
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages
-export type ResumptionPSKUsage = (typeof resumptionPSKUsages)[ResumptionPSKUsageName]
+/** @public */
+export type ResumptionPSKUsageValue = (typeof resumptionPSKUsages)[ResumptionPSKUsageName]
 
-export const resumptionPSKUsageEncoder: BufferEncoder<ResumptionPSKUsageName> = contramapBufferEncoder(
-  uint8Encoder,
-  (u) => resumptionPSKUsages[u],
-)
+export const resumptionPSKUsageEncoder: BufferEncoder<ResumptionPSKUsageValue> = uint8Encoder
 
-export const encodeResumptionPSKUsage: Encoder<ResumptionPSKUsageName> = encode(resumptionPSKUsageEncoder)
+export const encodeResumptionPSKUsage: Encoder<ResumptionPSKUsageValue> = encode(resumptionPSKUsageEncoder)
 
-export const decodeResumptionPSKUsage: Decoder<ResumptionPSKUsageName> = mapDecoderOption(
+export const decodeResumptionPSKUsage: Decoder<ResumptionPSKUsageValue> = mapDecoderOption(
   decodeUint8,
-  enumNumberToKey(resumptionPSKUsages),
+  numberToEnum(resumptionPSKUsages),
 )
 
 /** @public */
 export interface PSKInfoExternal {
-  psktype: "external"
+  psktype: typeof pskTypes.external
   pskId: Uint8Array
 }
 /** @public */
 export interface PSKInfoResumption {
-  psktype: "resumption"
-  usage: ResumptionPSKUsageName
+  psktype: typeof pskTypes.resumption
+  usage: ResumptionPSKUsageValue
   pskGroupId: Uint8Array
   pskEpoch: bigint
 }
@@ -77,9 +77,9 @@ const decodePskInfoResumption = mapDecoders(
 
 export const pskInfoEncoder: BufferEncoder<PSKInfo> = (info) => {
   switch (info.psktype) {
-    case "external":
+    case pskTypes.external:
       return encodePskInfoExternal(info)
-    case "resumption":
+    case pskTypes.resumption:
       return encodePskInfoResumption(info)
   }
 }
@@ -88,12 +88,12 @@ export const encodePskInfo: Encoder<PSKInfo> = encode(pskInfoEncoder)
 
 export const decodePskInfo: Decoder<PSKInfo> = flatMapDecoder(decodePskType, (psktype): Decoder<PSKInfo> => {
   switch (psktype) {
-    case "external":
+    case pskTypes.external:
       return mapDecoder(decodeVarLenData, (pskId) => ({
         psktype,
         pskId,
       }))
-    case "resumption":
+    case pskTypes.resumption:
       return mapDecoder(decodePskInfoResumption, (resumption) => ({
         psktype,
         ...resumption,

@@ -11,20 +11,33 @@ import { ProposalAdd } from "../src/proposal.js"
 import { defaultCapabilities } from "../src/defaultCapabilities.js"
 import { defaultLifetime } from "../src/lifetime.js"
 import { emptyPskIndex } from "../src/pskIndex.js"
-import { Credential } from "../src/credential.js"
+import { Credential, isDefaultCredential } from "../src/credential.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { CiphersuiteName, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { createCommit } from "../src/createCommit.js"
 import { processPrivateMessage } from "../src/processMessages.js"
+import { defaultProposalTypes } from "../src/defaultProposalType.js"
+import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
+import { LeafNode } from "../src/leafNode.js"
+import { wireformats } from "../src/wireformat.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
 async function buildThreeMemberGroup() {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(SUITE))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
 
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
@@ -34,7 +47,7 @@ async function buildThreeMemberGroup() {
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const addBobProposal: ProposalAdd = { proposalType: "add", add: { keyPackage: bob.publicPackage } }
+  const addBobProposal: ProposalAdd = { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }
   const addBobCommitResult = await createCommit(
     { state: aliceGroup, cipherSuite: impl },
     { extraProposals: [addBobProposal] },
@@ -49,13 +62,17 @@ async function buildThreeMemberGroup() {
     aliceGroup.ratchetTree,
   )
 
-  const addCharlieProposal: ProposalAdd = { proposalType: "add", add: { keyPackage: charlie.publicPackage } }
+  const addCharlieProposal: ProposalAdd = {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: charlie.publicPackage },
+  }
   const addCharlieCommitResult = await createCommit(
     { state: aliceGroup, cipherSuite: impl },
     { extraProposals: [addCharlieProposal] },
   )
   aliceGroup = addCharlieCommitResult.newState
-  if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
   const processAddCharlieResult = await processPrivateMessage(
     bobGroup,
     addCharlieCommitResult.commit.privateMessage,
@@ -75,9 +92,10 @@ async function buildThreeMemberGroup() {
   return { aliceGroup, bobGroup, charlieGroup }
 }
 
-function identityOf(l: import("../src/leafNode.js").LeafNode): string {
+function identityOf(l: LeafNode): string {
   const c = l.credential
-  if (c.credentialType !== "basic") throw new Error("Expected basic credential in test")
+  if (!isDefaultCredential(c) || c.credentialType !== defaultCredentialTypes.basic)
+    throw new Error("Expected basic credential in test")
   return new TextDecoder().decode(c.identity)
 }
 

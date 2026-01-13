@@ -11,6 +11,10 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src/index.js"
 import { UsageError } from "../../src/mlsError.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs) => {
   await customProposalTest(cs as CiphersuiteName)
@@ -23,24 +27,30 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   const capabilities: Capabilities = {
     extensions: [],
-    credentials: ["basic"],
+    credentials: [defaultCredentialTypes.basic],
     proposals: [customProposalType],
-    versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    versions: [protocolVersions.mls10],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -76,7 +86,8 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   bobGroup = createProposalResult.newState
 
-  if (createProposalResult.message.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (createProposalResult.message.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processProposalResult = await processPrivateMessage(
     aliceGroup,
@@ -103,7 +114,8 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   aliceGroup = createCommitResult.newState
 
-  if (createCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (createCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processCommitResult = await processPrivateMessage(
     bobGroup,

@@ -11,6 +11,10 @@ import { Capabilities } from "../../src/capabilities.js"
 import { Extension } from "../../src/extension.js"
 import { encodeRequiredCapabilities, RequiredCapabilities } from "../../src/requiredCapabilities.js"
 import { ValidationError } from "../../src/mlsError.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -21,25 +25,28 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
 
   const requiredCapabilities: RequiredCapabilities = {
     extensionTypes: [7, 8],
-    credentialTypes: ["x509", "basic"],
+    credentialTypes: [defaultCredentialTypes.x509, defaultCredentialTypes.basic],
     proposalTypes: [],
   }
 
   const capabilities: Capabilities = {
     extensions: [7, 8, 9],
-    credentials: ["x509", "basic"],
+    credentials: [defaultCredentialTypes.x509, defaultCredentialTypes.basic],
     proposals: [],
-    versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    versions: [protocolVersions.mls10],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   const requiredCapabilitiesExtension: Extension = {
-    extensionType: "required_capabilities",
+    extensionType: defaultExtensionTypes.required_capabilities,
     extensionData: encodeRequiredCapabilities(requiredCapabilities),
   }
 
@@ -51,22 +58,28 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     impl,
   )
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
 
   const minimalCapabilites: Capabilities = {
     extensions: [],
-    credentials: ["basic"],
+    credentials: [defaultCredentialTypes.basic],
     proposals: [],
-    versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    versions: [protocolVersions.mls10],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
   const charlie = await generateKeyPackage(charlieCredential, minimalCapabilites, defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -96,7 +109,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },

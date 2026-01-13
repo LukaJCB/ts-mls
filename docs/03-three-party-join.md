@@ -24,9 +24,11 @@ This scenario demonstrates a more advanced workflow in MLS: creating a group, ad
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -35,24 +37,34 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+const charlieCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("charlie"),
+}
 const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 // Alice adds Bob and commits, this is epoch 1
@@ -61,7 +73,8 @@ const addBobCommitResult = await createCommit(
   { extraProposals: [addBobProposal] },
 )
 
-if (addBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (addBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 aliceGroup = addBobCommitResult.newState
 
@@ -76,7 +89,7 @@ let bobGroup = await joinGroup(
 )
 
 const addCharlieProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: charlie.publicPackage },
 }
 // Alice adds Charlie, transitioning into epoch 2
@@ -85,7 +98,8 @@ const addCharlieCommitResult = await createCommit(
   { extraProposals: [addCharlieProposal] },
 )
 aliceGroup = addCharlieCommitResult.newState
-if (addCharlieCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // Bob processes the commit and transitions to epoch 2 as well
 const processAddCharlieResult = await processPrivateMessage(

@@ -4,6 +4,7 @@ import {
   CiphersuiteName,
   createGroup,
   Credential,
+  defaultCredentialTypes,
   defaultCapabilities,
   defaultLifetime,
   generateKeyPackage,
@@ -28,7 +29,10 @@ describe("GroupActiveState roundtrip", () => {
   test("roundtrips suspendedPendingReinit", async () => {
     const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
 
-    const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+    const aliceCredential: Credential = {
+      credentialType: defaultCredentialTypes.basic,
+      identity: new TextEncoder().encode("alice"),
+    }
     const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
     const groupId = new TextEncoder().encode("group1")

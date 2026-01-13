@@ -6,6 +6,8 @@ import { InternalError } from "./mlsError.js"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
 import { treeHash } from "./treeHash.js"
 import { isLeaf, LeafIndex, leafWidth, left, NodeIndex, right, root, toNodeIndex } from "./treemath.js"
+import { nodeTypes } from "./nodeType.js"
+import { leafNodeSources } from "./leafNodeSource.js"
 
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
@@ -42,7 +44,7 @@ function validateParentHashCoverage(parentIndices: number[], coverage: Record<nu
 
 export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<boolean> {
   const parentNodes = tree.reduce((acc, cur, index) => {
-    if (cur !== undefined && cur.nodeType === "parent") {
+    if (cur !== undefined && cur.nodeType === nodeTypes.parent) {
       return [...acc, index]
     } else return acc
   }, [] as number[])
@@ -102,8 +104,8 @@ function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, 
 }
 
 function getParentHash(node: Node): Uint8Array | undefined {
-  if (node.nodeType === "parent") return node.parent.parentHash
-  else if (node.leaf.leafNodeSource === "commit") return node.leaf.parentHash
+  if (node.nodeType === nodeTypes.parent) return node.parent.parentHash
+  else if (node.leaf.leafNodeSource === leafNodeSources.commit) return node.leaf.parentHash
 }
 
 /**
@@ -129,7 +131,7 @@ export async function calculateParentHash(
 
   const siblingIndex = nodeIndex < parentNodeIndex ? right(parentNodeIndex) : left(parentNodeIndex)
 
-  if (parentNode === undefined || parentNode.nodeType === "leaf")
+  if (parentNode === undefined || parentNode.nodeType === nodeTypes.leaf)
     throw new InternalError("Expected non-blank parent Node")
 
   const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves as LeafIndex[])

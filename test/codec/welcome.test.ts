@@ -1,4 +1,5 @@
 import { encodeWelcome, decodeWelcome } from "../../src/welcome.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Welcome roundtrip", () => {
@@ -6,7 +7,7 @@ describe("Welcome roundtrip", () => {
 
   test("roundtrips minimal", () => {
     roundtrip({
-      cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       secrets: [],
       encryptedGroupInfo: new Uint8Array([1]),
     })
@@ -14,7 +15,7 @@ describe("Welcome roundtrip", () => {
 
   test("roundtrips nontrivial", () => {
     roundtrip({
-      cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
       secrets: [
         {
           newMember: new Uint8Array([2, 3]),

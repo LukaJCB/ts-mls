@@ -12,6 +12,7 @@ import { decodeRatchetTree } from "../../src/ratchetTree.js"
 import { joinGroup, makePskIndex } from "../../src/clientState.js"
 import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
 import { bytesToBase64 } from "../../src/util/byteArray.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,
@@ -41,12 +42,14 @@ test.concurrent.each(jsonWelcome.map((x, index) => [index, x]))(
 async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteImpl) {
   const kp = decodeMlsMessage(hexToBytes(data.key_package), 0)
 
-  if (kp === undefined || kp[0].wireformat !== "mls_key_package") throw new Error("Could not decode KeyPackage")
+  if (kp === undefined || kp[0].wireformat !== wireformats.mls_key_package)
+    throw new Error("Could not decode KeyPackage")
   await verifyKeys(data, kp[0].keyPackage, impl)
 
   const welcome = decodeMlsMessage(hexToBytes(data.welcome), 0)
 
-  if (welcome === undefined || welcome[0].wireformat !== "mls_welcome") throw new Error("Could not decode Welcome")
+  if (welcome === undefined || welcome[0].wireformat !== wireformats.mls_welcome)
+    throw new Error("Could not decode Welcome")
 
   const pks: PrivateKeyPackage = {
     hpkePrivateKey: hexToBytes(data.encryption_priv),
@@ -69,11 +72,12 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
       const mlsProposal = decodeMlsMessage(hexToBytes(proposal), 0)
       if (
         mlsProposal === undefined ||
-        (mlsProposal[0].wireformat !== "mls_private_message" && mlsProposal[0].wireformat !== "mls_public_message")
+        (mlsProposal[0].wireformat !== wireformats.mls_private_message &&
+          mlsProposal[0].wireformat !== wireformats.mls_public_message)
       )
         throw new Error("Could not decode proposal message")
 
-      if (mlsProposal[0].wireformat === "mls_private_message") {
+      if (mlsProposal[0].wireformat === wireformats.mls_private_message) {
         const res = await processPrivateMessage(state, mlsProposal[0].privateMessage, makePskIndex(state, psks), impl)
 
         state = res.newState
@@ -87,11 +91,12 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
     const mlsCommit = decodeMlsMessage(hexToBytes(epoch.commit), 0)
     if (
       mlsCommit === undefined ||
-      (mlsCommit[0].wireformat !== "mls_private_message" && mlsCommit[0].wireformat !== "mls_public_message")
+      (mlsCommit[0].wireformat !== wireformats.mls_private_message &&
+        mlsCommit[0].wireformat !== wireformats.mls_public_message)
     )
       throw new Error("Could not decode commit message")
 
-    if (mlsCommit[0].wireformat === "mls_private_message") {
+    if (mlsCommit[0].wireformat === wireformats.mls_private_message) {
       const res = await processPrivateMessage(state, mlsCommit[0].privateMessage, makePskIndex(state, psks), impl)
 
       state = res.newState

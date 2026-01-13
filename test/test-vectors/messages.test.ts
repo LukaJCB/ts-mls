@@ -3,6 +3,7 @@ import json from "../../test_vectors/messages.json"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
 import { decodeCommit, encodeCommit } from "../../src/commit.js"
+import { contentTypes } from "../../src/contentType.js"
 import { Encoder } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
 import {
@@ -23,6 +24,7 @@ import {
 } from "../../src/proposal.js"
 import { decodeRatchetTree, encodeRatchetTree } from "../../src/ratchetTree.js"
 import { decodeGroupSecrets, encodeGroupSecrets } from "../../src/groupSecrets.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
   codecRoundtrip(x)
@@ -72,7 +74,7 @@ function welcome(s: string) {
   const inputBytes = hexToBytes(s)
   const mlsWelcome = decodeMlsMessage(inputBytes, 0)
 
-  if (mlsWelcome === undefined || mlsWelcome[0].wireformat !== "mls_welcome") {
+  if (mlsWelcome === undefined || mlsWelcome[0].wireformat !== wireformats.mls_welcome) {
     throw new Error("could not decode mls welcome")
   } else {
     const reEncoded = encodeMlsMessage(mlsWelcome[0])
@@ -84,7 +86,7 @@ function privateMessage(s: string) {
   const inputBytes = hexToBytes(s)
   const p = decodeMlsMessage(inputBytes, 0)
 
-  if (p === undefined || p[0].wireformat !== "mls_private_message") {
+  if (p === undefined || p[0].wireformat !== wireformats.mls_private_message) {
     throw new Error("could not decode mls private message")
   } else {
     const reEncoded = encodeMlsMessage(p?.[0])
@@ -96,7 +98,7 @@ function groupInfo(s: string) {
   const inputBytes = hexToBytes(s)
   const gi = decodeMlsMessage(inputBytes, 0)
 
-  if (gi === undefined || gi[0].wireformat !== "mls_group_info") {
+  if (gi === undefined || gi[0].wireformat !== wireformats.mls_group_info) {
     throw new Error("could not decode mls_group_info")
   } else {
     const reEncoded = encodeMlsMessage(gi[0])
@@ -108,7 +110,7 @@ function keyPackage(s: string) {
   const inputBytes = hexToBytes(s)
   const kp = decodeMlsMessage(inputBytes, 0)
 
-  if (kp === undefined || kp[0].wireformat !== "mls_key_package") {
+  if (kp === undefined || kp[0].wireformat !== wireformats.mls_key_package) {
     throw new Error("could not decode mls_key_package")
   } else {
     const reEncoded = encodeMlsMessage(kp[0])
@@ -120,10 +122,10 @@ function publicMessageApplication(s: string) {
   const inputBytes = hexToBytes(s)
   const p = decodeMlsMessage(inputBytes, 0)
 
-  if (p === undefined || p[0].wireformat !== "mls_public_message") {
+  if (p === undefined || p[0].wireformat !== wireformats.mls_public_message) {
     throw new Error("could not decode mls_public_message")
   } else {
-    expect(p[0].publicMessage.content.contentType).toBe("application")
+    expect(p[0].publicMessage.content.contentType).toBe(contentTypes.application)
     const reEncoded = encodeMlsMessage(p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
@@ -133,10 +135,10 @@ function publicMessageProposal(s: string) {
   const inputBytes = hexToBytes(s)
   const p = decodeMlsMessage(inputBytes, 0)
 
-  if (p === undefined || p[0].wireformat !== "mls_public_message") {
+  if (p === undefined || p[0].wireformat !== wireformats.mls_public_message) {
     throw new Error("could not decode mls_public_message")
   } else {
-    expect(p[0].publicMessage.content.contentType).toBe("proposal")
+    expect(p[0].publicMessage.content.contentType).toBe(contentTypes.proposal)
     const reEncoded = encodeMlsMessage(p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
@@ -146,10 +148,10 @@ function publicMessageCommit(s: string) {
   const inputBytes = hexToBytes(s)
   const p = decodeMlsMessage(inputBytes, 0)
 
-  if (p === undefined || p[0].wireformat !== "mls_public_message") {
+  if (p === undefined || p[0].wireformat !== wireformats.mls_public_message) {
     throw new Error("could not decode mls_public_message")
   } else {
-    expect(p[0].publicMessage.content.contentType).toBe("commit")
+    expect(p[0].publicMessage.content.contentType).toBe(contentTypes.commit)
     const reEncoded = encodeMlsMessage(p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }

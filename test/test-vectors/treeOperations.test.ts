@@ -10,7 +10,8 @@ import {
 } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-operations.json"
-import { decodeProposal, Proposal } from "../../src/proposal.js"
+import { decodeProposal, isDefaultProposal, Proposal } from "../../src/proposal.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { treeHashRoot } from "../../src/treeHash.js"
 import { toLeafIndex } from "../../src/treemath.js"
 
@@ -50,16 +51,21 @@ async function treeOperationsTest(data: TreeOperationData, impl: CiphersuiteImpl
 }
 
 function applyProposal(proposal: Proposal, tree: RatchetTree, data: TreeOperationData) {
+  if (!isDefaultProposal(proposal)) return tree
+
   switch (proposal.proposalType) {
-    case "add":
+    case defaultProposalTypes.add:
       return addLeafNode(tree, proposal.add.keyPackage.leafNode)[0]
-    case "update":
+    case defaultProposalTypes.update:
       return updateLeafNode(tree, proposal.update.leafNode, toLeafIndex(data.proposal_sender))
-    case "remove":
+    case defaultProposalTypes.remove:
       return removeLeafNode(tree, toLeafIndex(proposal.remove.removed))
-    case "psk":
-    case "reinit":
-    case "external_init":
-    case "group_context_extensions":
+    case defaultProposalTypes.psk:
+    case defaultProposalTypes.reinit:
+    case defaultProposalTypes.external_init:
+    case defaultProposalTypes.group_context_extensions:
+      return tree
   }
+
+  return tree
 }

@@ -1,5 +1,6 @@
 import { encodePrivateMessage, decodePrivateMessage } from "../../src/privateMessage.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { contentTypes } from "../../src/contentType.js"
 
 describe("PrivateMessage roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePrivateMessage, decodePrivateMessage)
@@ -8,7 +9,7 @@ describe("PrivateMessage roundtrip", () => {
     roundtrip({
       groupId: new Uint8Array([1]),
       epoch: 0n,
-      contentType: "application",
+      contentType: contentTypes.application,
       authenticatedData: new Uint8Array([2]),
       encryptedSenderData: new Uint8Array([3]),
       ciphertext: new Uint8Array([4]),
@@ -19,7 +20,7 @@ describe("PrivateMessage roundtrip", () => {
     roundtrip({
       groupId: new Uint8Array([5, 6]),
       epoch: 123n,
-      contentType: "commit",
+      contentType: contentTypes.commit,
       authenticatedData: new Uint8Array([7, 8]),
       encryptedSenderData: new Uint8Array([9, 10]),
       ciphertext: new Uint8Array([11, 12, 13]),
@@ -30,7 +31,7 @@ describe("PrivateMessage roundtrip", () => {
     roundtrip({
       groupId: new Uint8Array([5, 6]),
       epoch: 123n,
-      contentType: "proposal",
+      contentType: contentTypes.proposal,
       authenticatedData: new Uint8Array([7, 8]),
       encryptedSenderData: new Uint8Array([9, 10]),
       ciphertext: new Uint8Array([11, 12, 13]),

@@ -1,6 +1,7 @@
 import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -10,6 +11,8 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { pskTypes } from "../../src/presharedkey.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
   await externalPskJoin(cs as CiphersuiteName)
@@ -18,18 +21,24 @@ test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (c
 async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -41,10 +50,10 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
   const pskId = new TextEncoder().encode("psk-1")
 
   const pskProposal: Proposal = {
-    proposalType: "psk",
+    proposalType: defaultProposalTypes.psk,
     psk: {
       preSharedKeyId: {
-        psktype: "external",
+        psktype: pskTypes.external,
         pskId,
         pskNonce,
       },

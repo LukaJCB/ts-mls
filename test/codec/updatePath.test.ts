@@ -1,4 +1,8 @@
 import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {
@@ -7,17 +11,17 @@ describe("UpdatePath", () => {
         hpkePublicKey: new Uint8Array([1, 2, 3]),
         signaturePublicKey: new Uint8Array([4, 5, 6]),
         credential: {
-          credentialType: "basic",
+          credentialType: defaultCredentialTypes.basic,
           identity: new Uint8Array([7, 8, 9]),
         },
         capabilities: {
-          versions: ["mls10"],
-          ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+          versions: [protocolVersions.mls10],
+          ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
           extensions: [],
           proposals: [],
           credentials: [],
         },
-        leafNodeSource: "commit",
+        leafNodeSource: leafNodeSources.commit,
         parentHash: new Uint8Array([10, 11, 12]),
         extensions: [],
         signature: new Uint8Array([13, 14, 15]),
@@ -36,17 +40,17 @@ describe("UpdatePath", () => {
         hpkePublicKey: new Uint8Array([16, 17, 18, 19, 20]),
         signaturePublicKey: new Uint8Array([21, 22, 23, 24, 25]),
         credential: {
-          credentialType: "basic",
+          credentialType: defaultCredentialTypes.basic,
           identity: new Uint8Array([26, 27, 28, 29, 30]),
         },
         capabilities: {
-          versions: ["mls10"],
-          ciphersuites: ["MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"],
+          versions: [protocolVersions.mls10],
+          ciphersuites: [ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519],
           extensions: [],
           proposals: [],
           credentials: [],
         },
-        leafNodeSource: "commit",
+        leafNodeSource: leafNodeSources.commit,
         parentHash: new Uint8Array([31, 32, 33, 34, 35]),
         extensions: [],
         signature: new Uint8Array([36, 37, 38, 39, 40]),

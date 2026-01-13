@@ -17,7 +17,9 @@ import { CryptoVerificationError, UsageError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
 import { ExternalPublicMessage, findSignaturePublicKey, PublicMessage } from "./publicMessage.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { SenderNonMember } from "./sender.js"
+import { senderTypes, SenderNonMember } from "./sender.js"
+import { contentTypes } from "./contentType.js"
+import { wireformats } from "./wireformat.js"
 
 export interface ProtectProposalPublicResult {
   publicMessage: PublicMessage
@@ -35,24 +37,24 @@ export async function protectProposalPublic(
   const framedContent: FramedContent = {
     groupId: groupContext.groupId,
     epoch: groupContext.epoch,
-    sender: { senderType: "member", leafIndex },
-    contentType: "proposal",
+    sender: { senderType: senderTypes.member, leafIndex },
+    contentType: contentTypes.proposal,
     authenticatedData,
     proposal,
   }
 
   const tbs = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     content: framedContent,
-    senderType: "member",
+    senderType: senderTypes.member,
     context: groupContext,
   } as const
 
   const auth = await signFramedContentApplicationOrProposal(signKey, tbs, cs)
 
   const authenticatedContent: AuthenticatedContent = {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     content: framedContent,
     auth,
   }
@@ -74,14 +76,14 @@ export async function protectExternalProposalPublic(
     groupId: groupContext.groupId,
     epoch: groupContext.epoch,
     sender,
-    contentType: "proposal",
+    contentType: contentTypes.proposal,
     authenticatedData,
     proposal,
   }
 
   const tbs = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     content: framedContent,
     senderType: sender.senderType,
     context: groupContext,
@@ -104,11 +106,12 @@ export async function protectPublicMessage(
   content: AuthenticatedContent,
   cs: CiphersuiteImpl,
 ): Promise<PublicMessage> {
-  if (content.content.contentType === "application") throw new UsageError("Can't make an application message public")
+  if (content.content.contentType === contentTypes.application)
+    throw new UsageError("Can't make an application message public")
 
-  if (content.content.sender.senderType == "member") {
+  if (content.content.sender.senderType === senderTypes.member) {
     const authenticatedContent: AuthenticatedContentTBM = {
-      contentTbs: toTbs(content.content, "mls_public_message", groupContext),
+      contentTbs: toTbs(content.content, wireformats.mls_public_message, groupContext),
       auth: content.auth,
     }
 
@@ -116,7 +119,7 @@ export async function protectPublicMessage(
     return {
       content: content.content,
       auth: content.auth,
-      senderType: "member",
+      senderType: senderTypes.member,
       membershipTag: tag,
     }
   }
@@ -140,11 +143,12 @@ export async function unprotectPublicMessage(
   cs: CiphersuiteImpl,
   overrideSignatureKey?: Uint8Array,
 ): Promise<AuthenticatedContentProposalOrCommit> {
-  if (msg.content.contentType === "application") throw new UsageError("Can't make an application message public")
+  if (msg.content.contentType === contentTypes.application)
+    throw new UsageError("Can't make an application message public")
 
-  if (msg.senderType === "member") {
+  if (msg.senderType === senderTypes.member) {
     const authenticatedContent: AuthenticatedContentTBM = {
-      contentTbs: toTbs(msg.content, "mls_public_message", groupContext),
+      contentTbs: toTbs(msg.content, wireformats.mls_public_message, groupContext),
       auth: msg.auth,
     }
 
@@ -159,7 +163,7 @@ export async function unprotectPublicMessage(
 
   const signatureValid = await verifyFramedContentSignature(
     signaturePublicKey,
-    "mls_public_message",
+    wireformats.mls_public_message,
     msg.content,
     msg.auth,
     groupContext,
@@ -169,7 +173,7 @@ export async function unprotectPublicMessage(
   if (!signatureValid) throw new CryptoVerificationError("Signature invalid")
 
   return {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     content: msg.content,
     auth: msg.auth,
   }

@@ -2,6 +2,7 @@ import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -11,8 +12,9 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { createProposal } from "../../src/index.js"
 import { processMessage } from "../../src/processMessages.js"
 import { encodeExternalSender } from "../../src/externalSender.js"
-import { WireformatName } from "../../src/wireformat.js"
-
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
   await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
@@ -21,19 +23,25 @@ test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, as
 async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
-  const preferredWireformat: WireformatName = publicMessage ? "mls_public_message" : "mls_private_message"
+  const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -62,13 +70,13 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   )
 
   const bobProposeExtensions: Proposal = {
-    proposalType: "group_context_extensions",
+    proposalType: defaultProposalTypes.group_context_extensions,
     groupContextExtensions: {
       extensions: [
         {
-          extensionType: "external_senders",
+          extensionType: defaultExtensionTypes.external_senders,
           extensionData: encodeExternalSender({
-            credential: { credentialType: "basic", identity: new Uint8Array() },
+            credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
             signaturePublicKey: new Uint8Array(),
           }),
         },

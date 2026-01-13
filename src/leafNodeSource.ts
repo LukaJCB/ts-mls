@@ -1,25 +1,33 @@
 import { decodeUint8, uint8Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 
-const leafNodeSources = {
+/** @public */
+export const leafNodeSources = {
   key_package: 1,
   update: 2,
   commit: 3,
 } as const
 
+/** @public */
 export type LeafNodeSourceName = keyof typeof leafNodeSources
+/** @public */
 export type LeafNodeSourceValue = (typeof leafNodeSources)[LeafNodeSourceName]
 
-export const leafNodeSourceEncoder: BufferEncoder<LeafNodeSourceName> = contramapBufferEncoder(
-  uint8Encoder,
-  (t) => leafNodeSources[t],
-)
+const leafNodeSourceValues = new Set<number>(Object.values(leafNodeSources))
 
-export const encodeLeafNodeSource: Encoder<LeafNodeSourceName> = encode(leafNodeSourceEncoder)
+export function leafNodeSourceValueFromName(name: LeafNodeSourceName): LeafNodeSourceValue {
+  return leafNodeSources[name]
+}
 
-export const decodeLeafNodeSource: Decoder<LeafNodeSourceName> = mapDecoderOption(
-  decodeUint8,
-  enumNumberToKey(leafNodeSources),
+export function isLeafNodeSourceValue(v: number): v is LeafNodeSourceValue {
+  return leafNodeSourceValues.has(v)
+}
+
+export const leafNodeSourceValueEncoder: BufferEncoder<LeafNodeSourceValue> = uint8Encoder
+
+export const encodeLeafNodeSourceValue: Encoder<LeafNodeSourceValue> = encode(leafNodeSourceValueEncoder)
+
+export const decodeLeafNodeSourceValue: Decoder<LeafNodeSourceValue> = mapDecoderOption(decodeUint8, (v) =>
+  leafNodeSourceValues.has(v) ? (v as LeafNodeSourceValue) : undefined,
 )

@@ -9,6 +9,7 @@ import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 import { decodeGroupContext, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
 import { CodecError } from "./mlsError.js"
 import { decodeRatchetTree, RatchetTree } from "./ratchetTree.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 
 /** @public */
 export interface GroupInfoTBS {
@@ -56,7 +57,7 @@ export const decodeGroupInfo: Decoder<GroupInfo> = mapDecoders(
 )
 
 export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefined {
-  const treeExtension = info.extensions.find((ex) => ex.extensionType === "ratchet_tree")
+  const treeExtension = info.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
 
   if (treeExtension !== undefined) {
     const tree = decodeRatchetTree(treeExtension.extensionData, 0)

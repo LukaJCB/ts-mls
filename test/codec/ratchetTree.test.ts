@@ -1,22 +1,27 @@
 import { encodeRatchetTree, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { nodeTypes } from "../../src/nodeType.js"
 
 describe("RatchetTree roundtrip", () => {
   test("roundtrips single leaf", () => {
     const data: RatchetTree = [
       {
-        nodeType: "leaf",
+        nodeType: nodeTypes.leaf,
         leaf: {
           hpkePublicKey: new Uint8Array([1]),
           signaturePublicKey: new Uint8Array([2]),
-          credential: { credentialType: "basic", identity: new Uint8Array([3]) },
+          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([3]) },
           capabilities: {
-            versions: ["mls10"],
-            ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519"],
+            versions: [protocolVersions.mls10],
+            ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
             extensions: [],
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([4]),
@@ -31,26 +36,26 @@ describe("RatchetTree roundtrip", () => {
   test("roundtrips tree", () => {
     const data: RatchetTree = [
       {
-        nodeType: "leaf",
+        nodeType: nodeTypes.leaf,
         leaf: {
           hpkePublicKey: new Uint8Array([1]),
           signaturePublicKey: new Uint8Array([2]),
-          credential: { credentialType: "basic", identity: new Uint8Array([3]) },
+          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([3]) },
           capabilities: {
-            versions: ["mls10"],
-            ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519"],
+            versions: [protocolVersions.mls10],
+            ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
             extensions: [],
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([4]),
         },
       },
       {
-        nodeType: "parent",
+        nodeType: nodeTypes.parent,
         parent: {
           hpkePublicKey: new Uint8Array([1, 2]),
           parentHash: new Uint8Array([3, 4]),
@@ -58,19 +63,19 @@ describe("RatchetTree roundtrip", () => {
         },
       },
       {
-        nodeType: "leaf",
+        nodeType: nodeTypes.leaf,
         leaf: {
           hpkePublicKey: new Uint8Array([5]),
           signaturePublicKey: new Uint8Array([6]),
-          credential: { credentialType: "basic", identity: new Uint8Array([7]) },
+          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([7]) },
           capabilities: {
-            versions: ["mls10"],
-            ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519"],
+            versions: [protocolVersions.mls10],
+            ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
             extensions: [],
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([4]),

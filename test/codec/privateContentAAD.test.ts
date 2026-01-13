@@ -1,4 +1,5 @@
 import { encodePrivateContentAAD, decodePrivateContentAAD } from "../../src/privateMessage.js"
+import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PrivateContentAAD roundtrip", () => {
@@ -8,7 +9,7 @@ describe("PrivateContentAAD roundtrip", () => {
     roundtrip({
       groupId: new Uint8Array([1]),
       epoch: 0n,
-      contentType: "application",
+      contentType: contentTypes.application,
       authenticatedData: new Uint8Array([2]),
     })
   })
@@ -17,7 +18,7 @@ describe("PrivateContentAAD roundtrip", () => {
     roundtrip({
       groupId: new Uint8Array([3, 4, 5]),
       epoch: 123n,
-      contentType: "commit",
+      contentType: contentTypes.commit,
       authenticatedData: new Uint8Array([6, 7, 8]),
     })
   })
@@ -26,7 +27,7 @@ describe("PrivateContentAAD roundtrip", () => {
     roundtrip({
       groupId: new Uint8Array([3, 4, 5]),
       epoch: 123n,
-      contentType: "proposal",
+      contentType: contentTypes.proposal,
       authenticatedData: new Uint8Array([6, 7, 8]),
     })
   })

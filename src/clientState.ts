@@ -13,7 +13,7 @@ import {
   KeySchedule,
   keyScheduleEncoder,
 } from "./keySchedule.js"
-import { pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
+import { pskIdEncoder, PreSharedKeyID, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -42,9 +42,10 @@ import { firstCommonAncestor } from "./updatePath.js"
 import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
-import { WireformatName } from "./wireformat.js"
-import { ProposalOrRef } from "./proposalOrRefType.js"
+import { WireformatName, wireformats } from "./wireformat.js"
+import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import {
+  isDefaultProposal,
   Proposal,
   ProposalAdd,
   ProposalExternalInit,
@@ -56,6 +57,8 @@ import {
   Reinit,
   Remove,
 } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { pathToRoot } from "./pathSecrets.js"
 import {
   PrivateKeyPath,
@@ -91,6 +94,8 @@ import {
   verifyLeafNodeSignature,
   verifyLeafNodeSignatureKeyPackage,
 } from "./leafNode.js"
+import { leafNodeSources } from "./leafNodeSource.js"
+import { nodeTypes } from "./nodeType.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities.js"
 import { Capabilities } from "./capabilities.js"
@@ -102,7 +107,7 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
 import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
-import { CredentialTypeName } from "./credentialType.js"
+
 import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
 import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
@@ -265,7 +270,7 @@ export function decodeGroupStateWithoutTree(ratchetTree: RatchetTree): Decoder<G
 export function getOwnLeafNode(state: ClientState): LeafNode {
   const idx = leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))
   const leaf = state.ratchetTree[idx]
-  if (leaf?.nodeType !== "leaf") throw new InternalError("Expected leaf node")
+  if (leaf?.nodeType !== nodeTypes.leaf) throw new InternalError("Expected leaf node")
   return leaf.leaf
 }
 
@@ -284,7 +289,7 @@ export function extractFromGroupMembers<T>(
 ): T[] {
   const recipients = []
   for (const node of state.ratchetTree) {
-    if (node?.nodeType === "leaf" && !exclude(node.leaf)) {
+    if (node?.nodeType === nodeTypes.leaf && !exclude(node.leaf)) {
       recipients.push(map(node.leaf))
     }
   }
@@ -306,23 +311,26 @@ export function checkCanSendHandshakeMessages(state: ClientState): void {
 }
 
 export interface Proposals {
-  add: { senderLeafIndex: number | undefined; proposal: ProposalAdd }[]
-  update: { senderLeafIndex: number | undefined; proposal: ProposalUpdate }[]
-  remove: { senderLeafIndex: number | undefined; proposal: ProposalRemove }[]
-  psk: { senderLeafIndex: number | undefined; proposal: ProposalPSK }[]
-  reinit: { senderLeafIndex: number | undefined; proposal: ProposalReinit }[]
-  external_init: { senderLeafIndex: number | undefined; proposal: ProposalExternalInit }[]
-  group_context_extensions: { senderLeafIndex: number | undefined; proposal: ProposalGroupContextExtensions }[]
+  [defaultProposalTypes.add]: { senderLeafIndex: number | undefined; proposal: ProposalAdd }[]
+  [defaultProposalTypes.update]: { senderLeafIndex: number | undefined; proposal: ProposalUpdate }[]
+  [defaultProposalTypes.remove]: { senderLeafIndex: number | undefined; proposal: ProposalRemove }[]
+  [defaultProposalTypes.psk]: { senderLeafIndex: number | undefined; proposal: ProposalPSK }[]
+  [defaultProposalTypes.reinit]: { senderLeafIndex: number | undefined; proposal: ProposalReinit }[]
+  [defaultProposalTypes.external_init]: { senderLeafIndex: number | undefined; proposal: ProposalExternalInit }[]
+  [defaultProposalTypes.group_context_extensions]: {
+    senderLeafIndex: number | undefined
+    proposal: ProposalGroupContextExtensions
+  }[]
 }
 
 const emptyProposals: Proposals = {
-  add: [],
-  update: [],
-  remove: [],
-  psk: [],
-  reinit: [],
-  external_init: [],
-  group_context_extensions: [],
+  [defaultProposalTypes.add]: [],
+  [defaultProposalTypes.update]: [],
+  [defaultProposalTypes.remove]: [],
+  [defaultProposalTypes.psk]: [],
+  [defaultProposalTypes.reinit]: [],
+  [defaultProposalTypes.external_init]: [],
+  [defaultProposalTypes.group_context_extensions]: [],
 }
 
 function flattenExtensions(groupContextExtensions: { proposal: ProposalGroupContextExtensions }[]): Extension[] {
@@ -339,28 +347,32 @@ async function validateProposals(
   authService: AuthenticationService,
   tree: RatchetTree,
 ): Promise<MlsError | undefined> {
-  const containsUpdateByCommitter = p.update.some(
+  const containsUpdateByCommitter = p[defaultProposalTypes.update].some(
     (o) => o.senderLeafIndex !== undefined && o.senderLeafIndex === committerLeafIndex,
   )
 
   if (containsUpdateByCommitter)
     return new ValidationError("Commit cannot contain an update proposal sent by committer")
 
-  const containsRemoveOfCommitter = p.remove.some((o) => o.proposal.remove.removed === committerLeafIndex)
+  const containsRemoveOfCommitter = p[defaultProposalTypes.remove].some(
+    (o) => o.proposal.remove.removed === committerLeafIndex,
+  )
 
   if (containsRemoveOfCommitter)
     return new ValidationError("Commit cannot contain a remove proposal removing committer")
 
   const multipleUpdateRemoveForSameLeaf =
-    p.update.some(
+    p[defaultProposalTypes.update].some(
       ({ senderLeafIndex: a }, indexA) =>
-        p.update.some(({ senderLeafIndex: b }, indexB) => a === b && indexA !== indexB) ||
-        p.remove.some((r) => r.proposal.remove.removed === a),
+        p[defaultProposalTypes.update].some(({ senderLeafIndex: b }, indexB) => a === b && indexA !== indexB) ||
+        p[defaultProposalTypes.remove].some((r) => r.proposal.remove.removed === a),
     ) ||
-    p.remove.some(
+    p[defaultProposalTypes.remove].some(
       (a, indexA) =>
-        p.remove.some((b, indexB) => b.proposal.remove.removed === a.proposal.remove.removed && indexA !== indexB) ||
-        p.update.some(({ senderLeafIndex }) => a.proposal.remove.removed === senderLeafIndex),
+        p[defaultProposalTypes.remove].some(
+          (b, indexB) => b.proposal.remove.removed === a.proposal.remove.removed && indexA !== indexB,
+        ) ||
+        p[defaultProposalTypes.update].some(({ senderLeafIndex }) => a.proposal.remove.removed === senderLeafIndex),
     )
 
   if (multipleUpdateRemoveForSameLeaf)
@@ -368,8 +380,8 @@ async function validateProposals(
       "Commit cannot contain multiple update and/or remove proposals that apply to the same leaf",
     )
 
-  const multipleAddsContainSameKeypackage = p.add.some(({ proposal: a }, indexA) =>
-    p.add.some(
+  const multipleAddsContainSameKeypackage = p[defaultProposalTypes.add].some(({ proposal: a }, indexA) =>
+    p[defaultProposalTypes.add].some(
       ({ proposal: b }, indexB) => config.compareKeyPackages(a.add.keyPackage, b.add.keyPackage) && indexA !== indexB,
     ),
   )
@@ -381,28 +393,30 @@ async function validateProposals(
 
   // checks if there is an Add proposal with a KeyPackage that matches a client already in the group
   // unless there is a Remove proposal in the list removing the matching client from the group.
-  const addsContainExistingKeypackage = p.add.some(({ proposal }) =>
+  const addsContainExistingKeypackage = p[defaultProposalTypes.add].some(({ proposal }) =>
     tree.some(
       (node, nodeIndex) =>
         node !== undefined &&
-        node.nodeType === "leaf" &&
+        node.nodeType === nodeTypes.leaf &&
         config.compareKeyPackageToLeafNode(proposal.add.keyPackage, node.leaf) &&
-        p.remove.every((r) => r.proposal.remove.removed !== nodeToLeafIndex(toNodeIndex(nodeIndex))),
+        p[defaultProposalTypes.remove].every(
+          (r) => r.proposal.remove.removed !== nodeToLeafIndex(toNodeIndex(nodeIndex)),
+        ),
     ),
   )
 
   if (addsContainExistingKeypackage)
     return new ValidationError("Commit cannot contain an Add proposal for someone already in the group")
 
-  const everyLeafSupportsGroupExtensions = p.add.every(({ proposal }) =>
+  const everyLeafSupportsGroupExtensions = p[defaultProposalTypes.add].every(({ proposal }) =>
     extensionsSupportedByCapabilities(groupContext.extensions, proposal.add.keyPackage.leafNode.capabilities),
   )
 
   if (!everyLeafSupportsGroupExtensions)
     return new ValidationError("Added leaf node that doesn't support extension in GroupContext")
 
-  const multiplePskWithSamePskId = p.psk.some((a, indexA) =>
-    p.psk.some(
+  const multiplePskWithSamePskId = p[defaultProposalTypes.psk].some((a, indexA) =>
+    p[defaultProposalTypes.psk].some(
       (b, indexB) =>
         constantTimeEqual(
           encode(pskIdEncoder)(a.proposal.psk.preSharedKeyId),
@@ -414,26 +428,28 @@ async function validateProposals(
   if (multiplePskWithSamePskId)
     return new ValidationError("Commit cannot contain PreSharedKey proposals that reference the same PreSharedKeyID")
 
-  const multipleGroupContextExtensions = p.group_context_extensions.length > 1
+  const multipleGroupContextExtensions = p[defaultProposalTypes.group_context_extensions].length > 1
 
   if (multipleGroupContextExtensions)
     return new ValidationError("Commit cannot contain multiple GroupContextExtensions proposals")
 
-  const allExtensions = flattenExtensions(p.group_context_extensions)
+  const allExtensions = flattenExtensions(p[defaultProposalTypes.group_context_extensions])
 
-  const requiredCapabilities = allExtensions.find((e) => e.extensionType === "required_capabilities")
+  const requiredCapabilities = allExtensions.find(
+    (e) => e.extensionType === defaultExtensionTypes.required_capabilities,
+  )
 
   if (requiredCapabilities !== undefined) {
     const caps = decodeRequiredCapabilities(requiredCapabilities.extensionData, 0)
     if (caps === undefined) return new CodecError("Could not decode required_capabilities")
 
     const everyLeafSupportsCapabilities = tree
-      .filter((n) => n !== undefined && n.nodeType === "leaf")
+      .filter((n) => n !== undefined && n.nodeType === nodeTypes.leaf)
       .every((l) => capabiltiesAreSupported(caps[0], l.leaf.capabilities))
 
     if (!everyLeafSupportsCapabilities) return new ValidationError("Not all members support required capabilities")
 
-    const allAdditionsSupportCapabilities = p.add.every((a) =>
+    const allAdditionsSupportCapabilities = p[defaultProposalTypes.add].every((a) =>
       capabiltiesAreSupported(caps[0], a.proposal.add.keyPackage.leafNode.capabilities),
     )
 
@@ -448,7 +464,7 @@ async function validateExternalSenders(
   extensions: Extension[],
   authService: AuthenticationService,
 ): Promise<MlsError | undefined> {
-  const externalSenders = extensions.filter((e) => e.extensionType === "external_senders")
+  const externalSenders = extensions.filter((e) => e.extensionType === defaultExtensionTypes.external_senders)
   for (const externalSender of externalSenders) {
     const decoded = decodeExternalSender(externalSender.extensionData, 0)
     if (decoded === undefined) return new CodecError("Could not decode external_senders")
@@ -476,10 +492,10 @@ export async function validateRatchetTree(
 ): Promise<MlsError | undefined> {
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
-  const credentialTypes = new Set<CredentialTypeName>()
+  const credentialTypes = new Set<number>()
   for (const [i, n] of tree.entries()) {
     const nodeIndex = toNodeIndex(i)
-    if (n?.nodeType === "leaf") {
+    if (n?.nodeType === nodeTypes.leaf) {
       if (!isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
       const hpkeKey = bytesToBase64(n.leaf.hpkePublicKey)
@@ -490,10 +506,12 @@ export async function validateRatchetTree(
       if (signatureKeys.has(signatureKey)) return new ValidationError("signature keys not unique")
       else signatureKeys.add(signatureKey)
 
-      credentialTypes.add(n.leaf.credential.credentialType)
+      {
+        credentialTypes.add(n.leaf.credential.credentialType)
+      }
 
       const err =
-        n.leaf.leafNodeSource === "key_package"
+        n.leaf.leafNodeSource === leafNodeSources.key_package
           ? await validateLeafNodeKeyPackage(n.leaf, groupContext, false, config, authService, cs.signature)
           : await validateLeafNodeUpdateOrCommit(
               n.leaf,
@@ -504,7 +522,7 @@ export async function validateRatchetTree(
             )
 
       if (err !== undefined) return err
-    } else if (n?.nodeType === "parent") {
+    } else if (n?.nodeType === nodeTypes.parent) {
       if (isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
       const hpkeKey = bytesToBase64(n.parent.hpkePublicKey)
@@ -515,14 +533,14 @@ export async function validateRatchetTree(
         const leafIndex = toLeafIndex(unmergedLeaf)
         const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
         const nodeIndex = leafToNodeIndex(leafIndex)
-        if (tree[nodeIndex]?.nodeType !== "leaf" && !dp.includes(toNodeIndex(i)))
+        if (tree[nodeIndex]?.nodeType !== nodeTypes.leaf && !dp.includes(toNodeIndex(i)))
           return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node")
 
         for (const parentIdx of dp) {
           const dpNode = tree[parentIdx]
 
           if (dpNode !== undefined) {
-            if (dpNode.nodeType !== "parent") return new InternalError("Expected parent node")
+            if (dpNode.nodeType !== nodeTypes.parent) return new InternalError("Expected parent node")
 
             if (!arraysEqual(dpNode.parent.unmergedLeaves, n.parent.unmergedLeaves))
               return new ValidationError("non-blank intermediate node must list leaf node in its unmerged_leaves")
@@ -533,7 +551,7 @@ export async function validateRatchetTree(
   }
 
   for (const n of tree) {
-    if (n?.nodeType === "leaf") {
+    if (n?.nodeType === nodeTypes.leaf) {
       for (const credentialType of credentialTypes) {
         if (!n.leaf.capabilities.credentials.includes(credentialType))
           return new ValidationError("LeafNode has credential that is not supported by member of the group")
@@ -578,7 +596,9 @@ async function validateLeafNodeCommon(
 
   if (!credentialValid) return new ValidationError("Could not validate credential")
 
-  const requiredCapabilities = groupContext.extensions.find((e) => e.extensionType === "required_capabilities")
+  const requiredCapabilities = groupContext.extensions.find(
+    (e) => e.extensionType === defaultExtensionTypes.required_capabilities,
+  )
 
   if (requiredCapabilities !== undefined) {
     const caps = decodeRequiredCapabilities(requiredCapabilities.extensionData, 0)
@@ -607,7 +627,7 @@ async function validateLeafNodeKeyPackage(
 
   //verify lifetime
   if (sentByClient || config.validateLifetimeOnReceive) {
-    if (leafNode.leafNodeSource === "key_package") {
+    if (leafNode.leafNodeSource === leafNodeSources.key_package) {
       const currentTime = BigInt(Math.floor(Date.now() / 1000))
       if (leafNode.lifetime.notBefore > currentTime || leafNode.lifetime.notAfter < currentTime)
         return new ValidationError("Current time not within Lifetime")
@@ -627,8 +647,9 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
   for (const [nodeIndex, node] of tree.entries()) {
-    if (node?.nodeType === "leaf") {
-      if (!node.leaf.capabilities.credentials.includes(leafNode.credential.credentialType)) {
+    if (node?.nodeType === nodeTypes.leaf) {
+      const credentialType = leafNode.credential.credentialType
+      if (!node.leaf.capabilities.credentials.includes(credentialType)) {
         return new ValidationError("LeafNode has credential that is not supported by member of the group")
       }
 
@@ -640,7 +661,7 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
       if (signatureKeys.has(signatureKey) && existingLeafIndex !== nodeToLeafIndex(toNodeIndex(nodeIndex)))
         return new ValidationError("signature keys not unique")
       else signatureKeys.add(signatureKey)
-    } else if (node?.nodeType === "parent") {
+    } else if (node?.nodeType === nodeTypes.parent) {
       const hpkeKey = bytesToBase64(node.parent.hpkePublicKey)
       if (hpkeKeys.has(hpkeKey)) return new ValidationError("hpke keys not unique")
       else hpkeKeys.add(hpkeKey)
@@ -689,21 +710,22 @@ function validateReinit(
 ): ValidationError | undefined {
   if (allProposals.length !== 1) return new ValidationError("Reinit proposal needs to be commited by itself")
 
-  if (protocolVersions[reinit.version] < protocolVersions[gc.version])
+  if (reinit.version < gc.version)
     return new ValidationError("A ReInit proposal cannot use a version less than the version for the current group")
 }
 
 function validateExternalInit(grouped: Proposals): ValidationError | undefined {
-  if (grouped.external_init.length > 1)
+  if (grouped[defaultProposalTypes.external_init].length > 1)
     return new ValidationError("Cannot contain more than one external_init proposal")
 
-  if (grouped.remove.length > 1) return new ValidationError("Cannot contain more than one remove proposal")
+  if (grouped[defaultProposalTypes.remove].length > 1)
+    return new ValidationError("Cannot contain more than one remove proposal")
 
   if (
-    grouped.add.length > 0 ||
-    grouped.group_context_extensions.length > 0 ||
-    grouped.reinit.length > 0 ||
-    grouped.update.length > 0
+    grouped[defaultProposalTypes.add].length > 0 ||
+    grouped[defaultProposalTypes.group_context_extensions].length > 0 ||
+    grouped[defaultProposalTypes.reinit].length > 0 ||
+    grouped[defaultProposalTypes.update].length > 0
   )
     return new ValidationError("Invalid proposals")
 }
@@ -737,7 +759,7 @@ export async function applyProposals(
   cs: CiphersuiteImpl,
 ): Promise<ApplyProposalsResult> {
   const allProposals = proposals.reduce((acc, cur) => {
-    if (cur.proposalOrRefType === "proposal")
+    if (cur.proposalOrRefType === proposalOrRefTypes.proposal)
       return [...acc, { proposal: cur.proposal, senderLeafIndex: committerLeafIndex }]
 
     const p = state.unappliedProposals[bytesToBase64(cur.reference)]
@@ -747,18 +769,22 @@ export async function applyProposals(
 
   const grouped = allProposals.reduce((acc, cur) => {
     //this skips any custom proposals
-    if (typeof cur.proposal.proposalType === "number") return acc
-    const proposal = acc[cur.proposal.proposalType] ?? []
-    return { ...acc, [cur.proposal.proposalType]: [...proposal, cur] }
+    if (isDefaultProposal(cur.proposal)) {
+      const proposalType = cur.proposal.proposalType
+      const proposals = acc[proposalType] ?? []
+      return { ...acc, [cur.proposal.proposalType]: [...proposals, cur] }
+    } else {
+      return acc
+    }
   }, emptyProposals)
 
   const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
 
-  const isExternalInit = grouped.external_init.length > 0
+  const isExternalInit = grouped[defaultProposalTypes.external_init].length > 0
 
   if (!isExternalInit) {
-    if (grouped.reinit.length > 0) {
-      const reinit = grouped.reinit.at(0)!.proposal.reinit
+    if (grouped[defaultProposalTypes.reinit].length > 0) {
+      const reinit = grouped[defaultProposalTypes.reinit].at(0)!.proposal.reinit
 
       throwIfDefined(validateReinit(allProposals, reinit, state.groupContext))
 
@@ -787,7 +813,7 @@ export async function applyProposals(
       ),
     )
 
-    const newExtensions = flattenExtensions(grouped.group_context_extensions)
+    const newExtensions = flattenExtensions(grouped[defaultProposalTypes.group_context_extensions])
 
     const [mutatedTree, addedLeafNodes] = await applyTreeMutations(
       state.ratchetTree,
@@ -800,7 +826,7 @@ export async function applyProposals(
     )
 
     const [updatedPskSecret, pskIds] = await accumulatePskSecret(
-      grouped.psk.map((p) => p.proposal.psk.preSharedKeyId),
+      grouped[defaultProposalTypes.psk].map((p) => p.proposal.psk.preSharedKeyId),
       pskSearch,
       cs,
       zeroes,
@@ -809,7 +835,9 @@ export async function applyProposals(
     const selfRemoved = mutatedTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
 
     const needsUpdatePath =
-      allProposals.length === 0 || Object.values(grouped.update).length > 1 || Object.values(grouped.remove).length > 1
+      allProposals.length === 0 ||
+      Object.values(grouped[defaultProposalTypes.update]).length > 1 ||
+      Object.values(grouped[defaultProposalTypes.remove]).length > 1
 
     return {
       tree: mutatedTree,
@@ -827,20 +855,20 @@ export async function applyProposals(
   } else {
     throwIfDefined(validateExternalInit(grouped))
 
-    const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
+    const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
       return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
     }, state.ratchetTree)
 
     const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
 
     const [updatedPskSecret, pskIds] = await accumulatePskSecret(
-      grouped.psk.map((p) => p.proposal.psk.preSharedKeyId),
+      grouped[defaultProposalTypes.psk].map((p) => p.proposal.psk.preSharedKeyId),
       pskSearch,
       cs,
       zeroes,
     )
 
-    const initProposal = grouped.external_init.at(0)!
+    const initProposal = grouped[defaultProposalTypes.external_init].at(0)!
 
     const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
 
@@ -870,7 +898,7 @@ export async function applyProposals(
 export function makePskIndex(state: ClientState | undefined, externalPsks: Record<string, Uint8Array>): PskIndex {
   return {
     findPsk(preSharedKeyId) {
-      if (preSharedKeyId.psktype === "external") {
+      if (preSharedKeyId.psktype === pskTypes.external) {
         return externalPsks[bytesToBase64(preSharedKeyId.pskId)]
       }
 
@@ -892,7 +920,11 @@ export async function nextEpochContext(
   h: Hash,
 ): Promise<GroupContext> {
   const interimTranscriptHash = await createInterimHash(groupContext.confirmedTranscriptHash, confirmationTag, h)
-  const newConfirmedHash = await createConfirmedHash(interimTranscriptHash, { wireformat, content, signature }, h)
+  const newConfirmedHash = await createConfirmedHash(
+    interimTranscriptHash,
+    { wireformat: wireformats[wireformat], content, signature },
+    h,
+  )
 
   return {
     ...groupContext,
@@ -951,7 +983,7 @@ export async function joinGroupWithExtensions(
   const gi = await decryptGroupInfo(welcome, groupSecrets.joinerSecret, pskSecret, cs)
   if (gi === undefined) throw new CodecError("Could not decode group info")
 
-  const resumptionPsk = pskIds.find((id) => id.psktype === "resumption")
+  const resumptionPsk = pskIds.find((id) => id.psktype === pskTypes.resumption)
   if (resumptionPsk !== undefined) {
     if (resumingFromState === undefined) throw new ValidationError("No prior state passed for resumption")
 
@@ -962,7 +994,7 @@ export async function joinGroupWithExtensions(
 
     if (gi.groupContext.epoch !== 1n) throw new ValidationError("Resumption must be started at epoch 1")
 
-    if (resumptionPsk.usage === "reinit") {
+    if (resumptionPsk.usage === resumptionPSKUsages.reinit) {
       if (resumingFromState.groupActiveState.kind !== "suspendedPendingReinit")
         throw new ValidationError("Found reinit psk but no old suspended clientState")
 
@@ -995,7 +1027,7 @@ export async function joinGroupWithExtensions(
   if (signerNode === undefined) {
     throw new ValidationError("Could not find signer leafNode")
   }
-  if (signerNode.nodeType === "parent") throw new ValidationError("Expected non blank leaf node")
+  if (signerNode.nodeType === nodeTypes.parent) throw new ValidationError("Expected non blank leaf node")
 
   const credentialVerified = await clientConfig.authService.validateCredential(
     signerNode.leaf.credential,
@@ -1091,7 +1123,7 @@ export async function createGroup(
   cs: CiphersuiteImpl,
   clientConfig: ClientConfig = defaultClientConfig,
 ): Promise<ClientState> {
-  const ratchetTree: RatchetTree = [{ nodeType: "leaf", leaf: keyPackage.leafNode }]
+  const ratchetTree: RatchetTree = [{ nodeType: nodeTypes.leaf, leaf: keyPackage.leafNode }]
 
   const privatePath: PrivateKeyPath = {
     leafIndex: 0,
@@ -1101,7 +1133,7 @@ export async function createGroup(
   const confirmedTranscriptHash = new Uint8Array()
 
   const groupContext: GroupContext = {
-    version: "mls10",
+    version: protocolVersions.mls10,
     cipherSuite: cs.name,
     epoch: 0n,
     treeHash: await treeHashRoot(ratchetTree, cs.hash),
@@ -1170,24 +1202,29 @@ async function applyTreeMutations(
   lifetimeConfig: LifetimeConfig,
   s: Signature,
 ): Promise<[RatchetTree, [LeafIndex, KeyPackage][]]> {
-  const treeAfterUpdate = await grouped.update.reduce(async (acc, { senderLeafIndex, proposal }) => {
-    if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
+  const treeAfterUpdate = await grouped[defaultProposalTypes.update].reduce(
+    async (acc, { senderLeafIndex, proposal }) => {
+      if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
 
-    throwIfDefined(await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s))
-    throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniqueness(ratchetTree, proposal.update.leafNode, senderLeafIndex),
-    )
+      throwIfDefined(
+        await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s),
+      )
+      throwIfDefined(
+        await validateLeafNodeCredentialAndKeyUniqueness(ratchetTree, proposal.update.leafNode, senderLeafIndex),
+      )
 
-    return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
-  }, Promise.resolve(ratchetTree))
+      return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
+    },
+    Promise.resolve(ratchetTree),
+  )
 
-  const treeAfterRemove = grouped.remove.reduce((acc, { proposal }) => {
+  const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
     throwIfDefined(validateRemove(proposal.remove, ratchetTree))
 
     return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
   }, treeAfterUpdate)
 
-  const [treeAfterAdd, addedLeafNodes] = await grouped.add.reduce(
+  const [treeAfterAdd, addedLeafNodes] = await grouped[defaultProposalTypes.add].reduce(
     async (acc, { proposal }) => {
       throwIfDefined(
         await validateKeyPackage(

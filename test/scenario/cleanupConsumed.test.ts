@@ -4,6 +4,7 @@ import { createApplicationMessage } from "../../src/createMessage.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -15,6 +16,9 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { zeroOutUint8Array } from "../../src/util/byteArray.js"
 import { CryptoError } from "../../src/mlsError.js"
 import { PrivateMessage } from "../../src/privateMessage.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
@@ -23,31 +27,37 @@ test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, as
 async function cleanup(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   // bob sends keyPackage to alice
   const keyPackageMessage = encodeMlsMessage({
     keyPackage: bob.publicPackage,
-    wireformat: "mls_key_package",
-    version: "mls10",
+    wireformat: wireformats.mls_key_package,
+    version: protocolVersions.mls10,
   })
 
   // alice decodes bob's keyPackage
   const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
 
-  if (decodedKeyPackage.wireformat !== "mls_key_package") throw new Error("Expected key package")
+  if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
   // alice creates proposal to add bob
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: decodedKeyPackage.keyPackage,
     },

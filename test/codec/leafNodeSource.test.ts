@@ -1,18 +1,18 @@
-import { encodeLeafNodeSource, decodeLeafNodeSource, LeafNodeSourceName } from "../../src/leafNodeSource.js"
+import { encodeLeafNodeSourceValue, decodeLeafNodeSourceValue, leafNodeSources } from "../../src/leafNodeSource.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
-describe("LeafNodeSourceName roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeLeafNodeSource, decodeLeafNodeSource)
+describe("LeafNodeSourceValue roundtrip", () => {
+  const roundtrip = createRoundtripTest(encodeLeafNodeSourceValue, decodeLeafNodeSourceValue)
 
   test("roundtrips key_package", () => {
-    roundtrip("key_package" as LeafNodeSourceName)
+    roundtrip(leafNodeSources.key_package)
   })
 
   test("roundtrips commit", () => {
-    roundtrip("commit" as LeafNodeSourceName)
+    roundtrip(leafNodeSources.commit)
   })
 
   test("roundtrips update", () => {
-    roundtrip("update" as LeafNodeSourceName)
+    roundtrip(leafNodeSources.update)
   })
 })

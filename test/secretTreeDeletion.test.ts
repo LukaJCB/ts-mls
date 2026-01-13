@@ -4,7 +4,7 @@ import { toLeafIndex, root } from "../src/treemath.js"
 import { getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { defaultKeyRetentionConfig } from "../src/keyRetentionConfig.js"
 import { ReuseGuard } from "../src/sender.js"
-import { getCiphersuiteImpl } from "../src/index.js"
+import { contentTypes, getCiphersuiteImpl } from "../src/index.js"
 import { expandWithLabel } from "../src/crypto/kdf.js"
 import { constantTimeEqual } from "../src/util/constantTimeCompare.js"
 
@@ -21,7 +21,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(tree.intermediateNodes[rootIndex]).toBeDefined()
 
     // Derive leaf 0 (node index 0)
-    const result0 = await consumeRatchet(tree, toLeafIndex(0), "application", cs)
+    const result0 = await consumeRatchet(tree, toLeafIndex(0), contentTypes.application, cs)
 
     // Tree
     //             X
@@ -60,7 +60,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result0.consumed.some((b) => constantTimeEqual(b, secret1))).toBe(true)
 
     // Derive leaf 3 (node index 6)
-    const result3 = await consumeRatchet(result0.newTree, toLeafIndex(3), "proposal", cs)
+    const result3 = await consumeRatchet(result0.newTree, toLeafIndex(3), contentTypes.proposal, cs)
 
     // Tree
     //             X
@@ -92,7 +92,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result3.consumed.some((b) => b === result0.newTree.intermediateNodes[5]!)).toBe(true)
 
     // Derive leaf 2 (node index 4)
-    const result2 = await consumeRatchet(result3.newTree, toLeafIndex(2), "application", cs)
+    const result2 = await consumeRatchet(result3.newTree, toLeafIndex(2), contentTypes.application, cs)
 
     // Tree
     //             X
@@ -139,7 +139,7 @@ describe("SecretTree Deletion Schedule", () => {
       reuseGuard: new Uint8Array(4).fill(0) as ReuseGuard,
     }
 
-    const result0 = await ratchetToGeneration(tree, senderData, "application", defaultKeyRetentionConfig, cs)
+    const result0 = await ratchetToGeneration(tree, senderData, contentTypes.application, defaultKeyRetentionConfig, cs)
 
     // Tree
     //             X
@@ -184,7 +184,7 @@ describe("SecretTree Deletion Schedule", () => {
     const result3 = await ratchetToGeneration(
       result0.newTree,
       senderData3,
-      "application",
+      contentTypes.application,
       defaultKeyRetentionConfig,
       cs,
     )
@@ -224,7 +224,7 @@ describe("SecretTree Deletion Schedule", () => {
     const result2 = await ratchetToGeneration(
       result3.newTree,
       senderData2,
-      "application",
+      contentTypes.application,
       defaultKeyRetentionConfig,
       cs,
     )
@@ -269,7 +269,7 @@ describe("SecretTree Deletion Schedule", () => {
     const result2EarlierGen = await ratchetToGeneration(
       result2.newTree,
       senderData2EarlierGen,
-      "application",
+      contentTypes.application,
       defaultKeyRetentionConfig,
       cs,
     )
@@ -309,7 +309,7 @@ describe("SecretTree Deletion Schedule", () => {
     const result2LaterGen = await ratchetToGeneration(
       result2EarlierGen.newTree,
       senderData2LaterGen,
-      "application",
+      contentTypes.application,
       defaultKeyRetentionConfig,
       cs,
     )
@@ -357,7 +357,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(tree.intermediateNodes[rootIndex]).toBeDefined()
 
     // Derive leaf 0 (node index 0)
-    const result0 = await consumeRatchet(tree, toLeafIndex(0), "application", cs)
+    const result0 = await consumeRatchet(tree, toLeafIndex(0), contentTypes.application, cs)
 
     // Tree structure for leafWidth=16:
     //                                                     X
@@ -398,7 +398,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result0.consumed.some((b) => constantTimeEqual(b, secret3))).toBe(true)
 
     // Derive leaf 15 (node index 30)
-    const result15 = await consumeRatchet(result0.newTree, toLeafIndex(15), "proposal", cs)
+    const result15 = await consumeRatchet(result0.newTree, toLeafIndex(15), contentTypes.proposal, cs)
 
     //                                                     X
     //                             X                                               X
@@ -441,7 +441,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result15.consumed.some((b) => constantTimeEqual(b, secret29))).toBe(true)
 
     // Derive leaf 7 (node index 14)
-    const result7 = await consumeRatchet(result15.newTree, toLeafIndex(7), "application", cs)
+    const result7 = await consumeRatchet(result15.newTree, toLeafIndex(7), contentTypes.application, cs)
 
     //                                                     X
     //                             X                                               X
@@ -483,7 +483,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result7.consumed.some((b) => constantTimeEqual(b, secret13))).toBe(true)
 
     // Derive leaf 4 (node index 8)
-    const result4 = await consumeRatchet(result7.newTree, toLeafIndex(4), "application", cs)
+    const result4 = await consumeRatchet(result7.newTree, toLeafIndex(4), contentTypes.application, cs)
 
     //                                                     X
     //                             X                                               X
@@ -517,7 +517,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result4.consumed.some((b) => b === result7.newTree.intermediateNodes[9]!)).toBe(true)
 
     // Derive leaf 6 (node index 12)
-    const result6 = await consumeRatchet(result4.newTree, toLeafIndex(6), "application", cs)
+    const result6 = await consumeRatchet(result4.newTree, toLeafIndex(6), contentTypes.application, cs)
 
     //                                                     X
     //                             X                                               X

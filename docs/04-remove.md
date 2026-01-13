@@ -22,9 +22,11 @@ This scenario demonstrates how a member can be removed from a group and how the 
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -33,22 +35,29 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // Alice adds Bob and commits, this is epoch 1
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
@@ -69,7 +78,7 @@ let bobGroup = await joinGroup(
 
 // Alice removes Bob, transitioning to epoch 2
 const removeBobProposal: Proposal = {
-  proposalType: "remove",
+  proposalType: defaultProposalTypes.remove,
   remove: { removed: 1 }, // Bob's leaf index
 }
 const removeBobCommitResult = await createCommit(
@@ -77,7 +86,8 @@ const removeBobCommitResult = await createCommit(
   { extraProposals: [removeBobProposal] },
 )
 aliceGroup = removeBobCommitResult.newState
-if (removeBobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
+  throw new Error("Expected private message")
 
 // Bob processes the removal and is removed from the group (epoch 2)
 const bobProcessRemoveResult = await processPrivateMessage(

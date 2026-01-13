@@ -7,7 +7,11 @@ import { MLSMessage } from "./message.js"
 import { protectExternalProposalPublic } from "./messageProtectionPublic.js"
 import { UsageError, ValidationError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
+import { senderTypes } from "./sender.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export async function proposeAddExternal(
@@ -24,7 +28,7 @@ export async function proposeAddExternal(
   if (!allExtensionsSupported) throw new UsageError("client does not support every extension in the GroupContext")
 
   const proposal: Proposal = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage,
     },
@@ -35,12 +39,12 @@ export async function proposeAddExternal(
     groupInfo.groupContext,
     authenticatedData,
     proposal,
-    { senderType: "new_member_proposal" },
+    { senderType: senderTypes.new_member_proposal },
     cs,
   )
 
   return {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     version: groupInfo.groupContext.version,
     publicMessage: result.publicMessage,
   }
@@ -56,7 +60,7 @@ export async function proposeExternal(
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MLSMessage> {
   const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
-    if (ex.extensionType !== "external_senders") return false
+    if (ex.extensionType !== defaultExtensionTypes.external_senders) return false
     const decoded = decodeExternalSender(ex.extensionData, 0)
 
     if (decoded === undefined) throw new ValidationError("Could not decode external_sender extension")
@@ -72,12 +76,12 @@ export async function proposeExternal(
     groupInfo.groupContext,
     authenticatedData,
     proposal,
-    { senderType: "external", senderIndex: externalSenderExtensionIndex },
+    { senderType: senderTypes.external, senderIndex: externalSenderExtensionIndex },
     cs,
   )
 
   return {
-    wireformat: "mls_public_message",
+    wireformat: wireformats.mls_public_message,
     version: groupInfo.groupContext.version,
     publicMessage: result.publicMessage,
   }

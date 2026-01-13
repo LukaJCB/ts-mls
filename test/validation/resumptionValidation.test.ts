@@ -12,8 +12,11 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { processMessage } from "../../src/processMessages.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
 
-import { ProtocolVersionName } from "../../src/protocolVersion.js"
+import { ProtocolVersionValue } from "../../src/protocolVersion.js"
 import { ValidationError } from "../../src/mlsError.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
   await reinitValidation(cs as CiphersuiteName)
@@ -22,18 +25,24 @@ test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (c
 async function reinitValidation(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -65,7 +74,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobCommitResult.newState
 
-  if (bobCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (bobCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
   const processBobCommitResult = await processMessage(
     bobCommitResult.commit,
@@ -87,7 +96,8 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
 
   aliceGroup = reinitCommitResult.newState
 
-  if (reinitCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processReinitResult = await processMessage(
     reinitCommitResult.commit,
@@ -139,7 +149,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     ...bobGroup,
     groupActiveState: {
       kind: "suspendedPendingReinit",
-      reinit: { ...reinit!, version: "mls2" as ProtocolVersionName },
+      reinit: { ...reinit!, version: 0xffff as ProtocolVersionValue },
     },
   }
 
