@@ -57,10 +57,10 @@ The following cipher suites are supported:
 | ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519   | 82  | @hpke/ml-kem, @hpke/chacha20poly1305                                |
 | X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_AES256GCM_SHA512_Ed25519              | 83  | @hpke/hybridkem-x-wing                                              |
 | X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519       | 84  | @hpke/hybridkem-x-wing, @hpke/chacha20poly1305                      |
-| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA78          | 85  | @hpke/ml-kem, @noble/post-quantum                                   |
-| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA78   | 86  | @hpke/ml-kem, @hpke/chacha20poly1305, @noble/post-quantum           |
-| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_AES256GCM_SHA512_MLDSA78              | 87  | @hpke/hybridkem-x-wing, @noble/post-quantum                         |
-| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA78       | 88  | @hpke/hybridkem-x-wing, @hpke/chacha20poly1305, @noble/post-quantum |
+| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA87          | 85  | @hpke/ml-kem, @noble/post-quantum                                   |
+| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA87   | 86  | @hpke/ml-kem, @hpke/chacha20poly1305, @noble/post-quantum           |
+| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_AES256GCM_SHA512_MLDSA87              | 87  | @hpke/hybridkem-x-wing, @noble/post-quantum                         |
+| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA87       | 88  | @hpke/hybridkem-x-wing, @hpke/chacha20poly1305, @noble/post-quantum |
 
 ## ⚠️ Security Disclaimer
 
