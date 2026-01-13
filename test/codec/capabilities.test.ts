@@ -1,11 +1,11 @@
-import { capabilitiesEncoder, decodeCapabilities, Capabilities } from "../../src/capabilities.js"
+import { capabilitiesEncoder, capabilitiesDecoder, Capabilities } from "../../src/capabilities.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Capabilities roundtrip", () => {
-  const roundtrip = createRoundtripTest(capabilitiesEncoder, decodeCapabilities)
+  const roundtrip = createRoundtripTest(capabilitiesEncoder, capabilitiesDecoder)
 
   test("roundtrips minimal", () => {
     const c: Capabilities = {

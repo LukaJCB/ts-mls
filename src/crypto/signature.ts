@@ -18,10 +18,7 @@ export async function signWithLabel(
   s: Signature,
 ): Promise<Uint8Array> {
   const messageEncoder = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
-  return s.sign(
-    signKey,
-    encode(messageEncoder, [new TextEncoder().encode(`MLS 1.0 ${label}`), content]),
-  )
+  return s.sign(signKey, encode(messageEncoder, [new TextEncoder().encode(`MLS 1.0 ${label}`), content]))
 }
 
 export async function verifyWithLabel(
@@ -32,9 +29,5 @@ export async function verifyWithLabel(
   s: Signature,
 ): Promise<boolean> {
   const messageEncoder = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
-  return s.verify(
-    publicKey,
-    encode(messageEncoder, [new TextEncoder().encode(`MLS 1.0 ${label}`), content]),
-    signature,
-  )
+  return s.verify(publicKey, encode(messageEncoder, [new TextEncoder().encode(`MLS 1.0 ${label}`), content]), signature)
 }

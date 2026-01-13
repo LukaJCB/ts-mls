@@ -1,27 +1,17 @@
-import { decodeUint64, uint64Encoder } from "./codec/number.js"
+import { uint64Decoder, uint64Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import {
-  contramapBufferEncoder,
-  contramapBufferEncoders,
-  BufferEncoder,
-  encode,
-  encVoid,
-} from "./codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import { Commit, decodeCommit, commitEncoder } from "./commit.js"
-import { ContentTypeValue, contentTypes, contentTypeEncoder, decodeContentType } from "./contentType.js"
+import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, encVoid } from "./codec/tlsEncoder.js"
+import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
+import { Commit, commitDecoder, commitEncoder } from "./commit.js"
+import { ContentTypeValue, contentTypes, contentTypeEncoder, contentTypeDecoder } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { groupContextEncoder, GroupContext } from "./groupContext.js"
 import { wireformatEncoder, WireformatName, wireformats, WireformatValue } from "./wireformat.js"
-import { decodeProposal, proposalEncoder, Proposal } from "./proposal.js"
+import { proposalDecoder, proposalEncoder, Proposal } from "./proposal.js"
 import { protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
-import {
-  decodeSender,
-  senderEncoder,
-  Sender,
-} from "./sender.js"
+import { senderDecoder, senderEncoder, Sender } from "./sender.js"
 import { senderTypes } from "./sender.js"
 
 /** @public */
@@ -69,31 +59,31 @@ export const framedContentInfoEncoder: BufferEncoder<FramedContentInfo> = (fc) =
   }
 }
 
-export const decodeFramedContentApplicationData: Decoder<FramedContentApplicationData> = mapDecoder(
-  decodeVarLenData,
+export const framedContentApplicationDataDecoder: Decoder<FramedContentApplicationData> = mapDecoder(
+  varLenDataDecoder,
   (applicationData) => ({ contentType: contentTypes.application, applicationData }),
 )
 
-export const decodeFramedContentProposalData: Decoder<FramedContentProposalData> = mapDecoder(
-  decodeProposal,
+export const framedContentProposalDataDecoder: Decoder<FramedContentProposalData> = mapDecoder(
+  proposalDecoder,
   (proposal) => ({ contentType: contentTypes.proposal, proposal }),
 )
 
-export const decodeFramedContentCommitData: Decoder<FramedContentCommitData> = mapDecoder(decodeCommit, (commit) => ({
+export const framedContentCommitDataDecoder: Decoder<FramedContentCommitData> = mapDecoder(commitDecoder, (commit) => ({
   contentType: contentTypes.commit,
   commit,
 }))
 
-export const decodeFramedContentInfo: Decoder<FramedContentInfo> = flatMapDecoder(
-  decodeContentType,
+export const framedContentInfoDecoder: Decoder<FramedContentInfo> = flatMapDecoder(
+  contentTypeDecoder,
   (contentType): Decoder<FramedContentInfo> => {
     switch (contentType) {
       case contentTypes.application:
-        return decodeFramedContentApplicationData
+        return framedContentApplicationDataDecoder
       case contentTypes.proposal:
-        return decodeFramedContentProposalData
+        return framedContentProposalDataDecoder
       case contentTypes.commit:
-        return decodeFramedContentCommitData
+        return framedContentCommitDataDecoder
     }
   },
 )
@@ -121,8 +111,8 @@ export const framedContentEncoder: BufferEncoder<FramedContent> = contramapBuffe
   (fc) => [fc.groupId, fc.epoch, fc.sender, fc.authenticatedData, fc] as const,
 )
 
-export const decodeFramedContent: Decoder<FramedContent> = mapDecoders(
-  [decodeVarLenData, decodeUint64, decodeSender, decodeVarLenData, decodeFramedContentInfo],
+export const framedContentDecoder: Decoder<FramedContent> = mapDecoders(
+  [varLenDataDecoder, uint64Decoder, senderDecoder, varLenDataDecoder, framedContentInfoDecoder],
   (groupId, epoch, sender, authenticatedData, info) => ({
     groupId,
     epoch,
@@ -204,24 +194,24 @@ export const framedContentAuthDataEncoder: BufferEncoder<FramedContentAuthData> 
   (d) => [d.signature, d] as const,
 )
 
-export const decodeFramedContentAuthDataCommit: Decoder<FramedContentAuthDataContentCommit> = mapDecoder(
-  decodeVarLenData,
+export const framedContentAuthDataCommitDecoder: Decoder<FramedContentAuthDataContentCommit> = mapDecoder(
+  varLenDataDecoder,
   (confirmationTag) => ({
     contentType: contentTypes.commit,
     confirmationTag,
   }),
 )
 
-export function decodeFramedContentAuthData(contentType: ContentTypeValue): Decoder<FramedContentAuthData> {
+export function framedContentAuthDataDecoder(contentType: ContentTypeValue): Decoder<FramedContentAuthData> {
   switch (contentType) {
     case contentTypes.commit:
-      return mapDecoders([decodeVarLenData, decodeFramedContentAuthDataCommit], (signature, commitData) => ({
+      return mapDecoders([varLenDataDecoder, framedContentAuthDataCommitDecoder], (signature, commitData) => ({
         signature,
         ...commitData,
       }))
     case contentTypes.application:
     case contentTypes.proposal:
-      return mapDecoder(decodeVarLenData, (signature) => ({
+      return mapDecoder(varLenDataDecoder, (signature) => ({
         signature,
         contentType,
       }))

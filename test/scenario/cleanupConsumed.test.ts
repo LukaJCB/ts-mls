@@ -8,7 +8,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
-import { decodeMlsMessage, mlsMessageEncoder } from "../../src/message.js"
+import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
@@ -52,7 +52,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
   })
 
   // alice decodes bob's keyPackage
-  const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
+  const decodedKeyPackage = mlsMessageDecoder(keyPackageMessage, 0)![0]
 
   if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 

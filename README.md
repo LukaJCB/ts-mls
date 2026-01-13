@@ -86,7 +86,7 @@ import {
   generateKeyPackage,
   encode,
   mlsMessageEncoder,
-  decodeMlsMessage,
+  mlsMessageDecoder,
   protocolVersions,
   wireformats,
   Proposal,
@@ -122,7 +122,7 @@ const keyPackageMessage = encode(mlsMessageEncoder, {
 })
 
 // alice decodes bob's keyPackage
-const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
+const decodedKeyPackage = mlsMessageDecoder(keyPackageMessage, 0)![0]
 
 if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
@@ -150,7 +150,7 @@ const encodedWelcome = encode(mlsMessageEncoder, {
 })
 
 // bob decodes the welcome message
-const decodedWelcome = decodeMlsMessage(encodedWelcome, 0)![0]
+const decodedWelcome = mlsMessageDecoder(encodedWelcome, 0)![0]
 
 if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
@@ -182,7 +182,7 @@ const encodedPrivateMessageAlice = encode(mlsMessageEncoder, {
 })
 
 // bob decodes the message
-const decodedPrivateMessageAlice = decodeMlsMessage(encodedPrivateMessageAlice, 0)![0]
+const decodedPrivateMessageAlice = mlsMessageDecoder(encodedPrivateMessageAlice, 0)![0]
 
 if (decodedPrivateMessageAlice.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")

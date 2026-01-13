@@ -10,7 +10,7 @@ import {
   getCiphersuiteFromName,
   getCiphersuiteImpl,
 } from "../../src/index.js"
-import { decodeGroupState, groupStateEncoder, GroupState } from "../../src/clientState.js"
+import { groupStateDecoder, groupStateEncoder, GroupState } from "../../src/clientState.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 
 test.concurrent.each(Object.keys(ciphersuites).slice(0, 1))(
@@ -44,7 +44,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
   expect(binary).toBeInstanceOf(Uint8Array)
   expect(binary.byteLength).toBeGreaterThan(0)
 
-  const decoded = decodeGroupState(binary, 0)
+  const decoded = groupStateDecoder(binary, 0)
 
   if (!decoded) {
     throw new Error("binary deserialization failed unexpectedly")

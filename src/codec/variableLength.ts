@@ -1,6 +1,6 @@
 import { CodecError } from "../mlsError.js"
 import { base64ToBytes, bytesToBase64 } from "../util/byteArray.js"
-import { decodeUint64, uint64Encoder } from "./number.js"
+import { uint64Decoder, uint64Encoder } from "./number.js"
 import { Decoder, mapDecoder, mapDecoders } from "./tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders } from "./tlsEncoder.js"
 
@@ -82,7 +82,7 @@ export function determineLength(data: Uint8Array, offset: number = 0): { length:
   }
 }
 
-export const decodeVarLenData: Decoder<Uint8Array> = (buf, offset) => {
+export const varLenDataDecoder: Decoder<Uint8Array> = (buf, offset) => {
   if (offset >= buf.length) {
     throw new CodecError("Offset beyond buffer")
   }
@@ -123,9 +123,9 @@ export function varLenTypeEncoder<T>(enc: BufferEncoder<T>): BufferEncoder<T[]> 
   }
 }
 
-export function decodeVarLenType<T>(dec: Decoder<T>): Decoder<T[]> {
+export function varLenTypeDecoder<T>(dec: Decoder<T>): Decoder<T[]> {
   return (b, offset) => {
-    const d = decodeVarLenData(b, offset)
+    const d = varLenDataDecoder(b, offset)
     if (d === undefined) return
 
     const [totalBytes, totalLength] = d
@@ -155,10 +155,10 @@ export function base64RecordEncoder<V>(valueEncoder: BufferEncoder<V>): BufferEn
   return contramapBufferEncoders([varLenTypeEncoder(entryEncoder)], (record) => [Object.entries(record)] as const)
 }
 
-export function decodeBase64Record<V>(decodeValue: Decoder<V>): Decoder<Record<string, V>> {
+export function base64RecordDecoder<V>(valueDecoder: Decoder<V>): Decoder<Record<string, V>> {
   return mapDecoder(
-    decodeVarLenType(
-      mapDecoders([mapDecoder(decodeVarLenData, bytesToBase64), decodeValue], (key, value) => [key, value] as const),
+    varLenTypeDecoder(
+      mapDecoders([mapDecoder(varLenDataDecoder, bytesToBase64), valueDecoder], (key, value) => [key, value] as const),
     ),
     (entries) => {
       const record: Record<string, V> = {}
@@ -184,12 +184,12 @@ export function numberRecordEncoder<V>(
   )
 }
 
-export function decodeNumberRecord<V>(
-  decodeNumber: Decoder<number>,
-  decodeValue: Decoder<V>,
+export function numberRecordDecoder<V>(
+  numberDecoder: Decoder<number>,
+  valueDecoder: Decoder<V>,
 ): Decoder<Record<number, V>> {
   return mapDecoder(
-    decodeVarLenType(mapDecoders([decodeNumber, decodeValue], (key, value) => [key, value] as const)),
+    varLenTypeDecoder(mapDecoders([numberDecoder, valueDecoder], (key, value) => [key, value] as const)),
     (entries) => {
       const record: Record<number, V> = {}
       for (const [key, value] of entries) {
@@ -208,9 +208,9 @@ export function bigintMapEncoder<V>(valueEncoder: BufferEncoder<V>): BufferEncod
   return contramapBufferEncoder(varLenTypeEncoder(entryEncoder), (map) => Array.from(map.entries()))
 }
 
-export function decodeBigintMap<V>(decodeValue: Decoder<V>): Decoder<Map<bigint, V>> {
+export function bigintMapDecoder<V>(valueDecoder: Decoder<V>): Decoder<Map<bigint, V>> {
   return mapDecoder(
-    decodeVarLenType(mapDecoders([decodeUint64, decodeValue], (key, value) => [key, value] as const)),
+    varLenTypeDecoder(mapDecoders([uint64Decoder, valueDecoder], (key, value) => [key, value] as const)),
     (entries) => new Map(entries),
   )
 }

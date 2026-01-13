@@ -1,4 +1,4 @@
-import { groupActiveStateEncoder, decodeGroupActiveState, GroupActiveState } from "../../src/groupActiveState.js"
+import { groupActiveStateEncoder, groupActiveStateDecoder, GroupActiveState } from "../../src/groupActiveState.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 import {
   CiphersuiteName,
@@ -14,7 +14,7 @@ import {
 } from "../../src/index.js"
 
 describe("GroupActiveState roundtrip", () => {
-  const roundtrip = createRoundtripTestBufferEncoder(groupActiveStateEncoder, decodeGroupActiveState)
+  const roundtrip = createRoundtripTestBufferEncoder(groupActiveStateEncoder, groupActiveStateDecoder)
 
   test("roundtrips active", () => {
     const state: GroupActiveState = { kind: "active" }

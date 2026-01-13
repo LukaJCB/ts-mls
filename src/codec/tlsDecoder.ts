@@ -11,6 +11,10 @@ export function mapDecoder<T, U>(dec: Decoder<T>, f: (t: T) => U): Decoder<U> {
   }
 }
 
+export function decode<T>(dec: Decoder<T>, b: Uint8Array): T | undefined {
+  return dec(b, 0)?.[0]
+}
+
 export function mapDecodersOption<T extends unknown[], R>(
   decoders: { [K in keyof T]: Decoder<T[K]> },
   f: (...args: T) => R | undefined,
@@ -81,11 +85,7 @@ export function orDecoder<T, U>(decT: Decoder<T>, decU: Decoder<U>): Decoder<T |
   }
 }
 
-function flatMapDecoderAndMap<T, U, V>(
-  dec: Decoder<T>,
-  f: (t: T) => Decoder<U>,
-  g: (t: T, u: U) => V,
-): Decoder<V> {
+function flatMapDecoderAndMap<T, U, V>(dec: Decoder<T>, f: (t: T) => Decoder<U>, g: (t: T, u: U) => V): Decoder<V> {
   return (b, offset) => {
     const decodedT = dec(b, offset)
     if (decodedT !== undefined) {

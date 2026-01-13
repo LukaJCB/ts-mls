@@ -14,10 +14,10 @@ export { proposeAddExternal, proposeExternal } from "./externalProposal.js"
 
 export { type GroupContext } from "./groupContext.js"
 
-export { decodeExternalSender, externalSenderEncoder, type ExternalSender } from "./externalSender.js"
+export { externalSenderDecoder, externalSenderEncoder, type ExternalSender } from "./externalSender.js"
 
 export {
-  decodeRequiredCapabilities,
+  requiredCapabilitiesDecoder,
   requiredCapabilitiesEncoder,
   type RequiredCapabilities,
 } from "./requiredCapabilities.js"
@@ -38,7 +38,7 @@ export {
   makePskIndex,
   joinGroup,
   joinGroupWithExtensions,
-  decodeGroupState,
+  groupStateDecoder,
   groupStateEncoder,
   type GroupState,
   type ClientState,
@@ -117,7 +117,7 @@ export { defaultCryptoProvider } from "./crypto/implementation/default/provider.
 export { bytesToBase64 } from "./util/byteArray.js"
 
 export {
-  decodeMlsMessage,
+  mlsMessageDecoder,
   mlsMessageEncoder,
   type MLSMessage,
   type MlsPublicMessage,

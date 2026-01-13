@@ -1,4 +1,4 @@
-import { decodeUint8 } from "./number.js"
+import { uint8Decoder } from "./number.js"
 import { Decoder } from "./tlsDecoder.js"
 import { BufferEncoder } from "./tlsEncoder.js"
 
@@ -26,11 +26,11 @@ export function optionalEncoder<T>(encodeT: BufferEncoder<T>): BufferEncoder<T |
   }
 }
 
-export function decodeOptional<T>(decodeT: Decoder<T>): Decoder<T | undefined> {
+export function optionalDecoder<T>(tDecoder: Decoder<T>): Decoder<T | undefined> {
   return (b, offset) => {
-    const presenceOctet = decodeUint8(b, offset)?.[0]
+    const presenceOctet = uint8Decoder(b, offset)?.[0]
     if (presenceOctet == 1) {
-      const result = decodeT(b, offset + 1)
+      const result = tDecoder(b, offset + 1)
       return result === undefined ? undefined : [result[0], result[1] + 1]
     } else {
       return [undefined, 1]

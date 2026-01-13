@@ -1,4 +1,4 @@
-import { leafNodeEncoder, decodeLeafNode, LeafNode } from "../../src/leafNode.js"
+import { leafNodeEncoder, leafNodeDecoder, LeafNode } from "../../src/leafNode.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -40,7 +40,7 @@ const nontrivialLeafNode: LeafNode = {
 }
 
 describe("LeafNode roundtrip", () => {
-  const roundtrip = createRoundtripTest(leafNodeEncoder, decodeLeafNode)
+  const roundtrip = createRoundtripTest(leafNodeEncoder, leafNodeDecoder)
 
   test("roundtrips minimal", () => {
     roundtrip(minimalLeafNode)
@@ -50,4 +50,3 @@ describe("LeafNode roundtrip", () => {
     roundtrip(nontrivialLeafNode)
   })
 })
-

@@ -1,6 +1,6 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { extractEpochSecret, extractJoinerSecret, GroupContext } from "./groupContext.js"
@@ -49,18 +49,18 @@ export const keyScheduleEncoder: BufferEncoder<KeySchedule> = contramapBufferEnc
     ] as const,
 )
 
-export const decodeKeySchedule: Decoder<KeySchedule> = mapDecoders(
+export const keyScheduleDecoder: Decoder<KeySchedule> = mapDecoders(
   [
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
-    decodeVarLenData,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
+    varLenDataDecoder,
   ],
   (
     _epochSecret,

@@ -2,8 +2,8 @@ import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDec
 import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import {
-  decodeFramedContent,
-  decodeFramedContentAuthData,
+  framedContentDecoder,
+  framedContentAuthDataDecoder,
   framedContentEncoder,
   framedContentAuthDataEncoder,
   framedContentTBSEncoder,
@@ -14,7 +14,7 @@ import {
   FramedContentProposalData,
   FramedContentTBS,
 } from "./framedContent.js"
-import { decodeWireformat, wireformatEncoder, WireformatValue } from "./wireformat.js"
+import { wireformatDecoder, wireformatEncoder, WireformatValue } from "./wireformat.js"
 
 export interface AuthenticatedContent {
   wireformat: WireformatValue
@@ -35,11 +35,11 @@ export const authenticatedContentEncoder: BufferEncoder<AuthenticatedContent> = 
   (a) => [a.wireformat, a.content, a.auth] as const,
 )
 
-export const decodeAuthenticatedContent: Decoder<AuthenticatedContent> = mapDecoders(
+export const authenticatedContentDecoder: Decoder<AuthenticatedContent> = mapDecoders(
   [
-    decodeWireformat,
-    flatMapDecoder(decodeFramedContent, (content) => {
-      return mapDecoder(decodeFramedContentAuthData(content.contentType), (auth) => ({ content, auth }))
+    wireformatDecoder,
+    flatMapDecoder(framedContentDecoder, (content) => {
+      return mapDecoder(framedContentAuthDataDecoder(content.contentType), (auth) => ({ content, auth }))
     }),
   ],
   (wireformat, contentAuth) => ({

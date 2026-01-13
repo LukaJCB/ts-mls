@@ -1,7 +1,7 @@
-import { stringEncoder, decodeString } from "./codec/string.js"
+import { stringEncoder, stringDecoder } from "./codec/string.js"
 import { Decoder, flatMapDecoder, succeedDecoder, mapDecoder, failDecoder } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
-import { Reinit, reinitEncoder, decodeReinit } from "./proposal.js"
+import { Reinit, reinitEncoder, reinitDecoder } from "./proposal.js"
 
 /** @public */
 export type GroupActiveState =
@@ -27,15 +27,15 @@ export const groupActiveStateEncoder: BufferEncoder<GroupActiveState> = (state) 
   }
 }
 
-export const decodeGroupActiveState: Decoder<GroupActiveState> = flatMapDecoder(
-  decodeString,
+export const groupActiveStateDecoder: Decoder<GroupActiveState> = flatMapDecoder(
+  stringDecoder,
   (kind): Decoder<GroupActiveState> => {
     switch (kind) {
       case "active":
         return succeedDecoder({ kind: "active" })
 
       case "suspendedPendingReinit":
-        return mapDecoder(decodeReinit, (reinit) => ({ kind: "suspendedPendingReinit", reinit }))
+        return mapDecoder(reinitDecoder, (reinit) => ({ kind: "suspendedPendingReinit", reinit }))
 
       case "removedFromGroup":
         return succeedDecoder({ kind: "removedFromGroup" })

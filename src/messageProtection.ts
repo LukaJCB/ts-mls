@@ -8,7 +8,7 @@ import {
 import { GroupContext } from "./groupContext.js"
 import { Proposal } from "./proposal.js"
 import {
-  decodePrivateMessageContent,
+  privateMessageContentDecoder,
   decryptSenderData,
   encryptSenderData,
   PrivateContentAAD,
@@ -255,7 +255,7 @@ export async function unprotectPrivateMessage(
 
   const decrypted = await cs.hpke.decryptAead(key, nonce, encode(privateContentAADEncoder, aad), msg.ciphertext)
 
-  const pmc = decodePrivateMessageContent(msg.contentType)(decrypted, 0)?.[0]
+  const pmc = privateMessageContentDecoder(msg.contentType)(decrypted, 0)?.[0]
 
   if (pmc === undefined) throw new CodecError("Could not decode PrivateMessageContent")
 

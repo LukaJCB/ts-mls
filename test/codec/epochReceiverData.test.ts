@@ -1,6 +1,6 @@
 import { addHistoricalReceiverData } from "../../src/clientState.js"
-import { bigintMapEncoder, decodeBigintMap } from "../../src/codec/variableLength.js"
-import { decodeEpochReceiverData, epochReceiverDataEncoder } from "../../src/epochReceiverData.js"
+import { bigintMapEncoder, bigintMapDecoder } from "../../src/codec/variableLength.js"
+import { epochReceiverDataDecoder, epochReceiverDataEncoder } from "../../src/epochReceiverData.js"
 import {
   createGroup,
   defaultCapabilities,
@@ -13,11 +13,14 @@ import {
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
 describe("EpochReceiverData roundtrip", () => {
-  const roundtripEpochReceiverData = createRoundtripTestBufferEncoder(epochReceiverDataEncoder, decodeEpochReceiverData)
+  const roundtripEpochReceiverData = createRoundtripTestBufferEncoder(
+    epochReceiverDataEncoder,
+    epochReceiverDataDecoder,
+  )
 
   const roundtripEpochReceiverDataMap = createRoundtripTestBufferEncoder(
     bigintMapEncoder(epochReceiverDataEncoder),
-    decodeBigintMap(decodeEpochReceiverData),
+    bigintMapDecoder(epochReceiverDataDecoder),
   )
 
   test("roundtrips epoch receiver data extracted from client state", async () => {

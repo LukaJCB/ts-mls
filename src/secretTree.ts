@@ -1,10 +1,10 @@
-import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import {
-  decodeNumberRecord,
-  decodeVarLenData,
-  decodeVarLenType,
+  numberRecordDecoder,
+  varLenDataDecoder,
+  varLenTypeDecoder,
   numberRecordEncoder,
   varLenDataEncoder,
   varLenTypeEncoder,
@@ -29,8 +29,8 @@ export const generationSecretEncoder: BufferEncoder<GenerationSecret> = contrama
   (gs) => [gs.secret, gs.generation, gs.unusedGenerations] as const,
 )
 
-export const decodeGenerationSecret: Decoder<GenerationSecret> = mapDecoders(
-  [decodeVarLenData, decodeUint32, decodeNumberRecord(decodeUint32, decodeVarLenData)],
+export const generationSecretDecoder: Decoder<GenerationSecret> = mapDecoders(
+  [varLenDataDecoder, uint32Decoder, numberRecordDecoder(uint32Decoder, varLenDataDecoder)],
   (secret, generation, unusedGenerations) => ({
     secret,
     generation,
@@ -49,8 +49,8 @@ export const secretTreeNodeEncoder: BufferEncoder<SecretTreeNode> = contramapBuf
   (node) => [node.handshake, node.application] as const,
 )
 
-export const decodeSecretTreeNode: Decoder<SecretTreeNode> = mapDecoders(
-  [decodeGenerationSecret, decodeGenerationSecret],
+export const secretTreeNodeDecoder: Decoder<SecretTreeNode> = mapDecoders(
+  [generationSecretDecoder, generationSecretDecoder],
   (handshake, application) => ({
     handshake,
     application,
@@ -62,7 +62,7 @@ export type SecretTree = SecretTreeNode[]
 
 export const secretTreeEncoder: BufferEncoder<SecretTree> = varLenTypeEncoder(secretTreeNodeEncoder)
 
-export const decodeSecretTree: Decoder<SecretTree> = decodeVarLenType(decodeSecretTreeNode)
+export const secretTreeDecoder: Decoder<SecretTree> = varLenTypeDecoder(secretTreeNodeDecoder)
 
 export function allSecretTreeValues(tree: SecretTree): Uint8Array[] {
   const arr = new Array<Uint8Array>(tree.length * 2)

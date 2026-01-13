@@ -1,9 +1,4 @@
-import {
-  decodeUint8,
-  decodeUint16,
-  decodeUint32,
-  decodeUint64,
-} from "../../src/codec/number.js"
+import { uint8Decoder, uint16Decoder, uint32Decoder, uint64Decoder } from "../../src/codec/number.js"
 import { uint16Encoder, uint32Encoder, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 
@@ -55,26 +50,26 @@ test("encode and decode works for uint64: 18446744073709551615", () => {
   uint64RoundTrip(18446744073709551615n)
 })
 
-test("decodeUint8 fails for an array that's empty", () => {
-  expect(decodeUint8(new Uint8Array([]), 0)).toBeUndefined()
+test("uint8Decoder fails for an array that's empty", () => {
+  expect(uint8Decoder(new Uint8Array([]), 0)).toBeUndefined()
 })
 
-test("decodeUint16 fails for an array that's too small", () => {
-  expect(decodeUint16(new Uint8Array([0]), 0)).toBeUndefined()
+test("uint16Decoder fails for an array that's too small", () => {
+  expect(uint16Decoder(new Uint8Array([0]), 0)).toBeUndefined()
 })
 
-test("decodeUint32 fails for an array that's too small", () => {
-  expect(decodeUint32(new Uint8Array([0, 1]), 0)).toBeUndefined()
+test("uint32Decoder fails for an array that's too small", () => {
+  expect(uint32Decoder(new Uint8Array([0, 1]), 0)).toBeUndefined()
 })
 
-test("decodeUint64 fails for an array that's too small", () => {
-  expect(decodeUint64(new Uint8Array([0, 1, 2, 3]), 0)).toBeUndefined()
+test("uint64Decoder fails for an array that's too small", () => {
+  expect(uint64Decoder(new Uint8Array([0, 1, 2, 3]), 0)).toBeUndefined()
 })
 
 function uint8RoundTrip(num: number) {
   const encoded = encode(uint8Encoder, num)
 
-  const decoded = decodeUint8(encoded, 0)
+  const decoded = uint8Decoder(encoded, 0)
 
   expect(decoded?.[0]).toBe(num)
   expect(decoded?.[1]).toBe(1)
@@ -83,7 +78,7 @@ function uint8RoundTrip(num: number) {
 function uint16RoundTrip(num: number) {
   const encoded = encode(uint16Encoder, num)
 
-  const decoded = decodeUint16(encoded, 0)
+  const decoded = uint16Decoder(encoded, 0)
 
   expect(decoded?.[0]).toBe(num)
   expect(decoded?.[1]).toBe(2)
@@ -92,7 +87,7 @@ function uint16RoundTrip(num: number) {
 function uint32RoundTrip(num: number) {
   const encoded = encode(uint32Encoder, num)
 
-  const decoded = decodeUint32(encoded, 0)
+  const decoded = uint32Decoder(encoded, 0)
 
   expect(decoded?.[0]).toBe(num)
   expect(decoded?.[1]).toBe(4)
@@ -101,9 +96,8 @@ function uint32RoundTrip(num: number) {
 function uint64RoundTrip(num: bigint) {
   const encoded = encode(uint64Encoder, num)
 
-  const decoded = decodeUint64(encoded, 0)
+  const decoded = uint64Decoder(encoded, 0)
 
   expect(decoded?.[0]).toEqual(num)
   expect(decoded?.[1]).toBe(8)
 }
-
