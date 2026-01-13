@@ -131,10 +131,6 @@ export async function protectPublicMessage(
   }
 }
 
-export interface ProtectCommitPublicResult {
-  publicMessage: PublicMessage
-}
-
 export async function unprotectPublicMessage(
   membershipKey: Uint8Array,
   groupContext: GroupContext,

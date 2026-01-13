@@ -1,9 +1,10 @@
-import { encodeRatchetTree, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
+import { ratchetTreeEncoder, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { nodeTypes } from "../../src/nodeType.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 describe("RatchetTree roundtrip", () => {
   test("roundtrips single leaf", () => {
@@ -28,7 +29,7 @@ describe("RatchetTree roundtrip", () => {
         },
       },
     ]
-    const encoded = encodeRatchetTree(data)
+    const encoded = encode(ratchetTreeEncoder, data)
     const decoded = decodeRatchetTree(encoded, 0)?.[0] as RatchetTree
     expect(decoded).toStrictEqual(data)
   })
@@ -82,7 +83,7 @@ describe("RatchetTree roundtrip", () => {
         },
       },
     ]
-    const encoded = encodeRatchetTree(data)
+    const encoded = encode(ratchetTreeEncoder, data)
     const decoded = decodeRatchetTree(encoded, 0)?.[0] as RatchetTree
     expect(decoded).toStrictEqual(data)
   })

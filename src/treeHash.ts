@@ -1,7 +1,7 @@
 import { uint32Encoder, decodeUint32 } from "./codec/number.js"
 import { optionalEncoder, decodeOptional } from "./codec/optional.js"
 import { Decoder, mapDecoders, flatMapDecoder } from "./codec/tlsDecoder.js"
-import { BufferEncoder, Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
+import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, decodeVarLenData } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { LeafNode, leafNodeEncoder, decodeLeafNode } from "./leafNode.js"
@@ -29,8 +29,6 @@ export const leafNodeHashInputEncoder: BufferEncoder<LeafNodeHashInput> = contra
   (input) => [input.nodeType, input.leafIndex, input.leafNode] as const,
 )
 
-export const encodeLeafNodeHashInput: Encoder<LeafNodeHashInput> = encode(leafNodeHashInputEncoder)
-
 export const decodeLeafNodeHashInput: Decoder<LeafNodeHashInput> = mapDecoders(
   [decodeUint32, decodeOptional(decodeLeafNode)],
   (leafIndex, leafNode) => ({
@@ -44,8 +42,6 @@ export const parentNodeHashInputEncoder: BufferEncoder<ParentNodeHashInput> = co
   [nodeTypeEncoder, optionalEncoder(parentNodeEncoder), varLenDataEncoder, varLenDataEncoder],
   (input) => [input.nodeType, input.parentNode, input.leftHash, input.rightHash] as const,
 )
-
-export const encodeParentNodeHashInput: Encoder<ParentNodeHashInput> = encode(parentNodeHashInputEncoder)
 
 export const decodeParentNodeHashInput: Decoder<ParentNodeHashInput> = mapDecoders(
   [decodeOptional(decodeParentNode), decodeVarLenData, decodeVarLenData],
@@ -65,8 +61,6 @@ export const treeHashInputEncoder: BufferEncoder<TreeHashInput> = (input) => {
       return parentNodeHashInputEncoder(input)
   }
 }
-
-export const encodeTreeHashInput: Encoder<TreeHashInput> = encode(treeHashInputEncoder)
 
 export const decodeTreeHashInput: Decoder<TreeHashInput> = flatMapDecoder(
   decodeNodeType,
@@ -88,7 +82,7 @@ export async function treeHash(tree: RatchetTree, subtreeIndex: NodeIndex, h: Ha
   if (isLeaf(subtreeIndex)) {
     const leafNode = tree[subtreeIndex]
     if (leafNode?.nodeType === nodeTypes.parent) throw new InternalError("Somehow found parent node in leaf position")
-    const input = encode(leafNodeHashInputEncoder)({
+    const input = encode(leafNodeHashInputEncoder, {
       nodeType: nodeTypes.leaf,
       leafIndex: nodeToLeafIndex(subtreeIndex),
       leafNode: leafNode?.leaf,
@@ -106,6 +100,6 @@ export async function treeHash(tree: RatchetTree, subtreeIndex: NodeIndex, h: Ha
       rightHash: rightHash,
     } as const
 
-    return await h.digest(encode(parentNodeHashInputEncoder)(input))
+    return await h.digest(encode(parentNodeHashInputEncoder, input))
   }
 }

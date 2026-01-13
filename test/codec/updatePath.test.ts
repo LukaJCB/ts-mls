@@ -1,8 +1,9 @@
-import { decodeUpdatePath, encodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
+import { decodeUpdatePath, updatePathEncoder, UpdatePath } from "../../src/updatePath.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 describe("UpdatePath", () => {
   test("minimal roundtrip", () => {
@@ -29,7 +30,7 @@ describe("UpdatePath", () => {
       nodes: [],
     }
 
-    const encoded = encodeUpdatePath(minimal)
+    const encoded = encode(updatePathEncoder, minimal)
     const decoded = decodeUpdatePath(encoded, 0)![0]
     expect(decoded).toEqual(minimal)
   })
@@ -81,7 +82,7 @@ describe("UpdatePath", () => {
       ],
     }
 
-    const encoded = encodeUpdatePath(nonTrivial)
+    const encoded = encode(updatePathEncoder, nonTrivial)
     const decoded = decodeUpdatePath(encoded, 0)![0]
     expect(decoded).toEqual(nonTrivial)
   })

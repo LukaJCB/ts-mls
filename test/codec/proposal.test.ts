@@ -1,4 +1,4 @@
-import { encodeProposal, decodeProposal, Proposal } from "../../src/proposal.js"
+import { proposalEncoder, decodeProposal, Proposal } from "../../src/proposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -41,7 +41,7 @@ const dummyProposalRemove: Proposal = {
 }
 
 describe("Proposal roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeProposal, decodeProposal)
+  const roundtrip = createRoundtripTest(proposalEncoder, decodeProposal)
 
   test("roundtrips add", () => {
     roundtrip(dummyProposalAdd)

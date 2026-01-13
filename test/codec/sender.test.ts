@@ -1,8 +1,8 @@
-import { encodeSender, decodeSender, senderTypes } from "../../src/sender.js"
+import { senderEncoder, decodeSender, senderTypes } from "../../src/sender.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Sender roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeSender, decodeSender)
+  const roundtrip = createRoundtripTest(senderEncoder, decodeSender)
 
   test("roundtrips member", () => {
     roundtrip({ senderType: senderTypes.member, leafIndex: 0 })

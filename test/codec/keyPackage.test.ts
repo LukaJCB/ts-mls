@@ -1,4 +1,4 @@
-import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
+import { keyPackageEncoder, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -55,7 +55,7 @@ const nontrivialKeyPackage: KeyPackage = {
 }
 
 describe("KeyPackage roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeKeyPackage, decodeKeyPackage)
+  const roundtrip = createRoundtripTest(keyPackageEncoder, decodeKeyPackage)
 
   test("roundtrips minimal", () => {
     roundtrip(minimalKeyPackage)
@@ -65,3 +65,4 @@ describe("KeyPackage roundtrip", () => {
     roundtrip(nontrivialKeyPackage)
   })
 })
+

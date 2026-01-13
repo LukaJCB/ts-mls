@@ -1,6 +1,6 @@
 import { decodeUint64, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 
@@ -34,8 +34,6 @@ export const groupContextEncoder: BufferEncoder<GroupContext> = contramapBufferE
     [gc.version, gc.cipherSuite, gc.groupId, gc.epoch, gc.treeHash, gc.confirmedTranscriptHash, gc.extensions] as const,
 )
 
-export const encodeGroupContext: Encoder<GroupContext> = encode(groupContextEncoder)
-
 export const decodeGroupContext: Decoder<GroupContext> = mapDecoders(
   [
     decodeProtocolVersion,
@@ -66,7 +64,7 @@ export async function extractEpochSecret(
   const psk = pskSecret === undefined ? new Uint8Array(kdf.size) : pskSecret
   const extracted = await kdf.extract(joinerSecret, psk)
 
-  return expandWithLabel(extracted, "epoch", encode(groupContextEncoder)(context), kdf.size, kdf)
+  return expandWithLabel(extracted, "epoch", encode(groupContextEncoder, context), kdf.size, kdf)
 }
 
 export async function extractJoinerSecret(
@@ -77,5 +75,5 @@ export async function extractJoinerSecret(
 ) {
   const extracted = await kdf.extract(previousInitSecret, commitSecret)
 
-  return expandWithLabel(extracted, "joiner", encode(groupContextEncoder)(context), kdf.size, kdf)
+  return expandWithLabel(extracted, "joiner", encode(groupContextEncoder, context), kdf.size, kdf)
 }

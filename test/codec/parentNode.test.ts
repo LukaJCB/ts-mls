@@ -1,8 +1,8 @@
-import { encodeParentNode, decodeParentNode, ParentNode } from "../../src/parentNode.js"
+import { parentNodeEncoder, decodeParentNode, ParentNode } from "../../src/parentNode.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ParentNode roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeParentNode, decodeParentNode)
+  const roundtrip = createRoundtripTest(parentNodeEncoder, decodeParentNode)
 
   test("roundtrips minimal", () => {
     const node: ParentNode = {

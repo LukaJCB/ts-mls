@@ -8,7 +8,8 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
-import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
+import { decodeMlsMessage, mlsMessageEncoder } from "../../src/message.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
@@ -44,7 +45,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   // bob sends keyPackage to alice
-  const keyPackageMessage = encodeMlsMessage({
+  const keyPackageMessage = encode(mlsMessageEncoder, {
     keyPackage: bob.publicPackage,
     wireformat: wireformats.mls_key_package,
     version: protocolVersions.mls10,

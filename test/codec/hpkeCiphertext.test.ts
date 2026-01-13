@@ -1,4 +1,4 @@
-import { encodeHpkeCiphertext, decodeHpkeCiphertext, HPKECiphertext } from "../../src/hpkeCiphertext.js"
+import { hpkeCiphertextEncoder, decodeHpkeCiphertext, HPKECiphertext } from "../../src/hpkeCiphertext.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 const dummy: HPKECiphertext = {
@@ -7,7 +7,7 @@ const dummy: HPKECiphertext = {
 }
 
 describe("HPKECiphertext roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeHpkeCiphertext, decodeHpkeCiphertext)
+  const roundtrip = createRoundtripTest(hpkeCiphertextEncoder, decodeHpkeCiphertext)
 
   test("roundtrips", () => {
     roundtrip(dummy)

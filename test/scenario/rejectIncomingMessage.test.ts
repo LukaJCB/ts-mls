@@ -11,10 +11,11 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { createProposal } from "../../src/index.js"
 import { processMessage } from "../../src/processMessages.js"
-import { encodeExternalSender } from "../../src/externalSender.js"
+import { externalSenderEncoder } from "../../src/externalSender.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
   await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
@@ -75,7 +76,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
       extensions: [
         {
           extensionType: defaultExtensionTypes.external_senders,
-          extensionData: encodeExternalSender({
+          extensionData: encode(externalSenderEncoder, {
             credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
             signaturePublicKey: new Uint8Array(),
           }),

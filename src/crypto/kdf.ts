@@ -19,13 +19,10 @@ export function expandWithLabel(
   length: number,
   kdf: Kdf,
 ): Promise<Uint8Array> {
+  const infoEncoder = composeBufferEncoders([uint16Encoder, varLenDataEncoder, varLenDataEncoder])
   return kdf.expand(
     secret,
-    encode(composeBufferEncoders([uint16Encoder, varLenDataEncoder, varLenDataEncoder]))([
-      length,
-      new TextEncoder().encode(`MLS 1.0 ${label}`),
-      context,
-    ]),
+    encode(infoEncoder, [length, new TextEncoder().encode(`MLS 1.0 ${label}`), context]),
     length,
   )
 }
@@ -41,5 +38,5 @@ export async function deriveTreeSecret(
   length: number,
   kdf: Kdf,
 ): Promise<Uint8Array> {
-  return expandWithLabel(secret, label, encode(uint32Encoder)(generation), length, kdf)
+  return expandWithLabel(secret, label, encode(uint32Encoder, generation), length, kdf)
 }

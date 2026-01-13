@@ -1,8 +1,8 @@
-import { encodeProposalOrRefType, decodeProposalOrRefType, proposalOrRefTypes } from "../../src/proposalOrRefType.js"
+import { proposalOrRefTypeEncoder, decodeProposalOrRefType, proposalOrRefTypes } from "../../src/proposalOrRefType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ProposalOrRefTypeName roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeProposalOrRefType, decodeProposalOrRefType)
+  const roundtrip = createRoundtripTest(proposalOrRefTypeEncoder, decodeProposalOrRefType)
 
   test("roundtrips proposal", () => {
     roundtrip(proposalOrRefTypes.proposal)

@@ -1,6 +1,6 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { defaultCredentialTypes, isDefaultCredentialTypeValue } from "./defaultCredentialType.js"
 
@@ -37,21 +37,15 @@ export const credentialBasicEncoder: BufferEncoder<CredentialBasic> = contramapB
   (c) => [c.credentialType, c.identity] as const,
 )
 
-export const encodeCredentialBasic: Encoder<CredentialBasic> = encode(credentialBasicEncoder)
-
 export const credentialX509Encoder: BufferEncoder<CredentialX509> = contramapBufferEncoders(
   [uint16Encoder, varLenTypeEncoder(varLenDataEncoder)],
   (c) => [c.credentialType, c.certificates] as const,
 )
 
-export const encodeCredentialX509: Encoder<CredentialX509> = encode(credentialX509Encoder)
-
 export const credentialCustomEncoder: BufferEncoder<CredentialCustom> = contramapBufferEncoders(
   [uint16Encoder, varLenDataEncoder],
   (c) => [c.credentialType, c.data] as const,
 )
-
-export const encodeCredentialCustom: Encoder<CredentialCustom> = encode(credentialCustomEncoder)
 
 export const credentialEncoder: BufferEncoder<Credential> = (c) => {
   if (!isDefaultCredential(c)) return credentialCustomEncoder(c)
@@ -63,8 +57,6 @@ export const credentialEncoder: BufferEncoder<Credential> = (c) => {
       return credentialX509Encoder(c)
   }
 }
-
-export const encodeCredential: Encoder<Credential> = encode(credentialEncoder)
 
 const decodeCredentialBasic: Decoder<CredentialBasic> = mapDecoder(decodeVarLenData, (identity) => ({
   credentialType: defaultCredentialTypes.basic,

@@ -3,11 +3,12 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import {
   addLeafNode,
   decodeRatchetTree,
-  encodeRatchetTree,
+  ratchetTreeEncoder,
   RatchetTree,
   removeLeafNode,
   updateLeafNode,
 } from "../../src/ratchetTree.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-operations.json"
 import { decodeProposal, isDefaultProposal, Proposal } from "../../src/proposal.js"
@@ -44,7 +45,7 @@ async function treeOperationsTest(data: TreeOperationData, impl: CiphersuiteImpl
 
   if (treeAfter === undefined) throw new Error("Could not apply proposal: " + proposal[0].proposalType)
 
-  expect(encodeRatchetTree(treeAfter)).toStrictEqual(hexToBytes(data.tree_after))
+  expect(encode(ratchetTreeEncoder, treeAfter)).toStrictEqual(hexToBytes(data.tree_after))
 
   const hashAfter = await treeHashRoot(treeAfter, impl.hash)
   expect(hashAfter).toStrictEqual(hexToBytes(data.tree_hash_after))

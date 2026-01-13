@@ -1,10 +1,10 @@
-import { encodePublicMessage, decodePublicMessage } from "../../src/publicMessage.js"
+import { publicMessageEncoder, decodePublicMessage } from "../../src/publicMessage.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { contentTypes } from "../../src/contentType.js"
 import { senderTypes } from "../../src/sender.js"
 
 describe("PublicMessage roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodePublicMessage, decodePublicMessage)
+  const roundtrip = createRoundtripTest(publicMessageEncoder, decodePublicMessage)
 
   test("roundtrips member", () => {
     roundtrip({

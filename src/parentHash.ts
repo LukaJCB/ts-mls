@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { InternalError } from "./mlsError.js"
@@ -21,8 +21,6 @@ export const parentHashInputEncoder: BufferEncoder<ParentHashInput> = contramapB
   [varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
   (i) => [i.encryptionKey, i.parentHash, i.originalSiblingTreeHash] as const,
 )
-
-export const encodeParentHashInput: Encoder<ParentHashInput> = encode(parentHashInputEncoder)
 
 export const decodeParentHashInput: Decoder<ParentHashInput> = mapDecoders(
   [decodeVarLenData, decodeVarLenData, decodeVarLenData],
@@ -144,5 +142,5 @@ export async function calculateParentHash(
     originalSiblingTreeHash,
   }
 
-  return [await h.digest(encode(parentHashInputEncoder)(input)), parentNodeIndex]
+  return [await h.digest(encode(parentHashInputEncoder, input)), parentNodeIndex]
 }

@@ -11,10 +11,6 @@ export type DefaultCredentialTypeValue = (typeof defaultCredentialTypes)[Default
 
 const defaultCredentialTypeValues = new Set<number>(Object.values(defaultCredentialTypes))
 
-export function defaultCredentialTypeValueFromName(name: DefaultCredentialTypeName): DefaultCredentialTypeValue {
-  return defaultCredentialTypes[name]
-}
-
 export function isDefaultCredentialTypeValue(v: number): v is DefaultCredentialTypeValue {
   return defaultCredentialTypeValues.has(v)
 }

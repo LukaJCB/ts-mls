@@ -1,8 +1,8 @@
-import { decodeContentType, encodeContentType, contentTypes, ContentTypeValue } from "../../src/contentType.js"
+import { decodeContentType, contentTypeEncoder, contentTypes, ContentTypeValue } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ContentTypeValue roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeContentType, decodeContentType)
+  const roundtrip = createRoundtripTest(contentTypeEncoder, decodeContentType)
 
   test("roundtrips minimal", () => {
     roundtrip(contentTypes.application as ContentTypeValue)

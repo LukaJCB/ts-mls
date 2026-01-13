@@ -150,7 +150,7 @@ function compositeRoundTrip<T, U>(
 ) {
   const encoder = composeBufferEncoders([encT, encU])
   const decoder = mapDecoders([decT, decU], (t, u) => [t, u] as const)
-  const encoded = encode(encoder)([t, u])
+  const encoded = encode(encoder, [t, u])
 
   const decoded = decoder(encoded, 0)
 
@@ -170,7 +170,7 @@ function compositeRoundTrip3<T, U, V>(
 ) {
   const encoder = composeBufferEncoders([encT, encU, encV])
   const decoder = mapDecoders([decT, decU, decV], (t, u, v) => [t, u, v] as const)
-  const encoded = encode(encoder)([t, u, v])
+  const encoded = encode(encoder, [t, u, v])
 
   const decoded = decoder(encoded, 0)
 
@@ -193,7 +193,7 @@ function compositeRoundTrip4<T, U, V, W>(
 ) {
   const encoder = composeBufferEncoders([encT, encU, encV, encW])
   const decoder = mapDecoders([decT, decU, decV, decW], (t, u, v, w) => [t, u, v, w] as const)
-  const encoded = encode(encoder)([t, u, v, w])
+  const encoded = encode(encoder, [t, u, v, w])
 
   const decoded = decoder(encoded, 0)
 

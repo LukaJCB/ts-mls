@@ -96,7 +96,7 @@ test("determineLength doesn't work if offset is too large", () => {
 })
 
 test("determineLength doesn't work if prefix is too large", () => {
-  expect(() => determineLength(encode(lengthEncoder)(50000000000), 1)).toThrow(CodecError)
+  expect(() => determineLength(encode(lengthEncoder, 50000000000), 1)).toThrow(CodecError)
 })
 
 test("determineLength doesn't work if offset is ffsd large", () => {
@@ -104,7 +104,7 @@ test("determineLength doesn't work if offset is ffsd large", () => {
 })
 
 test("decode doesn't work if length is too large", () => {
-  const e = encode(varLenDataEncoder)(randomBytes(64))
+  const e = encode(varLenDataEncoder, randomBytes(64))
   e[1] = 0xff
   expect(() => decodeVarLenData(e, 0)).toThrow(CodecError)
 })
@@ -112,11 +112,11 @@ test("decode doesn't work if length is too large", () => {
 test("decodeVarLenType doesn't work if underlying decoder doesn't work", () => {
   const brokenDecoder: Decoder<number> = () => undefined
 
-  expect(decodeVarLenType(brokenDecoder)(encode(varLenDataEncoder)(randomBytes(16)), 0)).toBeUndefined()
+  expect(decodeVarLenType(brokenDecoder)(encode(varLenDataEncoder, randomBytes(16)), 0)).toBeUndefined()
 })
 
-const varLenRoundtrip = createRoundtripTest(encode(varLenDataEncoder), decodeVarLenData)
+const varLenRoundtrip = createRoundtripTest(varLenDataEncoder, decodeVarLenData)
 
 function arrayRoundtrip<T>(enc: BufferEncoder<T>, dec: Decoder<T>, ts: T[]) {
-  return createRoundtripTest(encode(varLenTypeEncoder(enc)), decodeVarLenType(dec))(ts)
+  return createRoundtripTest(varLenTypeEncoder(enc), decodeVarLenType(dec))(ts)
 }

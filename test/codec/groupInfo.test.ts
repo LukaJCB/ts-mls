@@ -1,8 +1,8 @@
 import {
-  encodeGroupInfoTBS,
+  groupInfoTBSEncoder,
   decodeGroupInfoTBS,
   GroupInfoTBS,
-  encodeGroupInfo,
+  groupInfoEncoder,
   decodeGroupInfo,
   GroupInfo,
 } from "../../src/groupInfo.js"
@@ -41,7 +41,7 @@ const nontrivialTBS: GroupInfoTBS = {
 }
 
 describe("GroupInfoTBS roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeGroupInfoTBS, decodeGroupInfoTBS)
+  const roundtrip = createRoundtripTest(groupInfoTBSEncoder, decodeGroupInfoTBS)
   test("roundtrips minimal", () => {
     roundtrip(minimalTBS)
   })
@@ -51,7 +51,7 @@ describe("GroupInfoTBS roundtrip", () => {
 })
 
 describe("GroupInfo roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeGroupInfo, decodeGroupInfo)
+  const roundtrip = createRoundtripTest(groupInfoEncoder, decodeGroupInfo)
   test("roundtrips minimal", () => {
     const g: GroupInfo = { ...minimalTBS, signature: new Uint8Array([]) }
     roundtrip(g)

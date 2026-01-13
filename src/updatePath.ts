@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
@@ -40,8 +40,6 @@ export const updatePathNodeEncoder: BufferEncoder<UpdatePathNode> = contramapBuf
   (node) => [node.hpkePublicKey, node.encryptedPathSecret] as const,
 )
 
-export const encodeUpdatePathNode: Encoder<UpdatePathNode> = encode(updatePathNodeEncoder)
-
 export const decodeUpdatePathNode: Decoder<UpdatePathNode> = mapDecoders(
   [decodeVarLenData, decodeVarLenType(decodeHpkeCiphertext)],
   (hpkePublicKey, encryptedPathSecret) => ({ hpkePublicKey, encryptedPathSecret }),
@@ -57,8 +55,6 @@ export const updatePathEncoder: BufferEncoder<UpdatePath> = contramapBufferEncod
   [leafNodeEncoder, varLenTypeEncoder(updatePathNodeEncoder)],
   (path) => [path.leafNode, path.nodes] as const,
 )
-
-export const encodeUpdatePath: Encoder<UpdatePath> = encode(updatePathEncoder)
 
 export const decodeUpdatePath: Decoder<UpdatePath> = mapDecoders(
   [decodeLeafNodeCommit, decodeVarLenType(decodeUpdatePathNode)],
@@ -159,7 +155,7 @@ function encryptSecretsForPath(
           const { ct, enc } = await encryptWithLabel(
             await cs.hpke.importPublicKey(getHpkePublicKey(originalTree[nodeIndex]!)),
             "UpdatePathNode",
-            encode(groupContextEncoder)(updatedGroupContext),
+            encode(groupContextEncoder, updatedGroupContext),
             pathSecret.secret,
             cs.hpke,
           )

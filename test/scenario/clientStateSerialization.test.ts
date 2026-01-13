@@ -10,7 +10,8 @@ import {
   getCiphersuiteFromName,
   getCiphersuiteImpl,
 } from "../../src/index.js"
-import { decodeGroupState, encodeGroupState, GroupState } from "../../src/clientState.js"
+import { decodeGroupState, groupStateEncoder, GroupState } from "../../src/clientState.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 test.concurrent.each(Object.keys(ciphersuites).slice(0, 1))(
   "ClientState Binary serialization round-trip %s",
@@ -39,7 +40,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   groupState = firstState
 
-  const binary = encodeGroupState(originalState)
+  const binary = encode(groupStateEncoder, groupState)
   expect(binary).toBeInstanceOf(Uint8Array)
   expect(binary.byteLength).toBeGreaterThan(0)
 

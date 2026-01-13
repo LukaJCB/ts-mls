@@ -1,6 +1,6 @@
 import { decodeUint8, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeProposal, Proposal, proposalEncoder } from "./proposal.js"
 import { numberToEnum } from "./util/enumHelpers.js"
@@ -14,8 +14,6 @@ export type ProposalOrRefTypeName = keyof typeof proposalOrRefTypes
 export type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTypeName]
 
 export const proposalOrRefTypeEncoder: BufferEncoder<ProposalOrRefTypeValue> = uint8Encoder
-
-export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeValue> = encode(proposalOrRefTypeEncoder)
 
 export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeValue> = mapDecoderOption(
   decodeUint8,
@@ -42,14 +40,10 @@ export const proposalOrRefProposalEncoder: BufferEncoder<ProposalOrRefProposal> 
   (p) => [p.proposalOrRefType, p.proposal] as const,
 )
 
-export const encodeProposalOrRefProposal: Encoder<ProposalOrRefProposal> = encode(proposalOrRefProposalEncoder)
-
 export const proposalOrRefProposalRefEncoder: BufferEncoder<ProposalOrRefProposalRef> = contramapBufferEncoders(
   [proposalOrRefTypeEncoder, varLenDataEncoder],
   (r) => [r.proposalOrRefType, r.reference] as const,
 )
-
-export const encodeProposalOrRefProposalRef: Encoder<ProposalOrRefProposalRef> = encode(proposalOrRefProposalRefEncoder)
 
 export const proposalOrRefEncoder: BufferEncoder<ProposalOrRef> = (input) => {
   switch (input.proposalOrRefType) {
@@ -59,8 +53,6 @@ export const proposalOrRefEncoder: BufferEncoder<ProposalOrRef> = (input) => {
       return proposalOrRefProposalRefEncoder(input)
   }
 }
-
-export const encodeProposalOrRef: Encoder<ProposalOrRef> = encode(proposalOrRefEncoder)
 
 export const decodeProposalOrRef: Decoder<ProposalOrRef> = flatMapDecoder(
   decodeProposalOrRefType,

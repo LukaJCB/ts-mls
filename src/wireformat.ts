@@ -1,6 +1,6 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { BufferEncoder } from "./codec/tlsEncoder.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
 /** @public */
@@ -18,7 +18,5 @@ export type WireformatName = keyof typeof wireformats
 export type WireformatValue = (typeof wireformats)[WireformatName]
 
 export const wireformatEncoder: BufferEncoder<WireformatValue> = uint16Encoder
-
-export const encodeWireformat: Encoder<WireformatValue> = encode(wireformatEncoder)
 
 export const decodeWireformat: Decoder<WireformatValue> = mapDecoderOption(decodeUint16, numberToEnum(wireformats))

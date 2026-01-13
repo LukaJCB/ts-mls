@@ -1,10 +1,10 @@
 import json from "../../test_vectors/messages.json"
 
 import { hexToBytes } from "@noble/ciphers/utils.js"
-import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
-import { decodeCommit, encodeCommit } from "../../src/commit.js"
+import { decodeMlsMessage, mlsMessageEncoder } from "../../src/message.js"
+import { decodeCommit, commitEncoder } from "../../src/commit.js"
 import { contentTypes } from "../../src/contentType.js"
-import { Encoder } from "../../src/codec/tlsEncoder.js"
+import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
 import {
   decodeAdd,
@@ -14,16 +14,16 @@ import {
   decodeReinit,
   decodeRemove,
   decodeUpdate,
-  encodeAdd,
-  encodeExternalInit,
-  encodeGroupContextExtensions,
-  encodePSK,
-  encodeReinit,
-  encodeRemove,
-  encodeUpdate,
+  addEncoder,
+  externalInitEncoder,
+  groupContextExtensionsEncoder,
+  pskEncoder,
+  reinitEncoder,
+  removeEncoder,
+  updateEncoder,
 } from "../../src/proposal.js"
-import { decodeRatchetTree, encodeRatchetTree } from "../../src/ratchetTree.js"
-import { decodeGroupSecrets, encodeGroupSecrets } from "../../src/groupSecrets.js"
+import { decodeRatchetTree, ratchetTreeEncoder } from "../../src/ratchetTree.js"
+import { decodeGroupSecrets, groupSecretsEncoder } from "../../src/groupSecrets.js"
 import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
@@ -77,7 +77,7 @@ function welcome(s: string) {
   if (mlsWelcome === undefined || mlsWelcome[0].wireformat !== wireformats.mls_welcome) {
     throw new Error("could not decode mls welcome")
   } else {
-    const reEncoded = encodeMlsMessage(mlsWelcome[0])
+    const reEncoded = encode(mlsMessageEncoder, mlsWelcome[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
@@ -89,7 +89,7 @@ function privateMessage(s: string) {
   if (p === undefined || p[0].wireformat !== wireformats.mls_private_message) {
     throw new Error("could not decode mls private message")
   } else {
-    const reEncoded = encodeMlsMessage(p?.[0])
+    const reEncoded = encode(mlsMessageEncoder, p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
@@ -101,7 +101,7 @@ function groupInfo(s: string) {
   if (gi === undefined || gi[0].wireformat !== wireformats.mls_group_info) {
     throw new Error("could not decode mls_group_info")
   } else {
-    const reEncoded = encodeMlsMessage(gi[0])
+    const reEncoded = encode(mlsMessageEncoder, gi[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
@@ -113,7 +113,7 @@ function keyPackage(s: string) {
   if (kp === undefined || kp[0].wireformat !== wireformats.mls_key_package) {
     throw new Error("could not decode mls_key_package")
   } else {
-    const reEncoded = encodeMlsMessage(kp[0])
+    const reEncoded = encode(mlsMessageEncoder, kp[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
@@ -126,7 +126,7 @@ function publicMessageApplication(s: string) {
     throw new Error("could not decode mls_public_message")
   } else {
     expect(p[0].publicMessage.content.contentType).toBe(contentTypes.application)
-    const reEncoded = encodeMlsMessage(p[0])
+    const reEncoded = encode(mlsMessageEncoder, p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
@@ -139,7 +139,7 @@ function publicMessageProposal(s: string) {
     throw new Error("could not decode mls_public_message")
   } else {
     expect(p[0].publicMessage.content.contentType).toBe(contentTypes.proposal)
-    const reEncoded = encodeMlsMessage(p[0])
+    const reEncoded = encode(mlsMessageEncoder, p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
@@ -152,28 +152,28 @@ function publicMessageCommit(s: string) {
     throw new Error("could not decode mls_public_message")
   } else {
     expect(p[0].publicMessage.content.contentType).toBe(contentTypes.commit)
-    const reEncoded = encodeMlsMessage(p[0])
+    const reEncoded = encode(mlsMessageEncoder, p[0])
     expect(reEncoded).toStrictEqual(inputBytes)
   }
 }
 
 //const keyPackage = createTest(encodeKeyPackage, decodeKeyPackage, '')
-const commit = createTest(encodeCommit, decodeCommit, "commit")
-const groupSecrets = createTest(encodeGroupSecrets, decodeGroupSecrets, "group_secrets")
-const ratchetTree = createTest(encodeRatchetTree, decodeRatchetTree, "ratchet_tree")
-const updateProposal = createTest(encodeUpdate, decodeUpdate, "update_proposal")
-const addProposal = createTest(encodeAdd, decodeAdd, "add_proposal")
-const pskProposal = createTest(encodePSK, decodePSK, "pre_shared_key_proposal")
-const removeProposal = createTest(encodeRemove, decodeRemove, "remove_proposal")
-const reinitProposal = createTest(encodeReinit, decodeReinit, "re_init_proposal")
-const externalInitProposal = createTest(encodeExternalInit, decodeExternalInit, "external_init_proposal")
+const commit = createTest(commitEncoder, decodeCommit, "commit")
+const groupSecrets = createTest(groupSecretsEncoder, decodeGroupSecrets, "group_secrets")
+const ratchetTree = createTest(ratchetTreeEncoder, decodeRatchetTree, "ratchet_tree")
+const updateProposal = createTest(updateEncoder, decodeUpdate, "update_proposal")
+const addProposal = createTest(addEncoder, decodeAdd, "add_proposal")
+const pskProposal = createTest(pskEncoder, decodePSK, "pre_shared_key_proposal")
+const removeProposal = createTest(removeEncoder, decodeRemove, "remove_proposal")
+const reinitProposal = createTest(reinitEncoder, decodeReinit, "re_init_proposal")
+const externalInitProposal = createTest(externalInitEncoder, decodeExternalInit, "external_init_proposal")
 const groupContextExtension = createTest(
-  encodeGroupContextExtensions,
+  groupContextExtensionsEncoder,
   decodeGroupContextExtensions,
   "group_context_extensions_proposal",
 )
 
-function createTest<T>(enc: Encoder<T>, dec: Decoder<T>, typeName: string): (s: string) => void {
+function createTest<T>(enc: BufferEncoder<T>, dec: Decoder<T>, typeName: string): (s: string) => void {
   return (s) => {
     const inputBytes = hexToBytes(s)
     const decoded = dec(inputBytes, 0)
@@ -181,7 +181,7 @@ function createTest<T>(enc: Encoder<T>, dec: Decoder<T>, typeName: string): (s: 
     if (decoded === undefined) {
       throw new Error(`could not decode ${typeName}`)
     } else {
-      const reEncoded = enc(decoded[0])
+      const reEncoded = encode(enc, decoded[0])
       expect(reEncoded).toStrictEqual(inputBytes)
     }
   }

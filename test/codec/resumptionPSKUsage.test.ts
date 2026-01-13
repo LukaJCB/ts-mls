@@ -1,8 +1,8 @@
-import { decodeResumptionPSKUsage, encodeResumptionPSKUsage, resumptionPSKUsages } from "../../src/presharedkey.js"
+import { decodeResumptionPSKUsage, resumptionPSKUsageEncoder, resumptionPSKUsages } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ResumptionPSKUsageValue roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeResumptionPSKUsage, decodeResumptionPSKUsage)
+  const roundtrip = createRoundtripTest(resumptionPSKUsageEncoder, decodeResumptionPSKUsage)
 
   test("roundtrips application", () => {
     roundtrip(resumptionPSKUsages.application)

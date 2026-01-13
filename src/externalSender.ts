@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Credential, decodeCredential, credentialEncoder } from "./credential.js"
 
@@ -13,9 +13,6 @@ export const externalSenderEncoder: BufferEncoder<ExternalSender> = contramapBuf
   [varLenDataEncoder, credentialEncoder],
   (e) => [e.signaturePublicKey, e.credential] as const,
 )
-
-/** @public */
-export const encodeExternalSender: Encoder<ExternalSender> = encode(externalSenderEncoder)
 
 /** @public */
 export const decodeExternalSender: Decoder<ExternalSender> = mapDecoders(

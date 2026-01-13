@@ -106,7 +106,7 @@ import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { decodeExternalSender } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
-import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
+import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 
 import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
@@ -131,6 +131,7 @@ export interface GroupState {
   groupActiveState: GroupActiveState
 }
 
+/** @public */
 export const groupStateEncoder: BufferEncoder<GroupState> = contramapBufferEncoders(
   [
     groupContextEncoder,
@@ -158,9 +159,6 @@ export const groupStateEncoder: BufferEncoder<GroupState> = contramapBufferEncod
       state.groupActiveState,
     ] as const,
 )
-
-/** @public */
-export const encodeGroupState: Encoder<GroupState> = encode(groupStateEncoder)
 
 /** @public */
 export const decodeGroupState: Decoder<GroupState> = mapDecoders(
@@ -200,72 +198,6 @@ export const decodeGroupState: Decoder<GroupState> = mapDecoders(
     groupActiveState,
   }),
 )
-
-export const groupStateEncoderWithoutTree: BufferEncoder<GroupState> = contramapBufferEncoders(
-  [
-    groupContextEncoder,
-    keyScheduleEncoder,
-    secretTreeEncoder,
-    privateKeyPathEncoder,
-    varLenDataEncoder,
-    unappliedProposalsEncoder,
-    varLenDataEncoder,
-    bigintMapEncoder(epochReceiverDataEncoder),
-    groupActiveStateEncoder,
-  ],
-  (state) =>
-    [
-      state.groupContext,
-      state.keySchedule,
-      state.secretTree,
-      state.privatePath,
-      state.signaturePrivateKey,
-      state.unappliedProposals,
-      state.confirmationTag,
-      state.historicalReceiverData,
-      state.groupActiveState,
-    ] as const,
-)
-
-export const encodeGroupStateWithoutTree: Encoder<GroupState> = encode(groupStateEncoderWithoutTree)
-
-export function decodeGroupStateWithoutTree(ratchetTree: RatchetTree): Decoder<GroupState> {
-  return mapDecoders(
-    [
-      decodeGroupContext,
-      decodeKeySchedule,
-      decodeSecretTree,
-      decodePrivateKeyPath,
-      decodeVarLenData,
-      decodeUnappliedProposals,
-      decodeVarLenData,
-      decodeBigintMap(decodeEpochReceiverData),
-      decodeGroupActiveState,
-    ],
-    (
-      groupContext,
-      keySchedule,
-      secretTree,
-      privatePath,
-      signaturePrivateKey,
-      unappliedProposals,
-      confirmationTag,
-      historicalReceiverData,
-      groupActiveState,
-    ) => ({
-      groupContext,
-      keySchedule,
-      secretTree,
-      ratchetTree,
-      privatePath,
-      signaturePrivateKey,
-      unappliedProposals,
-      confirmationTag,
-      historicalReceiverData,
-      groupActiveState,
-    }),
-  )
-}
 
 export function getOwnLeafNode(state: ClientState): LeafNode {
   const idx = leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))
@@ -419,8 +351,8 @@ async function validateProposals(
     p[defaultProposalTypes.psk].some(
       (b, indexB) =>
         constantTimeEqual(
-          encode(pskIdEncoder)(a.proposal.psk.preSharedKeyId),
-          encode(pskIdEncoder)(b.proposal.psk.preSharedKeyId),
+          encode(pskIdEncoder, a.proposal.psk.preSharedKeyId),
+          encode(pskIdEncoder, b.proposal.psk.preSharedKeyId),
         ) && indexA !== indexB,
     ),
   )
