@@ -1,7 +1,9 @@
 name: CI
+permissions:
+  contents: read
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "1.x"]
   pull_request:
     branches: ["**"]
 jobs:
