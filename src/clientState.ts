@@ -1092,9 +1092,8 @@ export async function joinGroupWithExtensions(
 
   if (!confirmationTagVerified) throw new CryptoVerificationError("Could not verify confirmation tag")
 
-  const secretTree = await createSecretTree(leafWidth(tree.length), encryptionSecret, cs.kdf)
+  const secretTree = createSecretTree(leafWidth(tree.length), encryptionSecret)
 
-  zeroOutUint8Array(encryptionSecret)
   zeroOutUint8Array(groupSecrets.joinerSecret)
 
   return [
@@ -1153,7 +1152,7 @@ export async function createGroup(
 
   const encryptionSecret = await deriveSecret(epochSecret, "encryption", cs.kdf)
 
-  const secretTree = await createSecretTree(1, encryptionSecret, cs.kdf)
+  const secretTree = createSecretTree(1, encryptionSecret)
 
   zeroOutUint8Array(epochSecret)
 

@@ -308,7 +308,7 @@ async function processCommit(
 
   if (!confirmationTagValid) throw new CryptoVerificationError("Could not verify confirmation tag")
 
-  const secretTree = await createSecretTree(leafWidth(tree.length), epochSecrets.encryptionSecret, cs.kdf)
+  const secretTree = createSecretTree(leafWidth(tree.length), epochSecrets.encryptionSecret)
 
   const suspendedPendingReinit = result.additionalResult.kind === "reinit" ? result.additionalResult.reinit : undefined
 
@@ -322,7 +322,6 @@ async function processCommit(
 
   zeroOutUint8Array(commitSecret)
   zeroOutUint8Array(epochSecrets.joinerSecret)
-  zeroOutUint8Array(epochSecrets.encryptionSecret)
 
   const consumed = [...consumedEpochData, initSecret]
 

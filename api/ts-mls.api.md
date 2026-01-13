@@ -1237,7 +1237,14 @@ export interface Rng {
 }
 
 // @public (undocumented)
-export type SecretTree = SecretTreeNode[];
+export interface SecretTree {
+    // (undocumented)
+    intermediateNodes: Record<number, Uint8Array>;
+    // (undocumented)
+    leafNodes: Record<number, SecretTreeNode>;
+    // (undocumented)
+    leafWidth: number;
+}
 
 // @public (undocumented)
 export interface SecretTreeNode {

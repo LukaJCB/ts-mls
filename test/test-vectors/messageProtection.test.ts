@@ -218,7 +218,7 @@ async function publicApplicationFails(data: MessageProtectionData, gc: GroupCont
   if (privateApplication === undefined || privateApplication[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const unprotected = await unprotectPrivateMessage(
     hexToBytes(data.sender_data_secret),
@@ -255,7 +255,7 @@ async function commit(data: MessageProtectionData, gc: GroupContext, impl: Ciphe
   if (privateCommit === undefined || privateCommit[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const unprotected = await unprotectPrivateMessage(
     hexToBytes(data.sender_data_secret),
@@ -279,7 +279,7 @@ async function application(data: MessageProtectionData, gc: GroupContext, impl: 
   if (privateApplication === undefined || privateApplication[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const unprotected = await unprotectPrivateMessage(
     hexToBytes(data.sender_data_secret),
@@ -302,7 +302,7 @@ async function protectThenUnprotectProposal(data: MessageProtectionData, gc: Gro
   const p = decodeProposal(hexToBytes(data.proposal), 0)
   if (p === undefined) throw new Error("could not decode proposal")
 
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const pro = await protectProposal(
     hexToBytes(data.signature_priv),
@@ -334,7 +334,7 @@ async function protectThenUnprotectProposal(data: MessageProtectionData, gc: Gro
 }
 
 async function protectThenUnprotectApplication(data: MessageProtectionData, gc: GroupContext, impl: CiphersuiteImpl) {
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const pro = await protectApplicationData(
     hexToBytes(data.signature_priv),
@@ -369,7 +369,7 @@ async function protectThenUnprotectCommit(data: MessageProtectionData, gc: Group
   const c = decodeCommit(hexToBytes(data.commit), 0)
   if (c === undefined) throw new Error("could not decode commit")
 
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const confirmationTag = crypto.getRandomValues(new Uint8Array(impl.hpke.keyLength)) // should I be getting this elsewhere?
 
@@ -425,7 +425,7 @@ async function proposal(data: MessageProtectionData, gc: GroupContext, impl: Cip
   if (privateProposal === undefined || privateProposal[0].wireformat !== wireformats.mls_private_message)
     throw new Error("could not decode mls private message")
 
-  const secretTree = await createSecretTree(2, hexToBytes(data.encryption_secret), impl.kdf)
+  const secretTree = createSecretTree(2, hexToBytes(data.encryption_secret))
 
   const unprotected = await unprotectPrivateMessage(
     hexToBytes(data.sender_data_secret),
