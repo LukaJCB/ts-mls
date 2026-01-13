@@ -1,18 +1,18 @@
-import { encodeResumptionPSKUsage, decodeResumptionPSKUsage, ResumptionPSKUsageName } from "../../src/presharedkey.js"
+import { decodeResumptionPSKUsage, encodeResumptionPSKUsage, resumptionPSKUsages } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
-describe("ResumptionPSKUsageName roundtrip", () => {
+describe("ResumptionPSKUsageValue roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeResumptionPSKUsage, decodeResumptionPSKUsage)
 
   test("roundtrips application", () => {
-    roundtrip("application" as ResumptionPSKUsageName)
+    roundtrip(resumptionPSKUsages.application)
   })
 
   test("roundtrips reinit", () => {
-    roundtrip("reinit" as ResumptionPSKUsageName)
+    roundtrip(resumptionPSKUsages.reinit)
   })
 
   test("roundtrips branch", () => {
-    roundtrip("branch" as ResumptionPSKUsageName)
+    roundtrip(resumptionPSKUsages.branch)
   })
 })

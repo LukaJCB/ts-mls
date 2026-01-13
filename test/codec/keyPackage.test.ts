@@ -1,14 +1,19 @@
 import { encodeKeyPackage, decodeKeyPackage, KeyPackage } from "../../src/keyPackage.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 const minimalKeyPackage: KeyPackage = {
-  version: "mls10",
-  cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+  version: protocolVersions.mls10,
+  cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
   initKey: new Uint8Array([]),
   leafNode: {
     hpkePublicKey: new Uint8Array([]),
     signaturePublicKey: new Uint8Array([]),
-    credential: { credentialType: "basic", identity: new Uint8Array([]) },
+    credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([]) },
     capabilities: {
       versions: [],
       ciphersuites: [],
@@ -16,7 +21,7 @@ const minimalKeyPackage: KeyPackage = {
       proposals: [],
       credentials: [],
     },
-    leafNodeSource: "key_package",
+    leafNodeSource: leafNodeSources.key_package,
     lifetime: { notBefore: 0n, notAfter: 0n },
     extensions: [],
     signature: new Uint8Array([]),
@@ -26,26 +31,26 @@ const minimalKeyPackage: KeyPackage = {
 }
 
 const nontrivialKeyPackage: KeyPackage = {
-  version: "mls10",
-  cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+  version: protocolVersions.mls10,
+  cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
   initKey: new Uint8Array([1, 2, 3]),
   leafNode: {
     hpkePublicKey: new Uint8Array([4, 5]),
     signaturePublicKey: new Uint8Array([6, 7]),
-    credential: { credentialType: "basic", identity: new Uint8Array([8, 9]) },
+    credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([8, 9]) },
     capabilities: {
-      versions: ["mls10"],
-      ciphersuites: ["MLS_256_XWING_AES256GCM_SHA512_Ed25519"],
+      versions: [protocolVersions.mls10],
+      ciphersuites: [ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519],
       extensions: [8],
       proposals: [9],
-      credentials: ["basic"],
+      credentials: [defaultCredentialTypes.basic],
     },
-    leafNodeSource: "key_package",
+    leafNodeSource: leafNodeSources.key_package,
     lifetime: { notBefore: 1n, notAfter: 2n },
-    extensions: [{ extensionType: "ratchet_tree", extensionData: new Uint8Array([10, 11]) }],
+    extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([10, 11]) }],
     signature: new Uint8Array([12, 13]),
   },
-  extensions: [{ extensionType: "ratchet_tree", extensionData: new Uint8Array([14, 15]) }],
+  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([14, 15]) }],
   signature: new Uint8Array([16, 17]),
 }
 

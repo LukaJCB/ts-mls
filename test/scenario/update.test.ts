@@ -3,6 +3,7 @@ import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -11,7 +12,8 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Update %s`, async (cs) => {
   await update(cs as CiphersuiteName)
 })
@@ -19,18 +21,24 @@ test.concurrent.each(Object.keys(ciphersuites))(`Update %s`, async (cs) => {
 async function update(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -64,7 +72,8 @@ async function update(cipherSuite: CiphersuiteName) {
     cipherSuite: impl,
   })
 
-  if (emptyCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   aliceGroup = emptyCommitResult.newState
 
@@ -82,7 +91,8 @@ async function update(cipherSuite: CiphersuiteName) {
     cipherSuite: impl,
   })
 
-  if (emptyCommitResult3.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   bobGroup = emptyCommitResult3.newState
 

@@ -28,7 +28,7 @@ import { emptyPskIndex, PskIndex } from "./pskIndex.js"
 import { PublicMessage } from "./publicMessage.js"
 import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree.js"
 import { createSecretTree } from "./secretTree.js"
-import { getSenderLeafNodeIndex, Sender } from "./sender.js"
+import { getSenderLeafNodeIndex, Sender, senderTypes } from "./sender.js"
 import { treeHashRoot } from "./treeHash.js"
 import {
   LeafIndex,
@@ -42,8 +42,9 @@ import {
 } from "./treemath.js"
 import { UpdatePath, applyUpdatePath } from "./updatePath.js"
 import { addToMap } from "./util/addToMap.js"
-import { WireformatName } from "./wireformat.js"
+import { WireformatName, wireformats } from "./wireformat.js"
 import { zeroOutUint8Array } from "./util/byteArray.js"
+import { contentTypes } from "./contentType.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -88,7 +89,7 @@ export async function processPrivateMessage(
 
       const newState = { ...state, historicalReceiverData: newHistoricalReceiverData }
 
-      if (result.content.content.contentType === "application") {
+      if (result.content.content.contentType === contentTypes.application) {
         return {
           kind: "applicationMessage",
           message: result.content.content.applicationData,
@@ -115,14 +116,14 @@ export async function processPrivateMessage(
 
   const updatedState = { ...state, secretTree: result.tree }
 
-  if (result.content.content.contentType === "application") {
+  if (result.content.content.contentType === contentTypes.application) {
     return {
       kind: "applicationMessage",
       message: result.content.content.applicationData,
       newState: updatedState,
       consumed: result.consumed,
     }
-  } else if (result.content.content.contentType === "commit") {
+  } else if (result.content.content.contentType === contentTypes.commit) {
     const { newState, actionTaken, consumed } = await processCommit(
       updatedState,
       result.content as AuthenticatedContentCommit,
@@ -187,7 +188,7 @@ export async function processPublicMessage(
     cs,
   )
 
-  if (content.content.contentType === "proposal") {
+  if (content.content.contentType === contentTypes.proposal) {
     const action = callback({
       kind: "proposal",
       proposal: { proposal: content.content.proposal, senderLeafIndex: getSenderLeafNodeIndex(content.content.sender) },
@@ -220,7 +221,7 @@ async function processCommit(
   if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
 
   const senderLeafIndex =
-    content.content.sender.senderType === "member" ? toLeafIndex(content.content.sender.leafIndex) : undefined
+    content.content.sender.senderType === senderTypes.member ? toLeafIndex(content.content.sender.leafIndex) : undefined
 
   const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, false, cs)
 
@@ -279,7 +280,8 @@ async function processCommit(
 
   const newTreeHash = await treeHashRoot(tree, cs.hash)
 
-  if (content.auth.contentType !== "commit") throw new ValidationError("Received content as commit, but not auth") //todo solve this with types?
+  if (content.auth.contentType !== contentTypes.commit)
+    throw new ValidationError("Received content as commit, but not auth") //todo solve this with types?
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
     wireformat,
@@ -353,7 +355,7 @@ async function applyTreeUpdate(
   kdf: Kdf,
 ): Promise<[PrivateKeyPath, Uint8Array, RatchetTree]> {
   if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree] as const
-  if (sender.senderType === "member") {
+  if (sender.senderType === senderTypes.member) {
     const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
@@ -425,7 +427,7 @@ export async function processMessage(
   action: IncomingMessageCallback,
   cs: CiphersuiteImpl,
 ): Promise<ProcessMessageResult> {
-  if (message.wireformat === "mls_public_message") {
+  if (message.wireformat === wireformats.mls_public_message) {
     const result = await processPublicMessage(state, message.publicMessage, pskIndex, cs, action)
 
     return { ...result, kind: "newState" }

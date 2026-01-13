@@ -7,20 +7,22 @@ import {
   encodePskLabel,
   encodePskType,
   encodeResumptionPSKUsage,
+  pskTypes,
+  resumptionPSKUsages,
 } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 test("PSKType roundtrip", () => {
   const roundtrip = createRoundtripTest(encodePskType, decodePskType)
-  roundtrip("external")
-  roundtrip("resumption")
+  roundtrip(pskTypes.external)
+  roundtrip(pskTypes.resumption)
 })
 
-test("ResumptionPSKUsageName roundtrip", () => {
+test("ResumptionPSKUsageValue roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeResumptionPSKUsage, decodeResumptionPSKUsage)
-  roundtrip("application")
-  roundtrip("branch")
-  roundtrip("reinit")
+  roundtrip(resumptionPSKUsages.application)
+  roundtrip(resumptionPSKUsages.branch)
+  roundtrip(resumptionPSKUsages.reinit)
 })
 
 test("PreSharedKeyID roundtrip", () => {
@@ -33,14 +35,14 @@ test("PSKLabel roundtrip", () => {
 
 const dummyByteArray = [new Uint8Array([0, 1, 2]), new Uint8Array()] as const
 const dummyPskInfoResumption = [
-  { usage: "application", pskGroupId: dummyByteArray[0], pskEpoch: 1000n },
-  { usage: "branch", pskGroupId: dummyByteArray[1], pskEpoch: 0n },
+  { usage: resumptionPSKUsages.application, pskGroupId: dummyByteArray[0], pskEpoch: 1000n },
+  { usage: resumptionPSKUsages.branch, pskGroupId: dummyByteArray[1], pskEpoch: 0n },
 ] as const
 const dummyPskInfoExternal = [{ pskId: dummyByteArray[0] }, { pskId: dummyByteArray[1] }] as const
 const dummyPskId = [
-  { psktype: "external", ...dummyPskInfoExternal[0], pskNonce: dummyByteArray[0] },
-  { psktype: "resumption", ...dummyPskInfoResumption[0], pskNonce: dummyByteArray[0] },
-  { psktype: "resumption", ...dummyPskInfoResumption[1], pskNonce: dummyByteArray[1] },
+  { psktype: pskTypes.external, ...dummyPskInfoExternal[0], pskNonce: dummyByteArray[0] },
+  { psktype: pskTypes.resumption, ...dummyPskInfoResumption[0], pskNonce: dummyByteArray[0] },
+  { psktype: pskTypes.resumption, ...dummyPskInfoResumption[1], pskNonce: dummyByteArray[1] },
 ] as const
 const dummyPskLabel = [
   { id: dummyPskId[0], index: 99, count: 200 },

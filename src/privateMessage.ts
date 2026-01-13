@@ -4,7 +4,7 @@ import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeCommit, commitEncoder } from "./commit.js"
-import { ContentTypeName, contentTypeEncoder, decodeContentType } from "./contentType.js"
+import { ContentTypeValue, contentTypes, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
   decodeFramedContentAuthDataCommit,
@@ -23,15 +23,17 @@ import {
   senderDataAADEncoder,
   expandSenderDataKey,
   expandSenderDataNonce,
+  senderTypes,
   SenderData,
   SenderDataAAD,
 } from "./sender.js"
+import { wireformats } from "./wireformat.js"
 
 /** @public */
 export interface PrivateMessage {
   groupId: Uint8Array
   epoch: bigint
-  contentType: ContentTypeName
+  contentType: ContentTypeValue
   authenticatedData: Uint8Array
   encryptedSenderData: Uint8Array
   ciphertext: Uint8Array
@@ -60,7 +62,7 @@ export const decodePrivateMessage: Decoder<PrivateMessage> = mapDecoders(
 export interface PrivateContentAAD {
   groupId: Uint8Array
   epoch: bigint
-  contentType: ContentTypeName
+  contentType: ContentTypeValue
   authenticatedData: Uint8Array
 }
 
@@ -94,9 +96,9 @@ export type PrivateMessageContentProposal = FramedContentProposalData & {
 }
 export type PrivateMessageContentCommit = FramedContentCommitData & { auth: FramedContentAuthDataCommit }
 
-export function decodePrivateMessageContent(contentType: ContentTypeName): Decoder<PrivateMessageContent> {
+export function decodePrivateMessageContent(contentType: ContentTypeValue): Decoder<PrivateMessageContent> {
   switch (contentType) {
-    case "application":
+    case contentTypes.application:
       return decoderWithPadding(
         mapDecoders([decodeVarLenData, decodeVarLenData], (applicationData, signature) => ({
           contentType,
@@ -104,7 +106,7 @@ export function decodePrivateMessageContent(contentType: ContentTypeName): Decod
           auth: { contentType, signature },
         })),
       )
-    case "proposal":
+    case contentTypes.proposal:
       return decoderWithPadding(
         mapDecoders([decodeProposal, decodeVarLenData], (proposal, signature) => ({
           contentType,
@@ -112,7 +114,7 @@ export function decodePrivateMessageContent(contentType: ContentTypeName): Decod
           auth: { contentType, signature },
         })),
       )
-    case "commit":
+    case contentTypes.commit:
       return decoderWithPadding(
         mapDecoders([decodeCommit, decodeVarLenData, decodeFramedContentAuthDataCommit], (commit, signature, auth) => ({
           contentType,
@@ -126,7 +128,7 @@ export function decodePrivateMessageContent(contentType: ContentTypeName): Decod
 export function privateMessageContentEncoder(config: PaddingConfig): BufferEncoder<PrivateMessageContent> {
   return (msg) => {
     switch (msg.contentType) {
-      case "application":
+      case contentTypes.application:
         return encoderWithPadding(
           contramapBufferEncoders(
             [varLenDataEncoder, framedContentAuthDataEncoder],
@@ -135,7 +137,7 @@ export function privateMessageContentEncoder(config: PaddingConfig): BufferEncod
           config,
         )(msg)
 
-      case "proposal":
+      case contentTypes.proposal:
         return encoderWithPadding(
           contramapBufferEncoders(
             [proposalEncoder, framedContentAuthDataEncoder],
@@ -144,7 +146,7 @@ export function privateMessageContentEncoder(config: PaddingConfig): BufferEncod
           config,
         )(msg)
 
-      case "commit":
+      case contentTypes.commit:
         return encoderWithPadding(
           contramapBufferEncoders(
             [commitEncoder, framedContentAuthDataEncoder],
@@ -197,12 +199,12 @@ export function toAuthenticatedContent(
   senderLeafIndex: number,
 ): AuthenticatedContent {
   return {
-    wireformat: "mls_private_message",
+    wireformat: wireformats.mls_private_message,
     content: {
       groupId: msg.groupId,
       epoch: msg.epoch,
       sender: {
-        senderType: "member",
+        senderType: senderTypes.member,
         leafIndex: senderLeafIndex,
       },
       authenticatedData: msg.authenticatedData,

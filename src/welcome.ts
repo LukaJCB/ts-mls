@@ -1,7 +1,7 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteImpl, CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { PublicKey, Hpke, encryptWithLabel, PrivateKey, decryptWithLabel } from "./crypto/hpke.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 import { decodeGroupInfo, groupInfoEncoder, extractWelcomeSecret, GroupInfo } from "./groupInfo.js"
@@ -30,7 +30,7 @@ export const decodeEncryptedGroupSecrets: Decoder<EncryptedGroupSecrets> = mapDe
 
 /** @public */
 export interface Welcome {
-  cipherSuite: CiphersuiteName
+  cipherSuite: CiphersuiteId
   secrets: EncryptedGroupSecrets[]
   encryptedGroupInfo: Uint8Array
 }

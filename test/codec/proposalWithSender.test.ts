@@ -3,21 +3,26 @@ import {
   ProposalWithSender,
   proposalWithSenderEncoder,
 } from "../../src/unappliedProposals.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 const dummyAddProposal: ProposalWithSender = {
   proposal: {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: {
-        version: "mls10",
-        cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+        version: protocolVersions.mls10,
+        cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
         initKey: new Uint8Array([]),
         leafNode: {
           hpkePublicKey: new Uint8Array([]),
           signaturePublicKey: new Uint8Array([]),
           credential: {
-            credentialType: "basic",
+            credentialType: defaultCredentialTypes.basic,
             identity: new Uint8Array([]),
           },
           capabilities: {
@@ -27,7 +32,7 @@ const dummyAddProposal: ProposalWithSender = {
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([]),
@@ -42,7 +47,7 @@ const dummyAddProposal: ProposalWithSender = {
 
 const dummyRemoveProposal: ProposalWithSender = {
   proposal: {
-    proposalType: "remove",
+    proposalType: defaultProposalTypes.remove,
     remove: { removed: 3 },
   },
   senderLeafIndex: undefined,

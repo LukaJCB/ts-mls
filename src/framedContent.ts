@@ -10,14 +10,14 @@ import {
 } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Commit, decodeCommit, commitEncoder } from "./commit.js"
-import { ContentTypeName, contentTypeEncoder, decodeContentType } from "./contentType.js"
+import { ContentTypeValue, contentTypes, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { groupContextEncoder, GroupContext } from "./groupContext.js"
-import { wireformatEncoder, WireformatName } from "./wireformat.js"
+import { wireformatEncoder, WireformatName, wireformats, WireformatValue } from "./wireformat.js"
 import { decodeProposal, proposalEncoder, Proposal } from "./proposal.js"
-import { protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import { protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import {
   decodeSender,
   senderEncoder,
@@ -27,23 +27,24 @@ import {
   SenderNewMemberCommit,
   SenderNewMemberProposal,
 } from "./sender.js"
+import { senderTypes } from "./sender.js"
 
 /** @public */
 export type FramedContentInfo = FramedContentApplicationData | FramedContentProposalData | FramedContentCommitData
 
 /** @public */
 export interface FramedContentApplicationData {
-  contentType: "application"
+  contentType: typeof contentTypes.application
   applicationData: Uint8Array
 }
 /** @public */
 export interface FramedContentProposalData {
-  contentType: "proposal"
+  contentType: typeof contentTypes.proposal
   proposal: Proposal
 }
 /** @public */
 export interface FramedContentCommitData {
-  contentType: "commit"
+  contentType: typeof contentTypes.commit
   commit: Commit
 }
 
@@ -74,11 +75,11 @@ export const encodeFramedContentCommitData: Encoder<FramedContentCommitData> = e
 
 export const framedContentInfoEncoder: BufferEncoder<FramedContentInfo> = (fc) => {
   switch (fc.contentType) {
-    case "application":
+    case contentTypes.application:
       return framedContentApplicationDataEncoder(fc)
-    case "proposal":
+    case contentTypes.proposal:
       return framedContentProposalDataEncoder(fc)
-    case "commit":
+    case contentTypes.commit:
       return framedContentCommitDataEncoder(fc)
   }
 }
@@ -87,16 +88,16 @@ export const encodeFramedContentInfo: Encoder<FramedContentInfo> = encode(framed
 
 export const decodeFramedContentApplicationData: Decoder<FramedContentApplicationData> = mapDecoder(
   decodeVarLenData,
-  (applicationData) => ({ contentType: "application", applicationData }),
+  (applicationData) => ({ contentType: contentTypes.application, applicationData }),
 )
 
 export const decodeFramedContentProposalData: Decoder<FramedContentProposalData> = mapDecoder(
   decodeProposal,
-  (proposal) => ({ contentType: "proposal", proposal }),
+  (proposal) => ({ contentType: contentTypes.proposal, proposal }),
 )
 
 export const decodeFramedContentCommitData: Decoder<FramedContentCommitData> = mapDecoder(decodeCommit, (commit) => ({
-  contentType: "commit",
+  contentType: contentTypes.commit,
   commit,
 }))
 
@@ -104,17 +105,17 @@ export const decodeFramedContentInfo: Decoder<FramedContentInfo> = flatMapDecode
   decodeContentType,
   (contentType): Decoder<FramedContentInfo> => {
     switch (contentType) {
-      case "application":
+      case contentTypes.application:
         return decodeFramedContentApplicationData
-      case "proposal":
+      case contentTypes.proposal:
         return decodeFramedContentProposalData
-      case "commit":
+      case contentTypes.commit:
         return decodeFramedContentCommitData
     }
   },
 )
 
-export function toTbs(content: FramedContent, wireformat: WireformatName, context: GroupContext): FramedContentTBS {
+export function toTbs(content: FramedContent, wireformat: WireformatValue, context: GroupContext): FramedContentTBS {
   return { protocolVersion: context.version, wireformat, content, senderType: content.sender.senderType, context }
 }
 
@@ -157,18 +158,18 @@ export const decodeFramedContent: Decoder<FramedContent> = mapDecoders(
 )
 
 type SenderInfo = SenderInfoMember | SenderInfoNewMemberCommit | SenderInfoExternal | SenderInfoNewMemberProposal
-type SenderInfoMember = { senderType: "member"; context: GroupContext }
-type SenderInfoNewMemberCommit = { senderType: "new_member_commit"; context: GroupContext }
-type SenderInfoExternal = { senderType: "external" }
-type SenderInfoNewMemberProposal = { senderType: "new_member_proposal" }
+type SenderInfoMember = { senderType: typeof senderTypes.member; context: GroupContext }
+type SenderInfoNewMemberCommit = { senderType: typeof senderTypes.new_member_commit; context: GroupContext }
+type SenderInfoExternal = { senderType: typeof senderTypes.external }
+type SenderInfoNewMemberProposal = { senderType: typeof senderTypes.new_member_proposal }
 
 export const senderInfoEncoder: BufferEncoder<SenderInfo> = (info) => {
   switch (info.senderType) {
-    case "member":
-    case "new_member_commit":
+    case senderTypes.member:
+    case senderTypes.new_member_commit:
       return groupContextEncoder(info.context)
-    case "external":
-    case "new_member_proposal":
+    case senderTypes.external:
+    case senderTypes.new_member_proposal:
       return encVoid
   }
 }
@@ -176,8 +177,8 @@ export const senderInfoEncoder: BufferEncoder<SenderInfo> = (info) => {
 export const encodeSenderInfo: Encoder<SenderInfo> = encode(senderInfoEncoder)
 
 export type FramedContentTBS = {
-  protocolVersion: ProtocolVersionName
-  wireformat: WireformatName
+  protocolVersion: ProtocolVersionValue
+  wireformat: WireformatValue
   content: FramedContent
 } & SenderInfo
 
@@ -205,16 +206,21 @@ type FramedContentAuthDataContent =
   | FramedContentAuthDataContentCommit
   | FramedContentAuthDataContentApplicationOrProposal
 /** @public */
-export type FramedContentAuthDataContentCommit = { contentType: "commit"; confirmationTag: Uint8Array }
+export type FramedContentAuthDataContentCommit = {
+  contentType: typeof contentTypes.commit
+  confirmationTag: Uint8Array
+}
 /** @public */
-export type FramedContentAuthDataContentApplicationOrProposal = { contentType: Exclude<ContentTypeName, "commit"> }
+export type FramedContentAuthDataContentApplicationOrProposal = {
+  contentType: typeof contentTypes.application | typeof contentTypes.proposal
+}
 
 const encodeFramedContentAuthDataContent: BufferEncoder<FramedContentAuthDataContent> = (authData) => {
   switch (authData.contentType) {
-    case "commit":
+    case contentTypes.commit:
       return encodeFramedContentAuthDataCommit(authData)
-    case "application":
-    case "proposal":
+    case contentTypes.application:
+    case contentTypes.proposal:
       return encVoid
   }
 }
@@ -234,20 +240,20 @@ export const encodeFramedContentAuthData: Encoder<FramedContentAuthData> = encod
 export const decodeFramedContentAuthDataCommit: Decoder<FramedContentAuthDataContentCommit> = mapDecoder(
   decodeVarLenData,
   (confirmationTag) => ({
-    contentType: "commit",
+    contentType: contentTypes.commit,
     confirmationTag,
   }),
 )
 
-export function decodeFramedContentAuthData(contentType: ContentTypeName): Decoder<FramedContentAuthData> {
+export function decodeFramedContentAuthData(contentType: ContentTypeValue): Decoder<FramedContentAuthData> {
   switch (contentType) {
-    case "commit":
+    case contentTypes.commit:
       return mapDecoders([decodeVarLenData, decodeFramedContentAuthDataCommit], (signature, commitData) => ({
         signature,
         ...commitData,
       }))
-    case "application":
-    case "proposal":
+    case contentTypes.application:
+    case contentTypes.proposal:
       return mapDecoder(decodeVarLenData, (signature) => ({
         signature,
         contentType,
@@ -257,7 +263,7 @@ export function decodeFramedContentAuthData(contentType: ContentTypeName): Decod
 
 export async function verifyFramedContentSignature(
   signKey: Uint8Array,
-  wireformat: WireformatName,
+  wireformat: WireformatValue,
   content: FramedContent,
   auth: FramedContentAuthData,
   context: GroupContext,
@@ -315,16 +321,16 @@ export async function createContentCommitSignature(
 ): Promise<{ framedContent: FramedContentCommit; signature: Uint8Array }> {
   const tbs: FramedContentTBSCommit = {
     protocolVersion: groupContext.version,
-    wireformat,
+    wireformat: wireformats[wireformat],
     content: {
-      contentType: "commit",
+      contentType: contentTypes.commit,
       commit: c,
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
       sender,
       authenticatedData,
     },
-    senderType: "member",
+    senderType: sender.senderType,
     context: groupContext,
   }
 

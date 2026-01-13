@@ -1,26 +1,26 @@
-import { encodeWireformat, decodeWireformat, WireformatName } from "../../src/wireformat.js"
+import { encodeWireformat, decodeWireformat, wireformats } from "../../src/wireformat.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("WireformatName roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeWireformat, decodeWireformat)
 
   test("roundtrips mls_public_message", () => {
-    roundtrip("mls_public_message" as WireformatName)
+    roundtrip(wireformats.mls_public_message)
   })
 
   test("roundtrips mls_private_message", () => {
-    roundtrip("mls_private_message" as WireformatName)
+    roundtrip(wireformats.mls_private_message)
   })
 
   test("roundtrips mls_welcome", () => {
-    roundtrip("mls_welcome" as WireformatName)
+    roundtrip(wireformats.mls_welcome)
   })
 
   test("roundtrips group_info", () => {
-    roundtrip("mls_group_info" as WireformatName)
+    roundtrip(wireformats.mls_group_info)
   })
 
   test("roundtrips mls_key_package", () => {
-    roundtrip("mls_key_package" as WireformatName)
+    roundtrip(wireformats.mls_key_package)
   })
 })

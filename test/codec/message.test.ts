@@ -1,24 +1,31 @@
 import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
+import { ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { contentTypes } from "../../src/contentType.js"
+import { senderTypes } from "../../src/sender.js"
+import { wireformats } from "../../src/wireformat.js"
 
 describe("MLSMessage roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeMlsMessage, decodeMlsMessage)
 
   test("roundtrips public message", () => {
     roundtrip({
-      version: "mls10",
-      wireformat: "mls_public_message",
+      version: protocolVersions.mls10,
+      wireformat: wireformats.mls_public_message,
       publicMessage: {
         content: {
-          contentType: "application",
+          contentType: contentTypes.application,
           groupId: new Uint8Array([1]),
           epoch: 0n,
-          sender: { senderType: "member", leafIndex: 0 },
+          sender: { senderType: senderTypes.member, leafIndex: 0 },
           authenticatedData: new Uint8Array([2]),
           applicationData: new Uint8Array([3]),
         },
-        auth: { contentType: "application", signature: new Uint8Array([4, 5, 6]) },
-        senderType: "member",
+        auth: { contentType: contentTypes.application, signature: new Uint8Array([4, 5, 6]) },
+        senderType: senderTypes.member,
         membershipTag: new Uint8Array([7, 8, 9]),
       },
     })
@@ -26,10 +33,10 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips private message", () => {
     roundtrip({
-      version: "mls10",
-      wireformat: "mls_private_message",
+      version: protocolVersions.mls10,
+      wireformat: wireformats.mls_private_message,
       privateMessage: {
-        contentType: "proposal",
+        contentType: contentTypes.proposal,
         groupId: new Uint8Array([1]),
         epoch: 0n,
         authenticatedData: new Uint8Array([2, 3]),
@@ -41,16 +48,16 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips key package message", () => {
     roundtrip({
-      version: "mls10",
-      wireformat: "mls_key_package",
+      version: protocolVersions.mls10,
+      wireformat: wireformats.mls_key_package,
       keyPackage: {
-        version: "mls10",
-        cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+        version: protocolVersions.mls10,
+        cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
         initKey: new Uint8Array([]),
         leafNode: {
           hpkePublicKey: new Uint8Array([]),
           signaturePublicKey: new Uint8Array([]),
-          credential: { credentialType: "basic", identity: new Uint8Array([]) },
+          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array([]) },
           capabilities: {
             versions: [],
             ciphersuites: [],
@@ -58,7 +65,7 @@ describe("MLSMessage roundtrip", () => {
             proposals: [],
             credentials: [],
           },
-          leafNodeSource: "key_package",
+          leafNodeSource: leafNodeSources.key_package,
           lifetime: { notBefore: 0n, notAfter: 0n },
           extensions: [],
           signature: new Uint8Array([]),
@@ -71,10 +78,10 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips welcome", () => {
     roundtrip({
-      version: "mls10",
-      wireformat: "mls_welcome",
+      version: protocolVersions.mls10,
+      wireformat: wireformats.mls_welcome,
       welcome: {
-        cipherSuite: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+        cipherSuite: ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
         secrets: [],
         encryptedGroupInfo: new Uint8Array([1]),
       },
@@ -83,12 +90,12 @@ describe("MLSMessage roundtrip", () => {
 
   test("roundtrips group info message", () => {
     roundtrip({
-      version: "mls10",
-      wireformat: "mls_group_info",
+      version: protocolVersions.mls10,
+      wireformat: wireformats.mls_group_info,
       groupInfo: {
         groupContext: {
-          version: "mls10",
-          cipherSuite: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+          version: protocolVersions.mls10,
+          cipherSuite: ciphersuites.MLS_256_XWING_AES256GCM_SHA512_Ed25519,
           groupId: new Uint8Array([1, 2, 3]),
           epoch: 0n,
           treeHash: new Uint8Array([4, 5]),

@@ -1,14 +1,14 @@
-import { encodeNodeType, decodeNodeType, NodeTypeName } from "../../src/nodeType.js"
+import { decodeNodeType, encodeNodeType, nodeTypes, NodeTypeValue } from "../../src/nodeType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
-describe("NodeTypeName roundtrip", () => {
+describe("NodeTypeValue roundtrip", () => {
   const roundtrip = createRoundtripTest(encodeNodeType, decodeNodeType)
 
   test("roundtrips leaf", () => {
-    roundtrip("leaf" as NodeTypeName)
+    roundtrip(nodeTypes.leaf as NodeTypeValue)
   })
 
   test("roundtrips parent", () => {
-    roundtrip("parent" as NodeTypeName)
+    roundtrip(nodeTypes.parent as NodeTypeValue)
   })
 })

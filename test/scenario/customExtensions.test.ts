@@ -9,8 +9,11 @@ import { ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension, ExtensionType } from "../../src/extension.js"
+import { Extension } from "../../src/extension.js"
 import { ValidationError } from "../../src/mlsError.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
@@ -19,17 +22,20 @@ test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (c
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const customExtensionType: ExtensionType = 7
+  const customExtensionType: number = 7
 
   const capabilities: Capabilities = {
     extensions: [customExtensionType],
-    credentials: ["basic"],
+    credentials: [defaultCredentialTypes.basic],
     proposals: [],
-    versions: ["mls10"],
-    ciphersuites: [cipherSuite],
+    versions: [protocolVersions.mls10],
+    ciphersuites: [ciphersuites[cipherSuite]],
   }
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
@@ -43,11 +49,14 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [customExtension], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -79,11 +88,14 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
   )
 
   //Charlie doesn't support the custom extension
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: charlie.publicPackage,
     },

@@ -1,4 +1,5 @@
 import { encodeExtension, decodeExtension, Extension } from "../../src/extension.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Extension roundtrip", () => {
@@ -6,7 +7,7 @@ describe("Extension roundtrip", () => {
 
   test("roundtrips minimal", () => {
     const e: Extension = {
-      extensionType: "application_id",
+      extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([]),
     }
     roundtrip(e)
@@ -14,7 +15,7 @@ describe("Extension roundtrip", () => {
 
   test("roundtrips nontrivial", () => {
     const e: Extension = {
-      extensionType: "ratchet_tree",
+      extensionType: defaultExtensionTypes.ratchet_tree,
       extensionData: new Uint8Array([1, 2, 3, 4]),
     }
     roundtrip(e)

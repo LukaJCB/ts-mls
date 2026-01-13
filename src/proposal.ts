@@ -2,12 +2,17 @@ import { decodeUint16, decodeUint32, uint16Encoder, uint32Encoder } from "./code
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteName, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
 import { decodeKeyPackage, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { decodePskId, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
-import { decodeDefaultProposalType, defaultProposalTypeEncoder } from "./defaultProposalType.js"
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionName } from "./protocolVersion.js"
+import {
+  decodeDefaultProposalTypeValue,
+  defaultProposalTypeValueEncoder,
+  defaultProposalTypes,
+  isDefaultProposalTypeValue,
+} from "./defaultProposalType.js"
+import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { decodeLeafNodeUpdate, leafNodeEncoder, LeafNodeUpdate } from "./leafNode.js"
 
 /** @public */
@@ -53,8 +58,8 @@ export const decodePSK: Decoder<PSK> = mapDecoder(decodePskId, (preSharedKeyId) 
 /** @public */
 export interface Reinit {
   groupId: Uint8Array
-  version: ProtocolVersionName
-  cipherSuite: CiphersuiteName
+  version: ProtocolVersionValue
+  cipherSuite: CiphersuiteId
   extensions: Extension[]
 }
 
@@ -102,43 +107,43 @@ export const decodeGroupContextExtensions: Decoder<GroupContextExtensions> = map
 
 /** @public */
 export interface ProposalAdd {
-  proposalType: "add"
+  proposalType: typeof defaultProposalTypes.add
   add: Add
 }
 
 /** @public */
 export interface ProposalUpdate {
-  proposalType: "update"
+  proposalType: typeof defaultProposalTypes.update
   update: Update
 }
 
 /** @public */
 export interface ProposalRemove {
-  proposalType: "remove"
+  proposalType: typeof defaultProposalTypes.remove
   remove: Remove
 }
 
 /** @public */
 export interface ProposalPSK {
-  proposalType: "psk"
+  proposalType: typeof defaultProposalTypes.psk
   psk: PSK
 }
 
 /** @public */
 export interface ProposalReinit {
-  proposalType: "reinit"
+  proposalType: typeof defaultProposalTypes.reinit
   reinit: Reinit
 }
 
 /** @public */
 export interface ProposalExternalInit {
-  proposalType: "external_init"
+  proposalType: typeof defaultProposalTypes.external_init
   externalInit: ExternalInit
 }
 
 /** @public */
 export interface ProposalGroupContextExtensions {
-  proposalType: "group_context_extensions"
+  proposalType: typeof defaultProposalTypes.group_context_extensions
   groupContextExtensions: GroupContextExtensions
 }
 
@@ -149,7 +154,7 @@ export interface ProposalCustom {
 }
 
 /** @public */
-export type Proposal =
+export type DefaultProposal =
   | ProposalAdd
   | ProposalUpdate
   | ProposalRemove
@@ -157,45 +162,51 @@ export type Proposal =
   | ProposalReinit
   | ProposalExternalInit
   | ProposalGroupContextExtensions
-  | ProposalCustom
+
+/** @public */
+export type Proposal = DefaultProposal | ProposalCustom
+
+export function isDefaultProposal(p: Proposal): p is DefaultProposal {
+  return isDefaultProposalTypeValue(p.proposalType)
+}
 
 export const proposalAddEncoder: BufferEncoder<ProposalAdd> = contramapBufferEncoders(
-  [defaultProposalTypeEncoder, addEncoder],
+  [defaultProposalTypeValueEncoder, addEncoder],
   (p) => [p.proposalType, p.add] as const,
 )
 
 export const encodeProposalAdd: Encoder<ProposalAdd> = encode(proposalAddEncoder)
 
 export const proposalUpdateEncoder: BufferEncoder<ProposalUpdate> = contramapBufferEncoders(
-  [defaultProposalTypeEncoder, updateEncoder],
+  [defaultProposalTypeValueEncoder, updateEncoder],
   (p) => [p.proposalType, p.update] as const,
 )
 
 export const encodeProposalUpdate: Encoder<ProposalUpdate> = encode(proposalUpdateEncoder)
 
 export const proposalRemoveEncoder: BufferEncoder<ProposalRemove> = contramapBufferEncoders(
-  [defaultProposalTypeEncoder, removeEncoder],
+  [defaultProposalTypeValueEncoder, removeEncoder],
   (p) => [p.proposalType, p.remove] as const,
 )
 
 export const encodeProposalRemove: Encoder<ProposalRemove> = encode(proposalRemoveEncoder)
 
 export const proposalPSKEncoder: BufferEncoder<ProposalPSK> = contramapBufferEncoders(
-  [defaultProposalTypeEncoder, pskEncoder],
+  [defaultProposalTypeValueEncoder, pskEncoder],
   (p) => [p.proposalType, p.psk] as const,
 )
 
 export const encodeProposalPSK: Encoder<ProposalPSK> = encode(proposalPSKEncoder)
 
 export const proposalReinitEncoder: BufferEncoder<ProposalReinit> = contramapBufferEncoders(
-  [defaultProposalTypeEncoder, reinitEncoder],
+  [defaultProposalTypeValueEncoder, reinitEncoder],
   (p) => [p.proposalType, p.reinit] as const,
 )
 
 export const encodeProposalReinit: Encoder<ProposalReinit> = encode(proposalReinitEncoder)
 
 export const proposalExternalInitEncoder: BufferEncoder<ProposalExternalInit> = contramapBufferEncoders(
-  [defaultProposalTypeEncoder, externalInitEncoder],
+  [defaultProposalTypeValueEncoder, externalInitEncoder],
   (p) => [p.proposalType, p.externalInit] as const,
 )
 
@@ -203,7 +214,7 @@ export const encodeProposalExternalInit: Encoder<ProposalExternalInit> = encode(
 
 export const proposalGroupContextExtensionsEncoder: BufferEncoder<ProposalGroupContextExtensions> =
   contramapBufferEncoders(
-    [defaultProposalTypeEncoder, groupContextExtensionsEncoder],
+    [defaultProposalTypeValueEncoder, groupContextExtensionsEncoder],
     (p) => [p.proposalType, p.groupContextExtensions] as const,
   )
 
@@ -219,55 +230,64 @@ export const proposalCustomEncoder: BufferEncoder<ProposalCustom> = contramapBuf
 export const encodeProposalCustom: Encoder<ProposalCustom> = encode(proposalCustomEncoder)
 
 export const proposalEncoder: BufferEncoder<Proposal> = (p) => {
+  if (!isDefaultProposal(p)) return proposalCustomEncoder(p)
+
   switch (p.proposalType) {
-    case "add":
+    case defaultProposalTypes.add:
       return proposalAddEncoder(p)
-    case "update":
+    case defaultProposalTypes.update:
       return proposalUpdateEncoder(p)
-    case "remove":
+    case defaultProposalTypes.remove:
       return proposalRemoveEncoder(p)
-    case "psk":
+    case defaultProposalTypes.psk:
       return proposalPSKEncoder(p)
-    case "reinit":
+    case defaultProposalTypes.reinit:
       return proposalReinitEncoder(p)
-    case "external_init":
+    case defaultProposalTypes.external_init:
       return proposalExternalInitEncoder(p)
-    case "group_context_extensions":
+    case defaultProposalTypes.group_context_extensions:
       return proposalGroupContextExtensionsEncoder(p)
-    default:
-      return proposalCustomEncoder(p)
   }
 }
 
 export const encodeProposal: Encoder<Proposal> = encode(proposalEncoder)
 
-export const decodeProposalAdd: Decoder<ProposalAdd> = mapDecoder(decodeAdd, (add) => ({ proposalType: "add", add }))
+export const decodeProposalAdd: Decoder<ProposalAdd> = mapDecoder(decodeAdd, (add) => ({
+  proposalType: defaultProposalTypes.add,
+  add,
+}))
 
 export const decodeProposalUpdate: Decoder<ProposalUpdate> = mapDecoder(decodeUpdate, (update) => ({
-  proposalType: "update",
+  proposalType: defaultProposalTypes.update,
   update,
 }))
 
 export const decodeProposalRemove: Decoder<ProposalRemove> = mapDecoder(decodeRemove, (remove) => ({
-  proposalType: "remove",
+  proposalType: defaultProposalTypes.remove,
   remove,
 }))
 
-export const decodeProposalPSK: Decoder<ProposalPSK> = mapDecoder(decodePSK, (psk) => ({ proposalType: "psk", psk }))
+export const decodeProposalPSK: Decoder<ProposalPSK> = mapDecoder(decodePSK, (psk) => ({
+  proposalType: defaultProposalTypes.psk,
+  psk,
+}))
 
 export const decodeProposalReinit: Decoder<ProposalReinit> = mapDecoder(decodeReinit, (reinit) => ({
-  proposalType: "reinit",
+  proposalType: defaultProposalTypes.reinit,
   reinit,
 }))
 
 export const decodeProposalExternalInit: Decoder<ProposalExternalInit> = mapDecoder(
   decodeExternalInit,
-  (externalInit) => ({ proposalType: "external_init", externalInit }),
+  (externalInit) => ({ proposalType: defaultProposalTypes.external_init, externalInit }),
 )
 
 export const decodeProposalGroupContextExtensions: Decoder<ProposalGroupContextExtensions> = mapDecoder(
   decodeGroupContextExtensions,
-  (groupContextExtensions) => ({ proposalType: "group_context_extensions", groupContextExtensions }),
+  (groupContextExtensions) => ({
+    proposalType: defaultProposalTypes.group_context_extensions,
+    groupContextExtensions,
+  }),
 )
 
 export function decodeProposalCustom(proposalType: number): Decoder<ProposalCustom> {
@@ -275,21 +295,21 @@ export function decodeProposalCustom(proposalType: number): Decoder<ProposalCust
 }
 
 export const decodeProposal: Decoder<Proposal> = orDecoder(
-  flatMapDecoder(decodeDefaultProposalType, (proposalType): Decoder<Proposal> => {
+  flatMapDecoder(decodeDefaultProposalTypeValue, (proposalType): Decoder<Proposal> => {
     switch (proposalType) {
-      case "add":
+      case defaultProposalTypes.add:
         return decodeProposalAdd
-      case "update":
+      case defaultProposalTypes.update:
         return decodeProposalUpdate
-      case "remove":
+      case defaultProposalTypes.remove:
         return decodeProposalRemove
-      case "psk":
+      case defaultProposalTypes.psk:
         return decodeProposalPSK
-      case "reinit":
+      case defaultProposalTypes.reinit:
         return decodeProposalReinit
-      case "external_init":
+      case defaultProposalTypes.external_init:
         return decodeProposalExternalInit
-      case "group_context_extensions":
+      case defaultProposalTypes.group_context_extensions:
         return decodeProposalGroupContextExtensions
     }
   }),

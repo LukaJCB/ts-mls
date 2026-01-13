@@ -23,9 +23,11 @@ This scenario demonstrates how to use an external pre-shared key (PSK) in a grou
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -35,22 +37,30 @@ import {
   processPrivateMessage,
   makePskIndex,
   bytesToBase64,
+  pskTypes,
+  wireformats,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // Alice adds Bob (epoch 1)
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
@@ -75,10 +85,10 @@ const pskNonce = impl.rng.randomBytes(impl.kdf.size)
 const pskId = new TextEncoder().encode("psk-1")
 
 const pskProposal: Proposal = {
-  proposalType: "psk",
+  proposalType: defaultProposalTypes.psk,
   psk: {
     preSharedKeyId: {
-      psktype: "external",
+      psktype: pskTypes.external,
       pskId,
       pskNonce,
     },
@@ -99,7 +109,7 @@ const pskCommitResult = await createCommit(
 )
 aliceGroup = pskCommitResult.newState
 
-if (pskCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
 // Bob processes the commit using the PSK
 const processPskResult = await processPrivateMessage(
@@ -142,9 +152,11 @@ It's also possible to use an external PSK when inviting a new member to the grou
 import {
   createGroup,
   Credential,
+  defaultCredentialTypes,
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
@@ -154,17 +166,24 @@ import {
   processPrivateMessage,
   makePskIndex,
   bytesToBase64,
+  pskTypes,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
-const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+const aliceCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("alice"),
+}
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+const bobCredential: Credential = {
+  credentialType: defaultCredentialTypes.basic,
+  identity: new TextEncoder().encode("bob"),
+}
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // Prepare external PSK and share it out-of-band
@@ -172,10 +191,10 @@ const pskSecret = impl.rng.randomBytes(impl.kdf.size)
 const pskNonce = impl.rng.randomBytes(impl.kdf.size)
 const pskId = new TextEncoder().encode("psk-1")
 const pskProposal: Proposal = {
-  proposalType: "psk",
+  proposalType: defaultProposalTypes.psk,
   psk: {
     preSharedKeyId: {
-      psktype: "external",
+      psktype: pskTypes.external,
       pskId,
       pskNonce,
     },
@@ -186,7 +205,7 @@ const sharedPsks = { [base64PskId]: pskSecret }
 
 // Add Bob and use PSK in the same commit (epoch 1)
 const addBobProposal: Proposal = {
-  proposalType: "add",
+  proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit(

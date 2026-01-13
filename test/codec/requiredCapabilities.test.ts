@@ -3,6 +3,7 @@ import {
   decodeRequiredCapabilities,
   RequiredCapabilities,
 } from "../../src/requiredCapabilities.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("RequiredCapabilities roundtrip", () => {
@@ -21,7 +22,7 @@ describe("RequiredCapabilities roundtrip", () => {
     const rc: RequiredCapabilities = {
       extensionTypes: [7, 8],
       proposalTypes: [9, 10, 11],
-      credentialTypes: ["basic", "x509"],
+      credentialTypes: [defaultCredentialTypes.basic, defaultCredentialTypes.x509],
     }
     roundtrip(rc)
   })
@@ -30,7 +31,7 @@ describe("RequiredCapabilities roundtrip", () => {
     const rc: RequiredCapabilities = {
       extensionTypes: [8],
       proposalTypes: [9],
-      credentialTypes: ["basic"],
+      credentialTypes: [defaultCredentialTypes.basic],
     }
     roundtrip(rc)
   })

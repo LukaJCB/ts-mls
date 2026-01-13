@@ -4,6 +4,7 @@ import { processPrivateMessage } from "../../src/processMessages.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
 import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption.js"
 import { Credential } from "../../src/credential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -13,7 +14,8 @@ import { getRandomElement, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
-
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { wireformats } from "../../src/wireformat.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
   await reinit(cs as CiphersuiteName)
 })
@@ -21,18 +23,24 @@ test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
 async function reinit(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: {
       keyPackage: bob.publicPackage,
     },
@@ -67,7 +75,8 @@ async function reinit(cipherSuite: CiphersuiteName) {
 
   aliceGroup = reinitCommitResult.newState
 
-  if (reinitCommitResult.commit.wireformat !== "mls_private_message") throw new Error("Expected private message")
+  if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
 
   const processReinitResult = await processPrivateMessage(
     bobGroup,

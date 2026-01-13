@@ -15,10 +15,10 @@ import {
   FramedContentProposalData,
   FramedContentTBS,
 } from "./framedContent.js"
-import { decodeWireformat, wireformatEncoder, WireformatName } from "./wireformat.js"
+import { decodeWireformat, wireformatEncoder, WireformatValue } from "./wireformat.js"
 
 export interface AuthenticatedContent {
-  wireformat: WireformatName
+  wireformat: WireformatValue
   content: FramedContent
   auth: FramedContentAuthData
 }

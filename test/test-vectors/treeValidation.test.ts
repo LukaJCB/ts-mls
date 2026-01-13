@@ -7,6 +7,7 @@ import { treeHash } from "../../src/treeHash.js"
 import { verifyLeafNodeSignature } from "../../src/leafNode.js"
 import { nodeToLeafIndex, toNodeIndex } from "../../src/treemath.js"
 import { verifyParentHashes } from "../../src/parentHash.js"
+import { nodeTypes } from "../../src/nodeType.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`tree-validation test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
@@ -39,7 +40,7 @@ async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImp
 
   for (const [i, n] of tree[0].entries()) {
     if (n !== undefined) {
-      if (n.nodeType === "leaf") {
+      if (n.nodeType === nodeTypes.leaf) {
         expect(
           await verifyLeafNodeSignature(
             n.leaf,

@@ -4,6 +4,7 @@ import {
   createGroup,
   Credential,
   defaultCapabilities,
+  defaultCredentialTypes,
   defaultLifetime,
   generateKeyPackage,
   getCiphersuiteFromName,
@@ -22,7 +23,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
   const aliceCredential: Credential = {
-    credentialType: "basic",
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
 
@@ -48,9 +49,5 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
     throw new Error("binary deserialization failed unexpectedly")
   }
 
-  console.log(groupState.ratchetTree)
-  console.log("foo")
-  console.log(decoded[0].ratchetTree)
-  console.log("bar")
   expect(groupState.ratchetTree).toEqual(decoded[0].ratchetTree)
 }

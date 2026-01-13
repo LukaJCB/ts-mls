@@ -1,7 +1,7 @@
 import json from "../../test_vectors/psk_secret.json"
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
-import { computePskSecret, PreSharedKeyIdExternal } from "../../src/presharedkey.js"
+import { computePskSecret, PreSharedKeyIdExternal, pskTypes } from "../../src/presharedkey.js"
 import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`psk_secret test vectors %i`, async (_index, x) => {
@@ -16,7 +16,10 @@ type Psk = {
 }
 
 function toExternalPsk(p: Psk): [PreSharedKeyIdExternal, Uint8Array] {
-  return [{ psktype: "external", pskId: hexToBytes(p.psk_id), pskNonce: hexToBytes(p.psk_nonce) }, hexToBytes(p.psk)]
+  return [
+    { psktype: pskTypes.external, pskId: hexToBytes(p.psk_id), pskNonce: hexToBytes(p.psk_nonce) },
+    hexToBytes(p.psk),
+  ]
 }
 
 async function testPskSecret(secret: string, psks: Psk[], impl: CiphersuiteImpl) {

@@ -20,12 +20,15 @@ import {
 } from "./privateMessage.js"
 import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree.js"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
-import { SenderData, SenderDataAAD } from "./sender.js"
+import { senderTypes, SenderData, SenderDataAAD } from "./sender.js"
 import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError, InternalError } from "./mlsError.js"
 import { PaddingConfig } from "./paddingConfig.js"
 import { encode } from "./codec/tlsEncoder.js"
+import { nodeTypes } from "./nodeType.js"
+import { contentTypes } from "./contentType.js"
+import { wireformats } from "./wireformat.js"
 
 export interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -46,19 +49,19 @@ export async function protectApplicationData(
 ): Promise<ProtectApplicationDataResult> {
   const tbs: FramedContentTBSApplicationOrProposal = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_private_message",
+    wireformat: wireformats.mls_private_message,
     content: {
-      contentType: "application",
+      contentType: contentTypes.application,
       applicationData,
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
       sender: {
-        senderType: "member",
+        senderType: senderTypes.member,
         leafIndex: leafIndex,
       },
       authenticatedData,
     },
-    senderType: "member",
+    senderType: senderTypes.member,
     context: groupContext,
   }
 
@@ -103,19 +106,19 @@ export async function protectProposal(
 ): Promise<ProtectProposalResult> {
   const tbs = {
     protocolVersion: groupContext.version,
-    wireformat: "mls_private_message" as const,
+    wireformat: wireformats.mls_private_message,
     content: {
-      contentType: "proposal" as const,
+      contentType: contentTypes.proposal,
       proposal: p,
       groupId: groupContext.groupId,
       epoch: groupContext.epoch,
       sender: {
-        senderType: "member" as const,
+        senderType: senderTypes.member,
         leafIndex,
       },
       authenticatedData,
     },
-    senderType: "member" as const,
+    senderType: senderTypes.member,
     context: groupContext,
   }
 
@@ -136,7 +139,7 @@ export async function protectProposal(
   const newSecretTree = protectResult.tree
 
   const authenticatedContent = {
-    wireformat: "mls_private_message" as const,
+    wireformat: wireformats.mls_private_message,
     content,
     auth,
   }
@@ -265,7 +268,7 @@ export async function unprotectPrivateMessage(
 
   const signatureValid = await verifyFramedContentSignature(
     signaturePublicKey,
-    "mls_private_message",
+    wireformats.mls_private_message,
     content.content,
     content.auth,
     groupContext,
@@ -278,6 +281,6 @@ export async function unprotectPrivateMessage(
 }
 
 export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== "leaf")
+  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== nodeTypes.leaf)
     return new ValidationError("SenderData did not point to a non-blank leaf node")
 }

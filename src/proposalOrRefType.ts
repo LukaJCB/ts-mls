@@ -1,11 +1,11 @@
 import { decodeUint8, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeProposal, Proposal, proposalEncoder } from "./proposal.js"
-import { enumNumberToKey } from "./util/enumHelpers.js"
+import { numberToEnum } from "./util/enumHelpers.js"
 
-const proposalOrRefTypes = {
+export const proposalOrRefTypes = {
   proposal: 1,
   reference: 2,
 } as const
@@ -13,27 +13,24 @@ const proposalOrRefTypes = {
 export type ProposalOrRefTypeName = keyof typeof proposalOrRefTypes
 export type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTypeName]
 
-export const proposalOrRefTypeEncoder: BufferEncoder<ProposalOrRefTypeName> = contramapBufferEncoder(
-  uint8Encoder,
-  (t) => proposalOrRefTypes[t],
-)
+export const proposalOrRefTypeEncoder: BufferEncoder<ProposalOrRefTypeValue> = uint8Encoder
 
-export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeName> = encode(proposalOrRefTypeEncoder)
+export const encodeProposalOrRefType: Encoder<ProposalOrRefTypeValue> = encode(proposalOrRefTypeEncoder)
 
-export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeName> = mapDecoderOption(
+export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeValue> = mapDecoderOption(
   decodeUint8,
-  enumNumberToKey(proposalOrRefTypes),
+  numberToEnum(proposalOrRefTypes),
 )
 
 /** @public */
 export interface ProposalOrRefProposal {
-  proposalOrRefType: "proposal"
+  proposalOrRefType: typeof proposalOrRefTypes.proposal
   proposal: Proposal
 }
 
 /** @public */
 export interface ProposalOrRefProposalRef {
-  proposalOrRefType: "reference"
+  proposalOrRefType: typeof proposalOrRefTypes.reference
   reference: Uint8Array
 }
 
@@ -56,9 +53,9 @@ export const encodeProposalOrRefProposalRef: Encoder<ProposalOrRefProposalRef> =
 
 export const proposalOrRefEncoder: BufferEncoder<ProposalOrRef> = (input) => {
   switch (input.proposalOrRefType) {
-    case "proposal":
+    case proposalOrRefTypes.proposal:
       return proposalOrRefProposalEncoder(input)
-    case "reference":
+    case proposalOrRefTypes.reference:
       return proposalOrRefProposalRefEncoder(input)
   }
 }
@@ -69,9 +66,9 @@ export const decodeProposalOrRef: Decoder<ProposalOrRef> = flatMapDecoder(
   decodeProposalOrRefType,
   (proposalOrRefType): Decoder<ProposalOrRef> => {
     switch (proposalOrRefType) {
-      case "proposal":
+      case proposalOrRefTypes.proposal:
         return mapDecoder(decodeProposal, (proposal) => ({ proposalOrRefType, proposal }))
-      case "reference":
+      case proposalOrRefTypes.reference:
         return mapDecoder(decodeVarLenData, (reference) => ({ proposalOrRefType, reference }))
     }
   },

@@ -1,7 +1,7 @@
 import { ClientState, createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit, createGroupInfoWithExternalPub } from "../../src/createCommit.js"
 import { emptyPskIndex } from "../../src/pskIndex.js"
-import { Credential } from "../../src/credential.js"
+import { Credential, isDefaultCredential } from "../../src/credential.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
@@ -14,10 +14,15 @@ import { encodeExternalSender } from "../../src/externalSender.js"
 import { AuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { createCustomCredential } from "../../src/customCredential.js"
+import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { Extension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
 import { Capabilities } from "../../src/capabilities.js"
+import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
+import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { pskTypes } from "../../src/presharedkey.js"
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -26,12 +31,12 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup, bobGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
     const removeBobProposal: ProposalRemove = {
-      proposalType: "remove",
+      proposalType: defaultProposalTypes.remove,
       remove: { removed: bobGroup.privatePath.leafIndex },
     }
 
     const removeBobProposal2: ProposalRemove = {
-      proposalType: "remove",
+      proposalType: defaultProposalTypes.remove,
       remove: { removed: bobGroup.privatePath.leafIndex },
     }
 
@@ -59,11 +64,11 @@ describe("Proposal Validation", () => {
       const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
       const proposalRequiredCapabilities: Proposal = {
-        proposalType: "group_context_extensions",
+        proposalType: defaultProposalTypes.group_context_extensions,
         groupContextExtensions: {
           extensions: [
             {
-              extensionType: "required_capabilities",
+              extensionType: defaultExtensionTypes.required_capabilities,
               extensionData: encodeRequiredCapabilities({
                 extensionTypes: [],
                 proposalTypes: [99],
@@ -85,27 +90,30 @@ describe("Proposal Validation", () => {
     async (cs) => {
       const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
-      const dianaCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("diana") }
+      const dianaCredential: Credential = {
+        credentialType: defaultCredentialTypes.basic,
+        identity: new TextEncoder().encode("diana"),
+      }
       const diana = await generateKeyPackage(
         dianaCredential,
-        { ...defaultCapabilities(), credentials: ["basic"] },
+        { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
         defaultLifetime,
         [],
         impl,
       )
 
-      const addDiana: Proposal = { proposalType: "add", add: { keyPackage: diana.publicPackage } }
+      const addDiana: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: diana.publicPackage } }
 
       const proposalRequiredCapabilitiesX509: Proposal = {
-        proposalType: "group_context_extensions",
+        proposalType: defaultProposalTypes.group_context_extensions,
         groupContextExtensions: {
           extensions: [
             {
-              extensionType: "required_capabilities",
+              extensionType: defaultExtensionTypes.required_capabilities,
               extensionData: encodeRequiredCapabilities({
                 extensionTypes: [],
                 proposalTypes: [],
-                credentialTypes: ["x509"],
+                credentialTypes: [defaultCredentialTypes.x509],
               }),
             },
           ],
@@ -125,9 +133,11 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
     const proposalInvalidRequiredCapabilities: Proposal = {
-      proposalType: "group_context_extensions",
+      proposalType: defaultProposalTypes.group_context_extensions,
       groupContextExtensions: {
-        extensions: [{ extensionType: "required_capabilities", extensionData: new Uint8Array([1, 2]) }],
+        extensions: [
+          { extensionType: defaultExtensionTypes.required_capabilities, extensionData: new Uint8Array([1, 2]) },
+        ],
       },
     }
 
@@ -142,9 +152,11 @@ describe("Proposal Validation", () => {
       const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
       const proposalInvalidExternalSenders: Proposal = {
-        proposalType: "group_context_extensions",
+        proposalType: defaultProposalTypes.group_context_extensions,
         groupContextExtensions: {
-          extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2]) }],
+          extensions: [
+            { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2]) },
+          ],
         },
       }
 
@@ -152,13 +164,16 @@ describe("Proposal Validation", () => {
         createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [proposalInvalidExternalSenders] }),
       ).rejects.toThrow(CodecError)
 
-      const badCredential = { credentialType: "basic" as const, identity: new TextEncoder().encode("NOT GOOD") }
+      const badCredential = {
+        credentialType: defaultCredentialTypes.basic,
+        identity: new TextEncoder().encode("NOT GOOD"),
+      }
       const proposalUnauthenticatedExternalSenders: Proposal = {
-        proposalType: "group_context_extensions",
+        proposalType: defaultProposalTypes.group_context_extensions,
         groupContextExtensions: {
           extensions: [
             {
-              extensionType: "external_senders",
+              extensionType: defaultExtensionTypes.external_senders,
               extensionData: encodeExternalSender({ credential: badCredential, signaturePublicKey: new Uint8Array() }),
             },
           ],
@@ -167,7 +182,12 @@ describe("Proposal Validation", () => {
 
       const authService: AuthenticationService = {
         async validateCredential(c, _pk) {
-          if (c.credentialType === "basic" && constantTimeEqual(c.identity, badCredential.identity)) return false
+          if (
+            c.credentialType === defaultCredentialTypes.basic &&
+            isDefaultCredential(c) &&
+            constantTimeEqual(c.identity, badCredential.identity)
+          )
+            return false
           return true
         },
       }
@@ -184,19 +204,27 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("can't add a member with invalid credentials %s", async (cs) => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
-    const edwardCredential = { credentialType: "basic" as const, identity: new TextEncoder().encode("edward") }
+    const edwardCredential = {
+      credentialType: defaultCredentialTypes.basic,
+      identity: new TextEncoder().encode("edward"),
+    }
     const edward = await generateKeyPackage(
       edwardCredential,
-      { ...defaultCapabilities(), credentials: ["basic"] },
+      { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
       defaultLifetime,
       [],
       impl,
     )
-    const addEdward: Proposal = { proposalType: "add", add: { keyPackage: edward.publicPackage } }
+    const addEdward: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: edward.publicPackage } }
 
     const authServiceEdward: AuthenticationService = {
       async validateCredential(c, _pk) {
-        if (c.credentialType === "basic" && constantTimeEqual(c.identity, edwardCredential.identity)) return false
+        if (
+          c.credentialType === defaultCredentialTypes.basic &&
+          isDefaultCredential(c) &&
+          constantTimeEqual(c.identity, edwardCredential.identity)
+        )
+          return false
         return true
       },
     }
@@ -214,7 +242,7 @@ describe("Proposal Validation", () => {
 
     const frankCredential: Credential = createCustomCredential(5, new Uint8Array([1, 2]))
     const frank = await generateKeyPackage(frankCredential, defaultCapabilities(), defaultLifetime, [], impl)
-    const addFrank: Proposal = { proposalType: "add", add: { keyPackage: frank.publicPackage } }
+    const addFrank: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: frank.publicPackage } }
 
     await expect(
       createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addFrank] }),
@@ -224,12 +252,15 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("can't add leafNode with unsupported extension %s", async (cs) => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
-    const georgeCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("george") }
+    const georgeCredential: Credential = {
+      credentialType: defaultCredentialTypes.basic,
+      identity: new TextEncoder().encode("george"),
+    }
     const georgeExtension: Extension = { extensionType: 8545, extensionData: new Uint8Array() }
     const george = await generateKeyPackage(georgeCredential, defaultCapabilities(), defaultLifetime, [], impl, [
       georgeExtension,
     ])
-    const addGeorge: Proposal = { proposalType: "add", add: { keyPackage: george.publicPackage } }
+    const addGeorge: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: george.publicPackage } }
 
     await expect(
       createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addGeorge] }),
@@ -240,7 +271,7 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup, alice } = await setupThreeMembers(cs as CiphersuiteName)
 
     const updateLeafNode: LeafNode = {
-      leafNodeSource: "update",
+      leafNodeSource: leafNodeSources.update,
       signaturePublicKey: alice.publicPackage.leafNode.signaturePublicKey,
       hpkePublicKey: alice.publicPackage.leafNode.hpkePublicKey,
       credential: alice.publicPackage.leafNode.credential,
@@ -249,7 +280,10 @@ describe("Proposal Validation", () => {
       signature: new Uint8Array(),
     }
 
-    const updateProposal: Proposal = { proposalType: "update", update: { leafNode: updateLeafNode } }
+    const updateProposal: Proposal = {
+      proposalType: defaultProposalTypes.update,
+      update: { leafNode: updateLeafNode },
+    }
 
     await expect(
       createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [updateProposal] }),
@@ -259,7 +293,7 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("committer can't remove themselves %s", async (cs) => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
-    const removeProposal: ProposalRemove = { proposalType: "remove", remove: { removed: 0 } }
+    const removeProposal: ProposalRemove = { proposalType: defaultProposalTypes.remove, remove: { removed: 0 } }
 
     await expect(
       createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [removeProposal] }),
@@ -269,9 +303,15 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("can't add the same keypackage twice %s", async (cs) => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
-    const hannahCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+    const hannahCredential: Credential = {
+      credentialType: defaultCredentialTypes.basic,
+      identity: new TextEncoder().encode("bob"),
+    }
     const hannah = await generateKeyPackage(hannahCredential, defaultCapabilities(), defaultLifetime, [], impl)
-    const addHannahProposal: ProposalAdd = { proposalType: "add", add: { keyPackage: hannah.publicPackage } }
+    const addHannahProposal: ProposalAdd = {
+      proposalType: defaultProposalTypes.add,
+      add: { keyPackage: hannah.publicPackage },
+    }
 
     await expect(
       createCommit(
@@ -290,8 +330,8 @@ describe("Proposal Validation", () => {
 
     const pskId = new Uint8Array([1, 2, 3, 4])
     const pskProposal: Proposal = {
-      proposalType: "psk",
-      psk: { preSharedKeyId: { psktype: "external", pskId, pskNonce: new Uint8Array([5, 6, 7, 8]) } },
+      proposalType: defaultProposalTypes.psk,
+      psk: { preSharedKeyId: { psktype: pskTypes.external, pskId, pskNonce: new Uint8Array([5, 6, 7, 8]) } },
     }
 
     await expect(
@@ -305,7 +345,7 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
     const groupContextExtensionsProposal: Proposal = {
-      proposalType: "group_context_extensions",
+      proposalType: defaultProposalTypes.group_context_extensions,
       groupContextExtensions: { extensions: [] },
     }
 
@@ -323,7 +363,7 @@ describe("Proposal Validation", () => {
     // external pub not really necessary here
     const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
-    const removeBobProposal: ProposalRemove = { proposalType: "remove", remove: { removed: 1 } }
+    const removeBobProposal: ProposalRemove = { proposalType: defaultProposalTypes.remove, remove: { removed: 1 } }
 
     await expect(
       proposeExternal(
@@ -341,7 +381,9 @@ describe("Proposal Validation", () => {
           ...groupInfo,
           groupContext: {
             ...groupInfo.groupContext,
-            extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2, 3]) }],
+            extensions: [
+              { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2, 3]) },
+            ],
           },
         },
         removeBobProposal,
@@ -360,7 +402,7 @@ describe("Proposal Validation", () => {
       // external pub not really necessary here
       const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
-      const removeBobProposal: ProposalRemove = { proposalType: "remove", remove: { removed: 1 } }
+      const removeBobProposal: ProposalRemove = { proposalType: defaultProposalTypes.remove, remove: { removed: 1 } }
 
       await expect(
         proposeExternal(
@@ -368,7 +410,9 @@ describe("Proposal Validation", () => {
             ...groupInfo,
             groupContext: {
               ...groupInfo.groupContext,
-              extensions: [{ extensionType: "external_senders", extensionData: new Uint8Array([1, 2, 3]) }],
+              extensions: [
+                { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2, 3]) },
+              ],
             },
           },
           removeBobProposal,
@@ -383,7 +427,10 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("keypackage extension separation %s", async (cs) => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
-    const helenCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("helen") }
+    const helenCredential: Credential = {
+      credentialType: defaultCredentialTypes.basic,
+      identity: new TextEncoder().encode("helen"),
+    }
     const keyPackageExtension: Extension = {
       extensionType: 1000,
       extensionData: new TextEncoder().encode("keyPackageData"),
@@ -407,7 +454,7 @@ describe("Proposal Validation", () => {
     expect(helen.publicPackage.extensions).toStrictEqual([keyPackageExtension])
     expect(helen.publicPackage.leafNode.extensions).toStrictEqual([leafNodeExtension])
 
-    const addHelen: Proposal = { proposalType: "add", add: { keyPackage: helen.publicPackage } }
+    const addHelen: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: helen.publicPackage } }
     await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addHelen] })
   })
 })
@@ -419,25 +466,34 @@ function withAuthService(state: ClientState, authService: AuthenticationService)
 async function setupThreeMembers(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const aliceCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("alice") }
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  const bobCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("bob") }
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
-  const charlieCredential: Credential = { credentialType: "basic", identity: new TextEncoder().encode("charlie") }
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
   const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const addBobProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: { keyPackage: bob.publicPackage },
   }
 
   const addCharlieProposal: ProposalAdd = {
-    proposalType: "add",
+    proposalType: defaultProposalTypes.add,
     add: { keyPackage: charlie.publicPackage },
   }
 

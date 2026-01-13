@@ -2,11 +2,11 @@ import { Signature, SignatureAlgorithm } from "./signature.js"
 import { Hash, HashAlgorithm } from "./hash.js"
 import { Kdf } from "./kdf.js"
 import { Hpke, HpkeAlgorithm } from "./hpke.js"
-import { contramapBufferEncoder, BufferEncoder, encode, Encoder } from "../codec/tlsEncoder.js"
+import { BufferEncoder, encode, Encoder } from "../codec/tlsEncoder.js"
 import { decodeUint16, uint16Encoder } from "../codec/number.js"
-import { Decoder, mapDecoderOption } from "../codec/tlsDecoder.js"
-import { openEnumNumberEncoder, openEnumNumberToKey, reverseMap } from "../util/enumHelpers.js"
+import { Decoder } from "../codec/tlsDecoder.js"
 import { Rng } from "./rng.js"
+import { reverseMap } from "../util/enumHelpers.js"
 
 /** @public */
 export interface CiphersuiteImpl {
@@ -15,7 +15,7 @@ export interface CiphersuiteImpl {
   signature: Signature
   kdf: Kdf
   rng: Rng
-  name: CiphersuiteName
+  name: CiphersuiteId
 }
 
 /** @public */
@@ -43,19 +43,17 @@ export const ciphersuites = {
 
 /** @public */
 export type CiphersuiteName = keyof typeof ciphersuites
+/** @public */
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
-export const ciphersuiteEncoder: BufferEncoder<CiphersuiteName> = contramapBufferEncoder(
-  uint16Encoder,
-  openEnumNumberEncoder(ciphersuites),
-)
+export const ciphersuiteEncoder: BufferEncoder<CiphersuiteId> = uint16Encoder
 
-export const encodeCiphersuite: Encoder<CiphersuiteName> = encode(ciphersuiteEncoder)
+export const encodeCiphersuite: Encoder<CiphersuiteId> = encode(ciphersuiteEncoder)
 
-export const decodeCiphersuite: Decoder<CiphersuiteName> = mapDecoderOption(
-  decodeUint16,
-  openEnumNumberToKey(ciphersuites),
-)
+export const decodeCiphersuite: Decoder<CiphersuiteId> = (b, offset) => {
+  const decoded = decodeUint16(b, offset)
+  return decoded === undefined ? undefined : [decoded[0] as CiphersuiteId, decoded[1]]
+}
 
 export function getCiphersuiteNameFromId(id: CiphersuiteId): CiphersuiteName {
   return reverseMap(ciphersuites)[id] as CiphersuiteName
@@ -79,7 +77,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA256",
     },
     signature: "Ed25519",
-    name: "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+    name: 1,
   },
   2: {
     hash: "SHA-256",
@@ -89,7 +87,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA256",
     },
     signature: "P256",
-    name: "MLS_128_DHKEMP256_AES128GCM_SHA256_P256",
+    name: 2,
   },
   3: {
     hash: "SHA-256",
@@ -99,7 +97,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA256",
     },
     signature: "Ed25519",
-    name: "MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519",
+    name: 3,
   },
   4: {
     hash: "SHA-512",
@@ -109,7 +107,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed448",
-    name: "MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448",
+    name: 4,
   },
   5: {
     hash: "SHA-512",
@@ -119,7 +117,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "P521",
-    name: "MLS_256_DHKEMP521_AES256GCM_SHA512_P521",
+    name: 5,
   },
   6: {
     hash: "SHA-512",
@@ -129,7 +127,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed448",
-    name: "MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448",
+    name: 6,
   },
   7: {
     hash: "SHA-384",
@@ -139,7 +137,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA384",
     },
     signature: "P384",
-    name: "MLS_256_DHKEMP384_AES256GCM_SHA384_P384",
+    name: 7,
   },
 
   77: {
@@ -150,7 +148,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_128_MLKEM512_AES128GCM_SHA256_Ed25519",
+    name: 77,
   },
   78: {
     hash: "SHA-256",
@@ -160,7 +158,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519",
+    name: 78,
   },
   79: {
     hash: "SHA-384",
@@ -170,7 +168,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519",
+    name: 79,
   },
   80: {
     hash: "SHA-384",
@@ -180,7 +178,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519",
+    name: 80,
   },
   81: {
     hash: "SHA-512",
@@ -190,7 +188,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_256_MLKEM1024_AES256GCM_SHA512_Ed25519",
+    name: 81,
   },
   82: {
     hash: "SHA-512",
@@ -200,7 +198,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519",
+    name: 82,
   },
   83: {
     hash: "SHA-512",
@@ -210,7 +208,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_256_XWING_AES256GCM_SHA512_Ed25519",
+    name: 83,
   },
   84: {
     hash: "SHA-512",
@@ -220,7 +218,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    name: "MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519",
+    name: 84,
   },
   85: {
     hash: "SHA-512",
@@ -230,7 +228,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    name: "MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA87",
+    name: 85,
   },
   86: {
     hash: "SHA-512",
@@ -240,7 +238,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    name: "MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA87",
+    name: 86,
   },
   87: {
     hash: "SHA-512",
@@ -250,7 +248,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    name: "MLS_256_XWING_AES256GCM_SHA512_MLDSA87",
+    name: 87,
   },
   88: {
     hash: "SHA-512",
@@ -260,7 +258,7 @@ const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    name: "MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA87",
+    name: 88,
   },
 } as const
 
@@ -269,5 +267,5 @@ export type Ciphersuite = {
   hash: HashAlgorithm
   hpke: HpkeAlgorithm
   signature: SignatureAlgorithm
-  name: CiphersuiteName
+  name: CiphersuiteId
 }

@@ -4,18 +4,19 @@ import {
   decodePrivateMessageContent,
   PrivateMessageContent,
 } from "../../src/privateMessage.js"
+import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PrivateMessageContent roundtrip with padding", () => {
   const roundtrip = (config: PaddingConfig) =>
-    createRoundtripTest(encodePrivateMessageContent(config), decodePrivateMessageContent("application"))
+    createRoundtripTest(encodePrivateMessageContent(config), decodePrivateMessageContent(contentTypes.application))
 
   const content: PrivateMessageContent = {
-    contentType: "application",
+    contentType: contentTypes.application,
     applicationData: new Uint8Array(),
     auth: {
       signature: new Uint8Array(),
-      contentType: "application",
+      contentType: contentTypes.application,
     },
   }
 
@@ -49,10 +50,10 @@ describe("PrivateMessageContent roundtrip with padding", () => {
   test("fails to decode message with non-zero padding", () => {
     const encoded = encodePrivateMessageContent({ kind: "alwaysPad", paddingLength: 2048 })(content)
 
-    expect(decodePrivateMessageContent("application")(encoded, 0)).toBeDefined()
+    expect(decodePrivateMessageContent(contentTypes.application)(encoded, 0)).toBeDefined()
 
     encoded[encoded.length - 1024] = 1
 
-    expect(decodePrivateMessageContent("application")(encoded, 0)).toBeUndefined()
+    expect(decodePrivateMessageContent(contentTypes.application)(encoded, 0)).toBeUndefined()
   })
 })
