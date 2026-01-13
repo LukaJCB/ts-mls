@@ -105,6 +105,7 @@ export const decodeMlsMessageContent: Decoder<MlsMessageContent> = flatMapDecode
   },
 )
 
+/** @public */
 export const mlsMessageEncoder: BufferEncoder<MLSMessage> = contramapBufferEncoders(
   [protocolVersionEncoder, mlsMessageContentEncoder],
   (w) => [w.version, w] as const,

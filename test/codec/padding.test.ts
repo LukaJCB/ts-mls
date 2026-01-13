@@ -58,4 +58,3 @@ describe("PrivateMessageContent roundtrip with padding", () => {
     expect(decodePrivateMessageContent(contentTypes.application)(encoded, 0)).toBeUndefined()
   })
 })
-

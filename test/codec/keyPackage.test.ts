@@ -65,4 +65,3 @@ describe("KeyPackage roundtrip", () => {
     roundtrip(nontrivialKeyPackage)
   })
 })
-

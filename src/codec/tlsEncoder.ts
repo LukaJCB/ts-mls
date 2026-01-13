@@ -1,5 +1,7 @@
+/** @public */
 export type BufferEncoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void]
 
+/** @public */
 export function encode<T>(enc: BufferEncoder<T>, t: T): Uint8Array {
   const [len, write] = enc(t)
   const buf = new ArrayBuffer(len)

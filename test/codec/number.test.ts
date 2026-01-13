@@ -1,9 +1,4 @@
-import {
-  decodeUint8,
-  decodeUint16,
-  decodeUint32,
-  decodeUint64,
-} from "../../src/codec/number.js"
+import { decodeUint8, decodeUint16, decodeUint32, decodeUint64 } from "../../src/codec/number.js"
 import { uint16Encoder, uint32Encoder, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 
@@ -106,4 +101,3 @@ function uint64RoundTrip(num: bigint) {
   expect(decoded?.[0]).toEqual(num)
   expect(decoded?.[1]).toBe(8)
 }
-

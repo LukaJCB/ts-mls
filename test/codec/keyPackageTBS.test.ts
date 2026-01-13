@@ -68,4 +68,3 @@ describe("KeyPackageTBS roundtrip", () => {
     roundtrip(tbs)
   })
 })
-

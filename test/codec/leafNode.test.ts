@@ -50,4 +50,3 @@ describe("LeafNode roundtrip", () => {
     roundtrip(nontrivialLeafNode)
   })
 })
-

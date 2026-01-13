@@ -10,6 +10,7 @@ export interface RequiredCapabilities {
   credentialTypes: number[]
 }
 
+/** @public */
 export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities> = contramapBufferEncoders(
   [varLenTypeEncoder(uint16Encoder), varLenTypeEncoder(uint16Encoder), varLenTypeEncoder(uint16Encoder)],
   (rc) => [rc.extensionTypes, rc.proposalTypes, rc.credentialTypes] as const,

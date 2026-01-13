@@ -1,6 +1,7 @@
 import {
   CiphersuiteName,
   ciphersuites,
+  createCommit,
   createGroup,
   Credential,
   defaultCapabilities,
@@ -9,16 +10,17 @@ import {
   generateKeyPackage,
   getCiphersuiteFromName,
   getCiphersuiteImpl,
+  Proposal,
+  decodeGroupState,
+  createApplicationMessage,
+  defaultProposalTypes,
+  groupStateEncoder,
+  encode,
 } from "../../src/index.js"
-import { decodeGroupState, groupStateEncoder, GroupState } from "../../src/clientState.js"
-import { encode } from "../../src/codec/tlsEncoder.js"
 
-test.concurrent.each(Object.keys(ciphersuites).slice(0, 1))(
-  "ClientState Binary serialization round-trip %s",
-  async (cs) => {
-    await clientStateBinarySerializationTest(cs as CiphersuiteName)
-  },
-)
+test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serialization round-trip %s", async (cs) => {
+  await clientStateBinarySerializationTest(cs as CiphersuiteName)
+})
 
 async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
@@ -32,15 +34,11 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   const groupId = new TextEncoder().encode("test-group")
 
-  const originalState = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
 
-  let groupState: GroupState | null = null
+  const { clientConfig: _config, ...firstState } = aliceGroup
 
-  const { clientConfig: _config, ...firstState } = originalState
-
-  groupState = firstState
-
-  const binary = encode(groupStateEncoder, groupState)
+  const binary = encode(groupStateEncoder, aliceGroup)
   expect(binary).toBeInstanceOf(Uint8Array)
   expect(binary.byteLength).toBeGreaterThan(0)
 
@@ -50,5 +48,61 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
     throw new Error("binary deserialization failed unexpectedly")
   }
 
-  expect(groupState.ratchetTree).toEqual(decoded[0].ratchetTree)
+  expect(firstState).toEqual(decoded[0])
+
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
+  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
+  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+
+  const addBobProposal: Proposal = {
+    proposalType: defaultProposalTypes.add,
+    add: {
+      keyPackage: bob.publicPackage,
+    },
+  }
+
+  const addCharlieProposal: Proposal = {
+    proposalType: defaultProposalTypes.add,
+    add: {
+      keyPackage: charlie.publicPackage,
+    },
+  }
+
+  const addBobAndCharlieCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+    },
+    {
+      extraProposals: [addBobProposal, addCharlieProposal],
+    },
+  )
+
+  aliceGroup = addBobAndCharlieCommitResult.newState
+
+  const message = new TextEncoder().encode("Hello!")
+
+  const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, message, impl)
+
+  aliceGroup = aliceCreateMessageResult.newState
+
+  const { clientConfig: _config2, ...secondState } = aliceGroup
+
+  const binary2 = encode(groupStateEncoder, aliceGroup)
+
+  const decoded2 = decodeGroupState(binary2, 0)
+
+  if (!decoded2) {
+    throw new Error("binary deserialization failed unexpectedly")
+  }
+
+  expect(secondState).toEqual(decoded2[0])
 }

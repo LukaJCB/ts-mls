@@ -31,20 +31,23 @@ export type Brand<T, B> = T & {
 };
 
 // @public (undocumented)
+export type BufferEncoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void];
+
+// @public (undocumented)
 export function bytesToBase64(bytes: Uint8Array): string;
 
 // @public (undocumented)
 export interface Capabilities {
     // (undocumented)
-    ciphersuites: CiphersuiteName[];
+    ciphersuites: CiphersuiteId[];
     // (undocumented)
-    credentials: CredentialTypeName[];
+    credentials: number[];
     // (undocumented)
     extensions: number[];
     // (undocumented)
     proposals: number[];
     // (undocumented)
-    versions: ProtocolVersionName[];
+    versions: ProtocolVersionValue[];
 }
 
 // @public (undocumented)
@@ -52,8 +55,11 @@ export type Ciphersuite = {
     hash: HashAlgorithm;
     hpke: HpkeAlgorithm;
     signature: SignatureAlgorithm;
-    name: CiphersuiteName;
+    name: CiphersuiteId;
 };
+
+// @public (undocumented)
+export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName];
 
 // @public (undocumented)
 export interface CiphersuiteImpl {
@@ -64,7 +70,7 @@ export interface CiphersuiteImpl {
     // (undocumented)
     kdf: Kdf;
     // (undocumented)
-    name: CiphersuiteName;
+    name: CiphersuiteId;
     // (undocumented)
     rng: Rng;
     // (undocumented)
@@ -135,6 +141,9 @@ export const contentTypes: {
 };
 
 // @public (undocumented)
+export type ContentTypeValue = (typeof contentTypes)[ContentTypeName];
+
+// @public (undocumented)
 export function createApplicationMessage(state: ClientState, message: Uint8Array, cs: CiphersuiteImpl, authenticatedData?: Uint8Array): Promise<{
     newState: ClientState;
     privateMessage: PrivateMessage;
@@ -186,33 +195,27 @@ export function createProposal(state: ClientState, publicMessage: boolean, propo
     consumed: Uint8Array[];
 }>;
 
+// Warning: (ae-forgotten-export) The symbol "DefaultCredential" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "CredentialCustom" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-type Credential_2 = CredentialBasic | CredentialX509;
+type Credential_2 = DefaultCredential | CredentialCustom;
 export { Credential_2 as Credential }
 
 // @public (undocumented)
 export interface CredentialBasic {
     // (undocumented)
-    credentialType: defaultCredentialTypes.basic;
+    credentialType: typeof defaultCredentialTypes.basic;
     // (undocumented)
     identity: Uint8Array;
 }
-
-// @public (undocumented)
-export type CredentialTypeName = keyof typeof credentialTypes;
-
-// @public (undocumented)
-export const credentialTypes: {
-    readonly basic: 1;
-    readonly x509: 2;
-};
 
 // @public (undocumented)
 export interface CredentialX509 {
     // (undocumented)
     certificates: Uint8Array[];
     // (undocumented)
-    credentialType: "x509";
+    credentialType: typeof defaultCredentialTypes.x509;
 }
 
 // @public (undocumented)
@@ -243,6 +246,18 @@ export const defaultAuthenticationService: {
 
 // @public (undocumented)
 export function defaultCapabilities(): Capabilities;
+
+// @public (undocumented)
+export type DefaultCredentialTypeName = keyof typeof defaultCredentialTypes;
+
+// @public (undocumented)
+export const defaultCredentialTypes: {
+    readonly basic: 1;
+    readonly x509: 2;
+};
+
+// @public (undocumented)
+export type DefaultCredentialTypeValue = (typeof defaultCredentialTypes)[DefaultCredentialTypeName];
 
 // @public (undocumented)
 export const defaultCryptoProvider: {
@@ -294,19 +309,7 @@ export const defaultProposalTypes: {
 export const emptyPskIndex: PskIndex;
 
 // @public (undocumented)
-export const encodeExternalSender: Encoder<ExternalSender>;
-
-// @public (undocumented)
-export const encodeGroupState: Encoder<GroupState>;
-
-// @public (undocumented)
-export const encodeMlsMessage: Encoder<MLSMessage>;
-
-// @public (undocumented)
-export type Encoder<T> = (t: T) => Uint8Array;
-
-// @public (undocumented)
-export const encodeRequiredCapabilities: Encoder<RequiredCapabilities>;
+export function encode<T>(enc: BufferEncoder<T>, t: T): Uint8Array;
 
 // @public (undocumented)
 export interface EncryptedGroupSecrets {
@@ -335,11 +338,8 @@ export interface Extension {
     // (undocumented)
     extensionData: Uint8Array;
     // (undocumented)
-    extensionType: ExtensionType;
+    extensionType: number;
 }
-
-// @public (undocumented)
-export type ExtensionType = DefaultExtensionTypeName | number;
 
 // @public (undocumented)
 export interface ExternalInit {
@@ -356,6 +356,9 @@ export interface ExternalSender {
 }
 
 // @public (undocumented)
+export const externalSenderEncoder: BufferEncoder<ExternalSender>;
+
+// @public (undocumented)
 export type FramedContent = FramedContentData & FramedContentInfo;
 
 // @public (undocumented)
@@ -363,7 +366,7 @@ export interface FramedContentApplicationData {
     // (undocumented)
     applicationData: Uint8Array;
     // (undocumented)
-    contentType: "application";
+    contentType: typeof contentTypes.application;
 }
 
 // @public (undocumented)
@@ -381,12 +384,12 @@ export type FramedContentAuthDataCommit = {
 
 // @public (undocumented)
 export type FramedContentAuthDataContentApplicationOrProposal = {
-    contentType: Exclude<ContentTypeName, "commit">;
+    contentType: typeof contentTypes.application | typeof contentTypes.proposal;
 };
 
 // @public (undocumented)
 export type FramedContentAuthDataContentCommit = {
-    contentType: "commit";
+    contentType: typeof contentTypes.commit;
     confirmationTag: Uint8Array;
 };
 
@@ -395,7 +398,7 @@ export interface FramedContentCommitData {
     // (undocumented)
     commit: Commit;
     // (undocumented)
-    contentType: "commit";
+    contentType: typeof contentTypes.commit;
 }
 
 // @public (undocumented)
@@ -416,7 +419,7 @@ export type FramedContentInfo = FramedContentApplicationData | FramedContentProp
 // @public (undocumented)
 export interface FramedContentProposalData {
     // (undocumented)
-    contentType: "proposal";
+    contentType: typeof contentTypes.proposal;
     // (undocumented)
     proposal: Proposal;
 }
@@ -465,7 +468,7 @@ export type GroupActiveState = {
 // @public (undocumented)
 export interface GroupContext {
     // (undocumented)
-    cipherSuite: CiphersuiteName;
+    cipherSuite: CiphersuiteId;
     // (undocumented)
     confirmedTranscriptHash: Uint8Array;
     // (undocumented)
@@ -477,7 +480,7 @@ export interface GroupContext {
     // (undocumented)
     treeHash: Uint8Array;
     // (undocumented)
-    version: ProtocolVersionName;
+    version: ProtocolVersionValue;
 }
 
 // @public (undocumented)
@@ -526,6 +529,9 @@ export interface GroupState {
     // (undocumented)
     unappliedProposals: UnappliedProposals;
 }
+
+// @public (undocumented)
+export const groupStateEncoder: BufferEncoder<GroupState>;
 
 // @public (undocumented)
 export interface Hash {
@@ -664,8 +670,8 @@ export interface KeyPackageEqualityConfig {
 
 // @public (undocumented)
 export type KeyPackageTBS = {
-    version: ProtocolVersionName;
-    cipherSuite: CiphersuiteName;
+    version: ProtocolVersionValue;
+    cipherSuite: CiphersuiteId;
     initKey: Uint8Array;
     leafNode: LeafNodeKeyPackage;
     extensions: Extension[];
@@ -711,7 +717,7 @@ export type LeafNode = LeafNodeData & LeafNodeInfoOmitted & {
 
 // @public (undocumented)
 export type LeafNodeCommit = LeafNode & {
-    leafNodeSource: "commit";
+    leafNodeSource: typeof leafNodeSources.commit;
 };
 
 // @public (undocumented)
@@ -731,7 +737,7 @@ export interface LeafNodeInfoCommitOmitted {
     // (undocumented)
     extensions: Extension[];
     // (undocumented)
-    leafNodeSource: "commit";
+    leafNodeSource: typeof leafNodeSources.commit;
     // (undocumented)
     parentHash: Uint8Array;
 }
@@ -741,7 +747,7 @@ export interface LeafNodeInfoKeyPackage {
     // (undocumented)
     extensions: Extension[];
     // (undocumented)
-    leafNodeSource: "key_package";
+    leafNodeSource: typeof leafNodeSources.key_package;
     // (undocumented)
     lifetime: Lifetime;
 }
@@ -754,17 +760,30 @@ export interface LeafNodeInfoUpdateOmitted {
     // (undocumented)
     extensions: Extension[];
     // (undocumented)
-    leafNodeSource: "update";
+    leafNodeSource: typeof leafNodeSources.update;
 }
 
 // @public (undocumented)
 export type LeafNodeKeyPackage = LeafNode & {
-    leafNodeSource: "key_package";
+    leafNodeSource: typeof leafNodeSources.key_package;
 };
 
 // @public (undocumented)
+export type LeafNodeSourceName = keyof typeof leafNodeSources;
+
+// @public (undocumented)
+export const leafNodeSources: {
+    readonly key_package: 1;
+    readonly update: 2;
+    readonly commit: 3;
+};
+
+// @public (undocumented)
+export type LeafNodeSourceValue = (typeof leafNodeSources)[LeafNodeSourceName];
+
+// @public (undocumented)
 export type LeafNodeUpdate = LeafNode & {
-    leafNodeSource: "update";
+    leafNodeSource: typeof leafNodeSources.update;
 };
 
 // @public (undocumented)
@@ -804,7 +823,7 @@ export interface MlsGroupInfo {
     // (undocumented)
     groupInfo: GroupInfo;
     // (undocumented)
-    wireformat: "mls_group_info";
+    wireformat: typeof wireformats.mls_group_info;
 }
 
 // @public (undocumented)
@@ -812,7 +831,7 @@ export interface MlsKeyPackage {
     // (undocumented)
     keyPackage: KeyPackage;
     // (undocumented)
-    wireformat: "mls_key_package";
+    wireformat: typeof wireformats.mls_key_package;
 }
 
 // @public (undocumented)
@@ -822,9 +841,12 @@ export type MLSMessage = MlsMessageProtocol & MlsMessageContent;
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage;
 
 // @public (undocumented)
+export const mlsMessageEncoder: BufferEncoder<MLSMessage>;
+
+// @public (undocumented)
 export interface MlsMessageProtocol {
     // (undocumented)
-    version: ProtocolVersionName;
+    version: ProtocolVersionValue;
 }
 
 // @public (undocumented)
@@ -832,7 +854,7 @@ export interface MlsPrivateMessage {
     // (undocumented)
     privateMessage: PrivateMessage;
     // (undocumented)
-    wireformat: "mls_private_message";
+    wireformat: typeof wireformats.mls_private_message;
 }
 
 // @public (undocumented)
@@ -840,7 +862,7 @@ export interface MlsPublicMessage {
     // (undocumented)
     publicMessage: PublicMessage;
     // (undocumented)
-    wireformat: "mls_public_message";
+    wireformat: typeof wireformats.mls_public_message;
 }
 
 // @public (undocumented)
@@ -848,7 +870,7 @@ export interface MlsWelcome {
     // (undocumented)
     welcome: Welcome;
     // (undocumented)
-    wireformat: wireformats.mls_welcome;
+    wireformat: typeof wireformats.mls_welcome;
 }
 
 // @public (undocumented)
@@ -872,13 +894,13 @@ export { Node_2 as Node }
 
 // @public (undocumented)
 export type NodeLeaf = {
-    nodeType: "leaf";
+    nodeType: typeof nodeTypes.leaf;
     leaf: LeafNode;
 };
 
 // @public (undocumented)
 export type NodeParent = {
-    nodeType: "parent";
+    nodeType: typeof nodeTypes.parent;
     parent: ParentNode_2;
 };
 
@@ -935,7 +957,7 @@ export interface PrivateMessage {
     // (undocumented)
     ciphertext: Uint8Array;
     // (undocumented)
-    contentType: ContentTypeName;
+    contentType: ContentTypeValue;
     // (undocumented)
     encryptedSenderData: Uint8Array;
     // (undocumented)
@@ -966,15 +988,17 @@ export function processPrivateMessage(state: ClientState, pm: PrivateMessage, ps
 // @public (undocumented)
 export function processPublicMessage(state: ClientState, pm: PublicMessage, pskSearch: PskIndex, cs: CiphersuiteImpl, callback?: IncomingMessageCallback): Promise<NewStateWithActionTaken>;
 
+// Warning: (ae-forgotten-export) The symbol "DefaultProposal" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export type Proposal = ProposalAdd | ProposalUpdate | ProposalRemove | ProposalPSK | ProposalReinit | ProposalExternalInit | ProposalGroupContextExtensions | ProposalCustom;
+export type Proposal = DefaultProposal | ProposalCustom;
 
 // @public (undocumented)
 export interface ProposalAdd {
     // (undocumented)
     add: Add;
     // (undocumented)
-    proposalType: "add";
+    proposalType: typeof defaultProposalTypes.add;
 }
 
 // @public (undocumented)
@@ -990,7 +1014,7 @@ export interface ProposalExternalInit {
     // (undocumented)
     externalInit: ExternalInit;
     // (undocumented)
-    proposalType: "external_init";
+    proposalType: typeof defaultProposalTypes.external_init;
 }
 
 // @public (undocumented)
@@ -998,7 +1022,7 @@ export interface ProposalGroupContextExtensions {
     // (undocumented)
     groupContextExtensions: GroupContextExtensions;
     // (undocumented)
-    proposalType: "group_context_extensions";
+    proposalType: typeof defaultProposalTypes.group_context_extensions;
 }
 
 // @public (undocumented)
@@ -1008,14 +1032,16 @@ export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef;
 export interface ProposalOrRefProposal {
     // (undocumented)
     proposal: Proposal;
+    // Warning: (ae-forgotten-export) The symbol "proposalOrRefTypes" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    proposalOrRefType: "proposal";
+    proposalOrRefType: typeof proposalOrRefTypes.proposal;
 }
 
 // @public (undocumented)
 export interface ProposalOrRefProposalRef {
     // (undocumented)
-    proposalOrRefType: "reference";
+    proposalOrRefType: typeof proposalOrRefTypes.reference;
     // (undocumented)
     reference: Uint8Array;
 }
@@ -1023,7 +1049,7 @@ export interface ProposalOrRefProposalRef {
 // @public (undocumented)
 export interface ProposalPSK {
     // (undocumented)
-    proposalType: "psk";
+    proposalType: typeof defaultProposalTypes.psk;
     // (undocumented)
     psk: PSK;
 }
@@ -1031,7 +1057,7 @@ export interface ProposalPSK {
 // @public (undocumented)
 export interface ProposalReinit {
     // (undocumented)
-    proposalType: "reinit";
+    proposalType: typeof defaultProposalTypes.reinit;
     // (undocumented)
     reinit: Reinit;
 }
@@ -1039,7 +1065,7 @@ export interface ProposalReinit {
 // @public (undocumented)
 export interface ProposalRemove {
     // (undocumented)
-    proposalType: "remove";
+    proposalType: typeof defaultProposalTypes.remove;
     // (undocumented)
     remove: Remove;
 }
@@ -1047,7 +1073,7 @@ export interface ProposalRemove {
 // @public (undocumented)
 export interface ProposalUpdate {
     // (undocumented)
-    proposalType: "update";
+    proposalType: typeof defaultProposalTypes.update;
     // (undocumented)
     update: Update;
 }
@@ -1075,6 +1101,9 @@ export const protocolVersions: {
 };
 
 // @public (undocumented)
+export type ProtocolVersionValue = (typeof protocolVersions)[ProtocolVersionName];
+
+// @public (undocumented)
 export interface PSK {
     // (undocumented)
     preSharedKeyId: PreSharedKeyID;
@@ -1094,7 +1123,7 @@ export interface PSKInfoExternal {
     // (undocumented)
     pskId: Uint8Array;
     // (undocumented)
-    psktype: "external";
+    psktype: typeof pskTypes.external;
 }
 
 // @public (undocumented)
@@ -1104,15 +1133,27 @@ export interface PSKInfoResumption {
     // (undocumented)
     pskGroupId: Uint8Array;
     // (undocumented)
-    psktype: "resumption";
+    psktype: typeof pskTypes.resumption;
     // (undocumented)
-    usage: ResumptionPSKUsageName;
+    usage: ResumptionPSKUsageValue;
 }
 
 // @public (undocumented)
 export type PSKNonce = {
     pskNonce: Uint8Array;
 };
+
+// @public (undocumented)
+export type PSKTypeName = keyof typeof pskTypes;
+
+// @public (undocumented)
+export const pskTypes: {
+    readonly external: 1;
+    readonly resumption: 2;
+};
+
+// @public (undocumented)
+export type PSKTypeValue = (typeof pskTypes)[PSKTypeName];
 
 // @public (undocumented)
 export type PublicKey = CryptoKey & {
@@ -1130,13 +1171,13 @@ export type PublicMessageInfo = PublicMessageInfoMember | PublicMessageInfoMembe
 
 // @public (undocumented)
 export type PublicMessageInfoMember = {
-    senderType: "member";
+    senderType: typeof senderTypes.member;
     membershipTag: Uint8Array;
 };
 
 // @public (undocumented)
 export type PublicMessageInfoMemberOther = {
-    senderType: Exclude<SenderTypeName, "member">;
+    senderType: Exclude<SenderTypeValue, typeof senderTypes.member>;
 };
 
 // @public (undocumented)
@@ -1145,13 +1186,13 @@ export type RatchetTree = (Node_2 | undefined)[];
 // @public (undocumented)
 export interface Reinit {
     // (undocumented)
-    cipherSuite: CiphersuiteName;
+    cipherSuite: CiphersuiteId;
     // (undocumented)
     extensions: Extension[];
     // (undocumented)
     groupId: Uint8Array;
     // (undocumented)
-    version: ProtocolVersionName;
+    version: ProtocolVersionValue;
 }
 
 // @public (undocumented)
@@ -1169,12 +1210,15 @@ export interface Remove {
 // @public (undocumented)
 export interface RequiredCapabilities {
     // (undocumented)
-    credentialTypes: CredentialTypeName[];
+    credentialTypes: number[];
     // (undocumented)
     extensionTypes: number[];
     // (undocumented)
     proposalTypes: number[];
 }
+
+// @public (undocumented)
+export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities>;
 
 // @public (undocumented)
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages;
@@ -1187,13 +1231,23 @@ export const resumptionPSKUsages: {
 };
 
 // @public (undocumented)
+export type ResumptionPSKUsageValue = (typeof resumptionPSKUsages)[ResumptionPSKUsageName];
+
+// @public (undocumented)
 export interface Rng {
     // (undocumented)
     randomBytes(n: number): Uint8Array;
 }
 
 // @public (undocumented)
-export type SecretTree = SecretTreeNode[];
+export interface SecretTree {
+    // (undocumented)
+    intermediateNodes: Record<number, Uint8Array>;
+    // (undocumented)
+    leafNodes: Record<number, SecretTreeNode>;
+    // (undocumented)
+    leafWidth: number;
+}
 
 // @public (undocumented)
 export interface SecretTreeNode {
@@ -1211,7 +1265,7 @@ export interface SenderExternal {
     // (undocumented)
     senderIndex: number;
     // (undocumented)
-    senderType: "external";
+    senderType: typeof senderTypes.external;
 }
 
 // @public (undocumented)
@@ -1219,19 +1273,19 @@ export interface SenderMember {
     // (undocumented)
     leafIndex: number;
     // (undocumented)
-    senderType: "member";
+    senderType: typeof senderTypes.member;
 }
 
 // @public (undocumented)
 export interface SenderNewMemberCommit {
     // (undocumented)
-    senderType: "new_member_commit";
+    senderType: typeof senderTypes.new_member_commit;
 }
 
 // @public (undocumented)
 export interface SenderNewMemberProposal {
     // (undocumented)
-    senderType: "new_member_proposal";
+    senderType: typeof senderTypes.new_member_proposal;
 }
 
 // @public (undocumented)
@@ -1247,6 +1301,9 @@ export const senderTypes: {
     readonly new_member_proposal: 3;
     readonly new_member_commit: 4;
 };
+
+// @public (undocumented)
+export type SenderTypeValue = (typeof senderTypes)[SenderTypeName];
 
 // @public (undocumented)
 export interface Signature {
@@ -1292,7 +1349,7 @@ export interface UpdatePathNode {
 // @public (undocumented)
 export interface Welcome {
     // (undocumented)
-    cipherSuite: CiphersuiteName;
+    cipherSuite: CiphersuiteId;
     // (undocumented)
     encryptedGroupInfo: Uint8Array;
     // (undocumented)
@@ -1300,7 +1357,26 @@ export interface Welcome {
 }
 
 // @public (undocumented)
+export type WireformatName = keyof typeof wireformats;
+
+// @public (undocumented)
+export const wireformats: {
+    readonly mls_public_message: 1;
+    readonly mls_private_message: 2;
+    readonly mls_welcome: 3;
+    readonly mls_group_info: 4;
+    readonly mls_key_package: 5;
+};
+
+// @public (undocumented)
+export type WireformatValue = (typeof wireformats)[WireformatName];
+
+// @public (undocumented)
 export function zeroOutUint8Array(buf: Uint8Array): void;
+
+// Warnings were encountered during analysis:
+//
+// dist/src/ratchetTree.d.ts:16:5 - (ae-forgotten-export) The symbol "nodeTypes" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

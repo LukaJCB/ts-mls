@@ -154,7 +154,6 @@ export function privateMessageContentEncoder(config: PaddingConfig): BufferEncod
   }
 }
 
-
 export async function decryptSenderData(
   msg: PrivateMessage,
   senderDataSecret: Uint8Array,
@@ -183,12 +182,7 @@ export async function encryptSenderData(
   const key = await expandSenderDataKey(cs, senderDataSecret, ciphertext)
   const nonce = await expandSenderDataNonce(cs, senderDataSecret, ciphertext)
 
-  return await cs.hpke.encryptAead(
-    key,
-    nonce,
-    encode(senderDataAADEncoder, aad),
-    encode(senderDataEncoder, senderData),
-  )
+  return await cs.hpke.encryptAead(key, nonce, encode(senderDataAADEncoder, aad), encode(senderDataEncoder, senderData))
 }
 
 export function toAuthenticatedContent(
