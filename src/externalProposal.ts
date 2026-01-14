@@ -1,6 +1,6 @@
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
-import { decodeExternalSender } from "./externalSender.js"
+import { externalSenderDecoder } from "./externalSender.js"
 import { GroupInfo } from "./groupInfo.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { MLSMessage } from "./message.js"
@@ -61,7 +61,7 @@ export async function proposeExternal(
 ): Promise<MLSMessage> {
   const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
     if (ex.extensionType !== defaultExtensionTypes.external_senders) return false
-    const decoded = decodeExternalSender(ex.extensionData, 0)
+    const decoded = externalSenderDecoder(ex.extensionData, 0)
 
     if (decoded === undefined) throw new ValidationError("Could not decode external_sender extension")
 

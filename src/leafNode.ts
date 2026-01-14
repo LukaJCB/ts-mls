@@ -1,13 +1,13 @@
-import { Capabilities, capabilitiesEncoder, decodeCapabilities } from "./capabilities.js"
-import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { Capabilities, capabilitiesEncoder, capabilitiesDecoder } from "./capabilities.js"
+import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders, flatMapDecoder, mapDecoderOption, mapDecoder } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
-import { varLenDataEncoder, decodeVarLenData, varLenTypeEncoder, decodeVarLenType } from "./codec/variableLength.js"
-import { credentialEncoder, decodeCredential, Credential } from "./credential.js"
+import { varLenDataEncoder, varLenDataDecoder, varLenTypeEncoder, varLenTypeDecoder } from "./codec/variableLength.js"
+import { credentialEncoder, credentialDecoder, Credential } from "./credential.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { Extension, extensionEncoder, decodeExtension } from "./extension.js"
-import { leafNodeSources, decodeLeafNodeSourceValue, leafNodeSourceValueEncoder } from "./leafNodeSource.js"
-import { Lifetime, lifetimeEncoder, decodeLifetime } from "./lifetime.js"
+import { Extension, extensionEncoder, extensionDecoder } from "./extension.js"
+import { leafNodeSources, leafNodeSourceValueDecoder, leafNodeSourceValueEncoder } from "./leafNodeSource.js"
+import { Lifetime, lifetimeEncoder, lifetimeDecoder } from "./lifetime.js"
 
 /** @public */
 export interface LeafNodeData {
@@ -22,8 +22,8 @@ export const leafNodeDataEncoder: BufferEncoder<LeafNodeData> = contramapBufferE
   (data) => [data.hpkePublicKey, data.signaturePublicKey, data.credential, data.capabilities] as const,
 )
 
-export const decodeLeafNodeData: Decoder<LeafNodeData> = mapDecoders(
-  [decodeVarLenData, decodeVarLenData, decodeCredential, decodeCapabilities],
+export const leafNodeDataDecoder: Decoder<LeafNodeData> = mapDecoders(
+  [varLenDataDecoder, varLenDataDecoder, credentialDecoder, capabilitiesDecoder],
   (hpkePublicKey, signaturePublicKey, credential, capabilities) => ({
     hpkePublicKey,
     signaturePublicKey,
@@ -81,8 +81,8 @@ export const leafNodeInfoOmittedEncoder: BufferEncoder<LeafNodeInfoOmitted> = (i
   }
 }
 
-export const decodeLeafNodeInfoKeyPackage: Decoder<LeafNodeInfoKeyPackage> = mapDecoders(
-  [decodeLifetime, decodeVarLenType(decodeExtension)],
+export const leafNodeInfoKeyPackageDecoder: Decoder<LeafNodeInfoKeyPackage> = mapDecoders(
+  [lifetimeDecoder, varLenTypeDecoder(extensionDecoder)],
   (lifetime, extensions) => ({
     leafNodeSource: leafNodeSources.key_package,
     lifetime,
@@ -90,16 +90,16 @@ export const decodeLeafNodeInfoKeyPackage: Decoder<LeafNodeInfoKeyPackage> = map
   }),
 )
 
-export const decodeLeafNodeInfoUpdateOmitted: Decoder<LeafNodeInfoUpdateOmitted> = mapDecoder(
-  decodeVarLenType(decodeExtension),
+export const leafNodeInfoUpdateOmittedDecoder: Decoder<LeafNodeInfoUpdateOmitted> = mapDecoder(
+  varLenTypeDecoder(extensionDecoder),
   (extensions) => ({
     leafNodeSource: leafNodeSources.update,
     extensions,
   }),
 )
 
-export const decodeLeafNodeInfoCommitOmitted: Decoder<LeafNodeInfoCommitOmitted> = mapDecoders(
-  [decodeVarLenData, decodeVarLenType(decodeExtension)],
+export const leafNodeInfoCommitOmittedDecoder: Decoder<LeafNodeInfoCommitOmitted> = mapDecoders(
+  [varLenDataDecoder, varLenTypeDecoder(extensionDecoder)],
   (parentHash, extensions) => ({
     leafNodeSource: leafNodeSources.commit,
     parentHash,
@@ -107,16 +107,16 @@ export const decodeLeafNodeInfoCommitOmitted: Decoder<LeafNodeInfoCommitOmitted>
   }),
 )
 
-export const decodeLeafNodeInfoOmitted: Decoder<LeafNodeInfoOmitted> = flatMapDecoder(
-  decodeLeafNodeSourceValue,
+export const leafNodeInfoOmittedDecoder: Decoder<LeafNodeInfoOmitted> = flatMapDecoder(
+  leafNodeSourceValueDecoder,
   (leafNodeSource): Decoder<LeafNodeInfoOmitted> => {
     switch (leafNodeSource) {
       case leafNodeSources.key_package:
-        return decodeLeafNodeInfoKeyPackage
+        return leafNodeInfoKeyPackageDecoder
       case leafNodeSources.update:
-        return decodeLeafNodeInfoUpdateOmitted
+        return leafNodeInfoUpdateOmittedDecoder
       case leafNodeSources.commit:
-        return decodeLeafNodeInfoCommitOmitted
+        return leafNodeInfoCommitOmittedDecoder
     }
   },
 )
@@ -153,8 +153,8 @@ export const leafNodeInfoEncoder: BufferEncoder<LeafNodeInfo> = (info) => {
   }
 }
 
-export const decodeLeafNodeInfoUpdate: Decoder<LeafNodeInfoUpdate> = mapDecoders(
-  [decodeLeafNodeInfoUpdateOmitted, decodeVarLenData, decodeUint32],
+export const leafNodeInfoUpdateDecoder: Decoder<LeafNodeInfoUpdate> = mapDecoders(
+  [leafNodeInfoUpdateOmittedDecoder, varLenDataDecoder, uint32Decoder],
   (ln, groupId, leafIndex) => ({
     ...ln,
     groupId,
@@ -162,8 +162,8 @@ export const decodeLeafNodeInfoUpdate: Decoder<LeafNodeInfoUpdate> = mapDecoders
   }),
 )
 
-export const decodeLeafNodeInfoCommit: Decoder<LeafNodeInfoCommit> = mapDecoders(
-  [decodeLeafNodeInfoCommitOmitted, decodeVarLenData, decodeUint32],
+export const leafNodeInfoCommitDecoder: Decoder<LeafNodeInfoCommit> = mapDecoders(
+  [leafNodeInfoCommitOmittedDecoder, varLenDataDecoder, uint32Decoder],
   (ln, groupId, leafIndex) => ({
     ...ln,
     groupId,
@@ -190,8 +190,8 @@ export const leafNodeEncoder: BufferEncoder<LeafNode> = contramapBufferEncoders(
   (leafNode) => [leafNode, leafNode, leafNode.signature] as const,
 )
 
-export const decodeLeafNode: Decoder<LeafNode> = mapDecoders(
-  [decodeLeafNodeData, decodeLeafNodeInfoOmitted, decodeVarLenData],
+export const leafNodeDecoder: Decoder<LeafNode> = mapDecoders(
+  [leafNodeDataDecoder, leafNodeInfoOmittedDecoder, varLenDataDecoder],
   (data, info, signature) => ({
     ...data,
     ...info,
@@ -202,21 +202,21 @@ export const decodeLeafNode: Decoder<LeafNode> = mapDecoders(
 /** @public */
 export type LeafNodeKeyPackage = LeafNode & { leafNodeSource: typeof leafNodeSources.key_package }
 
-export const decodeLeafNodeKeyPackage: Decoder<LeafNodeKeyPackage> = mapDecoderOption(decodeLeafNode, (ln) =>
+export const leafNodeKeyPackageDecoder: Decoder<LeafNodeKeyPackage> = mapDecoderOption(leafNodeDecoder, (ln) =>
   ln.leafNodeSource === leafNodeSources.key_package ? ln : undefined,
 )
 
 /** @public */
 export type LeafNodeCommit = LeafNode & { leafNodeSource: typeof leafNodeSources.commit }
 
-export const decodeLeafNodeCommit: Decoder<LeafNodeCommit> = mapDecoderOption(decodeLeafNode, (ln) =>
+export const leafNodeCommitDecoder: Decoder<LeafNodeCommit> = mapDecoderOption(leafNodeDecoder, (ln) =>
   ln.leafNodeSource === leafNodeSources.commit ? ln : undefined,
 )
 
 /** @public */
 export type LeafNodeUpdate = LeafNode & { leafNodeSource: typeof leafNodeSources.update }
 
-export const decodeLeafNodeUpdate: Decoder<LeafNodeUpdate> = mapDecoderOption(decodeLeafNode, (ln) =>
+export const leafNodeUpdateDecoder: Decoder<LeafNodeUpdate> = mapDecoderOption(leafNodeDecoder, (ln) =>
   ln.leafNodeSource === leafNodeSources.update ? ln : undefined,
 )
 

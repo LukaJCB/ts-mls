@@ -1,12 +1,12 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { PublicKey, Hpke, encryptWithLabel, PrivateKey, decryptWithLabel } from "./crypto/hpke.js"
 import { expandWithLabel } from "./crypto/kdf.js"
-import { decodeGroupInfo, groupInfoEncoder, extractWelcomeSecret, GroupInfo } from "./groupInfo.js"
-import { decodeGroupSecrets, GroupSecrets, groupSecretsEncoder } from "./groupSecrets.js"
-import { HPKECiphertext, hpkeCiphertextEncoder, decodeHpkeCiphertext } from "./hpkeCiphertext.js"
+import { groupInfoDecoder, groupInfoEncoder, extractWelcomeSecret, GroupInfo } from "./groupInfo.js"
+import { groupSecretsDecoder, GroupSecrets, groupSecretsEncoder } from "./groupSecrets.js"
+import { HPKECiphertext, hpkeCiphertextEncoder, hpkeCiphertextDecoder } from "./hpkeCiphertext.js"
 import { ValidationError } from "./mlsError.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
@@ -21,8 +21,8 @@ export const encryptedGroupSecretsEncoder: BufferEncoder<EncryptedGroupSecrets> 
   (egs) => [egs.newMember, egs.encryptedGroupSecrets] as const,
 )
 
-export const decodeEncryptedGroupSecrets: Decoder<EncryptedGroupSecrets> = mapDecoders(
-  [decodeVarLenData, decodeHpkeCiphertext],
+export const encryptedGroupSecretsDecoder: Decoder<EncryptedGroupSecrets> = mapDecoders(
+  [varLenDataDecoder, hpkeCiphertextDecoder],
   (newMember, encryptedGroupSecrets) => ({ newMember, encryptedGroupSecrets }),
 )
 
@@ -38,8 +38,8 @@ export const welcomeEncoder: BufferEncoder<Welcome> = contramapBufferEncoders(
   (welcome) => [welcome.cipherSuite, welcome.secrets, welcome.encryptedGroupInfo] as const,
 )
 
-export const decodeWelcome: Decoder<Welcome> = mapDecoders(
-  [decodeCiphersuite, decodeVarLenType(decodeEncryptedGroupSecrets), decodeVarLenData],
+export const welcomeDecoder: Decoder<Welcome> = mapDecoders(
+  [ciphersuiteDecoder, varLenTypeDecoder(encryptedGroupSecretsDecoder), varLenDataDecoder],
   (cipherSuite, secrets, encryptedGroupInfo) => ({ cipherSuite, secrets, encryptedGroupInfo }),
 )
 
@@ -75,7 +75,7 @@ export async function decryptGroupInfo(
   const nonce = await welcomeNonce(welcomeSecret, cs)
   const decrypted = await cs.hpke.decryptAead(key, nonce, undefined, w.encryptedGroupInfo)
 
-  const decoded = decodeGroupInfo(decrypted, 0)
+  const decoded = groupInfoDecoder(decrypted, 0)
   return decoded?.[0]
 }
 
@@ -104,5 +104,5 @@ export async function decryptGroupSecrets(
     secret.encryptedGroupSecrets.ciphertext,
     hpke,
   )
-  return decodeGroupSecrets(decrypted, 0)?.[0]
+  return groupSecretsDecoder(decrypted, 0)?.[0]
 }

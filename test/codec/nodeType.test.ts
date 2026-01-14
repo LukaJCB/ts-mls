@@ -1,8 +1,8 @@
-import { decodeNodeType, nodeTypeEncoder, nodeTypes, NodeTypeValue } from "../../src/nodeType.js"
+import { nodeTypeDecoder, nodeTypeEncoder, nodeTypes, NodeTypeValue } from "../../src/nodeType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("NodeTypeValue roundtrip", () => {
-  const roundtrip = createRoundtripTest(nodeTypeEncoder, decodeNodeType)
+  const roundtrip = createRoundtripTest(nodeTypeEncoder, nodeTypeDecoder)
 
   test("roundtrips leaf", () => {
     roundtrip(nodeTypes.leaf as NodeTypeValue)

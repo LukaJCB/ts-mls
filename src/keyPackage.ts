@@ -1,18 +1,18 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
+import { extensionDecoder, extensionEncoder, Extension } from "./extension.js"
 import {
-  decodeProtocolVersion,
+  protocolVersionDecoder,
   protocolVersionEncoder,
   protocolVersions,
   ProtocolVersionValue,
 } from "./protocolVersion.js"
 import {
-  decodeLeafNodeKeyPackage,
+  leafNodeKeyPackageDecoder,
   leafNodeEncoder,
   LeafNodeKeyPackage,
   LeafNodeTBSKeyPackage,
@@ -44,13 +44,13 @@ export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBuffe
     ] as const,
 )
 
-export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
+export const keyPackageTBSDecoder: Decoder<KeyPackageTBS> = mapDecoders(
   [
-    decodeProtocolVersion,
-    decodeCiphersuite,
-    decodeVarLenData,
-    decodeLeafNodeKeyPackage,
-    decodeVarLenType(decodeExtension),
+    protocolVersionDecoder,
+    ciphersuiteDecoder,
+    varLenDataDecoder,
+    leafNodeKeyPackageDecoder,
+    varLenTypeDecoder(extensionDecoder),
   ],
   (version, cipherSuite, initKey, leafNode, extensions) => ({
     version,
@@ -69,8 +69,8 @@ export const keyPackageEncoder: BufferEncoder<KeyPackage> = contramapBufferEncod
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )
 
-export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
-  [decodeKeyPackageTBS, decodeVarLenData],
+export const keyPackageDecoder: Decoder<KeyPackage> = mapDecoders(
+  [keyPackageTBSDecoder, varLenDataDecoder],
   (keyPackageTBS, signature) => ({
     ...keyPackageTBS,
     signature,

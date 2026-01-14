@@ -1,9 +1,9 @@
-import { ciphersuiteEncoder, CiphersuiteId, decodeCiphersuite } from "./crypto/ciphersuite.js"
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
+import { ciphersuiteEncoder, CiphersuiteId, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
+import { protocolVersionDecoder, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
-import { decodeUint16, uint16Encoder } from "./codec/number.js"
+import { varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 
 /** @public */
 export interface Capabilities {
@@ -25,13 +25,13 @@ export const capabilitiesEncoder: BufferEncoder<Capabilities> = contramapBufferE
   (cap) => [cap.versions, cap.ciphersuites, cap.extensions, cap.proposals, cap.credentials] as const,
 )
 
-export const decodeCapabilities: Decoder<Capabilities> = mapDecoders(
+export const capabilitiesDecoder: Decoder<Capabilities> = mapDecoders(
   [
-    decodeVarLenType(decodeProtocolVersion),
-    decodeVarLenType(decodeCiphersuite),
-    decodeVarLenType(decodeUint16),
-    decodeVarLenType(decodeUint16),
-    decodeVarLenType(decodeUint16),
+    varLenTypeDecoder(protocolVersionDecoder),
+    varLenTypeDecoder(ciphersuiteDecoder),
+    varLenTypeDecoder(uint16Decoder),
+    varLenTypeDecoder(uint16Decoder),
+    varLenTypeDecoder(uint16Decoder),
   ],
   (versions, ciphersuites, extensions, proposals, credentials) => ({
     versions,

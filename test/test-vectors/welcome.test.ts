@@ -2,7 +2,7 @@ import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/welcome.json"
-import { decodeMlsMessage } from "../../src/message.js"
+import { mlsMessageDecoder } from "../../src/message.js"
 import { makeKeyPackageRef } from "../../src/keyPackage.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "../../src/groupInfo.js"
@@ -22,12 +22,12 @@ async function testWelcome(
   welcome: string,
   impl: CiphersuiteImpl,
 ) {
-  const x = decodeMlsMessage(hexToBytes(welcome), 0)
+  const x = mlsMessageDecoder(hexToBytes(welcome), 0)
   if (x === undefined || x[0].wireformat !== wireformats.mls_welcome) throw new Error("Couldn't decode to welcome")
 
   const w = x[0].welcome
 
-  const y = decodeMlsMessage(hexToBytes(key_package), 0)
+  const y = mlsMessageDecoder(hexToBytes(key_package), 0)
   if (y === undefined || y[0].wireformat !== wireformats.mls_key_package)
     throw new Error("Couldn't decode to key package")
 

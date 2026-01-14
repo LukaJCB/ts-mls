@@ -1,7 +1,7 @@
-import { decodeUint16, uint16Encoder } from "./codec/number.js"
+import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { defaultCredentialTypes, isDefaultCredentialTypeValue } from "./defaultCredentialType.js"
 
 /** @public */
@@ -58,30 +58,30 @@ export const credentialEncoder: BufferEncoder<Credential> = (c) => {
   }
 }
 
-const decodeCredentialBasic: Decoder<CredentialBasic> = mapDecoder(decodeVarLenData, (identity) => ({
+const credentialBasicDecoder: Decoder<CredentialBasic> = mapDecoder(varLenDataDecoder, (identity) => ({
   credentialType: defaultCredentialTypes.basic,
   identity,
 }))
 
-const decodeCredentialX509: Decoder<CredentialX509> = mapDecoder(
-  decodeVarLenType(decodeVarLenData),
+const credentialX509Decoder: Decoder<CredentialX509> = mapDecoder(
+  varLenTypeDecoder(varLenDataDecoder),
   (certificates) => ({ credentialType: defaultCredentialTypes.x509, certificates }),
 )
 
-function decodeCredentialCustom(credentialType: number): Decoder<CredentialCustom> {
-  return mapDecoder(decodeVarLenData, (data) => ({ credentialType, data }))
+function credentialCustomDecoder(credentialType: number): Decoder<CredentialCustom> {
+  return mapDecoder(varLenDataDecoder, (data) => ({ credentialType, data }))
 }
 
-export const decodeCredential: Decoder<Credential> = flatMapDecoder(
-  decodeUint16,
+export const credentialDecoder: Decoder<Credential> = flatMapDecoder(
+  uint16Decoder,
   (credentialType): Decoder<Credential> => {
     switch (credentialType) {
       case defaultCredentialTypes.basic:
-        return decodeCredentialBasic
+        return credentialBasicDecoder
       case defaultCredentialTypes.x509:
-        return decodeCredentialX509
+        return credentialX509Decoder
       default:
-        return decodeCredentialCustom(credentialType)
+        return credentialCustomDecoder(credentialType)
     }
   },
 )

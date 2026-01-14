@@ -1,4 +1,4 @@
-import { ratchetTreeEncoder, decodeRatchetTree, RatchetTree } from "../../src/ratchetTree.js"
+import { ratchetTreeEncoder, ratchetTreeDecoder, RatchetTree } from "../../src/ratchetTree.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -30,7 +30,7 @@ describe("RatchetTree roundtrip", () => {
       },
     ]
     const encoded = encode(ratchetTreeEncoder, data)
-    const decoded = decodeRatchetTree(encoded, 0)?.[0] as RatchetTree
+    const decoded = ratchetTreeDecoder(encoded, 0)?.[0] as RatchetTree
     expect(decoded).toStrictEqual(data)
   })
 
@@ -84,7 +84,7 @@ describe("RatchetTree roundtrip", () => {
       },
     ]
     const encoded = encode(ratchetTreeEncoder, data)
-    const decoded = decodeRatchetTree(encoded, 0)?.[0] as RatchetTree
+    const decoded = ratchetTreeDecoder(encoded, 0)?.[0] as RatchetTree
     expect(decoded).toStrictEqual(data)
   })
 })

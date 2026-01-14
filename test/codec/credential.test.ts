@@ -1,4 +1,4 @@
-import { credentialEncoder, decodeCredential, Credential } from "../../src/credential.js"
+import { credentialEncoder, credentialDecoder, Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
@@ -10,7 +10,7 @@ const nontrivial: Credential = {
 }
 
 describe("Credential roundtrip", () => {
-  const roundtrip = createRoundtripTest(credentialEncoder, decodeCredential)
+  const roundtrip = createRoundtripTest(credentialEncoder, credentialDecoder)
 
   test("roundtrips minimal", () => {
     roundtrip(minimal)

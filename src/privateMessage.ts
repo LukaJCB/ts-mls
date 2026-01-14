@@ -1,13 +1,13 @@
 import { AuthenticatedContent } from "./authenticatedContent.js"
-import { decodeUint64, uint64Encoder } from "./codec/number.js"
+import { uint64Decoder, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import { decodeCommit, commitEncoder } from "./commit.js"
-import { ContentTypeValue, contentTypes, contentTypeEncoder, decodeContentType } from "./contentType.js"
+import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
+import { commitDecoder, commitEncoder } from "./commit.js"
+import { ContentTypeValue, contentTypes, contentTypeEncoder, contentTypeDecoder } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import {
-  decodeFramedContentAuthDataCommit,
+  framedContentAuthDataCommitDecoder,
   framedContentAuthDataEncoder,
   FramedContentApplicationData,
   FramedContentAuthDataApplicationOrProposal,
@@ -16,9 +16,9 @@ import {
   FramedContentProposalData,
 } from "./framedContent.js"
 import { byteLengthToPad, PaddingConfig } from "./paddingConfig.js"
-import { decodeProposal, proposalEncoder } from "./proposal.js"
+import { proposalDecoder, proposalEncoder } from "./proposal.js"
 import {
-  decodeSenderData,
+  senderDataDecoder,
   senderDataEncoder,
   senderDataAADEncoder,
   expandSenderDataKey,
@@ -45,8 +45,8 @@ export const privateMessageEncoder: BufferEncoder<PrivateMessage> = contramapBuf
     [msg.groupId, msg.epoch, msg.contentType, msg.authenticatedData, msg.encryptedSenderData, msg.ciphertext] as const,
 )
 
-export const decodePrivateMessage: Decoder<PrivateMessage> = mapDecoders(
-  [decodeVarLenData, decodeUint64, decodeContentType, decodeVarLenData, decodeVarLenData, decodeVarLenData],
+export const privateMessageDecoder: Decoder<PrivateMessage> = mapDecoders(
+  [varLenDataDecoder, uint64Decoder, contentTypeDecoder, varLenDataDecoder, varLenDataDecoder, varLenDataDecoder],
   (groupId, epoch, contentType, authenticatedData, encryptedSenderData, ciphertext) => ({
     groupId,
     epoch,
@@ -69,8 +69,8 @@ export const privateContentAADEncoder: BufferEncoder<PrivateContentAAD> = contra
   (aad) => [aad.groupId, aad.epoch, aad.contentType, aad.authenticatedData] as const,
 )
 
-export const decodePrivateContentAAD: Decoder<PrivateContentAAD> = mapDecoders(
-  [decodeVarLenData, decodeUint64, decodeContentType, decodeVarLenData],
+export const privateContentAADDecoder: Decoder<PrivateContentAAD> = mapDecoders(
+  [varLenDataDecoder, uint64Decoder, contentTypeDecoder, varLenDataDecoder],
   (groupId, epoch, contentType, authenticatedData) => ({
     groupId,
     epoch,
@@ -92,31 +92,34 @@ export type PrivateMessageContentProposal = FramedContentProposalData & {
 }
 export type PrivateMessageContentCommit = FramedContentCommitData & { auth: FramedContentAuthDataCommit }
 
-export function decodePrivateMessageContent(contentType: ContentTypeValue): Decoder<PrivateMessageContent> {
+export function privateMessageContentDecoder(contentType: ContentTypeValue): Decoder<PrivateMessageContent> {
   switch (contentType) {
     case contentTypes.application:
-      return decoderWithPadding(
-        mapDecoders([decodeVarLenData, decodeVarLenData], (applicationData, signature) => ({
+      return rWithPaddingDecoder(
+        mapDecoders([varLenDataDecoder, varLenDataDecoder], (applicationData, signature) => ({
           contentType,
           applicationData,
           auth: { contentType, signature },
         })),
       )
     case contentTypes.proposal:
-      return decoderWithPadding(
-        mapDecoders([decodeProposal, decodeVarLenData], (proposal, signature) => ({
+      return rWithPaddingDecoder(
+        mapDecoders([proposalDecoder, varLenDataDecoder], (proposal, signature) => ({
           contentType,
           proposal,
           auth: { contentType, signature },
         })),
       )
     case contentTypes.commit:
-      return decoderWithPadding(
-        mapDecoders([decodeCommit, decodeVarLenData, decodeFramedContentAuthDataCommit], (commit, signature, auth) => ({
-          contentType,
-          commit,
-          auth: { ...auth, signature, contentType },
-        })),
+      return rWithPaddingDecoder(
+        mapDecoders(
+          [commitDecoder, varLenDataDecoder, framedContentAuthDataCommitDecoder],
+          (commit, signature, auth) => ({
+            contentType,
+            commit,
+            auth: { ...auth, signature, contentType },
+          }),
+        ),
       )
   }
 }
@@ -169,7 +172,7 @@ export async function decryptSenderData(
   }
 
   const decrypted = await cs.hpke.decryptAead(key, nonce, encode(senderDataAADEncoder, aad), msg.encryptedSenderData)
-  return decodeSenderData(decrypted, 0)?.[0]
+  return senderDataDecoder(decrypted, 0)?.[0]
 }
 
 export async function encryptSenderData(
@@ -219,7 +222,7 @@ function encoderWithPadding<T>(encoder: BufferEncoder<T>, config: PaddingConfig)
   }
 }
 
-function decoderWithPadding<T>(decoder: Decoder<T>): Decoder<T> {
+function rWithPaddingDecoder<T>(decoder: Decoder<T>): Decoder<T> {
   return (bytes, offset) => {
     const result = decoder(bytes, offset)
     if (result === undefined) return undefined

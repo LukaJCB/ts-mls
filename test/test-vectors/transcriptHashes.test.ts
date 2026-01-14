@@ -2,7 +2,7 @@ import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/transcript-hashes.json"
-import { decodeAuthenticatedContent } from "../../src/authenticatedContent.js"
+import { authenticatedContentDecoder } from "../../src/authenticatedContent.js"
 import { createConfirmedHash, createInterimHash } from "../../src/transcriptHash.js"
 import { contentTypes } from "../../src/contentType.js"
 
@@ -26,7 +26,7 @@ async function testTranscriptHash(
   interimHashBefore: string,
   impl: CiphersuiteImpl,
 ) {
-  const auth = decodeAuthenticatedContent(hexToBytes(authenticatedContent), 0)
+  const auth = authenticatedContentDecoder(hexToBytes(authenticatedContent), 0)
   if (
     auth === undefined ||
     auth[0].content.contentType !== contentTypes.commit ||

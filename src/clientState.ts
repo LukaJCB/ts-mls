@@ -3,11 +3,11 @@ import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import { Extension, extensionsEqual, extensionsSupportedByCapabilities } from "./extension.js"
 import { createConfirmationTag, FramedContentCommit } from "./framedContent.js"
-import { decodeGroupContext, GroupContext, groupContextEncoder } from "./groupContext.js"
+import { groupContextDecoder, GroupContext, groupContextEncoder } from "./groupContext.js"
 import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage, verifyKeyPackage } from "./keyPackage.js"
 import {
-  decodeKeySchedule,
+  keyScheduleDecoder,
   deriveKeySchedule,
   initializeKeySchedule,
   KeySchedule,
@@ -17,7 +17,7 @@ import { pskIdEncoder, PreSharedKeyID, pskTypes, resumptionPSKUsages } from "./p
 
 import {
   addLeafNode,
-  decodeRatchetTree,
+  ratchetTreeDecoder,
   findBlankLeafNodeIndexOrExtend,
   findLeafIndex,
   ratchetTreeEncoder,
@@ -25,7 +25,13 @@ import {
   updateLeafNode,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { allSecretTreeValues, createSecretTree, decodeSecretTree, SecretTree, secretTreeEncoder } from "./secretTree.js"
+import {
+  allSecretTreeValues,
+  createSecretTree,
+  secretTreeDecoder,
+  SecretTree,
+  secretTreeEncoder,
+} from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
 import { treeHashRoot } from "./treeHash.js"
 import {
@@ -62,7 +68,7 @@ import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { pathToRoot } from "./pathSecrets.js"
 import {
   PrivateKeyPath,
-  decodePrivateKeyPath,
+  privateKeyPathDecoder,
   mergePrivateKeyPaths,
   privateKeyPathEncoder,
   toPrivateKeyPath,
@@ -72,7 +78,7 @@ import {
   addUnappliedProposal,
   ProposalWithSender,
   unappliedProposalsEncoder,
-  decodeUnappliedProposals,
+  unappliedProposalsDecoder,
 } from "./unappliedProposals.js"
 import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
 import { getSenderLeafNodeIndex } from "./sender.js"
@@ -97,20 +103,20 @@ import {
 import { leafNodeSources } from "./leafNodeSource.js"
 import { nodeTypes } from "./nodeType.js"
 import { protocolVersions } from "./protocolVersion.js"
-import { decodeRequiredCapabilities, RequiredCapabilities } from "./requiredCapabilities.js"
+import { requiredCapabilitiesDecoder, RequiredCapabilities } from "./requiredCapabilities.js"
 import { Capabilities } from "./capabilities.js"
 import { verifyParentHashes } from "./parentHash.js"
 import { AuthenticationService } from "./authenticationService.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
 import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
-import { decodeExternalSender } from "./externalSender.js"
+import { externalSenderDecoder } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
 import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 
-import { bigintMapEncoder, decodeBigintMap, decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import { decodeGroupActiveState, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
-import { decodeEpochReceiverData, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
+import { bigintMapEncoder, bigintMapDecoder, varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
+import { groupActiveStateDecoder, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
+import { epochReceiverDataDecoder, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { deriveSecret } from "./crypto/kdf.js"
 
@@ -161,18 +167,18 @@ export const groupStateEncoder: BufferEncoder<GroupState> = contramapBufferEncod
 )
 
 /** @public */
-export const decodeGroupState: Decoder<GroupState> = mapDecoders(
+export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
   [
-    decodeGroupContext,
-    decodeKeySchedule,
-    decodeSecretTree,
-    decodeRatchetTree,
-    decodePrivateKeyPath,
-    decodeVarLenData,
-    decodeUnappliedProposals,
-    decodeVarLenData,
-    decodeBigintMap(decodeEpochReceiverData),
-    decodeGroupActiveState,
+    groupContextDecoder,
+    keyScheduleDecoder,
+    secretTreeDecoder,
+    ratchetTreeDecoder,
+    privateKeyPathDecoder,
+    varLenDataDecoder,
+    unappliedProposalsDecoder,
+    varLenDataDecoder,
+    bigintMapDecoder(epochReceiverDataDecoder),
+    groupActiveStateDecoder,
   ],
   (
     groupContext,
@@ -372,7 +378,7 @@ async function validateProposals(
   )
 
   if (requiredCapabilities !== undefined) {
-    const caps = decodeRequiredCapabilities(requiredCapabilities.extensionData, 0)
+    const caps = requiredCapabilitiesDecoder(requiredCapabilities.extensionData, 0)
     if (caps === undefined) return new CodecError("Could not decode required_capabilities")
 
     const everyLeafSupportsCapabilities = tree
@@ -398,7 +404,7 @@ async function validateExternalSenders(
 ): Promise<MlsError | undefined> {
   const externalSenders = extensions.filter((e) => e.extensionType === defaultExtensionTypes.external_senders)
   for (const externalSender of externalSenders) {
-    const decoded = decodeExternalSender(externalSender.extensionData, 0)
+    const decoded = externalSenderDecoder(externalSender.extensionData, 0)
     if (decoded === undefined) return new CodecError("Could not decode external_senders")
 
     const validCredential = await authService.validateCredential(decoded[0].credential, decoded[0].signaturePublicKey)
@@ -533,7 +539,7 @@ async function validateLeafNodeCommon(
   )
 
   if (requiredCapabilities !== undefined) {
-    const caps = decodeRequiredCapabilities(requiredCapabilities.extensionData, 0)
+    const caps = requiredCapabilitiesDecoder(requiredCapabilities.extensionData, 0)
     if (caps === undefined) return new CodecError("Could not decode required_capabilities")
 
     const leafSupportsCapabilities = capabiltiesAreSupported(caps[0], leafNode.capabilities)

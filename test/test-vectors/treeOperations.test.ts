@@ -2,7 +2,7 @@ import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import {
   addLeafNode,
-  decodeRatchetTree,
+  ratchetTreeDecoder,
   ratchetTreeEncoder,
   RatchetTree,
   removeLeafNode,
@@ -11,7 +11,7 @@ import {
 import { encode } from "../../src/codec/tlsEncoder.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-operations.json"
-import { decodeProposal, isDefaultProposal, Proposal } from "../../src/proposal.js"
+import { proposalDecoder, isDefaultProposal, Proposal } from "../../src/proposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { treeHashRoot } from "../../src/treeHash.js"
 import { toLeafIndex } from "../../src/treemath.js"
@@ -31,14 +31,14 @@ type TreeOperationData = {
 }
 
 async function treeOperationsTest(data: TreeOperationData, impl: CiphersuiteImpl) {
-  const tree = decodeRatchetTree(hexToBytes(data.tree_before), 0)
+  const tree = ratchetTreeDecoder(hexToBytes(data.tree_before), 0)
 
   if (tree === undefined) throw new Error("could not decode tree")
 
   const hash = await treeHashRoot(tree[0], impl.hash)
   expect(hash).toStrictEqual(hexToBytes(data.tree_hash_before))
 
-  const proposal = decodeProposal(hexToBytes(data.proposal), 0)
+  const proposal = proposalDecoder(hexToBytes(data.proposal), 0)
   if (proposal === undefined) throw new Error("could not decode proposal")
 
   const treeAfter = applyProposal(proposal[0], tree[0], data)

@@ -14,10 +14,10 @@ export { proposeAddExternal, proposeExternal } from "./externalProposal.js"
 
 export { type GroupContext } from "./groupContext.js"
 
-export { decodeExternalSender, externalSenderEncoder, type ExternalSender } from "./externalSender.js"
+export { externalSenderDecoder, externalSenderEncoder, type ExternalSender } from "./externalSender.js"
 
 export {
-  decodeRequiredCapabilities,
+  requiredCapabilitiesDecoder,
   requiredCapabilitiesEncoder,
   type RequiredCapabilities,
 } from "./requiredCapabilities.js"
@@ -38,7 +38,7 @@ export {
   makePskIndex,
   joinGroup,
   joinGroupWithExtensions,
-  decodeGroupState,
+  groupStateDecoder,
   groupStateEncoder,
   type GroupState,
   type ClientState,
@@ -117,7 +117,7 @@ export { defaultCryptoProvider } from "./crypto/implementation/default/provider.
 export { bytesToBase64 } from "./util/byteArray.js"
 
 export {
-  decodeMlsMessage,
+  mlsMessageDecoder,
   mlsMessageEncoder,
   type MLSMessage,
   type MlsPublicMessage,
@@ -131,7 +131,7 @@ export { type Lifetime, defaultLifetime } from "./lifetime.js"
 export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
 
-export { type Decoder } from "./codec/tlsDecoder.js"
+export { type Decoder, decode } from "./codec/tlsDecoder.js"
 export { type BufferEncoder, encode } from "./codec/tlsEncoder.js"
 
 export { type Brand } from "./util/brand.js"
@@ -179,8 +179,9 @@ export {
 
 export { type UnappliedProposals } from "./unappliedProposals.js"
 
-export { type Node } from "./ratchetTree.js"
-export { type NodeParent, type NodeLeaf } from "./ratchetTree.js"
+export { nodeTypes } from "./nodeType.js"
+
+export { type Node, type NodeParent, type NodeLeaf } from "./ratchetTree.js"
 export { type LeafNode } from "./leafNode.js"
 export {
   type LeafNodeData,

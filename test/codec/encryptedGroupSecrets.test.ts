@@ -1,8 +1,8 @@
-import { encryptedGroupSecretsEncoder, decodeEncryptedGroupSecrets } from "../../src/welcome.js"
+import { encryptedGroupSecretsEncoder, encryptedGroupSecretsDecoder } from "../../src/welcome.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("EncryptedGroupSecrets roundtrip", () => {
-  const roundtrip = createRoundtripTest(encryptedGroupSecretsEncoder, decodeEncryptedGroupSecrets)
+  const roundtrip = createRoundtripTest(encryptedGroupSecretsEncoder, encryptedGroupSecretsDecoder)
 
   test("roundtrips minimal", () => {
     roundtrip({

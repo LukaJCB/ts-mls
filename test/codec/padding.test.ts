@@ -1,6 +1,6 @@
 import { PaddingConfig } from "../../src/paddingConfig.js"
 import {
-  decodePrivateMessageContent,
+  privateMessageContentDecoder,
   PrivateMessageContent,
   privateMessageContentEncoder,
 } from "../../src/privateMessage.js"
@@ -10,7 +10,7 @@ import { encode } from "../../src/codec/tlsEncoder.js"
 
 describe("PrivateMessageContent roundtrip with padding", () => {
   const roundtrip = (config: PaddingConfig) =>
-    createRoundtripTest(privateMessageContentEncoder(config), decodePrivateMessageContent(contentTypes.application))
+    createRoundtripTest(privateMessageContentEncoder(config), privateMessageContentDecoder(contentTypes.application))
 
   const content: PrivateMessageContent = {
     contentType: contentTypes.application,
@@ -51,10 +51,10 @@ describe("PrivateMessageContent roundtrip with padding", () => {
   test("fails to decode message with non-zero padding", () => {
     const encoded = encode(privateMessageContentEncoder({ kind: "alwaysPad", paddingLength: 2048 }), content)
 
-    expect(decodePrivateMessageContent(contentTypes.application)(encoded, 0)).toBeDefined()
+    expect(privateMessageContentDecoder(contentTypes.application)(encoded, 0)).toBeDefined()
 
     encoded[encoded.length - 1024] = 1
 
-    expect(decodePrivateMessageContent(contentTypes.application)(encoded, 0)).toBeUndefined()
+    expect(privateMessageContentDecoder(contentTypes.application)(encoded, 0)).toBeUndefined()
   })
 })

@@ -1,10 +1,10 @@
-import { commitEncoder, decodeCommit } from "../../src/commit.js"
+import { commitEncoder, commitDecoder } from "../../src/commit.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { proposalOrRefTypes } from "../../src/proposalOrRefType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Commit roundtrip", () => {
-  const roundtrip = createRoundtripTest(commitEncoder, decodeCommit)
+  const roundtrip = createRoundtripTest(commitEncoder, commitDecoder)
 
   test("roundtrips minimal", () => {
     roundtrip({ proposals: [], path: undefined })
