@@ -148,7 +148,7 @@ function deepConvertUint8Arrays(obj: unknown, depth = 0, maxDepth = 20): unknown
 }
 
 /**
- * @deprecated Use decodeGroupState instead for binary deserialization
+ * @deprecated Use groupStateDecoder instead for binary deserialization
  */
 export function fromJsonString(s: string, config: ClientConfig): ClientState | undefined {
   try {

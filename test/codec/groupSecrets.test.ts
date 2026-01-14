@@ -1,9 +1,9 @@
-import { groupSecretsEncoder, decodeGroupSecrets } from "../../src/groupSecrets.js"
+import { groupSecretsEncoder, groupSecretsDecoder } from "../../src/groupSecrets.js"
 import { pskTypes } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("GroupSecrets roundtrip", () => {
-  const roundtrip = createRoundtripTest(groupSecretsEncoder, decodeGroupSecrets)
+  const roundtrip = createRoundtripTest(groupSecretsEncoder, groupSecretsDecoder)
 
   test("roundtrips minimal", () => {
     roundtrip({ joinerSecret: new Uint8Array([1]), pathSecret: undefined, psks: [] })

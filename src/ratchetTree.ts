@@ -1,10 +1,10 @@
 import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
-import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
-import { decodeNodeType, nodeTypeEncoder, nodeTypes } from "./nodeType.js"
-import { decodeOptional, optionalEncoder } from "./codec/optional.js"
-import { ParentNode, parentNodeEncoder, decodeParentNode } from "./parentNode.js"
+import { varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { nodeTypeDecoder, nodeTypeEncoder, nodeTypes } from "./nodeType.js"
+import { optionalDecoder, optionalEncoder } from "./codec/optional.js"
+import { ParentNode, parentNodeEncoder, parentNodeDecoder } from "./parentNode.js"
 import {
   copath,
   directPath,
@@ -21,7 +21,7 @@ import {
   toLeafIndex,
   toNodeIndex,
 } from "./treemath.js"
-import { LeafNode, leafNodeEncoder, decodeLeafNode } from "./leafNode.js"
+import { LeafNode, leafNodeEncoder, leafNodeDecoder } from "./leafNode.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 
@@ -49,15 +49,15 @@ export const nodeEncoder: BufferEncoder<Node> = (node) => {
   }
 }
 
-export const decodeNode: Decoder<Node> = flatMapDecoder(decodeNodeType, (nodeType): Decoder<Node> => {
+export const nodeDecoder: Decoder<Node> = flatMapDecoder(nodeTypeDecoder, (nodeType): Decoder<Node> => {
   switch (nodeType) {
     case nodeTypes.parent:
-      return mapDecoder(decodeParentNode, (parent) => ({
+      return mapDecoder(parentNodeDecoder, (parent) => ({
         nodeType,
         parent,
       }))
     case nodeTypes.leaf:
-      return mapDecoder(decodeLeafNode, (leaf) => ({
+      return mapDecoder(leafNodeDecoder, (leaf) => ({
         nodeType,
         leaf,
       }))
@@ -124,8 +124,8 @@ export const ratchetTreeEncoder: BufferEncoder<RatchetTree> = contramapBufferEnc
   stripBlankNodes,
 )
 
-export const decodeRatchetTree: Decoder<RatchetTree> = mapDecoder(
-  decodeVarLenType(decodeOptional(decodeNode)),
+export const ratchetTreeDecoder: Decoder<RatchetTree> = mapDecoder(
+  varLenTypeDecoder(optionalDecoder(nodeDecoder)),
   extendRatchetTree,
 )
 

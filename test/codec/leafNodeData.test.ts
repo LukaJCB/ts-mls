@@ -1,11 +1,11 @@
-import { leafNodeDataEncoder, decodeLeafNodeData, LeafNodeData } from "../../src/leafNode.js"
+import { leafNodeDataEncoder, leafNodeDataDecoder, LeafNodeData } from "../../src/leafNode.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("LeafNodeData roundtrip", () => {
-  const roundtrip = createRoundtripTest(leafNodeDataEncoder, decodeLeafNodeData)
+  const roundtrip = createRoundtripTest(leafNodeDataEncoder, leafNodeDataDecoder)
 
   test("roundtrips minimal", () => {
     const data: LeafNodeData = {

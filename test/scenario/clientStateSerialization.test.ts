@@ -11,7 +11,7 @@ import {
   getCiphersuiteFromName,
   getCiphersuiteImpl,
   Proposal,
-  decodeGroupState,
+  groupStateDecoder,
   createApplicationMessage,
   defaultProposalTypes,
   groupStateEncoder,
@@ -42,7 +42,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
   expect(binary).toBeInstanceOf(Uint8Array)
   expect(binary.byteLength).toBeGreaterThan(0)
 
-  const decoded = decodeGroupState(binary, 0)
+  const decoded = groupStateDecoder(binary, 0)
 
   if (!decoded) {
     throw new Error("binary deserialization failed unexpectedly")
@@ -98,7 +98,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   const binary2 = encode(groupStateEncoder, aliceGroup)
 
-  const decoded2 = decodeGroupState(binary2, 0)
+  const decoded2 = groupStateDecoder(binary2, 0)
 
   if (!decoded2) {
     throw new Error("binary deserialization failed unexpectedly")

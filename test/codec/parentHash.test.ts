@@ -1,8 +1,8 @@
-import { parentHashInputEncoder, decodeParentHashInput } from "../../src/parentHash.js"
+import { parentHashInputEncoder, parentHashInputDecoder } from "../../src/parentHash.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ParentHashInput roundtrip", () => {
-  const roundtrip = createRoundtripTest(parentHashInputEncoder, decodeParentHashInput)
+  const roundtrip = createRoundtripTest(parentHashInputEncoder, parentHashInputDecoder)
 
   test("roundtrips", () => {
     roundtrip({

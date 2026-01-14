@@ -1,8 +1,8 @@
-import { wireformatEncoder, decodeWireformat, wireformats } from "../../src/wireformat.js"
+import { wireformatEncoder, wireformatDecoder, wireformats } from "../../src/wireformat.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("WireformatName roundtrip", () => {
-  const roundtrip = createRoundtripTest(wireformatEncoder, decodeWireformat)
+  const roundtrip = createRoundtripTest(wireformatEncoder, wireformatDecoder)
 
   test("roundtrips mls_public_message", () => {
     roundtrip(wireformats.mls_public_message)

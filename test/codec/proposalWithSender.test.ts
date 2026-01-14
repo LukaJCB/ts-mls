@@ -1,5 +1,5 @@
 import {
-  decodeProposalWithSender,
+  proposalWithSenderDecoder,
   ProposalWithSender,
   proposalWithSenderEncoder,
 } from "../../src/unappliedProposals.js"
@@ -54,7 +54,7 @@ const dummyRemoveProposal: ProposalWithSender = {
 }
 
 describe("ProposalWithSender roundtrip", () => {
-  const roundtrip = createRoundtripTestBufferEncoder(proposalWithSenderEncoder, decodeProposalWithSender)
+  const roundtrip = createRoundtripTestBufferEncoder(proposalWithSenderEncoder, proposalWithSenderDecoder)
 
   test("roundtrips add with sender", () => {
     roundtrip(dummyAddProposal)

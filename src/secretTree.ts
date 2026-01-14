@@ -1,7 +1,12 @@
-import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
-import { decodeNumberRecord, decodeVarLenData, numberRecordEncoder, varLenDataEncoder } from "./codec/variableLength.js"
+import {
+  numberRecordDecoder,
+  varLenDataDecoder,
+  numberRecordEncoder,
+  varLenDataEncoder,
+} from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypes } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Kdf, expandWithLabel, deriveTreeSecret } from "./crypto/kdf.js"
@@ -22,8 +27,8 @@ export const generationSecretEncoder: BufferEncoder<GenerationSecret> = contrama
   (gs) => [gs.secret, gs.generation, gs.unusedGenerations] as const,
 )
 
-export const decodeGenerationSecret: Decoder<GenerationSecret> = mapDecoders(
-  [decodeVarLenData, decodeUint32, decodeNumberRecord(decodeUint32, decodeVarLenData)],
+export const generationSecretDecoder: Decoder<GenerationSecret> = mapDecoders(
+  [varLenDataDecoder, uint32Decoder, numberRecordDecoder(uint32Decoder, varLenDataDecoder)],
   (secret, generation, unusedGenerations) => ({
     secret,
     generation,
@@ -42,8 +47,8 @@ export const secretTreeNodeEncoder: BufferEncoder<SecretTreeNode> = contramapBuf
   (node) => [node.handshake, node.application] as const,
 )
 
-export const decodeSecretTreeNode: Decoder<SecretTreeNode> = mapDecoders(
-  [decodeGenerationSecret, decodeGenerationSecret],
+export const secretTreeNodeDecoder: Decoder<SecretTreeNode> = mapDecoders(
+  [generationSecretDecoder, generationSecretDecoder],
   (handshake, application) => ({
     handshake,
     application,
@@ -66,11 +71,11 @@ export const secretTreeEncoder: BufferEncoder<SecretTree> = contramapBufferEncod
   (st) => [st.leafWidth, st.intermediateNodes, st.leafNodes] as const,
 )
 
-export const decodeSecretTree: Decoder<SecretTree> = mapDecoders(
+export const secretTreeDecoder: Decoder<SecretTree> = mapDecoders(
   [
-    decodeUint32,
-    decodeNumberRecord(decodeUint32, decodeVarLenData),
-    decodeNumberRecord(decodeUint32, decodeSecretTreeNode),
+    uint32Decoder,
+    numberRecordDecoder(uint32Decoder, varLenDataDecoder),
+    numberRecordDecoder(uint32Decoder, secretTreeNodeDecoder),
   ],
   (leafWidth, intermediateNodes, leafNodes) => ({ leafWidth, intermediateNodes, leafNodes }),
 )

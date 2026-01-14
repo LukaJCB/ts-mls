@@ -1,4 +1,4 @@
-import { externalSenderEncoder, decodeExternalSender, ExternalSender } from "../../src/externalSender.js"
+import { externalSenderEncoder, externalSenderDecoder, ExternalSender } from "../../src/externalSender.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
@@ -16,7 +16,7 @@ const x509: ExternalSender = {
 }
 
 describe("ExternalSender roundtrip", () => {
-  const roundtrip = createRoundtripTest(externalSenderEncoder, decodeExternalSender)
+  const roundtrip = createRoundtripTest(externalSenderEncoder, externalSenderDecoder)
 
   test("roundtrips basic", () => {
     roundtrip(basic)

@@ -1,8 +1,8 @@
-import { decodeUint8, uint8Encoder } from "./codec/number.js"
+import { uint8Decoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import { decodeProposal, Proposal, proposalEncoder } from "./proposal.js"
+import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
+import { proposalDecoder, Proposal, proposalEncoder } from "./proposal.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
 export const proposalOrRefTypes = {
@@ -15,8 +15,8 @@ export type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTy
 
 export const proposalOrRefTypeEncoder: BufferEncoder<ProposalOrRefTypeValue> = uint8Encoder
 
-export const decodeProposalOrRefType: Decoder<ProposalOrRefTypeValue> = mapDecoderOption(
-  decodeUint8,
+export const proposalOrRefTypeDecoder: Decoder<ProposalOrRefTypeValue> = mapDecoderOption(
+  uint8Decoder,
   numberToEnum(proposalOrRefTypes),
 )
 
@@ -54,14 +54,14 @@ export const proposalOrRefEncoder: BufferEncoder<ProposalOrRef> = (input) => {
   }
 }
 
-export const decodeProposalOrRef: Decoder<ProposalOrRef> = flatMapDecoder(
-  decodeProposalOrRefType,
+export const proposalOrRefDecoder: Decoder<ProposalOrRef> = flatMapDecoder(
+  proposalOrRefTypeDecoder,
   (proposalOrRefType): Decoder<ProposalOrRef> => {
     switch (proposalOrRefType) {
       case proposalOrRefTypes.proposal:
-        return mapDecoder(decodeProposal, (proposal) => ({ proposalOrRefType, proposal }))
+        return mapDecoder(proposalDecoder, (proposal) => ({ proposalOrRefType, proposal }))
       case proposalOrRefTypes.reference:
-        return mapDecoder(decodeVarLenData, (reference) => ({ proposalOrRefType, reference }))
+        return mapDecoder(varLenDataDecoder, (reference) => ({ proposalOrRefType, reference }))
     }
   },
 )

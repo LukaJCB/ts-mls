@@ -1,23 +1,23 @@
 import { randomBytes } from "@noble/hashes/utils.js"
 import {
-  decodeUint16,
-  decodeUint32,
-  decodeUint8,
+  uint16Decoder,
+  uint32Decoder,
+  uint8Decoder,
   uint16Encoder,
   uint32Encoder,
   uint8Encoder,
 } from "../../src/codec/number.js"
 import { Decoder, mapDecoders } from "../../src/codec/tlsDecoder.js"
 import { BufferEncoder, composeBufferEncoders, encode } from "../../src/codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "../../src/codec/variableLength.js"
-import { decodeOptional, optionalEncoder } from "../../src/codec/optional.js"
+import { varLenDataDecoder, varLenDataEncoder } from "../../src/codec/variableLength.js"
+import { optionalDecoder, optionalEncoder } from "../../src/codec/optional.js"
 
 test("composite codec roundtrip [uint8(0), uint32(48948430)]", () => {
-  compositeRoundTrip(0, 48948430, uint8Encoder, decodeUint8, uint32Encoder, decodeUint32)
+  compositeRoundTrip(0, 48948430, uint8Encoder, uint8Decoder, uint32Encoder, uint32Decoder)
 })
 
 test("composite codec roundtrip [uint16(256), randombytes(16)]", () => {
-  compositeRoundTrip(256, randomBytes(16), uint16Encoder, decodeUint16, varLenDataEncoder, decodeVarLenData)
+  compositeRoundTrip(256, randomBytes(16), uint16Encoder, uint16Decoder, varLenDataEncoder, varLenDataDecoder)
 })
 
 test("composite codec roundtrip [randombytes(100), randombytes(16)]", () => {
@@ -25,9 +25,9 @@ test("composite codec roundtrip [randombytes(100), randombytes(16)]", () => {
     randomBytes(100),
     randomBytes(16),
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
   )
 })
 
@@ -36,9 +36,9 @@ test("composite codec roundtrip [randombytes(100), optional randombytes(16)]", (
     randomBytes(100),
     randomBytes(16),
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
     optionalEncoder(varLenDataEncoder),
-    decodeOptional(decodeVarLenData),
+    optionalDecoder(varLenDataDecoder),
   )
 })
 
@@ -47,9 +47,9 @@ test("composite codec roundtrip [randombytes(100), undefined]", () => {
     randomBytes(100),
     undefined,
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
     optionalEncoder(varLenDataEncoder),
-    decodeOptional(decodeVarLenData),
+    optionalDecoder(varLenDataDecoder),
   )
 })
 
@@ -58,9 +58,9 @@ test("composite codec roundtrip [undefined, uint8(0)]", () => {
     undefined,
     0,
     optionalEncoder(varLenDataEncoder),
-    decodeOptional(decodeVarLenData),
+    optionalDecoder(varLenDataDecoder),
     uint8Encoder,
-    decodeUint8,
+    uint8Decoder,
   )
 })
 
@@ -69,9 +69,9 @@ test("composite codec roundtrip [undefined, uint16(128)]", () => {
     undefined,
     128,
     optionalEncoder(uint32Encoder),
-    decodeOptional(decodeUint32),
+    optionalDecoder(uint32Decoder),
     uint16Encoder,
-    decodeUint16,
+    uint16Decoder,
   )
 })
 
@@ -81,11 +81,11 @@ test("composite codec roundtrip [randombytes(8), undefined, uint32(99999)]", () 
     undefined,
     99999,
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
     optionalEncoder(uint32Encoder),
-    decodeOptional(decodeUint32),
+    optionalDecoder(uint32Decoder),
     uint32Encoder,
-    decodeUint32,
+    uint32Decoder,
   )
 })
 
@@ -96,13 +96,13 @@ test("composite codec roundtrip [uint8(0), undefined, undefined, randomBytes(128
     undefined,
     randomBytes(8),
     uint8Encoder,
-    decodeUint8,
+    uint8Decoder,
     optionalEncoder(uint8Encoder),
-    decodeOptional(decodeUint8),
+    optionalDecoder(uint8Decoder),
     optionalEncoder(uint32Encoder),
-    decodeOptional(decodeUint32),
+    optionalDecoder(uint32Decoder),
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
   )
 })
 
@@ -113,13 +113,13 @@ test("composite codec roundtrip [undefined, undefined, undefined, randomBytes(99
     undefined,
     randomBytes(999),
     optionalEncoder(uint8Encoder),
-    decodeOptional(decodeUint8),
+    optionalDecoder(uint8Decoder),
     optionalEncoder(uint8Encoder),
-    decodeOptional(decodeUint8),
+    optionalDecoder(uint8Decoder),
     optionalEncoder(uint32Encoder),
-    decodeOptional(decodeUint32),
+    optionalDecoder(uint32Decoder),
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
   )
 })
 
@@ -130,13 +130,13 @@ test("composite codec roundtrip [randomBytes(999), randomBytes(999), undefined, 
     undefined,
     randomBytes(999),
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
     optionalEncoder(uint32Encoder),
-    decodeOptional(decodeUint32),
+    optionalDecoder(uint32Decoder),
     varLenDataEncoder,
-    decodeVarLenData,
+    varLenDataDecoder,
   )
 })
 

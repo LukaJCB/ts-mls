@@ -8,7 +8,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
-import { decodeMlsMessage, mlsMessageEncoder } from "../../src/message.js"
+import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
@@ -48,7 +48,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   })
 
   // alice decodes bob's keyPackage
-  const decodedKeyPackage = decodeMlsMessage(keyPackageMessage, 0)![0]
+  const decodedKeyPackage = mlsMessageDecoder(keyPackageMessage, 0)![0]
 
   if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
@@ -81,7 +81,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   })
 
   // bob decodes the welcome message
-  const decodedWelcome = decodeMlsMessage(encodedWelcome, 0)![0]
+  const decodedWelcome = mlsMessageDecoder(encodedWelcome, 0)![0]
 
   if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
@@ -113,7 +113,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   })
 
   // bob decodes the message
-  const decodedPrivateMessageAlice = decodeMlsMessage(encodedPrivateMessageAlice, 0)![0]
+  const decodedPrivateMessageAlice = mlsMessageDecoder(encodedPrivateMessageAlice, 0)![0]
 
   if (decodedPrivateMessageAlice.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
@@ -144,7 +144,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     version: protocolVersions.mls10,
   })
 
-  const decodedPrivateMessageBob = decodeMlsMessage(encodedPrivateMessageBob, 0)![0]
+  const decodedPrivateMessageBob = mlsMessageDecoder(encodedPrivateMessageBob, 0)![0]
 
   if (decodedPrivateMessageBob.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")

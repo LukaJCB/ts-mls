@@ -1,13 +1,13 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import { encryptWithLabel, PrivateKey } from "./crypto/hpke.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import { groupContextEncoder, GroupContext } from "./groupContext.js"
 import {
-  decodeLeafNodeCommit,
+  leafNodeCommitDecoder,
   leafNodeEncoder,
   LeafNodeCommit,
   LeafNodeTBSCommit,
@@ -26,7 +26,7 @@ import { nodeTypes } from "./nodeType.js"
 import { treeHashRoot } from "./treeHash.js"
 import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
-import { decodeHpkeCiphertext, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
+import { hpkeCiphertextDecoder, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 
 /** @public */
@@ -40,8 +40,8 @@ export const updatePathNodeEncoder: BufferEncoder<UpdatePathNode> = contramapBuf
   (node) => [node.hpkePublicKey, node.encryptedPathSecret] as const,
 )
 
-export const decodeUpdatePathNode: Decoder<UpdatePathNode> = mapDecoders(
-  [decodeVarLenData, decodeVarLenType(decodeHpkeCiphertext)],
+export const updatePathNodeDecoder: Decoder<UpdatePathNode> = mapDecoders(
+  [varLenDataDecoder, varLenTypeDecoder(hpkeCiphertextDecoder)],
   (hpkePublicKey, encryptedPathSecret) => ({ hpkePublicKey, encryptedPathSecret }),
 )
 
@@ -56,8 +56,8 @@ export const updatePathEncoder: BufferEncoder<UpdatePath> = contramapBufferEncod
   (path) => [path.leafNode, path.nodes] as const,
 )
 
-export const decodeUpdatePath: Decoder<UpdatePath> = mapDecoders(
-  [decodeLeafNodeCommit, decodeVarLenType(decodeUpdatePathNode)],
+export const updatePathDecoder: Decoder<UpdatePath> = mapDecoders(
+  [leafNodeCommitDecoder, varLenTypeDecoder(updatePathNodeDecoder)],
   (leafNode, nodes) => ({ leafNode, nodes }),
 )
 

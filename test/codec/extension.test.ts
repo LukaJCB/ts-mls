@@ -1,9 +1,9 @@
-import { extensionEncoder, decodeExtension, Extension } from "../../src/extension.js"
+import { extensionEncoder, extensionDecoder, Extension } from "../../src/extension.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Extension roundtrip", () => {
-  const roundtrip = createRoundtripTest(extensionEncoder, decodeExtension)
+  const roundtrip = createRoundtripTest(extensionEncoder, extensionDecoder)
 
   test("roundtrips minimal", () => {
     const e: Extension = {

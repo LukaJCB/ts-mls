@@ -1,4 +1,4 @@
-import { decodeUint8, uint8Encoder } from "./codec/number.js"
+import { uint8Decoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { BufferEncoder } from "./codec/tlsEncoder.js"
 
@@ -18,6 +18,6 @@ const leafNodeSourceValues = new Set<number>(Object.values(leafNodeSources))
 
 export const leafNodeSourceValueEncoder: BufferEncoder<LeafNodeSourceValue> = uint8Encoder
 
-export const decodeLeafNodeSourceValue: Decoder<LeafNodeSourceValue> = mapDecoderOption(decodeUint8, (v) =>
+export const leafNodeSourceValueDecoder: Decoder<LeafNodeSourceValue> = mapDecoderOption(uint8Decoder, (v) =>
   leafNodeSourceValues.has(v) ? (v as LeafNodeSourceValue) : undefined,
 )

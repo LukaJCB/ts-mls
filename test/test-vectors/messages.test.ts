@@ -1,19 +1,19 @@
 import json from "../../test_vectors/messages.json"
 
 import { hexToBytes } from "@noble/ciphers/utils.js"
-import { decodeMlsMessage, mlsMessageEncoder } from "../../src/message.js"
-import { decodeCommit, commitEncoder } from "../../src/commit.js"
+import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
+import { commitDecoder, commitEncoder } from "../../src/commit.js"
 import { contentTypes } from "../../src/contentType.js"
 import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
 import {
-  decodeAdd,
-  decodeExternalInit,
-  decodeGroupContextExtensions,
-  decodePSK,
-  decodeReinit,
-  decodeRemove,
-  decodeUpdate,
+  addDecoder,
+  externalInitDecoder,
+  groupContextExtensionsDecoder,
+  pSKDecoder,
+  reinitDecoder,
+  removeDecoder,
+  updateDecoder,
   addEncoder,
   externalInitEncoder,
   groupContextExtensionsEncoder,
@@ -22,8 +22,8 @@ import {
   removeEncoder,
   updateEncoder,
 } from "../../src/proposal.js"
-import { decodeRatchetTree, ratchetTreeEncoder } from "../../src/ratchetTree.js"
-import { decodeGroupSecrets, groupSecretsEncoder } from "../../src/groupSecrets.js"
+import { ratchetTreeDecoder, ratchetTreeEncoder } from "../../src/ratchetTree.js"
+import { groupSecretsDecoder, groupSecretsEncoder } from "../../src/groupSecrets.js"
 import { wireformats } from "../../src/wireformat.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
@@ -72,7 +72,7 @@ function codecRoundtrip(msgs: Messages) {
 
 function welcome(s: string) {
   const inputBytes = hexToBytes(s)
-  const mlsWelcome = decodeMlsMessage(inputBytes, 0)
+  const mlsWelcome = mlsMessageDecoder(inputBytes, 0)
 
   if (mlsWelcome === undefined || mlsWelcome[0].wireformat !== wireformats.mls_welcome) {
     throw new Error("could not decode mls welcome")
@@ -84,7 +84,7 @@ function welcome(s: string) {
 
 function privateMessage(s: string) {
   const inputBytes = hexToBytes(s)
-  const p = decodeMlsMessage(inputBytes, 0)
+  const p = mlsMessageDecoder(inputBytes, 0)
 
   if (p === undefined || p[0].wireformat !== wireformats.mls_private_message) {
     throw new Error("could not decode mls private message")
@@ -96,7 +96,7 @@ function privateMessage(s: string) {
 
 function groupInfo(s: string) {
   const inputBytes = hexToBytes(s)
-  const gi = decodeMlsMessage(inputBytes, 0)
+  const gi = mlsMessageDecoder(inputBytes, 0)
 
   if (gi === undefined || gi[0].wireformat !== wireformats.mls_group_info) {
     throw new Error("could not decode mls_group_info")
@@ -108,7 +108,7 @@ function groupInfo(s: string) {
 
 function keyPackage(s: string) {
   const inputBytes = hexToBytes(s)
-  const kp = decodeMlsMessage(inputBytes, 0)
+  const kp = mlsMessageDecoder(inputBytes, 0)
 
   if (kp === undefined || kp[0].wireformat !== wireformats.mls_key_package) {
     throw new Error("could not decode mls_key_package")
@@ -120,7 +120,7 @@ function keyPackage(s: string) {
 
 function publicMessageApplication(s: string) {
   const inputBytes = hexToBytes(s)
-  const p = decodeMlsMessage(inputBytes, 0)
+  const p = mlsMessageDecoder(inputBytes, 0)
 
   if (p === undefined || p[0].wireformat !== wireformats.mls_public_message) {
     throw new Error("could not decode mls_public_message")
@@ -133,7 +133,7 @@ function publicMessageApplication(s: string) {
 
 function publicMessageProposal(s: string) {
   const inputBytes = hexToBytes(s)
-  const p = decodeMlsMessage(inputBytes, 0)
+  const p = mlsMessageDecoder(inputBytes, 0)
 
   if (p === undefined || p[0].wireformat !== wireformats.mls_public_message) {
     throw new Error("could not decode mls_public_message")
@@ -146,7 +146,7 @@ function publicMessageProposal(s: string) {
 
 function publicMessageCommit(s: string) {
   const inputBytes = hexToBytes(s)
-  const p = decodeMlsMessage(inputBytes, 0)
+  const p = mlsMessageDecoder(inputBytes, 0)
 
   if (p === undefined || p[0].wireformat !== wireformats.mls_public_message) {
     throw new Error("could not decode mls_public_message")
@@ -157,19 +157,19 @@ function publicMessageCommit(s: string) {
   }
 }
 
-//const keyPackage = createTest(encodeKeyPackage, decodeKeyPackage, '')
-const commit = createTest(commitEncoder, decodeCommit, "commit")
-const groupSecrets = createTest(groupSecretsEncoder, decodeGroupSecrets, "group_secrets")
-const ratchetTree = createTest(ratchetTreeEncoder, decodeRatchetTree, "ratchet_tree")
-const updateProposal = createTest(updateEncoder, decodeUpdate, "update_proposal")
-const addProposal = createTest(addEncoder, decodeAdd, "add_proposal")
-const pskProposal = createTest(pskEncoder, decodePSK, "pre_shared_key_proposal")
-const removeProposal = createTest(removeEncoder, decodeRemove, "remove_proposal")
-const reinitProposal = createTest(reinitEncoder, decodeReinit, "re_init_proposal")
-const externalInitProposal = createTest(externalInitEncoder, decodeExternalInit, "external_init_proposal")
+//const keyPackage = createTest(encodeKeyPackage, keyPackageDecoder, '')
+const commit = createTest(commitEncoder, commitDecoder, "commit")
+const groupSecrets = createTest(groupSecretsEncoder, groupSecretsDecoder, "group_secrets")
+const ratchetTree = createTest(ratchetTreeEncoder, ratchetTreeDecoder, "ratchet_tree")
+const updateProposal = createTest(updateEncoder, updateDecoder, "update_proposal")
+const addProposal = createTest(addEncoder, addDecoder, "add_proposal")
+const pskProposal = createTest(pskEncoder, pSKDecoder, "pre_shared_key_proposal")
+const removeProposal = createTest(removeEncoder, removeDecoder, "remove_proposal")
+const reinitProposal = createTest(reinitEncoder, reinitDecoder, "re_init_proposal")
+const externalInitProposal = createTest(externalInitEncoder, externalInitDecoder, "external_init_proposal")
 const groupContextExtension = createTest(
   groupContextExtensionsEncoder,
-  decodeGroupContextExtensions,
+  groupContextExtensionsDecoder,
   "group_context_extensions_proposal",
 )
 

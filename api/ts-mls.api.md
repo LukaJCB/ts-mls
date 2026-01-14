@@ -225,19 +225,10 @@ export interface CryptoProvider {
 }
 
 // @public (undocumented)
-export const decodeExternalSender: Decoder<ExternalSender>;
-
-// @public (undocumented)
-export const decodeGroupState: Decoder<GroupState>;
-
-// @public (undocumented)
-export const decodeMlsMessage: Decoder<MLSMessage>;
+export function decode<T>(dec: Decoder<T>, t: Uint8Array): T | undefined;
 
 // @public (undocumented)
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined;
-
-// @public (undocumented)
-export const decodeRequiredCapabilities: Decoder<RequiredCapabilities>;
 
 // @public (undocumented)
 export const defaultAuthenticationService: {
@@ -354,6 +345,9 @@ export interface ExternalSender {
     // (undocumented)
     signaturePublicKey: Uint8Array;
 }
+
+// @public (undocumented)
+export const externalSenderDecoder: Decoder<ExternalSender>;
 
 // @public (undocumented)
 export const externalSenderEncoder: BufferEncoder<ExternalSender>;
@@ -529,6 +523,9 @@ export interface GroupState {
     // (undocumented)
     unappliedProposals: UnappliedProposals;
 }
+
+// @public (undocumented)
+export const groupStateDecoder: Decoder<GroupState>;
 
 // @public (undocumented)
 export const groupStateEncoder: BufferEncoder<GroupState>;
@@ -841,6 +838,9 @@ export type MLSMessage = MlsMessageProtocol & MlsMessageContent;
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage;
 
 // @public (undocumented)
+export const mlsMessageDecoder: Decoder<MLSMessage>;
+
+// @public (undocumented)
 export const mlsMessageEncoder: BufferEncoder<MLSMessage>;
 
 // @public (undocumented)
@@ -902,6 +902,12 @@ export type NodeLeaf = {
 export type NodeParent = {
     nodeType: typeof nodeTypes.parent;
     parent: ParentNode_2;
+};
+
+// @public (undocumented)
+export const nodeTypes: {
+    readonly leaf: 1;
+    readonly parent: 2;
 };
 
 // @public (undocumented)
@@ -1218,6 +1224,9 @@ export interface RequiredCapabilities {
 }
 
 // @public (undocumented)
+export const requiredCapabilitiesDecoder: Decoder<RequiredCapabilities>;
+
+// @public (undocumented)
 export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities>;
 
 // @public (undocumented)
@@ -1373,10 +1382,6 @@ export type WireformatValue = (typeof wireformats)[WireformatName];
 
 // @public (undocumented)
 export function zeroOutUint8Array(buf: Uint8Array): void;
-
-// Warnings were encountered during analysis:
-//
-// dist/src/ratchetTree.d.ts:16:5 - (ae-forgotten-export) The symbol "nodeTypes" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

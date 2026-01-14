@@ -1,8 +1,8 @@
 import {
-  decodePskId,
-  decodePskLabel,
-  decodePskType,
-  decodeResumptionPSKUsage,
+  pskIdDecoder,
+  pskLabelDecoder,
+  pskTypeDecoder,
+  resumptionPSKUsageDecoder,
   pskIdEncoder,
   pskLabelEncoder,
   pskTypeEncoder,
@@ -13,24 +13,24 @@ import {
 import { createRoundtripTest } from "./roundtrip.js"
 
 test("PSKType roundtrip", () => {
-  const roundtrip = createRoundtripTest(pskTypeEncoder, decodePskType)
+  const roundtrip = createRoundtripTest(pskTypeEncoder, pskTypeDecoder)
   roundtrip(pskTypes.external)
   roundtrip(pskTypes.resumption)
 })
 
 test("ResumptionPSKUsageValue roundtrip", () => {
-  const roundtrip = createRoundtripTest(resumptionPSKUsageEncoder, decodeResumptionPSKUsage)
+  const roundtrip = createRoundtripTest(resumptionPSKUsageEncoder, resumptionPSKUsageDecoder)
   roundtrip(resumptionPSKUsages.application)
   roundtrip(resumptionPSKUsages.branch)
   roundtrip(resumptionPSKUsages.reinit)
 })
 
 test("PreSharedKeyID roundtrip", () => {
-  dummyPskId.forEach(createRoundtripTest(pskIdEncoder, decodePskId))
+  dummyPskId.forEach(createRoundtripTest(pskIdEncoder, pskIdDecoder))
 })
 
 test("PSKLabel roundtrip", () => {
-  dummyPskLabel.forEach(createRoundtripTest(pskLabelEncoder, decodePskLabel))
+  dummyPskLabel.forEach(createRoundtripTest(pskLabelEncoder, pskLabelDecoder))
 })
 
 const dummyByteArray = [new Uint8Array([0, 1, 2]), new Uint8Array()] as const

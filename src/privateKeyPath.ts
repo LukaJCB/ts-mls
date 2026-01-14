@@ -1,7 +1,12 @@
-import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
-import { decodeNumberRecord, decodeVarLenData, numberRecordEncoder, varLenDataEncoder } from "./codec/variableLength.js"
+import {
+  numberRecordDecoder,
+  varLenDataDecoder,
+  numberRecordEncoder,
+  varLenDataEncoder,
+} from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import { PathSecrets } from "./pathSecrets.js"
@@ -18,8 +23,8 @@ export const privateKeyPathEncoder: BufferEncoder<PrivateKeyPath> = contramapBuf
   (pkp) => [pkp.leafIndex, pkp.privateKeys] as const,
 )
 
-export const decodePrivateKeyPath: Decoder<PrivateKeyPath> = mapDecoders(
-  [decodeUint32, decodeNumberRecord(decodeUint32, decodeVarLenData)],
+export const privateKeyPathDecoder: Decoder<PrivateKeyPath> = mapDecoders(
+  [uint32Decoder, numberRecordDecoder(uint32Decoder, varLenDataDecoder)],
   (leafIndex, privateKeys) => ({
     leafIndex,
     privateKeys,

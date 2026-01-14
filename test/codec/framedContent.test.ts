@@ -1,10 +1,10 @@
-import { framedContentEncoder, decodeFramedContent } from "../../src/framedContent.js"
+import { framedContentEncoder, framedContentDecoder } from "../../src/framedContent.js"
 import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { senderTypes } from "../../src/sender.js"
 
 describe("FramedContent roundtrip", () => {
-  const roundtrip = createRoundtripTest(framedContentEncoder, decodeFramedContent)
+  const roundtrip = createRoundtripTest(framedContentEncoder, framedContentDecoder)
 
   test("roundtrips application", () => {
     roundtrip({
