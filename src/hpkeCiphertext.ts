@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
+import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, decodeVarLenData } from "./codec/variableLength.js"
 
 /** @public */
@@ -12,8 +12,6 @@ export const hpkeCiphertextEncoder: BufferEncoder<HPKECiphertext> = contramapBuf
   [varLenDataEncoder, varLenDataEncoder],
   (egs) => [egs.kemOutput, egs.ciphertext] as const,
 )
-
-export const encodeHpkeCiphertext: Encoder<HPKECiphertext> = encode(hpkeCiphertextEncoder)
 
 export const decodeHpkeCiphertext: Decoder<HPKECiphertext> = mapDecoders(
   [decodeVarLenData, decodeVarLenData],

@@ -31,6 +31,9 @@ export type Brand<T, B> = T & {
 };
 
 // @public (undocumented)
+export type BufferEncoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void];
+
+// @public (undocumented)
 export function bytesToBase64(bytes: Uint8Array): string;
 
 // @public (undocumented)
@@ -306,19 +309,7 @@ export const defaultProposalTypes: {
 export const emptyPskIndex: PskIndex;
 
 // @public (undocumented)
-export const encodeExternalSender: Encoder<ExternalSender>;
-
-// @public (undocumented)
-export const encodeGroupState: Encoder<GroupState>;
-
-// @public (undocumented)
-export const encodeMlsMessage: Encoder<MLSMessage>;
-
-// @public (undocumented)
-export type Encoder<T> = (t: T) => Uint8Array;
-
-// @public (undocumented)
-export const encodeRequiredCapabilities: Encoder<RequiredCapabilities>;
+export function encode<T>(enc: BufferEncoder<T>, t: T): Uint8Array;
 
 // @public (undocumented)
 export interface EncryptedGroupSecrets {
@@ -363,6 +354,9 @@ export interface ExternalSender {
     // (undocumented)
     signaturePublicKey: Uint8Array;
 }
+
+// @public (undocumented)
+export const externalSenderEncoder: BufferEncoder<ExternalSender>;
 
 // @public (undocumented)
 export type FramedContent = FramedContentData & FramedContentInfo;
@@ -535,6 +529,9 @@ export interface GroupState {
     // (undocumented)
     unappliedProposals: UnappliedProposals;
 }
+
+// @public (undocumented)
+export const groupStateEncoder: BufferEncoder<GroupState>;
 
 // @public (undocumented)
 export interface Hash {
@@ -842,6 +839,9 @@ export type MLSMessage = MlsMessageProtocol & MlsMessageContent;
 
 // @public (undocumented)
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage;
+
+// @public (undocumented)
+export const mlsMessageEncoder: BufferEncoder<MLSMessage>;
 
 // @public (undocumented)
 export interface MlsMessageProtocol {
@@ -1216,6 +1216,9 @@ export interface RequiredCapabilities {
     // (undocumented)
     proposalTypes: number[];
 }
+
+// @public (undocumented)
+export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities>;
 
 // @public (undocumented)
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages;

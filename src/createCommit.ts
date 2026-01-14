@@ -328,7 +328,7 @@ async function createEncryptedGroupSecrets(
   return { newMember: ref, encryptedGroupSecrets: { kemOutput: egs.enc, ciphertext: egs.ct } }
 }
 
-export async function createGroupInfo(
+async function createGroupInfo(
   groupContext: GroupContext,
   confirmationTag: Uint8Array,
   state: ClientState,
@@ -345,7 +345,7 @@ export async function createGroupInfo(
   return signGroupInfo(groupInfoTbs, state.signaturePrivateKey, cs.signature)
 }
 
-export async function createGroupInfoWithRatchetTree(
+async function createGroupInfoWithRatchetTree(
   groupContext: GroupContext,
   confirmationTag: Uint8Array,
   state: ClientState,
@@ -353,7 +353,7 @@ export async function createGroupInfoWithRatchetTree(
   extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const encodedTree = encode(ratchetTreeEncoder)(tree)
+  const encodedTree = encode(ratchetTreeEncoder, tree)
 
   const gi = await createGroupInfo(
     groupContext,
@@ -392,7 +392,7 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
   extensions: Extension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const encodedTree = encode(ratchetTreeEncoder)(state.ratchetTree)
+  const encodedTree = encode(ratchetTreeEncoder, state.ratchetTree)
 
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
@@ -488,7 +488,7 @@ export async function applyUpdatePathSecret(
       const pathSecret = await decryptWithLabel(
         key,
         "UpdatePathNode",
-        encode(groupContextEncoder)(gc),
+        encode(groupContextEncoder, gc),
         ct.kemOutput,
         ct.ciphertext,
         cs.hpke,
@@ -661,7 +661,7 @@ export async function joinGroupExternal(
 
   return { publicMessage: msg, newState: state }
 }
-export function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): NodeIndex[] {
+function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): NodeIndex[] {
   const set = new Set(excludeNodes)
   return resolution.filter((i) => !set.has(i))
 }

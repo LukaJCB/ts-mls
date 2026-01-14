@@ -1,8 +1,8 @@
-import { encodeLifetime, decodeLifetime } from "../../src/lifetime.js"
+import { lifetimeEncoder, decodeLifetime } from "../../src/lifetime.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Lifetime roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeLifetime, decodeLifetime)
+  const roundtrip = createRoundtripTest(lifetimeEncoder, decodeLifetime)
 
   test("roundtrips minimal", () => {
     roundtrip({ notBefore: 0n, notAfter: 0n })

@@ -1,8 +1,8 @@
-import { decodePskLabel, encodePskLabel, pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
+import { decodePskLabel, pskLabelEncoder, pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PSKLabel roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodePskLabel, decodePskLabel)
+  const roundtrip = createRoundtripTest(pskLabelEncoder, decodePskLabel)
 
   test("roundtrips minimal", () => {
     roundtrip({

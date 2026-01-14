@@ -1,8 +1,8 @@
-import { encodeLeafNodeSourceValue, decodeLeafNodeSourceValue, leafNodeSources } from "../../src/leafNodeSource.js"
+import { leafNodeSourceValueEncoder, decodeLeafNodeSourceValue, leafNodeSources } from "../../src/leafNodeSource.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("LeafNodeSourceValue roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeLeafNodeSourceValue, decodeLeafNodeSourceValue)
+  const roundtrip = createRoundtripTest(leafNodeSourceValueEncoder, decodeLeafNodeSourceValue)
 
   test("roundtrips key_package", () => {
     roundtrip(leafNodeSources.key_package)

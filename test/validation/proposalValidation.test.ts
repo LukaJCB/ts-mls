@@ -9,8 +9,8 @@ import { Proposal, ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { CodecError, ValidationError } from "../../src/mlsError.js"
-import { encodeRequiredCapabilities } from "../../src/requiredCapabilities.js"
-import { encodeExternalSender } from "../../src/externalSender.js"
+import { requiredCapabilitiesEncoder } from "../../src/requiredCapabilities.js"
+import { externalSenderEncoder } from "../../src/externalSender.js"
 import { AuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { createCustomCredential } from "../../src/customCredential.js"
@@ -23,6 +23,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { pskTypes } from "../../src/presharedkey.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -69,7 +70,7 @@ describe("Proposal Validation", () => {
           extensions: [
             {
               extensionType: defaultExtensionTypes.required_capabilities,
-              extensionData: encodeRequiredCapabilities({
+              extensionData: encode(requiredCapabilitiesEncoder, {
                 extensionTypes: [],
                 proposalTypes: [99],
                 credentialTypes: [],
@@ -110,7 +111,7 @@ describe("Proposal Validation", () => {
           extensions: [
             {
               extensionType: defaultExtensionTypes.required_capabilities,
-              extensionData: encodeRequiredCapabilities({
+              extensionData: encode(requiredCapabilitiesEncoder, {
                 extensionTypes: [],
                 proposalTypes: [],
                 credentialTypes: [defaultCredentialTypes.x509],
@@ -174,7 +175,10 @@ describe("Proposal Validation", () => {
           extensions: [
             {
               extensionType: defaultExtensionTypes.external_senders,
-              extensionData: encodeExternalSender({ credential: badCredential, signaturePublicKey: new Uint8Array() }),
+              extensionData: encode(externalSenderEncoder, {
+                credential: badCredential,
+                signaturePublicKey: new Uint8Array(),
+              }),
             },
           ],
         },

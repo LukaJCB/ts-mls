@@ -1,9 +1,9 @@
-import { encodeSenderDataAAD, decodeSenderDataAAD } from "../../src/sender.js"
+import { senderDataAADEncoder, decodeSenderDataAAD } from "../../src/sender.js"
 import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("SenderDataAAD roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeSenderDataAAD, decodeSenderDataAAD)
+  const roundtrip = createRoundtripTest(senderDataAADEncoder, decodeSenderDataAAD)
 
   test("roundtrips minimal", () => {
     roundtrip({ groupId: new Uint8Array([1]), epoch: 0n, contentType: contentTypes.application })

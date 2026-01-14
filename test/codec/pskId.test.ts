@@ -1,8 +1,8 @@
-import { decodePskId, encodePskId, pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
+import { decodePskId, pskIdEncoder, pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("PreSharedKeyID roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodePskId, decodePskId)
+  const roundtrip = createRoundtripTest(pskIdEncoder, decodePskId)
 
   test("roundtrips external", () => {
     roundtrip({ psktype: pskTypes.external, pskId: new Uint8Array([1, 2, 3]), pskNonce: new Uint8Array([4, 5, 6, 7]) })

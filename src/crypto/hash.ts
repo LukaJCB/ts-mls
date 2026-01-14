@@ -18,5 +18,5 @@ export function refhash(label: string, value: Uint8Array, h: Hash) {
 function encodeRefHash(label: string, value: Uint8Array): Uint8Array {
   const labelBytes = new TextEncoder().encode(label)
   const enc = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
-  return encode(enc)([labelBytes, value])
+  return encode(enc, [labelBytes, value])
 }

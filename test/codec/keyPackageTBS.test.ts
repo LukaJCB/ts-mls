@@ -1,4 +1,4 @@
-import { encodeKeyPackageTBS, decodeKeyPackageTBS } from "../../src/keyPackage.js"
+import { keyPackageTBSEncoder, decodeKeyPackageTBS } from "../../src/keyPackage.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -7,7 +7,7 @@ import { createRoundtripTest } from "./roundtrip.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 
 describe("KeyPackageTBS roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeKeyPackageTBS, decodeKeyPackageTBS)
+  const roundtrip = createRoundtripTest(keyPackageTBSEncoder, decodeKeyPackageTBS)
 
   test("roundtrips minimal", () => {
     const tbs = {

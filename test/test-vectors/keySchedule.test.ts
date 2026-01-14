@@ -1,9 +1,10 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
-import { encodeGroupContext, GroupContext } from "../../src/groupContext.js"
+import { groupContextEncoder, GroupContext } from "../../src/groupContext.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/key-schedule.json"
 import { protocolVersions } from "../../src/protocolVersion.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 import { initializeEpoch, mlsExporter } from "../../src/keySchedule.js"
 
@@ -35,7 +36,7 @@ async function testKeySchedule(
       }
 
       // Verify that group context matches the provided group_context value
-      expect(encodeGroupContext(gc)).toStrictEqual(hexToBytes(epoch.group_context))
+      expect(encode(groupContextEncoder, gc)).toStrictEqual(hexToBytes(epoch.group_context))
 
       const { keySchedule, joinerSecret, welcomeSecret, encryptionSecret } = await initializeEpoch(
         initSecret,

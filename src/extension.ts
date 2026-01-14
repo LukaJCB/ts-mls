@@ -1,13 +1,8 @@
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import {
-  DefaultExtensionTypeName,
-  DefaultExtensionTypeValue,
-  defaultExtensionTypeValueFromName,
-  isDefaultExtensionTypeValue,
-} from "./defaultExtensionType.js"
+import { isDefaultExtensionTypeValue } from "./defaultExtensionType.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 /** @public */
@@ -20,8 +15,6 @@ export const extensionEncoder: BufferEncoder<Extension> = contramapBufferEncoder
   [uint16Encoder, varLenDataEncoder],
   (e) => [e.extensionType, e.extensionData] as const,
 )
-
-export const encodeExtension: Encoder<Extension> = encode(extensionEncoder)
 
 export const decodeExtension: Decoder<Extension> = mapDecoders(
   [decodeUint16, decodeVarLenData],
@@ -48,8 +41,4 @@ export function extensionsSupportedByCapabilities(
 
 function isDefaultExtension(t: number): boolean {
   return isDefaultExtensionTypeValue(t)
-}
-
-export function extensionTypeValueFromName(name: DefaultExtensionTypeName): DefaultExtensionTypeValue {
-  return defaultExtensionTypeValueFromName(name)
 }

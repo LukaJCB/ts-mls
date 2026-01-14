@@ -1,6 +1,6 @@
 import { decodeUint32, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
@@ -24,8 +24,6 @@ export const groupInfoTBSEncoder: BufferEncoder<GroupInfoTBS> = contramapBufferE
   (g) => [g.groupContext, g.extensions, g.confirmationTag, g.signer] as const,
 )
 
-export const encodeGroupInfoTBS: Encoder<GroupInfoTBS> = encode(groupInfoTBSEncoder)
-
 export const decodeGroupInfoTBS: Decoder<GroupInfoTBS> = mapDecoders(
   [decodeGroupContext, decodeVarLenType(decodeExtension), decodeVarLenData, decodeUint32],
   (groupContext, extensions, confirmationTag, signer) => ({
@@ -46,8 +44,6 @@ export const groupInfoEncoder: BufferEncoder<GroupInfo> = contramapBufferEncoder
   (g) => [g, g.signature] as const,
 )
 
-export const encodeGroupInfo: Encoder<GroupInfo> = encode(groupInfoEncoder)
-
 export const decodeGroupInfo: Decoder<GroupInfo> = mapDecoders(
   [decodeGroupInfoTBS, decodeVarLenData],
   (tbs, signature) => ({
@@ -67,12 +63,12 @@ export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefin
 }
 
 export async function signGroupInfo(tbs: GroupInfoTBS, privateKey: Uint8Array, s: Signature): Promise<GroupInfo> {
-  const signature = await signWithLabel(privateKey, "GroupInfoTBS", encode(groupInfoTBSEncoder)(tbs), s)
+  const signature = await signWithLabel(privateKey, "GroupInfoTBS", encode(groupInfoTBSEncoder, tbs), s)
   return { ...tbs, signature }
 }
 
 export function verifyGroupInfoSignature(gi: GroupInfo, publicKey: Uint8Array, s: Signature): Promise<boolean> {
-  return verifyWithLabel(publicKey, "GroupInfoTBS", encode(groupInfoTBSEncoder)(gi), gi.signature, s)
+  return verifyWithLabel(publicKey, "GroupInfoTBS", encode(groupInfoTBSEncoder, gi), gi.signature, s)
 }
 
 export async function verifyGroupInfoConfirmationTag(

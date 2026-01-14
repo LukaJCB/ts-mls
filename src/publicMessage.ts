@@ -1,5 +1,5 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder, encVoid } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encVoid } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Extension } from "./extension.js"
 import { decodeExternalSender, ExternalSender } from "./externalSender.js"
@@ -39,8 +39,6 @@ export const publicMessageInfoEncoder: BufferEncoder<PublicMessageInfo> = (info)
   }
 }
 
-export const encodePublicMessageInfo: Encoder<PublicMessageInfo> = encode(publicMessageInfoEncoder)
-
 export function decodePublicMessageInfo(senderType: SenderTypeValue): Decoder<PublicMessageInfo> {
   switch (senderType) {
     case senderTypes.member:
@@ -57,15 +55,12 @@ export function decodePublicMessageInfo(senderType: SenderTypeValue): Decoder<Pu
 
 /** @public */
 export type PublicMessage = { content: FramedContent; auth: FramedContentAuthData } & PublicMessageInfo
-export type MemberPublicMessage = PublicMessage & PublicMessageInfoMember
 export type ExternalPublicMessage = PublicMessage & PublicMessageInfoMemberOther
 
 export const publicMessageEncoder: BufferEncoder<PublicMessage> = contramapBufferEncoders(
   [framedContentEncoder, framedContentAuthDataEncoder, publicMessageInfoEncoder],
   (msg) => [msg.content, msg.auth, msg] as const,
 )
-
-export const encodePublicMessage: Encoder<PublicMessage> = encode(publicMessageEncoder)
 
 export const decodePublicMessage: Decoder<PublicMessage> = flatMapDecoder(decodeFramedContent, (content) =>
   mapDecoders(

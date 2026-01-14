@@ -1,8 +1,8 @@
-import { encodeUpdatePathNode, decodeUpdatePathNode, UpdatePathNode } from "../../src/updatePath.js"
+import { updatePathNodeEncoder, decodeUpdatePathNode, UpdatePathNode } from "../../src/updatePath.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("UpdatePathNode roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeUpdatePathNode, decodeUpdatePathNode)
+  const roundtrip = createRoundtripTest(updatePathNodeEncoder, decodeUpdatePathNode)
 
   test("roundtrips minimal", () => {
     const node: UpdatePathNode = {

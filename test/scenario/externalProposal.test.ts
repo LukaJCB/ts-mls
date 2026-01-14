@@ -12,12 +12,13 @@ import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { encodeExternalSender, ExternalSender } from "../../src/externalSender.js"
+import { externalSenderEncoder, ExternalSender } from "../../src/externalSender.js"
 import { Extension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -53,7 +54,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   const extension: Extension = {
     extensionType: defaultExtensionTypes.external_senders,
-    extensionData: encodeExternalSender(externalSender),
+    extensionData: encode(externalSenderEncoder, externalSender),
   }
 
   let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [extension], impl)

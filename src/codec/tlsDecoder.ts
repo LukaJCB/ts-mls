@@ -81,11 +81,7 @@ export function orDecoder<T, U>(decT: Decoder<T>, decU: Decoder<U>): Decoder<T |
   }
 }
 
-export function flatMapDecoderAndMap<T, U, V>(
-  dec: Decoder<T>,
-  f: (t: T) => Decoder<U>,
-  g: (t: T, u: U) => V,
-): Decoder<V> {
+function flatMapDecoderAndMap<T, U, V>(dec: Decoder<T>, f: (t: T) => Decoder<U>, g: (t: T, u: U) => V): Decoder<V> {
   return (b, offset) => {
     const decodedT = dec(b, offset)
     if (decodedT !== undefined) {

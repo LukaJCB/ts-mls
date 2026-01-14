@@ -12,9 +12,10 @@ import {
   getCiphersuiteImpl,
   Proposal,
   decodeGroupState,
-  encodeGroupState,
   createApplicationMessage,
   defaultProposalTypes,
+  groupStateEncoder,
+  encode,
 } from "../../src/index.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serialization round-trip %s", async (cs) => {
@@ -37,7 +38,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   const { clientConfig: _config, ...firstState } = aliceGroup
 
-  const binary = encodeGroupState(aliceGroup)
+  const binary = encode(groupStateEncoder, aliceGroup)
   expect(binary).toBeInstanceOf(Uint8Array)
   expect(binary.byteLength).toBeGreaterThan(0)
 
@@ -95,7 +96,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   const { clientConfig: _config2, ...secondState } = aliceGroup
 
-  const binary2 = encodeGroupState(aliceGroup)
+  const binary2 = encode(groupStateEncoder, aliceGroup)
 
   const decoded2 = decodeGroupState(binary2, 0)
 

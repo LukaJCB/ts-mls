@@ -1,13 +1,13 @@
 import {
   decodeProtocolVersion,
-  encodeProtocolVersion,
+  protocolVersionEncoder,
   protocolVersions,
   ProtocolVersionValue,
 } from "../../src/protocolVersion.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("ProtocolVersionValue roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeProtocolVersion, decodeProtocolVersion)
+  const roundtrip = createRoundtripTest(protocolVersionEncoder, decodeProtocolVersion)
 
   test("roundtrips mls10", () => {
     roundtrip(protocolVersions.mls10 as ProtocolVersionValue)

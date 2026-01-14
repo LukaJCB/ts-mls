@@ -1,4 +1,4 @@
-import { encodeMlsMessage, decodeMlsMessage } from "../../src/message.js"
+import { mlsMessageEncoder, decodeMlsMessage } from "../../src/message.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -9,7 +9,7 @@ import { senderTypes } from "../../src/sender.js"
 import { wireformats } from "../../src/wireformat.js"
 
 describe("MLSMessage roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeMlsMessage, decodeMlsMessage)
+  const roundtrip = createRoundtripTest(mlsMessageEncoder, decodeMlsMessage)
 
   test("roundtrips public message", () => {
     roundtrip({

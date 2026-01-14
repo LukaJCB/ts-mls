@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { PublicKey, Hpke, encryptWithLabel, PrivateKey, decryptWithLabel } from "./crypto/hpke.js"
@@ -21,8 +21,6 @@ export const encryptedGroupSecretsEncoder: BufferEncoder<EncryptedGroupSecrets> 
   (egs) => [egs.newMember, egs.encryptedGroupSecrets] as const,
 )
 
-export const encodeEncryptedGroupSecrets: Encoder<EncryptedGroupSecrets> = encode(encryptedGroupSecretsEncoder)
-
 export const decodeEncryptedGroupSecrets: Decoder<EncryptedGroupSecrets> = mapDecoders(
   [decodeVarLenData, decodeHpkeCiphertext],
   (newMember, encryptedGroupSecrets) => ({ newMember, encryptedGroupSecrets }),
@@ -39,8 +37,6 @@ export const welcomeEncoder: BufferEncoder<Welcome> = contramapBufferEncoders(
   [ciphersuiteEncoder, varLenTypeEncoder(encryptedGroupSecretsEncoder), varLenDataEncoder],
   (welcome) => [welcome.cipherSuite, welcome.secrets, welcome.encryptedGroupInfo] as const,
 )
-
-export const encodeWelcome: Encoder<Welcome> = encode(welcomeEncoder)
 
 export const decodeWelcome: Decoder<Welcome> = mapDecoders(
   [decodeCiphersuite, decodeVarLenType(decodeEncryptedGroupSecrets), decodeVarLenData],
@@ -62,7 +58,7 @@ export async function encryptGroupInfo(
 ): Promise<Uint8Array> {
   const key = await welcomeKey(welcomeSecret, cs)
   const nonce = await welcomeNonce(welcomeSecret, cs)
-  const encrypted = await cs.hpke.encryptAead(key, nonce, undefined, encode(groupInfoEncoder)(groupInfo))
+  const encrypted = await cs.hpke.encryptAead(key, nonce, undefined, encode(groupInfoEncoder, groupInfo))
 
   return encrypted
 }
@@ -89,7 +85,7 @@ export function encryptGroupSecrets(
   groupSecrets: GroupSecrets,
   hpke: Hpke,
 ) {
-  return encryptWithLabel(initKey, "Welcome", encryptedGroupInfo, encode(groupSecretsEncoder)(groupSecrets), hpke)
+  return encryptWithLabel(initKey, "Welcome", encryptedGroupInfo, encode(groupSecretsEncoder, groupSecrets), hpke)
 }
 
 export async function decryptGroupSecrets(

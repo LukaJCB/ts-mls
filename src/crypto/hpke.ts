@@ -7,8 +7,6 @@ import { composeBufferEncoders, encode } from "../codec/tlsEncoder.js"
 /** @public */
 export type PublicKey = CryptoKey & { type: "public" }
 
-export type SecretKey = CryptoKey & { type: "secret" }
-
 /** @public */
 export type PrivateKey = CryptoKey & { type: "private" }
 
@@ -26,13 +24,11 @@ export function encryptWithLabel(
   plaintext: Uint8Array,
   hpke: Hpke,
 ): Promise<{ ct: Uint8Array; enc: Uint8Array }> {
+  const infoEncoder = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
   return hpke.seal(
     publicKey,
     plaintext,
-    encode(composeBufferEncoders([varLenDataEncoder, varLenDataEncoder]))([
-      new TextEncoder().encode(`MLS 1.0 ${label}`),
-      context,
-    ]),
+    encode(infoEncoder, [new TextEncoder().encode(`MLS 1.0 ${label}`), context]),
     new Uint8Array(),
   )
 }
@@ -45,14 +41,12 @@ export function decryptWithLabel(
   ciphertext: Uint8Array,
   hpke: Hpke,
 ): Promise<Uint8Array> {
+  const infoEncoder = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
   return hpke.open(
     privateKey,
     kemOutput,
     ciphertext,
-    encode(composeBufferEncoders([varLenDataEncoder, varLenDataEncoder]))([
-      new TextEncoder().encode(`MLS 1.0 ${label}`),
-      context,
-    ]),
+    encode(infoEncoder, [new TextEncoder().encode(`MLS 1.0 ${label}`), context]),
   )
 }
 

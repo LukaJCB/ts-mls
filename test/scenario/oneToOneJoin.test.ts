@@ -8,7 +8,8 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
-import { decodeMlsMessage, encodeMlsMessage } from "../../src/message.js"
+import { decodeMlsMessage, mlsMessageEncoder } from "../../src/message.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
@@ -40,7 +41,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   // bob sends keyPackage to alice
-  const keyPackageMessage = encodeMlsMessage({
+  const keyPackageMessage = encode(mlsMessageEncoder, {
     keyPackage: bob.publicPackage,
     wireformat: wireformats.mls_key_package,
     version: protocolVersions.mls10,
@@ -73,7 +74,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   aliceGroup = commitResult.newState
 
   // alice sends welcome message to bob
-  const encodedWelcome = encodeMlsMessage({
+  const encodedWelcome = encode(mlsMessageEncoder, {
     welcome: commitResult.welcome!,
     wireformat: wireformats.mls_welcome,
     version: protocolVersions.mls10,
@@ -105,7 +106,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateMessageResult.newState
 
   // alice sends the message to bob
-  const encodedPrivateMessageAlice = encodeMlsMessage({
+  const encodedPrivateMessageAlice = encode(mlsMessageEncoder, {
     privateMessage: aliceCreateMessageResult.privateMessage,
     wireformat: wireformats.mls_private_message,
     version: protocolVersions.mls10,
@@ -137,7 +138,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobCreateMessageResult.newState
 
-  const encodedPrivateMessageBob = encodeMlsMessage({
+  const encodedPrivateMessageBob = encode(mlsMessageEncoder, {
     privateMessage: bobCreateMessageResult.privateMessage,
     wireformat: wireformats.mls_private_message,
     version: protocolVersions.mls10,

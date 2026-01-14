@@ -1,15 +1,12 @@
 /** @public */
-export type Encoder<T> = (t: T) => Uint8Array
-
 export type BufferEncoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void]
 
-export function encode<T>(enc: BufferEncoder<T>): Encoder<T> {
-  return (t: T) => {
-    const [len, write] = enc(t)
-    const buf = new ArrayBuffer(len)
-    write(0, buf)
-    return new Uint8Array(buf)
-  }
+/** @public */
+export function encode<T>(enc: BufferEncoder<T>, t: T): Uint8Array {
+  const [len, write] = enc(t)
+  const buf = new ArrayBuffer(len)
+  write(0, buf)
+  return new Uint8Array(buf)
 }
 
 export function contramapBufferEncoder<T, U>(enc: BufferEncoder<T>, f: (u: U) => Readonly<T>): BufferEncoder<U> {

@@ -1,4 +1,4 @@
-import { encodeGroupContext, decodeGroupContext, GroupContext } from "../../src/groupContext.js"
+import { groupContextEncoder, decodeGroupContext, GroupContext } from "../../src/groupContext.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
@@ -25,7 +25,7 @@ const nontrivialGroupContext: GroupContext = {
 }
 
 describe("GroupContext roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeGroupContext, decodeGroupContext)
+  const roundtrip = createRoundtripTest(groupContextEncoder, decodeGroupContext)
 
   test("roundtrips minimal", () => {
     roundtrip(minimalGroupContext)

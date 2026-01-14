@@ -1,9 +1,9 @@
-import { encodeWelcome, decodeWelcome } from "../../src/welcome.js"
+import { welcomeEncoder, decodeWelcome } from "../../src/welcome.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("Welcome roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeWelcome, decodeWelcome)
+  const roundtrip = createRoundtripTest(welcomeEncoder, decodeWelcome)
 
   test("roundtrips minimal", () => {
     roundtrip({

@@ -84,7 +84,8 @@ import {
   defaultLifetime,
   emptyPskIndex,
   generateKeyPackage,
-  encodeMlsMessage,
+  encode,
+  mlsMessageEncoder,
   decodeMlsMessage,
   protocolVersions,
   wireformats,
@@ -114,7 +115,7 @@ const bobCredential: Credential = {
 const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
 // bob sends keyPackage to alice
-const keyPackageMessage = encodeMlsMessage({
+const keyPackageMessage = encode(mlsMessageEncoder, {
   keyPackage: bob.publicPackage,
   wireformat: wireformats.mls_key_package,
   version: protocolVersions.mls10,
@@ -142,7 +143,7 @@ aliceGroup = commitResult.newState
 commitResult.consumed.forEach(zeroOutUint8Array)
 
 // alice sends welcome message to bob
-const encodedWelcome = encodeMlsMessage({
+const encodedWelcome = encode(mlsMessageEncoder, {
   welcome: commitResult.welcome!,
   wireformat: wireformats.mls_welcome,
   version: protocolVersions.mls10,
@@ -174,7 +175,7 @@ aliceGroup = aliceCreateMessageResult.newState
 aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 
 // alice sends the message to bob
-const encodedPrivateMessageAlice = encodeMlsMessage({
+const encodedPrivateMessageAlice = encode(mlsMessageEncoder, {
   privateMessage: aliceCreateMessageResult.privateMessage,
   wireformat: wireformats.mls_private_message,
   version: protocolVersions.mls10,

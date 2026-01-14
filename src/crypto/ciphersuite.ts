@@ -2,11 +2,10 @@ import { Signature, SignatureAlgorithm } from "./signature.js"
 import { Hash, HashAlgorithm } from "./hash.js"
 import { Kdf } from "./kdf.js"
 import { Hpke, HpkeAlgorithm } from "./hpke.js"
-import { BufferEncoder, encode, Encoder } from "../codec/tlsEncoder.js"
+import { BufferEncoder } from "../codec/tlsEncoder.js"
 import { decodeUint16, uint16Encoder } from "../codec/number.js"
 import { Decoder } from "../codec/tlsDecoder.js"
 import { Rng } from "./rng.js"
-import { reverseMap } from "../util/enumHelpers.js"
 
 /** @public */
 export interface CiphersuiteImpl {
@@ -48,15 +47,9 @@ export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
 export const ciphersuiteEncoder: BufferEncoder<CiphersuiteId> = uint16Encoder
 
-export const encodeCiphersuite: Encoder<CiphersuiteId> = encode(ciphersuiteEncoder)
-
 export const decodeCiphersuite: Decoder<CiphersuiteId> = (b, offset) => {
   const decoded = decodeUint16(b, offset)
   return decoded === undefined ? undefined : [decoded[0] as CiphersuiteId, decoded[1]]
-}
-
-export function getCiphersuiteNameFromId(id: CiphersuiteId): CiphersuiteName {
-  return reverseMap(ciphersuites)[id] as CiphersuiteName
 }
 
 export function getCiphersuiteFromId(id: CiphersuiteId): Ciphersuite {

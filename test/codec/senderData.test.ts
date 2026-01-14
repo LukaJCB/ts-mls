@@ -1,8 +1,8 @@
-import { encodeSenderData, decodeSenderData, ReuseGuard } from "../../src/sender.js"
+import { senderDataEncoder, decodeSenderData, ReuseGuard } from "../../src/sender.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("SenderData roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeSenderData, decodeSenderData)
+  const roundtrip = createRoundtripTest(senderDataEncoder, decodeSenderData)
 
   test("roundtrips minimal", () => {
     roundtrip({ leafIndex: 0, generation: 0, reuseGuard: new Uint8Array([1, 2, 3, 4]) as ReuseGuard })

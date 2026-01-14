@@ -1,7 +1,7 @@
 import { AuthenticatedContent } from "./authenticatedContent.js"
 import { decodeUint64, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { decodeCommit, commitEncoder } from "./commit.js"
 import { ContentTypeValue, contentTypes, contentTypeEncoder, decodeContentType } from "./contentType.js"
@@ -45,8 +45,6 @@ export const privateMessageEncoder: BufferEncoder<PrivateMessage> = contramapBuf
     [msg.groupId, msg.epoch, msg.contentType, msg.authenticatedData, msg.encryptedSenderData, msg.ciphertext] as const,
 )
 
-export const encodePrivateMessage: Encoder<PrivateMessage> = encode(privateMessageEncoder)
-
 export const decodePrivateMessage: Decoder<PrivateMessage> = mapDecoders(
   [decodeVarLenData, decodeUint64, decodeContentType, decodeVarLenData, decodeVarLenData, decodeVarLenData],
   (groupId, epoch, contentType, authenticatedData, encryptedSenderData, ciphertext) => ({
@@ -70,8 +68,6 @@ export const privateContentAADEncoder: BufferEncoder<PrivateContentAAD> = contra
   [varLenDataEncoder, uint64Encoder, contentTypeEncoder, varLenDataEncoder],
   (aad) => [aad.groupId, aad.epoch, aad.contentType, aad.authenticatedData] as const,
 )
-
-export const encodePrivateContentAAD: Encoder<PrivateContentAAD> = encode(privateContentAADEncoder)
 
 export const decodePrivateContentAAD: Decoder<PrivateContentAAD> = mapDecoders(
   [decodeVarLenData, decodeUint64, decodeContentType, decodeVarLenData],
@@ -158,10 +154,6 @@ export function privateMessageContentEncoder(config: PaddingConfig): BufferEncod
   }
 }
 
-export function encodePrivateMessageContent(config: PaddingConfig): Encoder<PrivateMessageContent> {
-  return encode(privateMessageContentEncoder(config))
-}
-
 export async function decryptSenderData(
   msg: PrivateMessage,
   senderDataSecret: Uint8Array,
@@ -176,7 +168,7 @@ export async function decryptSenderData(
     contentType: msg.contentType,
   }
 
-  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(senderDataAADEncoder)(aad), msg.encryptedSenderData)
+  const decrypted = await cs.hpke.decryptAead(key, nonce, encode(senderDataAADEncoder, aad), msg.encryptedSenderData)
   return decodeSenderData(decrypted, 0)?.[0]
 }
 
@@ -190,7 +182,7 @@ export async function encryptSenderData(
   const key = await expandSenderDataKey(cs, senderDataSecret, ciphertext)
   const nonce = await expandSenderDataNonce(cs, senderDataSecret, ciphertext)
 
-  return await cs.hpke.encryptAead(key, nonce, encode(senderDataAADEncoder)(aad), encode(senderDataEncoder)(senderData))
+  return await cs.hpke.encryptAead(key, nonce, encode(senderDataAADEncoder, aad), encode(senderDataEncoder, senderData))
 }
 
 export function toAuthenticatedContent(

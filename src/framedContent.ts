@@ -1,13 +1,6 @@
 import { decodeUint64, uint64Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import {
-  contramapBufferEncoder,
-  contramapBufferEncoders,
-  BufferEncoder,
-  encode,
-  encVoid,
-  Encoder,
-} from "./codec/tlsEncoder.js"
+import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder, encode, encVoid } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { Commit, decodeCommit, commitEncoder } from "./commit.js"
 import { ContentTypeValue, contentTypes, contentTypeEncoder, decodeContentType } from "./contentType.js"
@@ -18,15 +11,7 @@ import { groupContextEncoder, GroupContext } from "./groupContext.js"
 import { wireformatEncoder, WireformatName, wireformats, WireformatValue } from "./wireformat.js"
 import { decodeProposal, proposalEncoder, Proposal } from "./proposal.js"
 import { protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
-import {
-  decodeSender,
-  senderEncoder,
-  Sender,
-  SenderExternal,
-  SenderMember,
-  SenderNewMemberCommit,
-  SenderNewMemberProposal,
-} from "./sender.js"
+import { decodeSender, senderEncoder, Sender } from "./sender.js"
 import { senderTypes } from "./sender.js"
 
 /** @public */
@@ -53,25 +38,15 @@ export const framedContentApplicationDataEncoder: BufferEncoder<FramedContentApp
   (f) => [f.contentType, f.applicationData] as const,
 )
 
-export const encodeFramedContentApplicationData: Encoder<FramedContentApplicationData> = encode(
-  framedContentApplicationDataEncoder,
-)
-
 export const framedContentProposalDataEncoder: BufferEncoder<FramedContentProposalData> = contramapBufferEncoders(
   [contentTypeEncoder, proposalEncoder],
   (f) => [f.contentType, f.proposal] as const,
-)
-
-export const encodeFramedContentProposalData: Encoder<FramedContentProposalData> = encode(
-  framedContentProposalDataEncoder,
 )
 
 export const framedContentCommitDataEncoder: BufferEncoder<FramedContentCommitData> = contramapBufferEncoders(
   [contentTypeEncoder, commitEncoder],
   (f) => [f.contentType, f.commit] as const,
 )
-
-export const encodeFramedContentCommitData: Encoder<FramedContentCommitData> = encode(framedContentCommitDataEncoder)
 
 export const framedContentInfoEncoder: BufferEncoder<FramedContentInfo> = (fc) => {
   switch (fc.contentType) {
@@ -83,8 +58,6 @@ export const framedContentInfoEncoder: BufferEncoder<FramedContentInfo> = (fc) =
       return framedContentCommitDataEncoder(fc)
   }
 }
-
-export const encodeFramedContentInfo: Encoder<FramedContentInfo> = encode(framedContentInfoEncoder)
 
 export const decodeFramedContentApplicationData: Decoder<FramedContentApplicationData> = mapDecoder(
   decodeVarLenData,
@@ -129,12 +102,6 @@ export interface FramedContentData {
   authenticatedData: Uint8Array
 }
 
-export type FramedContentMember = FramedContent & { sender: SenderMember }
-export type FramedContentNewMemberCommit = FramedContent & { sender: SenderNewMemberCommit }
-
-export type FramedContentExternal = FramedContent & { sender: SenderExternal }
-export type FramedContentNewMemberProposal = FramedContent & { sender: SenderNewMemberProposal }
-
 export type FramedContentCommit = FramedContentData & FramedContentCommitData
 export type FramedContentApplicationOrProposal = FramedContentData &
   (FramedContentApplicationData | FramedContentProposalData)
@@ -143,8 +110,6 @@ export const framedContentEncoder: BufferEncoder<FramedContent> = contramapBuffe
   [varLenDataEncoder, uint64Encoder, senderEncoder, varLenDataEncoder, framedContentInfoEncoder],
   (fc) => [fc.groupId, fc.epoch, fc.sender, fc.authenticatedData, fc] as const,
 )
-
-export const encodeFramedContent: Encoder<FramedContent> = encode(framedContentEncoder)
 
 export const decodeFramedContent: Decoder<FramedContent> = mapDecoders(
   [decodeVarLenData, decodeUint64, decodeSender, decodeVarLenData, decodeFramedContentInfo],
@@ -174,8 +139,6 @@ export const senderInfoEncoder: BufferEncoder<SenderInfo> = (info) => {
   }
 }
 
-export const encodeSenderInfo: Encoder<SenderInfo> = encode(senderInfoEncoder)
-
 export type FramedContentTBS = {
   protocolVersion: ProtocolVersionValue
   wireformat: WireformatValue
@@ -184,15 +147,11 @@ export type FramedContentTBS = {
 
 export type FramedContentTBSCommit = FramedContentTBS & { content: FramedContentCommit }
 export type FramedContentTBSApplicationOrProposal = FramedContentTBS & { content: FramedContentApplicationOrProposal }
-export type FramedContentTBSExternal = FramedContentTBS &
-  (SenderInfoExternal | SenderInfoNewMemberCommit | SenderInfoNewMemberProposal)
 
 export const framedContentTBSEncoder: BufferEncoder<FramedContentTBS> = contramapBufferEncoders(
   [protocolVersionEncoder, wireformatEncoder, framedContentEncoder, senderInfoEncoder],
   (f) => [f.protocolVersion, f.wireformat, f.content, f] as const,
 )
-
-export const encodeFramedContentTBS: Encoder<FramedContentTBS> = encode(framedContentTBSEncoder)
 
 /** @public */
 export type FramedContentAuthData = FramedContentAuthDataCommit | FramedContentAuthDataApplicationOrProposal
@@ -235,8 +194,6 @@ export const framedContentAuthDataEncoder: BufferEncoder<FramedContentAuthData> 
   (d) => [d.signature, d] as const,
 )
 
-export const encodeFramedContentAuthData: Encoder<FramedContentAuthData> = encode(framedContentAuthDataEncoder)
-
 export const decodeFramedContentAuthDataCommit: Decoder<FramedContentAuthDataContentCommit> = mapDecoder(
   decodeVarLenData,
   (confirmationTag) => ({
@@ -272,14 +229,14 @@ export async function verifyFramedContentSignature(
   return verifyWithLabel(
     signKey,
     "FramedContentTBS",
-    encode(framedContentTBSEncoder)(toTbs(content, wireformat, context)),
+    encode(framedContentTBSEncoder, toTbs(content, wireformat, context)),
     auth.signature,
     s,
   )
 }
 
 export function signFramedContentTBS(signKey: Uint8Array, tbs: FramedContentTBS, s: Signature): Promise<Uint8Array> {
-  return signWithLabel(signKey, "FramedContentTBS", encode(framedContentTBSEncoder)(tbs), s)
+  return signWithLabel(signKey, "FramedContentTBS", encode(framedContentTBSEncoder, tbs), s)
 }
 
 export async function signFramedContentApplicationOrProposal(

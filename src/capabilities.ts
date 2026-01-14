@@ -1,6 +1,6 @@
 import { ciphersuiteEncoder, CiphersuiteId, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
-import { BufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
+import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
 import { decodeUint16, uint16Encoder } from "./codec/number.js"
@@ -24,8 +24,6 @@ export const capabilitiesEncoder: BufferEncoder<Capabilities> = contramapBufferE
   ],
   (cap) => [cap.versions, cap.ciphersuites, cap.extensions, cap.proposals, cap.credentials] as const,
 )
-
-export const encodeCapabilities: Encoder<Capabilities> = encode(capabilitiesEncoder)
 
 export const decodeCapabilities: Decoder<Capabilities> = mapDecoders(
   [

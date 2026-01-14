@@ -14,11 +14,11 @@ export { proposeAddExternal, proposeExternal } from "./externalProposal.js"
 
 export { type GroupContext } from "./groupContext.js"
 
-export { decodeExternalSender, encodeExternalSender, type ExternalSender } from "./externalSender.js"
+export { decodeExternalSender, externalSenderEncoder, type ExternalSender } from "./externalSender.js"
 
 export {
   decodeRequiredCapabilities,
-  encodeRequiredCapabilities,
+  requiredCapabilitiesEncoder,
   type RequiredCapabilities,
 } from "./requiredCapabilities.js"
 
@@ -39,7 +39,7 @@ export {
   joinGroup,
   joinGroupWithExtensions,
   decodeGroupState,
-  encodeGroupState,
+  groupStateEncoder,
   type GroupState,
   type ClientState,
 } from "./clientState.js"
@@ -118,7 +118,7 @@ export { bytesToBase64 } from "./util/byteArray.js"
 
 export {
   decodeMlsMessage,
-  encodeMlsMessage,
+  mlsMessageEncoder,
   type MLSMessage,
   type MlsPublicMessage,
   type MlsWelcome,
@@ -132,7 +132,7 @@ export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
 
 export { type Decoder } from "./codec/tlsDecoder.js"
-export { type Encoder } from "./codec/tlsEncoder.js"
+export { type BufferEncoder, encode } from "./codec/tlsEncoder.js"
 
 export { type Brand } from "./util/brand.js"
 

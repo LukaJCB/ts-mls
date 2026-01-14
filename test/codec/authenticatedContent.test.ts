@@ -1,11 +1,11 @@
-import { encodeAuthenticatedContent, decodeAuthenticatedContent } from "../../src/authenticatedContent.js"
+import { authenticatedContentEncoder, decodeAuthenticatedContent } from "../../src/authenticatedContent.js"
 import { contentTypes } from "../../src/contentType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { senderTypes } from "../../src/sender.js"
 import { wireformats } from "../../src/wireformat.js"
 
 describe("AuthenticatedContent roundtrip", () => {
-  const roundtrip = createRoundtripTest(encodeAuthenticatedContent, decodeAuthenticatedContent)
+  const roundtrip = createRoundtripTest(authenticatedContentEncoder, decodeAuthenticatedContent)
 
   test("roundtrips minimal", () => {
     roundtrip({

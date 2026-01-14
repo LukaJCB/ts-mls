@@ -1,7 +1,6 @@
 import { decodeUint32, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
-
 import { decodeNumberRecord, decodeVarLenData, numberRecordEncoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypes } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"

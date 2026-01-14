@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
@@ -44,8 +44,6 @@ export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBuffe
     ] as const,
 )
 
-export const encodeKeyPackageTBS: Encoder<KeyPackageTBS> = encode(keyPackageTBSEncoder)
-
 export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
   [
     decodeProtocolVersion,
@@ -71,8 +69,6 @@ export const keyPackageEncoder: BufferEncoder<KeyPackage> = contramapBufferEncod
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )
 
-export const encodeKeyPackage: Encoder<KeyPackage> = encode(keyPackageEncoder)
-
 export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
   [decodeKeyPackageTBS, decodeVarLenData],
   (keyPackageTBS, signature) => ({
@@ -82,21 +78,21 @@ export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
 )
 
 export async function signKeyPackage(tbs: KeyPackageTBS, signKey: Uint8Array, s: Signature): Promise<KeyPackage> {
-  return { ...tbs, signature: await signWithLabel(signKey, "KeyPackageTBS", encode(keyPackageTBSEncoder)(tbs), s) }
+  return { ...tbs, signature: await signWithLabel(signKey, "KeyPackageTBS", encode(keyPackageTBSEncoder, tbs), s) }
 }
 
 export async function verifyKeyPackage(kp: KeyPackage, s: Signature): Promise<boolean> {
   return verifyWithLabel(
     kp.leafNode.signaturePublicKey,
     "KeyPackageTBS",
-    encode(keyPackageTBSEncoder)(kp),
+    encode(keyPackageTBSEncoder, kp),
     kp.signature,
     s,
   )
 }
 
 export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Array> {
-  return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder)(value), h)
+  return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder, value), h)
 }
 
 /** @public */

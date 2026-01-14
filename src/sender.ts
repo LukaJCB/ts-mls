@@ -1,6 +1,6 @@
 import { decodeUint32, decodeUint64, decodeUint8, uint32Encoder, uint64Encoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode, Encoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypeEncoder, decodeContentType } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
@@ -21,8 +21,6 @@ export type SenderTypeName = keyof typeof senderTypes
 export type SenderTypeValue = (typeof senderTypes)[SenderTypeName]
 
 export const senderTypeEncoder: BufferEncoder<SenderTypeValue> = uint8Encoder
-
-export const encodeSenderType: Encoder<SenderTypeValue> = encode(senderTypeEncoder)
 
 export const decodeSenderType: Decoder<SenderTypeValue> = mapDecoderOption(decodeUint8, numberToEnum(senderTypes))
 
@@ -71,8 +69,6 @@ export const senderEncoder: BufferEncoder<Sender> = (s) => {
       return senderTypeEncoder(s.senderType)
   }
 }
-
-export const encodeSender: Encoder<Sender> = encode(senderEncoder)
 
 export const decodeSender: Decoder<Sender> = flatMapDecoder(decodeSenderType, (senderType): Decoder<Sender> => {
   switch (senderType) {
@@ -123,8 +119,6 @@ export const reuseGuardEncoder: BufferEncoder<ReuseGuard> = (g) => [
   },
 ]
 
-export const encodeReuseGuard: Encoder<ReuseGuard> = encode(reuseGuardEncoder)
-
 export const decodeReuseGuard: Decoder<ReuseGuard> = (b, offset) => {
   return [b.subarray(offset, offset + 4) as ReuseGuard, 4]
 }
@@ -133,8 +127,6 @@ export const senderDataEncoder: BufferEncoder<SenderData> = contramapBufferEncod
   [uint32Encoder, uint32Encoder, reuseGuardEncoder],
   (s) => [s.leafIndex, s.generation, s.reuseGuard] as const,
 )
-
-export const encodeSenderData: Encoder<SenderData> = encode(senderDataEncoder)
 
 export const decodeSenderData: Decoder<SenderData> = mapDecoders(
   [decodeUint32, decodeUint32, decodeReuseGuard],
@@ -155,8 +147,6 @@ export const senderDataAADEncoder: BufferEncoder<SenderDataAAD> = contramapBuffe
   [varLenDataEncoder, uint64Encoder, contentTypeEncoder],
   (aad) => [aad.groupId, aad.epoch, aad.contentType] as const,
 )
-
-export const encodeSenderDataAAD: Encoder<SenderDataAAD> = encode(senderDataAADEncoder)
 
 export const decodeSenderDataAAD: Decoder<SenderDataAAD> = mapDecoders(
   [decodeVarLenData, decodeUint64, decodeContentType],

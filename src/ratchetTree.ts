@@ -1,4 +1,4 @@
-import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
+import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
 import { decodeVarLenType, varLenTypeEncoder } from "./codec/variableLength.js"
@@ -48,8 +48,6 @@ export const nodeEncoder: BufferEncoder<Node> = (node) => {
       )(node)
   }
 }
-
-export const encodeNode: Encoder<Node> = encode(nodeEncoder)
 
 export const decodeNode: Decoder<Node> = flatMapDecoder(decodeNodeType, (nodeType): Decoder<Node> => {
   switch (nodeType) {
@@ -125,8 +123,6 @@ export const ratchetTreeEncoder: BufferEncoder<RatchetTree> = contramapBufferEnc
   varLenTypeEncoder(optionalEncoder(nodeEncoder)),
   stripBlankNodes,
 )
-
-export const encodeRatchetTree: Encoder<RatchetTree> = encode(ratchetTreeEncoder)
 
 export const decodeRatchetTree: Decoder<RatchetTree> = mapDecoder(
   decodeVarLenType(decodeOptional(decodeNode)),
@@ -333,7 +329,7 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | un
     if (isLeaf(toNodeIndex(nodeIndex)) && node !== undefined) {
       if (node.nodeType === nodeTypes.parent) throw new InternalError("Found parent node in leaf node position")
       //todo is there a better (faster) comparison method?
-      return constantTimeEqual(encode(leafNodeEncoder)(node.leaf), encode(leafNodeEncoder)(leaf))
+      return constantTimeEqual(encode(leafNodeEncoder, node.leaf), encode(leafNodeEncoder, leaf))
     }
 
     return false

@@ -1,13 +1,6 @@
-import {
-  encodeUint8,
-  encodeUint16,
-  decodeUint8,
-  decodeUint16,
-  encodeUint32,
-  decodeUint32,
-  encodeUint64,
-  decodeUint64,
-} from "../../src/codec/number.js"
+import { decodeUint8, decodeUint16, decodeUint32, decodeUint64 } from "../../src/codec/number.js"
+import { uint16Encoder, uint32Encoder, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
+import { encode } from "../../src/codec/tlsEncoder.js"
 
 test("encode and decode works for uint8: 0", () => {
   uint8RoundTrip(0)
@@ -74,7 +67,7 @@ test("decodeUint64 fails for an array that's too small", () => {
 })
 
 function uint8RoundTrip(num: number) {
-  const encoded = encodeUint8(num)
+  const encoded = encode(uint8Encoder, num)
 
   const decoded = decodeUint8(encoded, 0)
 
@@ -83,7 +76,7 @@ function uint8RoundTrip(num: number) {
 }
 
 function uint16RoundTrip(num: number) {
-  const encoded = encodeUint16(num)
+  const encoded = encode(uint16Encoder, num)
 
   const decoded = decodeUint16(encoded, 0)
 
@@ -92,7 +85,7 @@ function uint16RoundTrip(num: number) {
 }
 
 function uint32RoundTrip(num: number) {
-  const encoded = encodeUint32(num)
+  const encoded = encode(uint32Encoder, num)
 
   const decoded = decodeUint32(encoded, 0)
 
@@ -101,7 +94,7 @@ function uint32RoundTrip(num: number) {
 }
 
 function uint64RoundTrip(num: bigint) {
-  const encoded = encodeUint64(num)
+  const encoded = encode(uint64Encoder, num)
 
   const decoded = decodeUint64(encoded, 0)
 
