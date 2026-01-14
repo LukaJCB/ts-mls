@@ -1,8 +1,8 @@
 import { groupContextEncoder, decodeGroupContext, GroupContext } from "../../src/groupContext.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
-import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
+import { makeCustomExtension } from "../../src/extension.js"
 
 const minimalGroupContext: GroupContext = {
   version: protocolVersions.mls10,
@@ -21,7 +21,7 @@ const nontrivialGroupContext: GroupContext = {
   epoch: 42n,
   treeHash: new Uint8Array([4, 5]),
   confirmedTranscriptHash: new Uint8Array([6, 7]),
-  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([8, 9]) }],
+  extensions: [makeCustomExtension(91, new Uint8Array([0x11]))],
 }
 
 describe("GroupContext roundtrip", () => {

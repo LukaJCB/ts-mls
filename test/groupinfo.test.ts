@@ -5,6 +5,7 @@ import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/gr
 import { ed25519 } from "@noble/curves/ed25519.js"
 import { protocolVersions } from "../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../src/defaultExtensionType.js"
+import { makeCustomExtension } from "../src/extension.js"
 
 describe("GroupInfo signing and verification", () => {
   const privateKey = ed25519.utils.randomSecretKey()
@@ -17,12 +18,12 @@ describe("GroupInfo signing and verification", () => {
     epoch: BigInt(42),
     treeHash: new Uint8Array([0xaa]),
     confirmedTranscriptHash: new Uint8Array([0xbb]),
-    extensions: [{ extensionType: defaultExtensionTypes.application_id, extensionData: new Uint8Array([0x11]) }],
+    extensions: [makeCustomExtension(91, new Uint8Array([0x11]))],
   }
 
   const baseTBS: GroupInfoTBS = {
     groupContext,
-    extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([0x22]) }],
+    extensions: [{ extensionType: defaultExtensionTypes.external_pub, extensionData: new Uint8Array([0x22]) }],
     confirmationTag: new Uint8Array([0xcc]),
     signer: 7,
   }

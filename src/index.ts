@@ -136,6 +136,8 @@ export { type Lifetime, defaultLifetime } from "./lifetime.js"
 export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
 
+export { nodeTypes } from "./nodeType.js"
+
 export { type Decoder } from "./codec/tlsDecoder.js"
 export { type BufferEncoder, encode } from "./codec/tlsEncoder.js"
 

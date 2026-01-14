@@ -13,7 +13,7 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { ExternalSender, externalSenderEncoder } from "../../src/externalSender.js"
-import { CustomExtension } from "../../src/extension.js"
+import { GroupContextExtension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
@@ -52,7 +52,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     signaturePublicKey: charlie.publicPackage.leafNode.signaturePublicKey,
   }
 
-  const extension: CustomExtension = {
+  const extension: GroupContextExtension = {
     extensionType: defaultExtensionTypes.external_senders,
     extensionData: encode(externalSenderEncoder, externalSender),
   }

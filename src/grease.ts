@@ -29,7 +29,7 @@ export function greaseCredentials(greaseConfig: GreaseConfig): number[] {
 }
 
 export function greaseExtensions(greaseConfig: GreaseConfig): CustomExtension[] {
-  return grease(greaseConfig).map((n) => ({ extensionType: n, extensionData: new Uint8Array() }))
+  return grease(greaseConfig).map((n) => ({ extensionType: n, extensionData: new Uint8Array() }) as CustomExtension)
 }
 
 export function greaseCapabilities(config: GreaseConfig, capabilities: Capabilities): Capabilities {

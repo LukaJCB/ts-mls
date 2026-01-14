@@ -35,7 +35,7 @@ const nontrivialLeafNode: LeafNode = {
   },
   leafNodeSource: leafNodeSources.commit,
   parentHash: new Uint8Array([9, 10]),
-  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([11, 12]) }],
+  extensions: [{ extensionType: defaultExtensionTypes.application_id, extensionData: new Uint8Array([11, 12]) }],
   signature: new Uint8Array([13, 14]),
 }
 

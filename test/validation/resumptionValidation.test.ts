@@ -17,6 +17,7 @@ import { ValidationError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { makeCustomExtension } from "../../src/extension.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
   await reinitValidation(cs as CiphersuiteName)
@@ -167,7 +168,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     ...bobGroup,
     groupActiveState: {
       kind: "suspendedPendingReinit",
-      reinit: { ...reinit!, extensions: [{ extensionType: 17, extensionData: new Uint8Array([1]) }] },
+      reinit: { ...reinit!, extensions: [makeCustomExtension(17, new Uint8Array([1]))] },
     },
   }
 

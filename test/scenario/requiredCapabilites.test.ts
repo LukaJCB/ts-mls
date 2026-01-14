@@ -8,7 +8,7 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { CustomExtension } from "../../src/extension.js"
+import { GroupContextExtension } from "../../src/extension.js"
 import { RequiredCapabilities, requiredCapabilitiesEncoder } from "../../src/requiredCapabilities.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -46,7 +46,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const requiredCapabilitiesExtension: CustomExtension = {
+  const requiredCapabilitiesExtension: GroupContextExtension = {
     extensionType: defaultExtensionTypes.required_capabilities,
     extensionData: encode(requiredCapabilitiesEncoder, requiredCapabilities),
   }

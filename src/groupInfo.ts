@@ -5,7 +5,7 @@ import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncode
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { decodeExtension, extensionEncoder, ExtensionRatchetTree, GroupInfoExtension } from "./extension.js"
+import { extensionEncoder, ExtensionRatchetTree, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
 import { decodeGroupContext, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
 import { decodeRatchetTree, RatchetTree } from "./ratchetTree.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
@@ -25,7 +25,7 @@ export const groupInfoTBSEncoder: BufferEncoder<GroupInfoTBS> = contramapBufferE
 )
 
 export const decodeGroupInfoTBS: Decoder<GroupInfoTBS> = mapDecoders(
-  [decodeGroupContext, decodeVarLenType(decodeExtension), decodeVarLenData, decodeUint32],
+  [decodeGroupContext, decodeVarLenType(groupInfoExtensionDecoder), decodeVarLenData, decodeUint32],
   (groupContext, extensions, confirmationTag, signer) => ({
     groupContext,
     extensions,

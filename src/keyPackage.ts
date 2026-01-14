@@ -4,7 +4,7 @@ import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncode
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { extensionEncoder, CustomExtension, decodeExtension } from "./extension.js"
+import { extensionEncoder, CustomExtension, decodeCustomExtension } from "./extension.js"
 import {
   decodeProtocolVersion,
   protocolVersionEncoder,
@@ -50,7 +50,7 @@ export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
     decodeCiphersuite,
     decodeVarLenData,
     decodeLeafNodeKeyPackage,
-    decodeVarLenType(decodeExtension),
+    decodeVarLenType(decodeCustomExtension),
   ],
   (version, cipherSuite, initKey, leafNode, extensions) => ({
     version,

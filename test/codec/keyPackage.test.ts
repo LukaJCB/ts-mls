@@ -5,6 +5,7 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { makeCustomExtension } from "../../src/extension.js"
 
 const minimalKeyPackage: KeyPackage = {
   version: protocolVersions.mls10,
@@ -47,10 +48,10 @@ const nontrivialKeyPackage: KeyPackage = {
     },
     leafNodeSource: leafNodeSources.key_package,
     lifetime: { notBefore: 1n, notAfter: 2n },
-    extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([10, 11]) }],
+    extensions: [{ extensionType: defaultExtensionTypes.application_id, extensionData: new Uint8Array([10, 11]) }],
     signature: new Uint8Array([12, 13]),
   },
-  extensions: [{ extensionType: defaultExtensionTypes.ratchet_tree, extensionData: new Uint8Array([14, 15]) }],
+  extensions: [makeCustomExtension(100, new Uint8Array([14, 15]))],
   signature: new Uint8Array([16, 17]),
 }
 

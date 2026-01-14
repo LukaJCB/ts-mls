@@ -3,6 +3,7 @@ import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 import { BufferEncoder } from "./codec/tlsEncoder.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
+/** @public */
 export const nodeTypes = {
   leaf: 1,
   parent: 2,
