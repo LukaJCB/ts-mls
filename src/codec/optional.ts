@@ -1,8 +1,8 @@
 import { uint8Decoder } from "./number.js"
 import { Decoder } from "./tlsDecoder.js"
-import { BufferEncoder } from "./tlsEncoder.js"
+import { Encoder } from "./tlsEncoder.js"
 
-export function optionalEncoder<T>(encodeT: BufferEncoder<T>): BufferEncoder<T | undefined> {
+export function optionalEncoder<T>(encodeT: Encoder<T>): Encoder<T | undefined> {
   return (t) => {
     if (t) {
       const [len, write] = encodeT(t)

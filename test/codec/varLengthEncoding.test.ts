@@ -8,7 +8,7 @@ import {
   varLenTypeEncoder,
 } from "../../src/codec/variableLength.js"
 import { createRoundtripTest } from "./roundtrip.js"
-import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
+import { Encoder, encode } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
 import { uint64Decoder, uint8Decoder, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
 import { optionalDecoder, optionalEncoder } from "../../src/codec/optional.js"
@@ -117,6 +117,6 @@ test("varLenTypeDecoder doesn't work if underlying decoder doesn't work", () => 
 
 const varLenRoundtrip = createRoundtripTest(varLenDataEncoder, varLenDataDecoder)
 
-function arrayRoundtrip<T>(enc: BufferEncoder<T>, dec: Decoder<T>, ts: T[]) {
+function arrayRoundtrip<T>(enc: Encoder<T>, dec: Decoder<T>, ts: T[]) {
   return createRoundtripTest(varLenTypeEncoder(enc), varLenTypeDecoder(dec))(ts)
 }

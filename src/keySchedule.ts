@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, expandWithLabel, Kdf } from "./crypto/kdf.js"
@@ -18,7 +18,7 @@ export interface KeySchedule {
   initSecret: Uint8Array
 }
 
-export const keyScheduleEncoder: BufferEncoder<KeySchedule> = contramapBufferEncoders(
+export const keyScheduleEncoder: Encoder<KeySchedule> = contramapBufferEncoders(
   [
     varLenDataEncoder,
     varLenDataEncoder,

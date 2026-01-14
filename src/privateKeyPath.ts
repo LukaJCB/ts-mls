@@ -1,6 +1,6 @@
 import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import {
   numberRecordDecoder,
   varLenDataDecoder,
@@ -18,7 +18,7 @@ export interface PrivateKeyPath {
   privateKeys: Record<number, Uint8Array>
 }
 
-export const privateKeyPathEncoder: BufferEncoder<PrivateKeyPath> = contramapBufferEncoders(
+export const privateKeyPathEncoder: Encoder<PrivateKeyPath> = contramapBufferEncoders(
   [uint32Encoder, numberRecordEncoder(uint32Encoder, varLenDataEncoder)],
   (pkp) => [pkp.leafIndex, pkp.privateKeys] as const,
 )

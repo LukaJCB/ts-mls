@@ -1,6 +1,6 @@
 import { uint8Decoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { BufferEncoder } from "./codec/tlsEncoder.js"
+import { Encoder } from "./codec/tlsEncoder.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
 /** @public */
@@ -12,6 +12,6 @@ export const nodeTypes = {
 export type NodeTypeName = keyof typeof nodeTypes
 export type NodeTypeValue = (typeof nodeTypes)[NodeTypeName]
 
-export const nodeTypeEncoder: BufferEncoder<NodeTypeValue> = uint8Encoder
+export const nodeTypeEncoder: Encoder<NodeTypeValue> = uint8Encoder
 
 export const nodeTypeDecoder: Decoder<NodeTypeValue> = mapDecoderOption(uint8Decoder, numberToEnum(nodeTypes))

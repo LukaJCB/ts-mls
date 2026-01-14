@@ -2,9 +2,9 @@ import { CodecError } from "../mlsError.js"
 import { base64ToBytes, bytesToBase64 } from "../util/byteArray.js"
 import { uint64Decoder, uint64Encoder } from "./number.js"
 import { Decoder, mapDecoder, mapDecoders } from "./tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders } from "./tlsEncoder.js"
+import { Encoder, contramapBufferEncoder, contramapBufferEncoders } from "./tlsEncoder.js"
 
-export const varLenDataEncoder: BufferEncoder<Uint8Array> = (data) => {
+export const varLenDataEncoder: Encoder<Uint8Array> = (data) => {
   const [len, write] = lengthEncoder(data.length)
 
   return [
@@ -98,7 +98,7 @@ export const varLenDataDecoder: Decoder<Uint8Array> = (buf, offset) => {
   return [data, totalBytes]
 }
 
-export function varLenTypeEncoder<T>(enc: BufferEncoder<T>): BufferEncoder<T[]> {
+export function varLenTypeEncoder<T>(enc: Encoder<T>): Encoder<T[]> {
   return (data) => {
     let totalLength = 0
     let writeTotal = (_offset: number, _buffer: ArrayBuffer) => {}
@@ -146,7 +146,7 @@ export function varLenTypeDecoder<T>(dec: Decoder<T>): Decoder<T[]> {
   }
 }
 
-export function base64RecordEncoder<V>(valueEncoder: BufferEncoder<V>): BufferEncoder<Record<string, V>> {
+export function base64RecordEncoder<V>(valueEncoder: Encoder<V>): Encoder<Record<string, V>> {
   const entryEncoder = contramapBufferEncoders(
     [contramapBufferEncoder(varLenDataEncoder, base64ToBytes), valueEncoder],
     ([key, value]: [string, V]) => [key, value] as const,
@@ -171,9 +171,9 @@ export function base64RecordDecoder<V>(valueDecoder: Decoder<V>): Decoder<Record
 }
 
 export function numberRecordEncoder<V>(
-  numberEncoder: BufferEncoder<number>,
-  valueEncoder: BufferEncoder<V>,
-): BufferEncoder<Record<number, V>> {
+  numberEncoder: Encoder<number>,
+  valueEncoder: Encoder<V>,
+): Encoder<Record<number, V>> {
   const entryEncoder = contramapBufferEncoders(
     [numberEncoder, valueEncoder],
     ([key, value]: [number, V]) => [key, value] as const,
@@ -199,7 +199,7 @@ export function numberRecordDecoder<V>(
     },
   )
 }
-export function bigintMapEncoder<V>(valueEncoder: BufferEncoder<V>): BufferEncoder<Map<bigint, V>> {
+export function bigintMapEncoder<V>(valueEncoder: Encoder<V>): Encoder<Map<bigint, V>> {
   const entryEncoder = contramapBufferEncoders(
     [uint64Encoder, valueEncoder],
     ([key, value]: [bigint, V]) => [key, value] as const,

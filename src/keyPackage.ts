@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
@@ -32,7 +32,7 @@ export type KeyPackageTBS = {
   extensions: Extension[]
 }
 
-export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBufferEncoders(
+export const keyPackageTBSEncoder: Encoder<KeyPackageTBS> = contramapBufferEncoders(
   [protocolVersionEncoder, ciphersuiteEncoder, varLenDataEncoder, leafNodeEncoder, varLenTypeEncoder(extensionEncoder)],
   (keyPackageTBS) =>
     [
@@ -64,7 +64,7 @@ export const keyPackageTBSDecoder: Decoder<KeyPackageTBS> = mapDecoders(
 /** @public */
 export type KeyPackage = KeyPackageTBS & { signature: Uint8Array }
 
-export const keyPackageEncoder: BufferEncoder<KeyPackage> = contramapBufferEncoders(
+export const keyPackageEncoder: Encoder<KeyPackage> = contramapBufferEncoders(
   [keyPackageTBSEncoder, varLenDataEncoder],
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )

@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
@@ -35,7 +35,7 @@ export interface UpdatePathNode {
   encryptedPathSecret: HPKECiphertext[]
 }
 
-export const updatePathNodeEncoder: BufferEncoder<UpdatePathNode> = contramapBufferEncoders(
+export const updatePathNodeEncoder: Encoder<UpdatePathNode> = contramapBufferEncoders(
   [varLenDataEncoder, varLenTypeEncoder(hpkeCiphertextEncoder)],
   (node) => [node.hpkePublicKey, node.encryptedPathSecret] as const,
 )
@@ -51,7 +51,7 @@ export interface UpdatePath {
   nodes: UpdatePathNode[]
 }
 
-export const updatePathEncoder: BufferEncoder<UpdatePath> = contramapBufferEncoders(
+export const updatePathEncoder: Encoder<UpdatePath> = contramapBufferEncoders(
   [leafNodeEncoder, varLenTypeEncoder(updatePathNodeEncoder)],
   (path) => [path.leafNode, path.nodes] as const,
 )

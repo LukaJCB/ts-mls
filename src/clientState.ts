@@ -112,7 +112,7 @@ import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { externalSenderDecoder } from "./externalSender.js"
 import { arraysEqual } from "./util/array.js"
-import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 
 import { bigintMapEncoder, bigintMapDecoder, varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { groupActiveStateDecoder, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
@@ -138,7 +138,7 @@ export interface GroupState {
 }
 
 /** @public */
-export const groupStateEncoder: BufferEncoder<GroupState> = contramapBufferEncoders(
+export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
   [
     groupContextEncoder,
     keyScheduleEncoder,

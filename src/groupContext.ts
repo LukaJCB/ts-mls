@@ -1,6 +1,6 @@
 import { uint64Decoder, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 
@@ -20,7 +20,7 @@ export interface GroupContext {
   extensions: Extension[]
 }
 
-export const groupContextEncoder: BufferEncoder<GroupContext> = contramapBufferEncoders(
+export const groupContextEncoder: Encoder<GroupContext> = contramapBufferEncoders(
   [
     protocolVersionEncoder,
     ciphersuiteEncoder,

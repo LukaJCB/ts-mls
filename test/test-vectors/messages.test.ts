@@ -4,7 +4,7 @@ import { hexToBytes } from "@noble/ciphers/utils.js"
 import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
 import { commitDecoder, commitEncoder } from "../../src/commit.js"
 import { contentTypes } from "../../src/contentType.js"
-import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
+import { Encoder, encode } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
 import {
   addDecoder,
@@ -173,7 +173,7 @@ const groupContextExtension = createTest(
   "group_context_extensions_proposal",
 )
 
-function createTest<T>(enc: BufferEncoder<T>, dec: Decoder<T>, typeName: string): (s: string) => void {
+function createTest<T>(enc: Encoder<T>, dec: Decoder<T>, typeName: string): (s: string) => void {
   return (s) => {
     const inputBytes = hexToBytes(s)
     const decoded = dec(inputBytes, 0)

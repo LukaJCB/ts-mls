@@ -1,6 +1,6 @@
 import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { BufferEncoder } from "./codec/tlsEncoder.js"
+import { Encoder } from "./codec/tlsEncoder.js"
 
 /** @public */
 export const defaultProposalTypes = {
@@ -23,7 +23,7 @@ export function isDefaultProposalTypeValue(v: number): v is DefaultProposalTypeV
   return defaultProposalTypeValues.has(v)
 }
 
-export const defaultProposalTypeValueEncoder: BufferEncoder<DefaultProposalTypeValue> = uint16Encoder
+export const defaultProposalTypeValueEncoder: Encoder<DefaultProposalTypeValue> = uint16Encoder
 
 export const decodeDefaultProposalTypeValue: Decoder<DefaultProposalTypeValue> = mapDecoderOption(uint16Decoder, (v) =>
   defaultProposalTypeValues.has(v) ? (v as DefaultProposalTypeValue) : undefined,

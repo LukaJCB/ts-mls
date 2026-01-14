@@ -7,7 +7,7 @@ import {
   uint8Encoder,
 } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypeEncoder, contentTypeDecoder } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
@@ -27,7 +27,7 @@ export type SenderTypeName = keyof typeof senderTypes
 /** @public */
 export type SenderTypeValue = (typeof senderTypes)[SenderTypeName]
 
-export const senderTypeEncoder: BufferEncoder<SenderTypeValue> = uint8Encoder
+export const senderTypeEncoder: Encoder<SenderTypeValue> = uint8Encoder
 
 export const senderTypeDecoder: Decoder<SenderTypeValue> = mapDecoderOption(uint8Decoder, numberToEnum(senderTypes))
 
@@ -59,7 +59,7 @@ export interface SenderNewMemberCommit {
 /** @public */
 export type Sender = SenderMember | SenderNonMember
 
-export const senderEncoder: BufferEncoder<Sender> = (s) => {
+export const senderEncoder: Encoder<Sender> = (s) => {
   switch (s.senderType) {
     case senderTypes.member:
       return contramapBufferEncoders(
@@ -118,7 +118,7 @@ export interface SenderData {
 
 export type ReuseGuard = Uint8Array & { length: 4 }
 
-export const reuseGuardEncoder: BufferEncoder<ReuseGuard> = (g) => [
+export const reuseGuardEncoder: Encoder<ReuseGuard> = (g) => [
   4,
   (offset, buffer) => {
     const view = new Uint8Array(buffer, offset, 4)
@@ -130,7 +130,7 @@ export const reuseGuardDecoder: Decoder<ReuseGuard> = (b, offset) => {
   return [b.subarray(offset, offset + 4) as ReuseGuard, 4]
 }
 
-export const senderDataEncoder: BufferEncoder<SenderData> = contramapBufferEncoders(
+export const senderDataEncoder: Encoder<SenderData> = contramapBufferEncoders(
   [uint32Encoder, uint32Encoder, reuseGuardEncoder],
   (s) => [s.leafIndex, s.generation, s.reuseGuard] as const,
 )
@@ -150,7 +150,7 @@ export interface SenderDataAAD {
   contentType: ContentTypeValue
 }
 
-export const senderDataAADEncoder: BufferEncoder<SenderDataAAD> = contramapBufferEncoders(
+export const senderDataAADEncoder: Encoder<SenderDataAAD> = contramapBufferEncoders(
   [varLenDataEncoder, uint64Encoder, contentTypeEncoder],
   (aad) => [aad.groupId, aad.epoch, aad.contentType] as const,
 )

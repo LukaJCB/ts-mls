@@ -132,7 +132,7 @@ export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
 
 export { type Decoder, decode } from "./codec/tlsDecoder.js"
-export { type BufferEncoder, encode } from "./codec/tlsEncoder.js"
+export { type Encoder as BufferEncoder, encode } from "./codec/tlsEncoder.js"
 
 export { type Brand } from "./util/brand.js"
 
