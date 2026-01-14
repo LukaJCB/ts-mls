@@ -2,7 +2,7 @@ import { uint64Decoder, uint8Decoder, uint64Encoder, uint8Encoder } from "../../
 import { optionalDecoder, optionalEncoder } from "../../src/codec/optional.js"
 import { randomBytes } from "@noble/hashes/utils.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
-import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
+import { Encoder, encode } from "../../src/codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "../../src/codec/variableLength.js"
 
 test("optional codec should return single 0 byte", () => {
@@ -38,7 +38,7 @@ test("optional codec roundtrip randomBytes(500)", () => {
   optionalRoundTrip(randomBytes(500), varLenDataEncoder, varLenDataDecoder)
 })
 
-function optionalRoundTrip<T>(t: T, enc: BufferEncoder<T>, dec: Decoder<T>) {
+function optionalRoundTrip<T>(t: T, enc: Encoder<T>, dec: Decoder<T>) {
   const encodedOptional = encode(optionalEncoder(enc), t)
   const encoded = encode(enc, t)
 

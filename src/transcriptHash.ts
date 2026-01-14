@@ -1,5 +1,5 @@
 import { Decoder, mapDecodersOption } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { framedContentDecoder, FramedContentCommit, framedContentEncoder } from "./framedContent.js"
@@ -12,7 +12,7 @@ export interface ConfirmedTranscriptHashInput {
   signature: Uint8Array
 }
 
-export const confirmedTranscriptHashInputEncoder: BufferEncoder<ConfirmedTranscriptHashInput> = contramapBufferEncoders(
+export const confirmedTranscriptHashInputEncoder: Encoder<ConfirmedTranscriptHashInput> = contramapBufferEncoders(
   [wireformatEncoder, framedContentEncoder, varLenDataEncoder],
   (input) => [input.wireformat, input.content, input.signature] as const,
 )

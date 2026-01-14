@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { PublicKey, Hpke, encryptWithLabel, PrivateKey, decryptWithLabel } from "./crypto/hpke.js"
@@ -16,7 +16,7 @@ export interface EncryptedGroupSecrets {
   encryptedGroupSecrets: HPKECiphertext
 }
 
-export const encryptedGroupSecretsEncoder: BufferEncoder<EncryptedGroupSecrets> = contramapBufferEncoders(
+export const encryptedGroupSecretsEncoder: Encoder<EncryptedGroupSecrets> = contramapBufferEncoders(
   [varLenDataEncoder, hpkeCiphertextEncoder],
   (egs) => [egs.newMember, egs.encryptedGroupSecrets] as const,
 )
@@ -33,7 +33,7 @@ export interface Welcome {
   encryptedGroupInfo: Uint8Array
 }
 
-export const welcomeEncoder: BufferEncoder<Welcome> = contramapBufferEncoders(
+export const welcomeEncoder: Encoder<Welcome> = contramapBufferEncoders(
   [ciphersuiteEncoder, varLenTypeEncoder(encryptedGroupSecretsEncoder), varLenDataEncoder],
   (welcome) => [welcome.cipherSuite, welcome.secrets, welcome.encryptedGroupInfo] as const,
 )

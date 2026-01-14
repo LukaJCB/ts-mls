@@ -1,7 +1,7 @@
 import { Decoder } from "../../src/codec/tlsDecoder.js"
-import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
+import { Encoder, encode } from "../../src/codec/tlsEncoder.js"
 
-export function createRoundtripTest<T>(enc: BufferEncoder<T>, dec: Decoder<T>): (t: T) => void {
+export function createRoundtripTest<T>(enc: Encoder<T>, dec: Decoder<T>): (t: T) => void {
   return (t) => {
     const encoded = encode(enc, t)
 
@@ -11,6 +11,6 @@ export function createRoundtripTest<T>(enc: BufferEncoder<T>, dec: Decoder<T>): 
   }
 }
 
-export function createRoundtripTestBufferEncoder<T>(enc: BufferEncoder<T>, dec: Decoder<T>): (t: T) => void {
+export function createRoundtripTestBufferEncoder<T>(enc: Encoder<T>, dec: Decoder<T>): (t: T) => void {
   return createRoundtripTest(enc, dec)
 }

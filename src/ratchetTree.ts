@@ -1,4 +1,4 @@
-import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
 import { varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
@@ -34,7 +34,7 @@ export type NodeParent = { nodeType: typeof nodeTypes.parent; parent: ParentNode
 /** @public */
 export type NodeLeaf = { nodeType: typeof nodeTypes.leaf; leaf: LeafNode }
 
-export const nodeEncoder: BufferEncoder<Node> = (node) => {
+export const nodeEncoder: Encoder<Node> = (node) => {
   switch (node.nodeType) {
     case nodeTypes.parent:
       return contramapBufferEncoders(
@@ -119,7 +119,7 @@ export function stripBlankNodes(tree: RatchetTree): RatchetTree {
   return tree.slice(0, lastNonBlank + 1)
 }
 
-export const ratchetTreeEncoder: BufferEncoder<RatchetTree> = contramapBufferEncoder(
+export const ratchetTreeEncoder: Encoder<RatchetTree> = contramapBufferEncoder(
   varLenTypeEncoder(optionalEncoder(nodeEncoder)),
   stripBlankNodes,
 )

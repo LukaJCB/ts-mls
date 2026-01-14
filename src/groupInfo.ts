@@ -1,6 +1,6 @@
 import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
@@ -19,7 +19,7 @@ export interface GroupInfoTBS {
   signer: number
 }
 
-export const groupInfoTBSEncoder: BufferEncoder<GroupInfoTBS> = contramapBufferEncoders(
+export const groupInfoTBSEncoder: Encoder<GroupInfoTBS> = contramapBufferEncoders(
   [groupContextEncoder, varLenTypeEncoder(extensionEncoder), varLenDataEncoder, uint32Encoder],
   (g) => [g.groupContext, g.extensions, g.confirmationTag, g.signer] as const,
 )
@@ -39,7 +39,7 @@ export type GroupInfo = GroupInfoTBS & {
   signature: Uint8Array
 }
 
-export const groupInfoEncoder: BufferEncoder<GroupInfo> = contramapBufferEncoders(
+export const groupInfoEncoder: Encoder<GroupInfo> = contramapBufferEncoders(
   [groupInfoTBSEncoder, varLenDataEncoder],
   (g) => [g, g.signature] as const,
 )

@@ -1,7 +1,7 @@
 import { uint32Encoder, uint32Decoder } from "./codec/number.js"
 import { optionalEncoder, optionalDecoder } from "./codec/optional.js"
 import { Decoder, mapDecoders, flatMapDecoder } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, varLenDataDecoder } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { LeafNode, leafNodeEncoder, leafNodeDecoder } from "./leafNode.js"
@@ -24,7 +24,7 @@ type ParentNodeHashInput = {
   rightHash: Uint8Array
 }
 
-export const leafNodeHashInputEncoder: BufferEncoder<LeafNodeHashInput> = contramapBufferEncoders(
+export const leafNodeHashInputEncoder: Encoder<LeafNodeHashInput> = contramapBufferEncoders(
   [nodeTypeEncoder, uint32Encoder, optionalEncoder(leafNodeEncoder)],
   (input) => [input.nodeType, input.leafIndex, input.leafNode] as const,
 )
@@ -38,7 +38,7 @@ export const leafNodeHashInputDecoder: Decoder<LeafNodeHashInput> = mapDecoders(
   }),
 )
 
-export const parentNodeHashInputEncoder: BufferEncoder<ParentNodeHashInput> = contramapBufferEncoders(
+export const parentNodeHashInputEncoder: Encoder<ParentNodeHashInput> = contramapBufferEncoders(
   [nodeTypeEncoder, optionalEncoder(parentNodeEncoder), varLenDataEncoder, varLenDataEncoder],
   (input) => [input.nodeType, input.parentNode, input.leftHash, input.rightHash] as const,
 )
@@ -53,7 +53,7 @@ export const parentNodeHashInputDecoder: Decoder<ParentNodeHashInput> = mapDecod
   }),
 )
 
-export const treeHashInputEncoder: BufferEncoder<TreeHashInput> = (input) => {
+export const treeHashInputEncoder: Encoder<TreeHashInput> = (input) => {
   switch (input.nodeType) {
     case nodeTypes.leaf:
       return leafNodeHashInputEncoder(input)

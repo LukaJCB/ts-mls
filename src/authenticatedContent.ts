@@ -1,5 +1,5 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import {
   framedContentDecoder,
@@ -30,7 +30,7 @@ export type AuthenticatedContentProposalOrCommit = AuthenticatedContent & {
   content: (FramedContentProposalData | FramedContentCommitData) & FramedContentData
 }
 
-export const authenticatedContentEncoder: BufferEncoder<AuthenticatedContent> = contramapBufferEncoders(
+export const authenticatedContentEncoder: Encoder<AuthenticatedContent> = contramapBufferEncoders(
   [wireformatEncoder, framedContentEncoder, framedContentAuthDataEncoder],
   (a) => [a.wireformat, a.content, a.auth] as const,
 )
@@ -53,7 +53,7 @@ export interface AuthenticatedContentTBM {
   auth: FramedContentAuthData
 }
 
-const authenticatedContentTBMEncoder: BufferEncoder<AuthenticatedContentTBM> = contramapBufferEncoders(
+const authenticatedContentTBMEncoder: Encoder<AuthenticatedContentTBM> = contramapBufferEncoders(
   [framedContentTBSEncoder, framedContentAuthDataEncoder],
   (t) => [t.contentTbs, t.auth] as const,
 )

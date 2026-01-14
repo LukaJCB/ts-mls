@@ -1,6 +1,6 @@
 import { stringEncoder, stringDecoder } from "./codec/string.js"
 import { Decoder, flatMapDecoder, succeedDecoder, mapDecoder, failDecoder } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Reinit, reinitEncoder, reinitDecoder } from "./proposal.js"
 
 /** @public */
@@ -8,15 +8,15 @@ export type GroupActiveState =
   | { kind: "active" }
   | { kind: "suspendedPendingReinit"; reinit: Reinit }
   | { kind: "removedFromGroup" }
-const activeEncoder: BufferEncoder<GroupActiveState> = contramapBufferEncoder(stringEncoder, () => "active")
-const suspendedPendingReinitEncoder: BufferEncoder<{ kind: "suspendedPendingReinit"; reinit: Reinit }> =
+const activeEncoder: Encoder<GroupActiveState> = contramapBufferEncoder(stringEncoder, () => "active")
+const suspendedPendingReinitEncoder: Encoder<{ kind: "suspendedPendingReinit"; reinit: Reinit }> =
   contramapBufferEncoders([stringEncoder, reinitEncoder], (s) => ["suspendedPendingReinit", s.reinit] as const)
-const removedFromGroupEncoder: BufferEncoder<GroupActiveState> = contramapBufferEncoder(
+const removedFromGroupEncoder: Encoder<GroupActiveState> = contramapBufferEncoder(
   stringEncoder,
   () => "removedFromGroup",
 )
 
-export const groupActiveStateEncoder: BufferEncoder<GroupActiveState> = (state) => {
+export const groupActiveStateEncoder: Encoder<GroupActiveState> = (state) => {
   switch (state.kind) {
     case "active":
       return activeEncoder(state)

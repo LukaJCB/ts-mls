@@ -1,7 +1,7 @@
 import { AuthenticatedContent } from "./authenticatedContent.js"
 import { uint64Decoder, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { commitDecoder, commitEncoder } from "./commit.js"
 import { ContentTypeValue, contentTypes, contentTypeEncoder, contentTypeDecoder } from "./contentType.js"
@@ -39,7 +39,7 @@ export interface PrivateMessage {
   ciphertext: Uint8Array
 }
 
-export const privateMessageEncoder: BufferEncoder<PrivateMessage> = contramapBufferEncoders(
+export const privateMessageEncoder: Encoder<PrivateMessage> = contramapBufferEncoders(
   [varLenDataEncoder, uint64Encoder, contentTypeEncoder, varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
   (msg) =>
     [msg.groupId, msg.epoch, msg.contentType, msg.authenticatedData, msg.encryptedSenderData, msg.ciphertext] as const,
@@ -64,7 +64,7 @@ export interface PrivateContentAAD {
   authenticatedData: Uint8Array
 }
 
-export const privateContentAADEncoder: BufferEncoder<PrivateContentAAD> = contramapBufferEncoders(
+export const privateContentAADEncoder: Encoder<PrivateContentAAD> = contramapBufferEncoders(
   [varLenDataEncoder, uint64Encoder, contentTypeEncoder, varLenDataEncoder],
   (aad) => [aad.groupId, aad.epoch, aad.contentType, aad.authenticatedData] as const,
 )
@@ -124,7 +124,7 @@ export function privateMessageContentDecoder(contentType: ContentTypeValue): Dec
   }
 }
 
-export function privateMessageContentEncoder(config: PaddingConfig): BufferEncoder<PrivateMessageContent> {
+export function privateMessageContentEncoder(config: PaddingConfig): Encoder<PrivateMessageContent> {
   return (msg) => {
     switch (msg.contentType) {
       case contentTypes.application:
@@ -209,7 +209,7 @@ export function toAuthenticatedContent(
   }
 }
 
-function encoderWithPadding<T>(encoder: BufferEncoder<T>, config: PaddingConfig): BufferEncoder<T> {
+function encoderWithPadding<T>(encoder: Encoder<T>, config: PaddingConfig): Encoder<T> {
   return (t) => {
     const [len, write] = encoder(t)
     const totalLength = len + byteLengthToPad(len, config)

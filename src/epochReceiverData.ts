@@ -1,5 +1,5 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, varLenDataDecoder } from "./codec/variableLength.js"
 import { GroupContext, groupContextEncoder, groupContextDecoder } from "./groupContext.js"
 import { RatchetTree, ratchetTreeEncoder, ratchetTreeDecoder } from "./ratchetTree.js"
@@ -18,7 +18,7 @@ export interface EpochReceiverData {
   groupContext: GroupContext
 }
 
-export const epochReceiverDataEncoder: BufferEncoder<EpochReceiverData> = contramapBufferEncoders(
+export const epochReceiverDataEncoder: Encoder<EpochReceiverData> = contramapBufferEncoders(
   [varLenDataEncoder, secretTreeEncoder, ratchetTreeEncoder, varLenDataEncoder, groupContextEncoder],
   (erd) => [erd.resumptionPsk, erd.secretTree, erd.ratchetTree, erd.senderDataSecret, erd.groupContext] as const,
 )

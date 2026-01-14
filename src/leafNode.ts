@@ -1,7 +1,7 @@
 import { Capabilities, capabilitiesEncoder, capabilitiesDecoder } from "./capabilities.js"
 import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders, flatMapDecoder, mapDecoderOption, mapDecoder } from "./codec/tlsDecoder.js"
-import { BufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, varLenDataDecoder, varLenTypeEncoder, varLenTypeDecoder } from "./codec/variableLength.js"
 import { credentialEncoder, credentialDecoder, Credential } from "./credential.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
@@ -17,7 +17,7 @@ export interface LeafNodeData {
   capabilities: Capabilities
 }
 
-export const leafNodeDataEncoder: BufferEncoder<LeafNodeData> = contramapBufferEncoders(
+export const leafNodeDataEncoder: Encoder<LeafNodeData> = contramapBufferEncoders(
   [varLenDataEncoder, varLenDataEncoder, credentialEncoder, capabilitiesEncoder],
   (data) => [data.hpkePublicKey, data.signaturePublicKey, data.credential, data.capabilities] as const,
 )
@@ -55,22 +55,22 @@ export interface LeafNodeInfoKeyPackage {
   extensions: Extension[]
 }
 
-export const leafNodeInfoKeyPackageEncoder: BufferEncoder<LeafNodeInfoKeyPackage> = contramapBufferEncoders(
+export const leafNodeInfoKeyPackageEncoder: Encoder<LeafNodeInfoKeyPackage> = contramapBufferEncoders(
   [leafNodeSourceValueEncoder, lifetimeEncoder, varLenTypeEncoder(extensionEncoder)],
   (info) => [leafNodeSources.key_package, info.lifetime, info.extensions] as const,
 )
 
-export const leafNodeInfoUpdateOmittedEncoder: BufferEncoder<LeafNodeInfoUpdateOmitted> = contramapBufferEncoders(
+export const leafNodeInfoUpdateOmittedEncoder: Encoder<LeafNodeInfoUpdateOmitted> = contramapBufferEncoders(
   [leafNodeSourceValueEncoder, varLenTypeEncoder(extensionEncoder)],
   (i) => [i.leafNodeSource, i.extensions] as const,
 )
 
-export const leafNodeInfoCommitOmittedEncoder: BufferEncoder<LeafNodeInfoCommitOmitted> = contramapBufferEncoders(
+export const leafNodeInfoCommitOmittedEncoder: Encoder<LeafNodeInfoCommitOmitted> = contramapBufferEncoders(
   [leafNodeSourceValueEncoder, varLenDataEncoder, varLenTypeEncoder(extensionEncoder)],
   (info) => [info.leafNodeSource, info.parentHash, info.extensions] as const,
 )
 
-export const leafNodeInfoOmittedEncoder: BufferEncoder<LeafNodeInfoOmitted> = (info) => {
+export const leafNodeInfoOmittedEncoder: Encoder<LeafNodeInfoOmitted> = (info) => {
   switch (info.leafNodeSource) {
     case leafNodeSources.key_package:
       return leafNodeInfoKeyPackageEncoder(info)
@@ -132,17 +132,17 @@ export type LeafNodeInfoCommit = LeafNodeInfoCommitOmitted & {
   leafIndex: number
 }
 
-export const leafNodeInfoUpdateEncoder: BufferEncoder<LeafNodeInfoUpdate> = contramapBufferEncoders(
+export const leafNodeInfoUpdateEncoder: Encoder<LeafNodeInfoUpdate> = contramapBufferEncoders(
   [leafNodeInfoUpdateOmittedEncoder, varLenDataEncoder, uint32Encoder],
   (i) => [i, i.groupId, i.leafIndex] as const,
 )
 
-export const leafNodeInfoCommitEncoder: BufferEncoder<LeafNodeInfoCommit> = contramapBufferEncoders(
+export const leafNodeInfoCommitEncoder: Encoder<LeafNodeInfoCommit> = contramapBufferEncoders(
   [leafNodeInfoCommitOmittedEncoder, varLenDataEncoder, uint32Encoder],
   (info) => [info, info.groupId, info.leafIndex] as const,
 )
 
-export const leafNodeInfoEncoder: BufferEncoder<LeafNodeInfo> = (info) => {
+export const leafNodeInfoEncoder: Encoder<LeafNodeInfo> = (info) => {
   switch (info.leafNodeSource) {
     case leafNodeSources.key_package:
       return leafNodeInfoKeyPackageEncoder(info)
@@ -177,7 +177,7 @@ export type LeafNodeTBSCommit = LeafNodeData & LeafNodeInfoCommit
 
 export type LeafNodeTBSKeyPackage = LeafNodeData & LeafNodeInfoKeyPackage
 
-export const leafNodeTBSEncoder: BufferEncoder<LeafNodeTBS> = contramapBufferEncoders(
+export const leafNodeTBSEncoder: Encoder<LeafNodeTBS> = contramapBufferEncoders(
   [leafNodeDataEncoder, leafNodeInfoEncoder],
   (tbs) => [tbs, tbs] as const,
 )
@@ -185,7 +185,7 @@ export const leafNodeTBSEncoder: BufferEncoder<LeafNodeTBS> = contramapBufferEnc
 /** @public */
 export type LeafNode = LeafNodeData & LeafNodeInfoOmitted & { signature: Uint8Array }
 
-export const leafNodeEncoder: BufferEncoder<LeafNode> = contramapBufferEncoders(
+export const leafNodeEncoder: Encoder<LeafNode> = contramapBufferEncoders(
   [leafNodeDataEncoder, leafNodeInfoOmittedEncoder, varLenDataEncoder],
   (leafNode) => [leafNode, leafNode, leafNode.signature] as const,
 )

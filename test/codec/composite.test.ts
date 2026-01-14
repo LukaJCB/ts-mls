@@ -8,7 +8,7 @@ import {
   uint8Encoder,
 } from "../../src/codec/number.js"
 import { Decoder, mapDecoders } from "../../src/codec/tlsDecoder.js"
-import { BufferEncoder, composeBufferEncoders, encode } from "../../src/codec/tlsEncoder.js"
+import { Encoder, composeBufferEncoders, encode } from "../../src/codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "../../src/codec/variableLength.js"
 import { optionalDecoder, optionalEncoder } from "../../src/codec/optional.js"
 
@@ -140,14 +140,7 @@ test("composite codec roundtrip [randomBytes(999), randomBytes(999), undefined, 
   )
 })
 
-function compositeRoundTrip<T, U>(
-  t: T,
-  u: U,
-  encT: BufferEncoder<T>,
-  decT: Decoder<T>,
-  encU: BufferEncoder<U>,
-  decU: Decoder<U>,
-) {
+function compositeRoundTrip<T, U>(t: T, u: U, encT: Encoder<T>, decT: Decoder<T>, encU: Encoder<U>, decU: Decoder<U>) {
   const encoder = composeBufferEncoders([encT, encU])
   const decoder = mapDecoders([decT, decU], (t, u) => [t, u] as const)
   const encoded = encode(encoder, [t, u])
@@ -161,11 +154,11 @@ function compositeRoundTrip3<T, U, V>(
   t: T,
   u: U,
   v: V,
-  encT: BufferEncoder<T>,
+  encT: Encoder<T>,
   decT: Decoder<T>,
-  encU: BufferEncoder<U>,
+  encU: Encoder<U>,
   decU: Decoder<U>,
-  encV: BufferEncoder<V>,
+  encV: Encoder<V>,
   decV: Decoder<V>,
 ) {
   const encoder = composeBufferEncoders([encT, encU, encV])
@@ -182,13 +175,13 @@ function compositeRoundTrip4<T, U, V, W>(
   u: U,
   v: V,
   w: W,
-  encT: BufferEncoder<T>,
+  encT: Encoder<T>,
   decT: Decoder<T>,
-  encU: BufferEncoder<U>,
+  encU: Encoder<U>,
   decU: Decoder<U>,
-  encV: BufferEncoder<V>,
+  encV: Encoder<V>,
   decV: Decoder<V>,
-  encW: BufferEncoder<W>,
+  encW: Encoder<W>,
   decW: Decoder<W>,
 ) {
   const encoder = composeBufferEncoders([encT, encU, encV, encW])
