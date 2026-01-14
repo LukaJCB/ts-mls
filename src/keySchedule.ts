@@ -8,9 +8,7 @@ import { extractWelcomeSecret } from "./groupInfo.js"
 
 /** @public */
 export interface KeySchedule {
-  // epochSecret: Uint8Array
   senderDataSecret: Uint8Array
-  // encryptionSecret: Uint8Array
   exporterSecret: Uint8Array
   externalSecret: Uint8Array
   confirmationKey: Uint8Array
@@ -20,11 +18,8 @@ export interface KeySchedule {
   initSecret: Uint8Array
 }
 
-//TODO remove 2 arrays here once we break compatability
 export const keyScheduleEncoder: Encoder<KeySchedule> = contramapBufferEncoders(
   [
-    varLenDataEncoder,
-    varLenDataEncoder,
     varLenDataEncoder,
     varLenDataEncoder,
     varLenDataEncoder,
@@ -36,9 +31,7 @@ export const keyScheduleEncoder: Encoder<KeySchedule> = contramapBufferEncoders(
   ],
   (ks) =>
     [
-      new Uint8Array(),
       ks.senderDataSecret,
-      new Uint8Array(),
       ks.exporterSecret,
       ks.externalSecret,
       ks.confirmationKey,
@@ -59,13 +52,9 @@ export const keyScheduleDecoder: Decoder<KeySchedule> = mapDecoders(
     varLenDataDecoder,
     varLenDataDecoder,
     varLenDataDecoder,
-    varLenDataDecoder,
-    varLenDataDecoder,
   ],
   (
-    _epochSecret,
     senderDataSecret,
-    _encryptionSecret,
     exporterSecret,
     externalSecret,
     confirmationKey,
