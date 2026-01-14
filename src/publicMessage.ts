@@ -1,8 +1,8 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, BufferEncoder, encVoid } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
-import { Extension } from "./extension.js"
-import { decodeExternalSender, ExternalSender } from "./externalSender.js"
+import { ExtensionExternalSenders, GroupContextExtension } from "./extension.js"
+import { ExternalSender } from "./externalSender.js"
 import {
   decodeFramedContent,
   decodeFramedContentAuthData,
@@ -12,7 +12,7 @@ import {
   FramedContentAuthData,
 } from "./framedContent.js"
 import { GroupContext } from "./groupContext.js"
-import { CodecError, ValidationError } from "./mlsError.js"
+import { ValidationError } from "./mlsError.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
@@ -106,17 +106,16 @@ export function findSignaturePublicKey(
   }
 }
 
-export function senderFromExtension(extensions: Extension[], senderIndex: number): ExternalSender | undefined {
+export function senderFromExtension(extensions: GroupContextExtension[], senderIndex: number): ExternalSender | undefined {
   const externalSenderExtensions = extensions.filter(
-    (ex) => ex.extensionType === defaultExtensionTypes.external_senders,
+    (ex): ex is ExtensionExternalSenders => ex.extensionType === defaultExtensionTypes.external_senders,
   )
 
   const externalSenderExtension = externalSenderExtensions[senderIndex]
 
   if (externalSenderExtension !== undefined) {
-    const externalSender = decodeExternalSender(externalSenderExtension.extensionData, 0)
-    if (externalSender === undefined) throw new CodecError("Could not decode ExternalSender")
+    const externalSender = externalSenderExtension.extensionData
 
-    return externalSender[0]
+    return externalSender
   }
 }

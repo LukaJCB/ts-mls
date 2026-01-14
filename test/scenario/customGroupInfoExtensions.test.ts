@@ -8,7 +8,7 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension } from "../../src/extension.js"
+import { CustomExtension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
@@ -40,7 +40,7 @@ async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
 
   const extensionData = new TextEncoder().encode("custom extension data")
 
-  const customExtension: Extension = {
+  const customExtension: CustomExtension = {
     extensionType: customExtensionType,
     extensionData: extensionData,
   }

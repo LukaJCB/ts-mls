@@ -58,7 +58,7 @@ import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
-import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
+import { CustomExtension, ExtensionExternalPub, extensionsSupportedByCapabilities, GroupInfoExtension } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
 import { wireformats } from "./wireformat.js"
@@ -83,7 +83,7 @@ export interface CreateCommitOptions {
   wireAsPublicMessage?: boolean
   extraProposals?: Proposal[]
   ratchetTreeExtension?: boolean
-  groupInfoExtensions?: Extension[]
+  groupInfoExtensions?: GroupInfoExtension[]
   authenticatedData?: Uint8Array
 }
 
@@ -266,7 +266,7 @@ async function createWelcome(
   epochSecrets: EpochSecrets,
   res: ApplyProposalsResult,
   pathSecrets: PathSecret[],
-  extensions: Extension[],
+  extensions: GroupInfoExtension[],
 ): Promise<Welcome | undefined> {
   const groupInfo = ratchetTreeExtension
     ? await createGroupInfoWithRatchetTree(groupContext, confirmationTag, state, tree, extensions, cs)
@@ -332,7 +332,7 @@ async function createGroupInfo(
   groupContext: GroupContext,
   confirmationTag: Uint8Array,
   state: ClientState,
-  extensions: Extension[],
+  extensions: GroupInfoExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const groupInfoTbs: GroupInfoTBS = {
@@ -350,16 +350,15 @@ async function createGroupInfoWithRatchetTree(
   confirmationTag: Uint8Array,
   state: ClientState,
   tree: RatchetTree,
-  extensions: Extension[],
+  extensions: GroupInfoExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const encodedTree = encode(ratchetTreeEncoder, tree)
-
+ 
   const gi = await createGroupInfo(
     groupContext,
     confirmationTag,
     state,
-    [...extensions, { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encodedTree }],
+    [...extensions,  { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: tree }],
     cs,
   )
 
@@ -369,7 +368,7 @@ async function createGroupInfoWithRatchetTree(
 /** @public */
 export async function createGroupInfoWithExternalPub(
   state: ClientState,
-  extensions: Extension[],
+  extensions: CustomExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
@@ -389,7 +388,7 @@ export async function createGroupInfoWithExternalPub(
 /** @public */
 export async function createGroupInfoWithExternalPubAndRatchetTree(
   state: ClientState,
-  extensions: Extension[],
+  extensions: CustomExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const encodedTree = encode(ratchetTreeEncoder, state.ratchetTree)
@@ -511,7 +510,7 @@ export async function joinGroupExternal(
   clientConfig: ClientConfig = defaultClientConfig,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
-  const externalPub = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.external_pub)
+  const externalPub = groupInfo.extensions.find((ex): ex is ExtensionExternalPub => ex.extensionType === defaultExtensionTypes.external_pub)
 
   if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
 

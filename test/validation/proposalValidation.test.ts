@@ -15,7 +15,7 @@ import { AuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { createCustomCredential } from "../../src/customCredential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
-import { Extension } from "../../src/extension.js"
+import { CustomExtension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
 import { Capabilities } from "../../src/capabilities.js"
@@ -260,7 +260,7 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("george"),
     }
-    const georgeExtension: Extension = { extensionType: 8545, extensionData: new Uint8Array() }
+    const georgeExtension: CustomExtension = { extensionType: 8545, extensionData: new Uint8Array() }
     const george = await generateKeyPackage(georgeCredential, defaultCapabilities(), defaultLifetime, [], impl, [
       georgeExtension,
     ])
@@ -435,11 +435,11 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("helen"),
     }
-    const keyPackageExtension: Extension = {
+    const keyPackageExtension: CustomExtension = {
       extensionType: 1000,
       extensionData: new TextEncoder().encode("keyPackageData"),
     }
-    const leafNodeExtension: Extension = {
+    const leafNodeExtension: CustomExtension = {
       extensionType: 2000,
       extensionData: new TextEncoder().encode("leafNodeData"),
     }

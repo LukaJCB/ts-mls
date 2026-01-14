@@ -1,6 +1,6 @@
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
-import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
-import { decodeExternalSender } from "./externalSender.js"
+import { extensionsSupportedByCapabilities } from "./extension.js"
+import { ExternalSender } from "./externalSender.js"
 import { GroupInfo } from "./groupInfo.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { MLSMessage } from "./message.js"
@@ -59,13 +59,12 @@ export async function proposeExternal(
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MLSMessage> {
-  const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
+  const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex): boolean => {
     if (ex.extensionType !== defaultExtensionTypes.external_senders) return false
-    const decoded = decodeExternalSender(ex.extensionData, 0)
+    //todo can we do without the type assertion?
+    const decoded: ExternalSender = ex.extensionData as ExternalSender
 
-    if (decoded === undefined) throw new ValidationError("Could not decode external_sender extension")
-
-    return constantTimeEqual(decoded[0].signaturePublicKey, signaturePublicKey)
+    return constantTimeEqual(decoded.signaturePublicKey, signaturePublicKey)
   })
 
   if (externalSenderExtensionIndex === -1)

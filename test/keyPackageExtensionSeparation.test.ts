@@ -2,7 +2,7 @@ import { generateKeyPackage } from "../src/keyPackage.js"
 import { Credential } from "../src/credential.js"
 import { Capabilities } from "../src/capabilities.js"
 import { defaultLifetime } from "../src/lifetime.js"
-import { Extension } from "../src/extension.js"
+import { CustomExtension } from "../src/extension.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { defaultCapabilities } from "../src/defaultCapabilities.js"
@@ -22,11 +22,11 @@ async function keyPackageExtensionSeparationTest(cipherSuite: CiphersuiteName) {
   }
 
   // Define test extensions
-  const keyPackageExtension: Extension = {
+  const keyPackageExtension: CustomExtension = {
     extensionType: 1000,
     extensionData: new TextEncoder().encode("keyPackage-specific-data"),
   }
-  const leafNodeExtension: Extension = {
+  const leafNodeExtension: CustomExtension = {
     extensionType: 2000,
     extensionData: new TextEncoder().encode("leafNode-specific-data"),
   }

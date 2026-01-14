@@ -4,7 +4,7 @@ import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncode
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
+import { extensionEncoder, CustomExtension, decodeCustomExtension } from "./extension.js"
 import {
   decodeProtocolVersion,
   protocolVersionEncoder,
@@ -29,7 +29,7 @@ export type KeyPackageTBS = {
   cipherSuite: CiphersuiteId
   initKey: Uint8Array
   leafNode: LeafNodeKeyPackage
-  extensions: Extension[]
+  extensions: CustomExtension[]
 }
 
 export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBufferEncoders(
@@ -50,7 +50,7 @@ export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
     decodeCiphersuite,
     decodeVarLenData,
     decodeLeafNodeKeyPackage,
-    decodeVarLenType(decodeExtension),
+    decodeVarLenType(decodeCustomExtension),
   ],
   (version, cipherSuite, initKey, leafNode, extensions) => ({
     version,
@@ -107,10 +107,10 @@ export async function generateKeyPackageWithKey(
   credential: Credential,
   capabilities: Capabilities,
   lifetime: Lifetime,
-  extensions: Extension[],
+  extensions: CustomExtension[],
   signatureKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
   cs: CiphersuiteImpl,
-  leafNodeExtensions?: Extension[],
+  leafNodeExtensions?: CustomExtension[],
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
   const initKeys = await cs.hpke.generateKeyPair()
   const hpkeKeys = await cs.hpke.generateKeyPair()
@@ -147,9 +147,9 @@ export async function generateKeyPackage(
   credential: Credential,
   capabilities: Capabilities,
   lifetime: Lifetime,
-  extensions: Extension[],
+  extensions: CustomExtension[],
   cs: CiphersuiteImpl,
-  leafNodeExtensions?: Extension[],
+  leafNodeExtensions?: CustomExtension[],
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
   const sigKeys = await cs.signature.keygen()
   return generateKeyPackageWithKey(credential, capabilities, lifetime, extensions, sigKeys, cs, leafNodeExtensions)

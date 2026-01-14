@@ -12,8 +12,8 @@ import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { externalSenderEncoder, ExternalSender } from "../../src/externalSender.js"
-import { Extension } from "../../src/extension.js"
+import {  ExternalSender, externalSenderEncoder } from "../../src/externalSender.js"
+import { CustomExtension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
@@ -52,7 +52,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     signaturePublicKey: charlie.publicPackage.leafNode.signaturePublicKey,
   }
 
-  const extension: Extension = {
+  const extension: CustomExtension = {
     extensionType: defaultExtensionTypes.external_senders,
     extensionData: encode(externalSenderEncoder, externalSender),
   }

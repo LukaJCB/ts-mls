@@ -6,7 +6,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension } from "../../src/extension.js"
+import { CustomExtension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 
@@ -39,7 +39,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const extensionData = new TextEncoder().encode("custom extension data")
 
-  const customExtension: Extension = {
+  const customExtension: CustomExtension = {
     extensionType: customExtensionType,
     extensionData: extensionData,
   }

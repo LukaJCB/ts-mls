@@ -1,13 +1,13 @@
-import { Extension, extensionsEqual } from "../src/extension.js"
+import { CustomExtension, extensionsEqual } from "../src/extension.js"
 import { defaultExtensionTypes } from "../src/defaultExtensionType.js"
 
 describe("extensionsEqual", () => {
   test("should return true for identical extensions", () => {
-    const ext1: Extension = {
+    const ext1: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 3]),
     }
-    const ext2: Extension = {
+    const ext2: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 3]),
     }
@@ -16,11 +16,11 @@ describe("extensionsEqual", () => {
   })
 
   test("should return false for different extension types", () => {
-    const ext1: Extension = {
+    const ext1: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 3]),
     }
-    const ext2: Extension = {
+    const ext2: CustomExtension = {
       extensionType: defaultExtensionTypes.ratchet_tree,
       extensionData: new Uint8Array([1, 2, 3]),
     }
@@ -29,11 +29,11 @@ describe("extensionsEqual", () => {
   })
 
   test("should return false for different extension data", () => {
-    const ext1: Extension = {
+    const ext1: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 3]),
     }
-    const ext2: Extension = {
+    const ext2: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 4]),
     }
@@ -42,11 +42,11 @@ describe("extensionsEqual", () => {
   })
 
   test("should return false for different array lengths", () => {
-    const ext1: Extension = {
+    const ext1: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 3]),
     }
-    const ext2: Extension = {
+    const ext2: CustomExtension = {
       extensionType: defaultExtensionTypes.application_id,
       extensionData: new Uint8Array([1, 2, 3]),
     }

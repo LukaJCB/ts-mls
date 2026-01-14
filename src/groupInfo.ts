@@ -5,16 +5,15 @@ import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncode
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
+import { extensionEncoder, ExtensionRatchetTree, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
 import { decodeGroupContext, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
-import { CodecError } from "./mlsError.js"
-import { decodeRatchetTree, RatchetTree } from "./ratchetTree.js"
+import { RatchetTree } from "./ratchetTree.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
 
 /** @public */
 export interface GroupInfoTBS {
   groupContext: GroupContext
-  extensions: Extension[]
+  extensions: GroupInfoExtension[]
   confirmationTag: Uint8Array
   signer: number
 }
@@ -25,7 +24,7 @@ export const groupInfoTBSEncoder: BufferEncoder<GroupInfoTBS> = contramapBufferE
 )
 
 export const decodeGroupInfoTBS: Decoder<GroupInfoTBS> = mapDecoders(
-  [decodeGroupContext, decodeVarLenType(decodeExtension), decodeVarLenData, decodeUint32],
+  [decodeGroupContext, decodeVarLenType(groupInfoExtensionDecoder), decodeVarLenData, decodeUint32],
   (groupContext, extensions, confirmationTag, signer) => ({
     groupContext,
     extensions,
@@ -52,13 +51,12 @@ export const decodeGroupInfo: Decoder<GroupInfo> = mapDecoders(
   }),
 )
 
+
 export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefined {
-  const treeExtension = info.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
+  const treeExtension = info.extensions.find((ex): ex is ExtensionRatchetTree => ex.extensionType === defaultExtensionTypes.ratchet_tree)
 
   if (treeExtension !== undefined) {
-    const tree = decodeRatchetTree(treeExtension.extensionData, 0)
-    if (tree === undefined) throw new CodecError("Could not decode RatchetTree")
-    return tree[0]
+    return treeExtension.extensionData
   }
 }
 

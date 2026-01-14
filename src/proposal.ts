@@ -3,7 +3,7 @@ import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, orDecoder } from "./c
 import { contramapBufferEncoder, contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
 import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
-import { decodeExtension, extensionEncoder, Extension } from "./extension.js"
+import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
 import { decodeKeyPackage, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { decodePskId, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 import {
@@ -52,7 +52,7 @@ export interface Reinit {
   groupId: Uint8Array
   version: ProtocolVersionValue
   cipherSuite: CiphersuiteId
-  extensions: Extension[]
+  extensions: GroupContextExtension[]
 }
 
 export const reinitEncoder: BufferEncoder<Reinit> = contramapBufferEncoders(
@@ -61,7 +61,7 @@ export const reinitEncoder: BufferEncoder<Reinit> = contramapBufferEncoders(
 )
 
 export const decodeReinit: Decoder<Reinit> = mapDecoders(
-  [decodeVarLenData, decodeProtocolVersion, decodeCiphersuite, decodeVarLenType(decodeExtension)],
+  [decodeVarLenData, decodeProtocolVersion, decodeCiphersuite, decodeVarLenType(groupContextExtensionDecoder)],
   (groupId, version, cipherSuite, extensions) => ({ groupId, version, cipherSuite, extensions }),
 )
 
@@ -78,7 +78,7 @@ export const decodeExternalInit: Decoder<ExternalInit> = mapDecoder(decodeVarLen
 
 /** @public */
 export interface GroupContextExtensions {
-  extensions: Extension[]
+  extensions: GroupContextExtension[]
 }
 
 export const groupContextExtensionsEncoder: BufferEncoder<GroupContextExtensions> = contramapBufferEncoder(
@@ -87,7 +87,7 @@ export const groupContextExtensionsEncoder: BufferEncoder<GroupContextExtensions
 )
 
 export const decodeGroupContextExtensions: Decoder<GroupContextExtensions> = mapDecoder(
-  decodeVarLenType(decodeExtension),
+  decodeVarLenType(groupContextExtensionDecoder),
   (extensions) => ({ extensions }),
 )
 

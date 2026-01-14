@@ -9,7 +9,7 @@ import { ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension } from "../../src/extension.js"
+import { CustomExtension } from "../../src/extension.js"
 import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -42,7 +42,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const extensionData = new TextEncoder().encode("custom extension data")
 
-  const customExtension: Extension = {
+  const customExtension: CustomExtension = {
     extensionType: customExtensionType,
     extensionData: extensionData,
   }
