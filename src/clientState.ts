@@ -1,7 +1,15 @@
 import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
-import { ExtensionExternalSenders, ExtensionRequiredCapabilities, extensionsEqual, extensionsSupportedByCapabilities, GroupContextExtension, GroupInfoExtension } from "./extension.js"
+import {
+  decodeFully,
+  ExtensionExternalSenders,
+  ExtensionRequiredCapabilities,
+  extensionsEqual,
+  extensionsSupportedByCapabilities,
+  GroupContextExtension,
+  GroupInfoExtension,
+} from "./extension.js"
 import { createConfirmationTag, FramedContentCommit } from "./framedContent.js"
 import { decodeGroupContext, GroupContext, groupContextEncoder } from "./groupContext.js"
 import { ratchetTreeFromExtension, verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "./groupInfo.js"
@@ -25,9 +33,11 @@ import {
   updateLeafNode,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
+import { decodeExternalSender } from "./externalSender.js"
 import { allSecretTreeValues, createSecretTree, decodeSecretTree, SecretTree, secretTreeEncoder } from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
 import { treeHashRoot } from "./treeHash.js"
+import { decodeRequiredCapabilities } from "./requiredCapabilities.js"
 import {
   directPath,
   isLeaf,
@@ -264,7 +274,9 @@ const emptyProposals: Proposals = {
   [defaultProposalTypes.group_context_extensions]: [],
 }
 
-function flattenExtensions(groupContextExtensions: { proposal: ProposalGroupContextExtensions }[]): GroupContextExtension[] {
+function flattenExtensions(
+  groupContextExtensions: { proposal: ProposalGroupContextExtensions }[],
+): GroupContextExtension[] {
   return groupContextExtensions.reduce((acc, { proposal }) => {
     return [...acc, ...proposal.groupContextExtensions.extensions]
   }, [] as GroupContextExtension[])
@@ -371,7 +383,8 @@ async function validateProposals(
   )
 
   if (requiredCapabilities !== undefined) {
-    const caps = requiredCapabilities.extensionData
+    const caps = decodeFully(decodeRequiredCapabilities, requiredCapabilities.extensionData)
+    if (caps === undefined) return new CodecError("Could not decode required_capabilities")
 
     const everyLeafSupportsCapabilities = tree
       .filter((n) => n !== undefined && n.nodeType === nodeTypes.leaf)
@@ -394,9 +407,12 @@ async function validateExternalSenders(
   extensions: GroupContextExtension[],
   authService: AuthenticationService,
 ): Promise<MlsError | undefined> {
-  const externalSenders = extensions.filter((e): e is ExtensionExternalSenders => e.extensionType === defaultExtensionTypes.external_senders)
+  const externalSenders = extensions.filter(
+    (e): e is ExtensionExternalSenders => e.extensionType === defaultExtensionTypes.external_senders,
+  )
   for (const externalSender of externalSenders) {
-    const decoded = externalSender.extensionData
+    const decoded = decodeFully(decodeExternalSender, externalSender.extensionData)
+    if (decoded === undefined) return new CodecError("Could not decode external_sender extension")
 
     const validCredential = await authService.validateCredential(decoded.credential, decoded.signaturePublicKey)
     if (!validCredential) return new ValidationError("Could not validate external credential")
@@ -530,7 +546,8 @@ async function validateLeafNodeCommon(
   )
 
   if (requiredCapabilities !== undefined) {
-    const caps = requiredCapabilities.extensionData
+    const caps = decodeFully(decodeRequiredCapabilities, requiredCapabilities.extensionData)
+    if (caps === undefined) return new CodecError("Could not decode required_capabilities extension")
 
     const leafSupportsCapabilities = capabiltiesAreSupported(caps, leafNode.capabilities)
 

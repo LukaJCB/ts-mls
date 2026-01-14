@@ -58,7 +58,12 @@ import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
-import { CustomExtension, ExtensionExternalPub, extensionsSupportedByCapabilities, GroupInfoExtension } from "./extension.js"
+import {
+  CustomExtension,
+  ExtensionExternalPub,
+  extensionsSupportedByCapabilities,
+  GroupInfoExtension,
+} from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
 import { wireformats } from "./wireformat.js"
@@ -353,12 +358,14 @@ async function createGroupInfoWithRatchetTree(
   extensions: GroupInfoExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
- 
   const gi = await createGroupInfo(
     groupContext,
     confirmationTag,
     state,
-    [...extensions,  { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: tree }],
+    [
+      ...extensions,
+      { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encode(ratchetTreeEncoder, tree) },
+    ],
     cs,
   )
 
@@ -510,7 +517,9 @@ export async function joinGroupExternal(
   clientConfig: ClientConfig = defaultClientConfig,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
-  const externalPub = groupInfo.extensions.find((ex): ex is ExtensionExternalPub => ex.extensionType === defaultExtensionTypes.external_pub)
+  const externalPub = groupInfo.extensions.find(
+    (ex): ex is ExtensionExternalPub => ex.extensionType === defaultExtensionTypes.external_pub,
+  )
 
   if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
 

@@ -1,4 +1,9 @@
-export { type CustomExtension, type GroupContextExtension, type GroupInfoExtension, type LeafNodeExtension } from "./extension.js"
+export {
+  type CustomExtension,
+  type GroupContextExtension,
+  type GroupInfoExtension,
+  type LeafNodeExtension,
+} from "./extension.js"
 
 export { defaultProposalTypes, type DefaultProposalTypeName } from "./defaultProposalType.js"
 
