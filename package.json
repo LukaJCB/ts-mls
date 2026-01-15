@@ -29,6 +29,7 @@
   "peerDependencies": {
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
+    "@hpke/dhkem-x448": "1.6.4",
     "@hpke/ml-kem": "0.2.1",
     "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
@@ -44,6 +45,9 @@
     "@hpke/ml-kem": {
       "optional": true
     },
+    "@hpke/dhkem-x448": {
+      "optional": true
+    },
     "@noble/curves": {
       "optional": true
     },
@@ -57,23 +61,26 @@
     "@hpke/chacha20poly1305": "1.7.1",
     "@hpke/hybridkem-x-wing": "0.6.1",
     "@hpke/ml-kem": "0.2.1",
+    "@hpke/dhkem-x448": "1.6.4",
     "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
     "@noble/hashes": "2.0.1",
     "@noble/post-quantum": "0.5.4",
     "@types/jest": "30.0.0",
     "@types/node": "^25.0.6",
-    "@vitest/coverage-v8": "4.0.16",
+    "@vitest/browser-playwright": "4.0.17",
+    "@vitest/coverage-v8": "4.0.17",
     "eslint": "9.39.2",
     "eslint-plugin-import": "2.32.0",
     "madge": "8.0.0",
+    "playwright": "^1.52.0",
     "prettier": "3.7.4",
     "tinybench": "6.0.0",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "typescript-docs-verifier": "3.0.1",
     "typescript-eslint": "8.53.0",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   },
   "repository": {
     "type": "git",
@@ -87,6 +94,8 @@
     "typecheck": "tsc",
     "benchmark": "tsx bench/index.ts",
     "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "playwright:install": "playwright install",
     "coverage": "vitest run --coverage",
     "lint": "eslint src/ test/",
     "format": "prettier -w .",

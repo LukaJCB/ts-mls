@@ -11,7 +11,9 @@ import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
-import { randomInt } from "crypto"
+function randomInt(maxExclusive: number): number {
+  return Math.floor(Math.random() * maxExclusive)
+}
 
 test.concurrent.each(Object.keys(ciphersuites))(
   "Large Group, Full Lifecycle %s",
