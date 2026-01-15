@@ -27,7 +27,7 @@ export function branchGroup(state: ClientState, keyPackage: KeyPackage, privateK
 
 // @public (undocumented)
 export type Brand<T, B> = T & {
-    __brand: B;
+    [__brand]: B;
 };
 
 // @public (undocumented)
