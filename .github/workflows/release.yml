@@ -1,4 +1,4 @@
-name: Publish to npm with Provenance
+name: Publish to npm
 
 on:
   push:
@@ -6,8 +6,11 @@ on:
       - "v*"
 
 jobs:
-  publish:
+  publish-stable:
     runs-on: ubuntu-latest
+
+    # Avoid accidentally publishing prerelease tags to the `latest` dist-tag.
+    if: ${{ !contains(github.ref_name, '-rc.') }}
 
     permissions:
       contents: read
@@ -17,8 +20,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
@@ -26,12 +27,42 @@ jobs:
           registry-url: "https://registry.npmjs.org/"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build your project
         run: pnpm build
 
       - name: Publish to npm with Provenance
         run: pnpm publish --no-git-checks
+        env:
+          NPM_CONFIG_PROVENANCE: "true"
+
+  publish-rc:
+    runs-on: ubuntu-latest
+
+    if: ${{ contains(github.ref_name, '-rc.') }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build your project
+        run: pnpm build
+
+      - name: Publish to npm with Provenance
+        run: pnpm publish --tag rc --no-git-checks
         env:
           NPM_CONFIG_PROVENANCE: "true"
