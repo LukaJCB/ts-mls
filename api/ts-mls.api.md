@@ -31,9 +31,6 @@ export type Brand<T, B> = T & {
 };
 
 // @public (undocumented)
-export type BufferEncoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void];
-
-// @public (undocumented)
 export function bytesToBase64(bytes: Uint8Array): string;
 
 // @public (undocumented)
@@ -235,19 +232,10 @@ export interface CustomExtension {
 }
 
 // @public (undocumented)
-export const decodeExternalSender: Decoder<ExternalSender>;
-
-// @public (undocumented)
-export const decodeGroupState: Decoder<GroupState>;
-
-// @public (undocumented)
-export const decodeMlsMessage: Decoder<MLSMessage>;
+export function decode<T>(dec: Decoder<T>, t: Uint8Array): T | undefined;
 
 // @public (undocumented)
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined;
-
-// @public (undocumented)
-export const decodeRequiredCapabilities: Decoder<RequiredCapabilities>;
 
 // @public (undocumented)
 export const defaultAuthenticationService: {
@@ -319,7 +307,10 @@ export const defaultProposalTypes: {
 export const emptyPskIndex: PskIndex;
 
 // @public (undocumented)
-export function encode<T>(enc: BufferEncoder<T>, t: T): Uint8Array;
+export function encode<T>(enc: Encoder<T>, t: T): Uint8Array;
+
+// @public (undocumented)
+export type Encoder<T> = (t: T) => [number, (offset: number, buffer: ArrayBuffer) => void];
 
 // @public (undocumented)
 export interface EncryptedGroupSecrets {
@@ -358,7 +349,10 @@ export interface ExternalSender {
 }
 
 // @public (undocumented)
-export const externalSenderEncoder: BufferEncoder<ExternalSender>;
+export const externalSenderDecoder: Decoder<ExternalSender>;
+
+// @public (undocumented)
+export const externalSenderEncoder: Encoder<ExternalSender>;
 
 // @public (undocumented)
 export type FramedContent = FramedContentData & FramedContentInfo;
@@ -545,7 +539,10 @@ export interface GroupState {
 }
 
 // @public (undocumented)
-export const groupStateEncoder: BufferEncoder<GroupState>;
+export const groupStateDecoder: Decoder<GroupState>;
+
+// @public (undocumented)
+export const groupStateEncoder: Encoder<GroupState>;
 
 // @public (undocumented)
 export interface Hash {
@@ -860,7 +857,10 @@ export type MLSMessage = MlsMessageProtocol & MlsMessageContent;
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage;
 
 // @public (undocumented)
-export const mlsMessageEncoder: BufferEncoder<MLSMessage>;
+export const mlsMessageDecoder: Decoder<MLSMessage>;
+
+// @public (undocumented)
+export const mlsMessageEncoder: Encoder<MLSMessage>;
 
 // @public (undocumented)
 export interface MlsMessageProtocol {
@@ -1243,7 +1243,10 @@ export interface RequiredCapabilities {
 }
 
 // @public (undocumented)
-export const requiredCapabilitiesEncoder: BufferEncoder<RequiredCapabilities>;
+export const requiredCapabilitiesDecoder: Decoder<RequiredCapabilities>;
+
+// @public (undocumented)
+export const requiredCapabilitiesEncoder: Encoder<RequiredCapabilities>;
 
 // @public (undocumented)
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages;

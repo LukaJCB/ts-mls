@@ -1,4 +1,4 @@
-import { confirmedTranscriptHashInputEncoder, decodeConfirmedTranscriptHashInput } from "../../src/transcriptHash.js"
+import { confirmedTranscriptHashInputEncoder, confirmedTranscriptHashInputDecoder } from "../../src/transcriptHash.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { FramedContentCommit } from "../../src/framedContent.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -40,7 +40,7 @@ const minimalContent: FramedContentCommit = {
 }
 
 describe("ConfirmedTranscriptHashInput roundtrip", () => {
-  const roundtrip = createRoundtripTest(confirmedTranscriptHashInputEncoder, decodeConfirmedTranscriptHashInput)
+  const roundtrip = createRoundtripTest(confirmedTranscriptHashInputEncoder, confirmedTranscriptHashInputDecoder)
 
   test("roundtrips", () => {
     roundtrip({ wireformat: wireformats.mls_public_message, content: minimalContent, signature: new Uint8Array([8]) })

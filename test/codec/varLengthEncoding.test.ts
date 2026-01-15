@@ -1,17 +1,17 @@
 import { randomBytes } from "@noble/hashes/utils.js"
 import {
-  decodeVarLenData,
-  decodeVarLenType,
+  varLenDataDecoder,
+  varLenTypeDecoder,
   determineLength,
   lengthEncoder,
   varLenDataEncoder,
   varLenTypeEncoder,
 } from "../../src/codec/variableLength.js"
 import { createRoundtripTest } from "./roundtrip.js"
-import { BufferEncoder, encode } from "../../src/codec/tlsEncoder.js"
+import { Encoder, encode } from "../../src/codec/tlsEncoder.js"
 import { Decoder } from "../../src/codec/tlsDecoder.js"
-import { decodeUint64, decodeUint8, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
-import { decodeOptional, optionalEncoder } from "../../src/codec/optional.js"
+import { uint64Decoder, uint8Decoder, uint64Encoder, uint8Encoder } from "../../src/codec/number.js"
+import { optionalDecoder, optionalEncoder } from "../../src/codec/optional.js"
 import { CodecError } from "../../src/mlsError.js"
 
 test("encode and decode works for 1 random byte", () => {
@@ -59,7 +59,7 @@ test("encode and decode works for 9999 random bytes", () => {
 })
 
 test("encode and decode works for array of random bytes", () => {
-  arrayRoundtrip(varLenDataEncoder, decodeVarLenData, [
+  arrayRoundtrip(varLenDataEncoder, varLenDataDecoder, [
     randomBytes(9999),
     randomBytes(9999),
     randomBytes(9999),
@@ -68,15 +68,15 @@ test("encode and decode works for array of random bytes", () => {
 })
 
 test("encode and decode works for array of uint8", () => {
-  arrayRoundtrip(uint8Encoder, decodeUint8, [1, 2, 3, 4, 5])
+  arrayRoundtrip(uint8Encoder, uint8Decoder, [1, 2, 3, 4, 5])
 })
 
 test("encode and decode works for array of uint64", () => {
-  arrayRoundtrip(uint64Encoder, decodeUint64, [1n, 2n, 3n, 4n, 5n, 18446744073709551615n])
+  arrayRoundtrip(uint64Encoder, uint64Decoder, [1n, 2n, 3n, 4n, 5n, 18446744073709551615n])
 })
 
 test("encode and decode works for array of optional random bytes", () => {
-  arrayRoundtrip(optionalEncoder(varLenDataEncoder), decodeOptional(decodeVarLenData), [
+  arrayRoundtrip(optionalEncoder(varLenDataEncoder), optionalDecoder(varLenDataDecoder), [
     randomBytes(99),
     undefined,
     randomBytes(99),
@@ -88,7 +88,7 @@ test("encode and decode works for array of optional random bytes", () => {
 })
 
 test("decode doesn't work if offset is too large", () => {
-  expect(() => decodeVarLenData(new Uint8Array(0), 2)).toThrow(CodecError)
+  expect(() => varLenDataDecoder(new Uint8Array(0), 2)).toThrow(CodecError)
 })
 
 test("determineLength doesn't work if offset is too large", () => {
@@ -106,17 +106,17 @@ test("determineLength doesn't work if offset is ffsd large", () => {
 test("decode doesn't work if length is too large", () => {
   const e = encode(varLenDataEncoder, randomBytes(64))
   e[1] = 0xff
-  expect(() => decodeVarLenData(e, 0)).toThrow(CodecError)
+  expect(() => varLenDataDecoder(e, 0)).toThrow(CodecError)
 })
 
-test("decodeVarLenType doesn't work if underlying decoder doesn't work", () => {
+test("varLenTypeDecoder doesn't work if underlying decoder doesn't work", () => {
   const brokenDecoder: Decoder<number> = () => undefined
 
-  expect(decodeVarLenType(brokenDecoder)(encode(varLenDataEncoder, randomBytes(16)), 0)).toBeUndefined()
+  expect(varLenTypeDecoder(brokenDecoder)(encode(varLenDataEncoder, randomBytes(16)), 0)).toBeUndefined()
 })
 
-const varLenRoundtrip = createRoundtripTest(varLenDataEncoder, decodeVarLenData)
+const varLenRoundtrip = createRoundtripTest(varLenDataEncoder, varLenDataDecoder)
 
-function arrayRoundtrip<T>(enc: BufferEncoder<T>, dec: Decoder<T>, ts: T[]) {
-  return createRoundtripTest(varLenTypeEncoder(enc), decodeVarLenType(dec))(ts)
+function arrayRoundtrip<T>(enc: Encoder<T>, dec: Decoder<T>, ts: T[]) {
+  return createRoundtripTest(varLenTypeEncoder(enc), varLenTypeDecoder(dec))(ts)
 }

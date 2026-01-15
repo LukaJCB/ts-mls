@@ -1,9 +1,9 @@
-import { privateMessageEncoder, decodePrivateMessage } from "../../src/privateMessage.js"
+import { privateMessageEncoder, privateMessageDecoder } from "../../src/privateMessage.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { contentTypes } from "../../src/contentType.js"
 
 describe("PrivateMessage roundtrip", () => {
-  const roundtrip = createRoundtripTest(privateMessageEncoder, decodePrivateMessage)
+  const roundtrip = createRoundtripTest(privateMessageEncoder, privateMessageDecoder)
 
   test("roundtrips application", () => {
     roundtrip({

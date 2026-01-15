@@ -1,4 +1,4 @@
-import { decodeUpdatePath, updatePathEncoder, UpdatePath } from "../../src/updatePath.js"
+import { updatePathDecoder, updatePathEncoder, UpdatePath } from "../../src/updatePath.js"
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -31,7 +31,7 @@ describe("UpdatePath", () => {
     }
 
     const encoded = encode(updatePathEncoder, minimal)
-    const decoded = decodeUpdatePath(encoded, 0)![0]
+    const decoded = updatePathDecoder(encoded, 0)![0]
     expect(decoded).toEqual(minimal)
   })
 
@@ -83,7 +83,7 @@ describe("UpdatePath", () => {
     }
 
     const encoded = encode(updatePathEncoder, nonTrivial)
-    const decoded = decodeUpdatePath(encoded, 0)![0]
+    const decoded = updatePathDecoder(encoded, 0)![0]
     expect(decoded).toEqual(nonTrivial)
   })
 })

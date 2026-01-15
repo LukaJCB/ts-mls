@@ -1,18 +1,18 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { extensionEncoder, CustomExtension, decodeCustomExtension } from "./extension.js"
+import { extensionEncoder, CustomExtension, customExtensionDecoder } from "./extension.js"
 import {
-  decodeProtocolVersion,
+  protocolVersionDecoder,
   protocolVersionEncoder,
   protocolVersions,
   ProtocolVersionValue,
 } from "./protocolVersion.js"
 import {
-  decodeLeafNodeKeyPackage,
+  leafNodeKeyPackageDecoder,
   leafNodeEncoder,
   LeafNodeKeyPackage,
   LeafNodeTBSKeyPackage,
@@ -32,7 +32,7 @@ export type KeyPackageTBS = {
   extensions: CustomExtension[]
 }
 
-export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBufferEncoders(
+export const keyPackageTBSEncoder: Encoder<KeyPackageTBS> = contramapBufferEncoders(
   [protocolVersionEncoder, ciphersuiteEncoder, varLenDataEncoder, leafNodeEncoder, varLenTypeEncoder(extensionEncoder)],
   (keyPackageTBS) =>
     [
@@ -44,13 +44,13 @@ export const keyPackageTBSEncoder: BufferEncoder<KeyPackageTBS> = contramapBuffe
     ] as const,
 )
 
-export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
+export const keyPackageTBSDecoder: Decoder<KeyPackageTBS> = mapDecoders(
   [
-    decodeProtocolVersion,
-    decodeCiphersuite,
-    decodeVarLenData,
-    decodeLeafNodeKeyPackage,
-    decodeVarLenType(decodeCustomExtension),
+    protocolVersionDecoder,
+    ciphersuiteDecoder,
+    varLenDataDecoder,
+    leafNodeKeyPackageDecoder,
+    varLenTypeDecoder(customExtensionDecoder),
   ],
   (version, cipherSuite, initKey, leafNode, extensions) => ({
     version,
@@ -64,13 +64,13 @@ export const decodeKeyPackageTBS: Decoder<KeyPackageTBS> = mapDecoders(
 /** @public */
 export type KeyPackage = KeyPackageTBS & { signature: Uint8Array }
 
-export const keyPackageEncoder: BufferEncoder<KeyPackage> = contramapBufferEncoders(
+export const keyPackageEncoder: Encoder<KeyPackage> = contramapBufferEncoders(
   [keyPackageTBSEncoder, varLenDataEncoder],
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )
 
-export const decodeKeyPackage: Decoder<KeyPackage> = mapDecoders(
-  [decodeKeyPackageTBS, decodeVarLenData],
+export const keyPackageDecoder: Decoder<KeyPackage> = mapDecoders(
+  [keyPackageTBSDecoder, varLenDataDecoder],
   (keyPackageTBS, signature) => ({
     ...keyPackageTBS,
     signature,

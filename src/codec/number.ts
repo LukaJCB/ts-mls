@@ -1,7 +1,7 @@
 import { Decoder } from "./tlsDecoder.js"
-import { BufferEncoder } from "./tlsEncoder.js"
+import { Encoder } from "./tlsEncoder.js"
 
-export const uint8Encoder: BufferEncoder<number> = (n) => [
+export const uint8Encoder: Encoder<number> = (n) => [
   1,
   (offset, buffer) => {
     const view = new DataView(buffer)
@@ -9,12 +9,12 @@ export const uint8Encoder: BufferEncoder<number> = (n) => [
   },
 ]
 
-export const decodeUint8: Decoder<number> = (b, offset) => {
+export const uint8Decoder: Decoder<number> = (b, offset) => {
   const value = b.at(offset)
   return value !== undefined ? [value, 1] : undefined
 }
 
-export const uint16Encoder: BufferEncoder<number> = (n) => [
+export const uint16Encoder: Encoder<number> = (n) => [
   2,
   (offset, buffer) => {
     const view = new DataView(buffer)
@@ -22,7 +22,7 @@ export const uint16Encoder: BufferEncoder<number> = (n) => [
   },
 ]
 
-export const decodeUint16: Decoder<number> = (b, offset) => {
+export const uint16Decoder: Decoder<number> = (b, offset) => {
   const view = new DataView(b.buffer, b.byteOffset, b.byteLength)
   try {
     return [view.getUint16(offset), 2]
@@ -31,7 +31,7 @@ export const decodeUint16: Decoder<number> = (b, offset) => {
   }
 }
 
-export const uint32Encoder: BufferEncoder<number> = (n) => [
+export const uint32Encoder: Encoder<number> = (n) => [
   4,
   (offset, buffer) => {
     const view = new DataView(buffer)
@@ -39,7 +39,7 @@ export const uint32Encoder: BufferEncoder<number> = (n) => [
   },
 ]
 
-export const decodeUint32: Decoder<number> = (b, offset) => {
+export const uint32Decoder: Decoder<number> = (b, offset) => {
   const view = new DataView(b.buffer, b.byteOffset, b.byteLength)
   try {
     return [view.getUint32(offset), 4]
@@ -48,7 +48,7 @@ export const decodeUint32: Decoder<number> = (b, offset) => {
   }
 }
 
-export const uint64Encoder: BufferEncoder<bigint> = (n) => [
+export const uint64Encoder: Encoder<bigint> = (n) => [
   8,
   (offset, buffer) => {
     const view = new DataView(buffer)
@@ -56,7 +56,7 @@ export const uint64Encoder: BufferEncoder<bigint> = (n) => [
   },
 ]
 
-export const decodeUint64: Decoder<bigint> = (b, offset) => {
+export const uint64Decoder: Decoder<bigint> = (b, offset) => {
   const view = new DataView(b.buffer, b.byteOffset, b.byteLength)
   try {
     return [view.getBigUint64(offset), 8]

@@ -1,4 +1,4 @@
-import { decodeUint16 } from "./codec/number.js"
+import { uint16Decoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
 
 /** @public */
@@ -19,6 +19,6 @@ export function isDefaultExtensionTypeValue(v: number): v is DefaultExtensionTyp
 }
 
 export const decodeDefaultExtensionTypeValue: Decoder<DefaultExtensionTypeValue> = mapDecoderOption(
-  decodeUint16,
+  uint16Decoder,
   (n) => (isDefaultExtensionTypeValue(n) ? n : undefined),
 )

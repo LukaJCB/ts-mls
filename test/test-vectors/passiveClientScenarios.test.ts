@@ -6,8 +6,8 @@ import jsonCommit from "../../test_vectors/passive-client-handling-commit.json"
 import jsonRandom from "../../test_vectors/passive-client-random.json"
 import jsonWelcome from "../../test_vectors/passive-client-welcome.json"
 import { hpkeKeysMatch, signatureKeysMatch } from "../crypto/keyMatch.js"
-import { decodeMlsMessage } from "../../src/message.js"
-import { decodeRatchetTree } from "../../src/ratchetTree.js"
+import { mlsMessageDecoder } from "../../src/message.js"
+import { ratchetTreeDecoder } from "../../src/ratchetTree.js"
 
 import { joinGroup, makePskIndex } from "../../src/clientState.js"
 import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
@@ -40,13 +40,13 @@ test.concurrent.each(jsonWelcome.map((x, index) => [index, x]))(
 )
 
 async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteImpl) {
-  const kp = decodeMlsMessage(hexToBytes(data.key_package), 0)
+  const kp = mlsMessageDecoder(hexToBytes(data.key_package), 0)
 
   if (kp === undefined || kp[0].wireformat !== wireformats.mls_key_package)
     throw new Error("Could not decode KeyPackage")
   await verifyKeys(data, kp[0].keyPackage, impl)
 
-  const welcome = decodeMlsMessage(hexToBytes(data.welcome), 0)
+  const welcome = mlsMessageDecoder(hexToBytes(data.welcome), 0)
 
   if (welcome === undefined || welcome[0].wireformat !== wireformats.mls_welcome)
     throw new Error("Could not decode Welcome")
@@ -57,7 +57,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
     signaturePrivateKey: hexToBytes(data.signature_priv),
   }
 
-  const tree = data.ratchet_tree !== null ? decodeRatchetTree(hexToBytes(data.ratchet_tree), 0)?.[0] : undefined
+  const tree = data.ratchet_tree !== null ? ratchetTreeDecoder(hexToBytes(data.ratchet_tree), 0)?.[0] : undefined
 
   const psks: Record<string, Uint8Array> = data.external_psks.reduce(
     (acc, psk) => ({ ...acc, [bytesToBase64(hexToBytes(psk.psk_id))]: hexToBytes(psk.psk) }),
@@ -69,7 +69,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
 
   for (const epoch of data.epochs) {
     for (const proposal of epoch.proposals) {
-      const mlsProposal = decodeMlsMessage(hexToBytes(proposal), 0)
+      const mlsProposal = mlsMessageDecoder(hexToBytes(proposal), 0)
       if (
         mlsProposal === undefined ||
         (mlsProposal[0].wireformat !== wireformats.mls_private_message &&
@@ -88,7 +88,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
       }
     }
 
-    const mlsCommit = decodeMlsMessage(hexToBytes(epoch.commit), 0)
+    const mlsCommit = mlsMessageDecoder(hexToBytes(epoch.commit), 0)
     if (
       mlsCommit === undefined ||
       (mlsCommit[0].wireformat !== wireformats.mls_private_message &&

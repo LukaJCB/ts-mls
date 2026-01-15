@@ -1,6 +1,6 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
+import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { InternalError } from "./mlsError.js"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
@@ -17,13 +17,13 @@ export interface ParentHashInput {
   originalSiblingTreeHash: Uint8Array
 }
 
-export const parentHashInputEncoder: BufferEncoder<ParentHashInput> = contramapBufferEncoders(
+export const parentHashInputEncoder: Encoder<ParentHashInput> = contramapBufferEncoders(
   [varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
   (i) => [i.encryptionKey, i.parentHash, i.originalSiblingTreeHash] as const,
 )
 
-export const decodeParentHashInput: Decoder<ParentHashInput> = mapDecoders(
-  [decodeVarLenData, decodeVarLenData, decodeVarLenData],
+export const parentHashInputDecoder: Decoder<ParentHashInput> = mapDecoders(
+  [varLenDataDecoder, varLenDataDecoder, varLenDataDecoder],
   (encryptionKey, parentHash, originalSiblingTreeHash) => ({
     encryptionKey,
     parentHash,

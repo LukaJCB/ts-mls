@@ -1,6 +1,6 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
-import { decodeRatchetTree, resolution } from "../../src/ratchetTree.js"
+import { ratchetTreeDecoder, resolution } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-validation.json"
 import { treeHash } from "../../src/treeHash.js"
@@ -22,7 +22,7 @@ type TreeValidationData = {
 }
 
 async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImpl) {
-  const tree = decodeRatchetTree(hexToBytes(data.tree), 0)
+  const tree = ratchetTreeDecoder(hexToBytes(data.tree), 0)
 
   if (tree === undefined) throw new Error("could not decode tree")
 

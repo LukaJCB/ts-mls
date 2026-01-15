@@ -1,7 +1,7 @@
-import { decodeUint16, uint16Encoder } from "./codec/number.js"
+import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, varLenDataEncoder } from "./codec/variableLength.js"
+import { contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { defaultExtensionTypes, isDefaultExtensionTypeValue } from "./defaultExtensionType.js"
 import { UsageError } from "./mlsError.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
@@ -69,54 +69,57 @@ export function makeCustomExtension(extensionType: number, extensionData: Uint8A
   return { extensionType, extensionData } as CustomExtension
 }
 
-export const extensionEncoder: BufferEncoder<Extension> = contramapBufferEncoders(
+export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders(
   [uint16Encoder, varLenDataEncoder],
   (e) => [e.extensionType, e.extensionData] as const,
 )
 
-export const decodeCustomExtension: Decoder<CustomExtension> = mapDecoders(
-  [decodeUint16, decodeVarLenData],
+export const customExtensionDecoder: Decoder<CustomExtension> = mapDecoders(
+  [uint16Decoder, varLenDataDecoder],
   (extensionType, extensionData) => ({ extensionType, extensionData }) as CustomExtension,
 )
 
 export const leafNodeExtensionDecoder: Decoder<LeafNodeExtension> = flatMapDecoder(
-  decodeUint16,
+  uint16Decoder,
   (extensionType): Decoder<LeafNodeExtension> => {
     if (extensionType === defaultExtensionTypes.application_id) {
-      return mapDecoder(decodeVarLenData, (extensionData) => {
+      return mapDecoder(varLenDataDecoder, (extensionData) => {
         return { extensionType: defaultExtensionTypes.application_id, extensionData }
       })
-    } else return mapDecoder(decodeVarLenData, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
+    } else
+      return mapDecoder(varLenDataDecoder, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
   },
 )
 
 export const groupInfoExtensionDecoder: Decoder<GroupInfoExtension> = flatMapDecoder(
-  decodeUint16,
+  uint16Decoder,
   (extensionType): Decoder<GroupInfoExtension> => {
     if (extensionType === defaultExtensionTypes.external_pub) {
-      return mapDecoder(decodeVarLenData, (extensionData) => {
+      return mapDecoder(varLenDataDecoder, (extensionData) => {
         return { extensionType: defaultExtensionTypes.external_pub, extensionData }
       })
     } else if (extensionType === defaultExtensionTypes.ratchet_tree) {
-      return mapDecoder(decodeVarLenData, (extensionData) => {
+      return mapDecoder(varLenDataDecoder, (extensionData) => {
         return { extensionType: defaultExtensionTypes.ratchet_tree, extensionData }
       })
-    } else return mapDecoder(decodeVarLenData, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
+    } else
+      return mapDecoder(varLenDataDecoder, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
   },
 )
 
 export const groupContextExtensionDecoder: Decoder<GroupContextExtension> = flatMapDecoder(
-  decodeUint16,
+  uint16Decoder,
   (extensionType): Decoder<GroupContextExtension> => {
     if (extensionType === defaultExtensionTypes.external_senders) {
-      return mapDecoder(decodeVarLenData, (extensionData) => {
+      return mapDecoder(varLenDataDecoder, (extensionData) => {
         return { extensionType: defaultExtensionTypes.external_senders, extensionData: extensionData }
       })
     } else if (extensionType === defaultExtensionTypes.required_capabilities) {
-      return mapDecoder(decodeVarLenData, (extensionData) => {
+      return mapDecoder(varLenDataDecoder, (extensionData) => {
         return { extensionType: defaultExtensionTypes.required_capabilities, extensionData }
       })
-    } else return mapDecoder(decodeVarLenData, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
+    } else
+      return mapDecoder(varLenDataDecoder, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
   },
 )
 

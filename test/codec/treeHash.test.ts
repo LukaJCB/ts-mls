@@ -1,9 +1,9 @@
-import { treeHashInputEncoder, decodeTreeHashInput } from "../../src/treeHash.js"
+import { treeHashInputEncoder, treeHashInputDecoder } from "../../src/treeHash.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { nodeTypes } from "../../src/nodeType.js"
 
 describe("TreeHashInput roundtrip", () => {
-  const roundtrip = createRoundtripTest(treeHashInputEncoder, decodeTreeHashInput)
+  const roundtrip = createRoundtripTest(treeHashInputEncoder, treeHashInputDecoder)
 
   test("roundtrips leaf", () => {
     roundtrip({ nodeType: nodeTypes.leaf, leafIndex: 0, leafNode: undefined })

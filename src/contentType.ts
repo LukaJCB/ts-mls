@@ -1,6 +1,6 @@
-import { decodeUint8, uint8Encoder } from "./codec/number.js"
+import { uint8Decoder, uint8Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { BufferEncoder } from "./codec/tlsEncoder.js"
+import { Encoder } from "./codec/tlsEncoder.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
 /** @public */
@@ -15,6 +15,6 @@ export type ContentTypeName = keyof typeof contentTypes
 /** @public */
 export type ContentTypeValue = (typeof contentTypes)[ContentTypeName]
 
-export const contentTypeEncoder: BufferEncoder<ContentTypeValue> = uint8Encoder
+export const contentTypeEncoder: Encoder<ContentTypeValue> = uint8Encoder
 
-export const decodeContentType: Decoder<ContentTypeValue> = mapDecoderOption(decodeUint8, numberToEnum(contentTypes))
+export const contentTypeDecoder: Decoder<ContentTypeValue> = mapDecoderOption(uint8Decoder, numberToEnum(contentTypes))

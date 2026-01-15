@@ -1,6 +1,6 @@
-import { decodeUint16, uint16Encoder } from "./codec/number.js"
+import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
-import { BufferEncoder } from "./codec/tlsEncoder.js"
+import { Encoder } from "./codec/tlsEncoder.js"
 
 /** @public */
 export const protocolVersions = {
@@ -14,8 +14,8 @@ export type ProtocolVersionValue = (typeof protocolVersions)[ProtocolVersionName
 
 const protocolVersionValues = new Set<number>(Object.values(protocolVersions))
 
-export const protocolVersionEncoder: BufferEncoder<ProtocolVersionValue> = uint16Encoder
+export const protocolVersionEncoder: Encoder<ProtocolVersionValue> = uint16Encoder
 
-export const decodeProtocolVersion: Decoder<ProtocolVersionValue> = mapDecoderOption(decodeUint16, (v) =>
+export const protocolVersionDecoder: Decoder<ProtocolVersionValue> = mapDecoderOption(uint16Decoder, (v) =>
   protocolVersionValues.has(v) ? (v as ProtocolVersionValue) : undefined,
 )

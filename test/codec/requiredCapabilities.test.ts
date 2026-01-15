@@ -1,13 +1,13 @@
 import {
   requiredCapabilitiesEncoder,
-  decodeRequiredCapabilities,
+  requiredCapabilitiesDecoder,
   RequiredCapabilities,
 } from "../../src/requiredCapabilities.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 
 describe("RequiredCapabilities roundtrip", () => {
-  const roundtrip = createRoundtripTest(requiredCapabilitiesEncoder, decodeRequiredCapabilities)
+  const roundtrip = createRoundtripTest(requiredCapabilitiesEncoder, requiredCapabilitiesDecoder)
 
   test("roundtrips empty arrays", () => {
     const rc: RequiredCapabilities = {

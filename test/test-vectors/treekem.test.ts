@@ -1,9 +1,9 @@
 import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
-import { decodeRatchetTree, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree.js"
+import { ratchetTreeDecoder, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/treekem.json"
-import { applyUpdatePath, createUpdatePath, decodeUpdatePath, UpdatePath } from "../../src/updatePath.js"
+import { applyUpdatePath, createUpdatePath, updatePathDecoder, UpdatePath } from "../../src/updatePath.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { treeHashRoot } from "../../src/treeHash.js"
 import { deriveSecret } from "../../src/crypto/kdf.js"
@@ -55,7 +55,7 @@ interface UpdatePathState {
 }
 
 async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
-  const tree = decodeRatchetTree(hexToBytes(data.ratchet_tree), 0)
+  const tree = ratchetTreeDecoder(hexToBytes(data.ratchet_tree), 0)
 
   if (tree === undefined) throw new Error("could not decode tree")
 
@@ -76,7 +76,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
   await testTreeKeys(data, tree, impl)
 
   for (const path of data.update_paths) {
-    const updatePath = decodeUpdatePath(hexToBytes(path.update_path), 0)
+    const updatePath = updatePathDecoder(hexToBytes(path.update_path), 0)
 
     if (updatePath === undefined) throw new Error("could not decode updatepath")
 

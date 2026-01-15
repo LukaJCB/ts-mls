@@ -1,13 +1,13 @@
-import { decodeUint64, uint64Encoder } from "./codec/number.js"
+import { uint64Decoder, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, ciphersuiteEncoder, decodeCiphersuite } from "./crypto/ciphersuite.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 
 import { expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
 
-import { decodeProtocolVersion, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
+import { protocolVersionDecoder, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 
 /** @public */
 export interface GroupContext {
@@ -20,7 +20,7 @@ export interface GroupContext {
   extensions: GroupContextExtension[]
 }
 
-export const groupContextEncoder: BufferEncoder<GroupContext> = contramapBufferEncoders(
+export const groupContextEncoder: Encoder<GroupContext> = contramapBufferEncoders(
   [
     protocolVersionEncoder,
     ciphersuiteEncoder,
@@ -34,15 +34,15 @@ export const groupContextEncoder: BufferEncoder<GroupContext> = contramapBufferE
     [gc.version, gc.cipherSuite, gc.groupId, gc.epoch, gc.treeHash, gc.confirmedTranscriptHash, gc.extensions] as const,
 )
 
-export const decodeGroupContext: Decoder<GroupContext> = mapDecoders(
+export const groupContextDecoder: Decoder<GroupContext> = mapDecoders(
   [
-    decodeProtocolVersion,
-    decodeCiphersuite,
-    decodeVarLenData, // groupId
-    decodeUint64, // epoch
-    decodeVarLenData, // treeHash
-    decodeVarLenData, // confirmedTranscriptHash
-    decodeVarLenType(groupContextExtensionDecoder),
+    protocolVersionDecoder,
+    ciphersuiteDecoder,
+    varLenDataDecoder, // groupId
+    uint64Decoder, // epoch
+    varLenDataDecoder, // treeHash
+    varLenDataDecoder, // confirmedTranscriptHash
+    varLenTypeDecoder(groupContextExtensionDecoder),
   ],
   (version, cipherSuite, groupId, epoch, treeHash, confirmedTranscriptHash, extensions) => ({
     version,

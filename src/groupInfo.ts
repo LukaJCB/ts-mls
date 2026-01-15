@@ -1,13 +1,13 @@
-import { decodeUint32, uint32Encoder } from "./codec/number.js"
+import { uint32Decoder, uint32Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, BufferEncoder, encode } from "./codec/tlsEncoder.js"
-import { decodeVarLenData, decodeVarLenType, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
+import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
+import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { extensionEncoder, ExtensionRatchetTree, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
-import { decodeGroupContext, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
-import { decodeRatchetTree, RatchetTree } from "./ratchetTree.js"
+import { groupContextDecoder, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
+import { ratchetTreeDecoder, RatchetTree } from "./ratchetTree.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { CodecError } from "./mlsError.js"
 
@@ -19,13 +19,13 @@ export interface GroupInfoTBS {
   signer: number
 }
 
-export const groupInfoTBSEncoder: BufferEncoder<GroupInfoTBS> = contramapBufferEncoders(
+export const groupInfoTBSEncoder: Encoder<GroupInfoTBS> = contramapBufferEncoders(
   [groupContextEncoder, varLenTypeEncoder(extensionEncoder), varLenDataEncoder, uint32Encoder],
   (g) => [g.groupContext, g.extensions, g.confirmationTag, g.signer] as const,
 )
 
-export const decodeGroupInfoTBS: Decoder<GroupInfoTBS> = mapDecoders(
-  [decodeGroupContext, decodeVarLenType(groupInfoExtensionDecoder), decodeVarLenData, decodeUint32],
+export const groupInfoTBSDecoder: Decoder<GroupInfoTBS> = mapDecoders(
+  [groupContextDecoder, varLenTypeDecoder(groupInfoExtensionDecoder), varLenDataDecoder, uint32Decoder],
   (groupContext, extensions, confirmationTag, signer) => ({
     groupContext,
     extensions,
@@ -39,13 +39,13 @@ export type GroupInfo = GroupInfoTBS & {
   signature: Uint8Array
 }
 
-export const groupInfoEncoder: BufferEncoder<GroupInfo> = contramapBufferEncoders(
+export const groupInfoEncoder: Encoder<GroupInfo> = contramapBufferEncoders(
   [groupInfoTBSEncoder, varLenDataEncoder],
   (g) => [g, g.signature] as const,
 )
 
-export const decodeGroupInfo: Decoder<GroupInfo> = mapDecoders(
-  [decodeGroupInfoTBS, decodeVarLenData],
+export const groupInfoDecoder: Decoder<GroupInfo> = mapDecoders(
+  [groupInfoTBSDecoder, varLenDataDecoder],
   (tbs, signature) => ({
     ...tbs,
     signature,
@@ -58,7 +58,7 @@ export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefin
   )
 
   if (treeExtension !== undefined) {
-    const tree = decodeRatchetTree(treeExtension.extensionData, 0)
+    const tree = ratchetTreeDecoder(treeExtension.extensionData, 0)
     if (tree === undefined) throw new CodecError("Could not decode RatchetTree")
     return tree[0]
   }

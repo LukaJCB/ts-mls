@@ -1,6 +1,11 @@
 /** @public */
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined
 
+/** @public */
+export function decode<T>(dec: Decoder<T>, t: Uint8Array): T | undefined {
+  return dec(t, 0)?.[0]
+}
+
 export function mapDecoder<T, U>(dec: Decoder<T>, f: (t: T) => U): Decoder<U> {
   return (b, offset) => {
     const x = dec(b, offset)
@@ -12,11 +17,11 @@ export function mapDecoder<T, U>(dec: Decoder<T>, f: (t: T) => U): Decoder<U> {
 }
 
 export function mapDecodersOption<T extends unknown[], R>(
-  decoders: { [K in keyof T]: Decoder<T[K]> },
+  rsDecoder: { [K in keyof T]: Decoder<T[K]> },
   f: (...args: T) => R | undefined,
 ): Decoder<R> {
   return (b, offset) => {
-    const initial = mapDecoders(decoders, f)(b, offset)
+    const initial = mapDecoders(rsDecoder, f)(b, offset)
     if (initial === undefined) return undefined
     else {
       const [r, len] = initial
@@ -26,11 +31,11 @@ export function mapDecodersOption<T extends unknown[], R>(
 }
 
 export function mapDecoders<T extends unknown[], R>(
-  decoders: { [K in keyof T]: Decoder<T[K]> },
+  rsDecoder: { [K in keyof T]: Decoder<T[K]> },
   f: (...args: T) => R,
 ): Decoder<R> {
   return (b, offset) => {
-    const result = decoders.reduce<
+    const result = rsDecoder.reduce<
       | {
           values: unknown[]
           offset: number
@@ -86,8 +91,8 @@ function flatMapDecoderAndMap<T, U, V>(dec: Decoder<T>, f: (t: T) => Decoder<U>,
     const decodedT = dec(b, offset)
     if (decodedT !== undefined) {
       const [t, len] = decodedT
-      const decoderU = f(t)
-      const decodedU = decoderU(b, offset + len)
+      const rUDecoder = f(t)
+      const decodedU = rUDecoder(b, offset + len)
       if (decodedU !== undefined) {
         const [u, len2] = decodedU
         return [g(t, u), len + len2]

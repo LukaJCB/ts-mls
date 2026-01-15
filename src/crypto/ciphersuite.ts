@@ -2,8 +2,8 @@ import { Signature, SignatureAlgorithm } from "./signature.js"
 import { Hash, HashAlgorithm } from "./hash.js"
 import { Kdf } from "./kdf.js"
 import { Hpke, HpkeAlgorithm } from "./hpke.js"
-import { BufferEncoder } from "../codec/tlsEncoder.js"
-import { decodeUint16, uint16Encoder } from "../codec/number.js"
+import { Encoder } from "../codec/tlsEncoder.js"
+import { uint16Decoder, uint16Encoder } from "../codec/number.js"
 import { Decoder } from "../codec/tlsDecoder.js"
 import { Rng } from "./rng.js"
 
@@ -45,10 +45,10 @@ export type CiphersuiteName = keyof typeof ciphersuites
 /** @public */
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
-export const ciphersuiteEncoder: BufferEncoder<CiphersuiteId> = uint16Encoder
+export const ciphersuiteEncoder: Encoder<CiphersuiteId> = uint16Encoder
 
-export const decodeCiphersuite: Decoder<CiphersuiteId> = (b, offset) => {
-  const decoded = decodeUint16(b, offset)
+export const ciphersuiteDecoder: Decoder<CiphersuiteId> = (b, offset) => {
+  const decoded = uint16Decoder(b, offset)
   return decoded === undefined ? undefined : [decoded[0] as CiphersuiteId, decoded[1]]
 }
 

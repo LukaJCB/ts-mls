@@ -2,7 +2,7 @@ import { bytesToBase64, defaultProposalTypes, defaultCredentialTypes } from "../
 import { ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import {
-  decodeUnappliedProposals,
+  unappliedProposalsDecoder,
   UnappliedProposals,
   unappliedProposalsEncoder,
 } from "../../src/unappliedProposals.js"
@@ -56,7 +56,7 @@ const dummyUnapplied: UnappliedProposals = {
 }
 
 describe("UnappliedProposals roundtrip", () => {
-  const roundtrip = createRoundtripTestBufferEncoder(unappliedProposalsEncoder, decodeUnappliedProposals)
+  const roundtrip = createRoundtripTestBufferEncoder(unappliedProposalsEncoder, unappliedProposalsDecoder)
 
   test("roundtrips empty record", () => {
     roundtrip({})
