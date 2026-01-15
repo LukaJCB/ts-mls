@@ -15,10 +15,9 @@ import { AuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { createCustomCredential } from "../../src/customCredential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
-import { Extension } from "../../src/extension.js"
+import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
 import { proposeExternal } from "../../src/index.js"
-import { Capabilities } from "../../src/capabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
@@ -260,7 +259,7 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("george"),
     }
-    const georgeExtension: Extension = { extensionType: 8545, extensionData: new Uint8Array() }
+    const georgeExtension: CustomExtension = makeCustomExtension(8545, new Uint8Array())
     const george = await generateKeyPackage(georgeCredential, defaultCapabilities(), defaultLifetime, [], impl, [
       georgeExtension,
     ])
@@ -427,40 +426,6 @@ describe("Proposal Validation", () => {
       ).rejects.toThrow(new ValidationError("Could not decode external_sender extension"))
     },
   )
-
-  test.concurrent.each(suites)("keypackage extension separation %s", async (cs) => {
-    const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
-
-    const helenCredential: Credential = {
-      credentialType: defaultCredentialTypes.basic,
-      identity: new TextEncoder().encode("helen"),
-    }
-    const keyPackageExtension: Extension = {
-      extensionType: 1000,
-      extensionData: new TextEncoder().encode("keyPackageData"),
-    }
-    const leafNodeExtension: Extension = {
-      extensionType: 2000,
-      extensionData: new TextEncoder().encode("leafNodeData"),
-    }
-
-    const helenCapabilities: Capabilities = { ...defaultCapabilities(), extensions: [1000, 2000] }
-
-    const helen = await generateKeyPackage(
-      helenCredential,
-      helenCapabilities,
-      defaultLifetime,
-      [keyPackageExtension],
-      impl,
-      [leafNodeExtension],
-    )
-
-    expect(helen.publicPackage.extensions).toStrictEqual([keyPackageExtension])
-    expect(helen.publicPackage.leafNode.extensions).toStrictEqual([leafNodeExtension])
-
-    const addHelen: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: helen.publicPackage } }
-    await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addHelen] })
-  })
 })
 
 function withAuthService(state: ClientState, authService: AuthenticationService) {

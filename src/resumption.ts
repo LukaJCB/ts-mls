@@ -10,7 +10,7 @@ import {
 import { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
 import { defaultCryptoProvider } from "./crypto/implementation/default/provider.js"
 import { CryptoProvider } from "./crypto/provider.js"
-import { Extension } from "./extension.js"
+import { CustomExtension, GroupContextExtension } from "./extension.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { UsageError } from "./mlsError.js"
 import { pskTypes, resumptionPSKUsages, type ResumptionPSKUsageValue, PreSharedKeyID } from "./presharedkey.js"
@@ -26,7 +26,7 @@ export async function reinitGroup(
   groupId: Uint8Array,
   version: ProtocolVersionName,
   cipherSuite: CiphersuiteName,
-  extensions: Extension[],
+  extensions: GroupContextExtension[],
   cs: CiphersuiteImpl,
 ): Promise<CreateCommitResult> {
   const reinitProposal: Proposal = {
@@ -59,7 +59,7 @@ export async function reinitCreateNewGroup(
   memberKeyPackages: KeyPackage[],
   groupId: Uint8Array,
   cipherSuite: CiphersuiteName,
-  extensions: Extension[],
+  extensions: CustomExtension[],
   provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<CreateCommitResult> {
   const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider)

@@ -1,5 +1,5 @@
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
-import { Extension, extensionsSupportedByCapabilities } from "./extension.js"
+import { extensionsSupportedByCapabilities } from "./extension.js"
 import { externalSenderDecoder } from "./externalSender.js"
 import { GroupInfo } from "./groupInfo.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
@@ -12,6 +12,7 @@ import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { senderTypes } from "./sender.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { wireformats } from "./wireformat.js"
+import { decode } from "./codec/tlsDecoder.js"
 
 /** @public */
 export async function proposeAddExternal(
@@ -59,13 +60,14 @@ export async function proposeExternal(
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MLSMessage> {
-  const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex: Extension): boolean => {
+  const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex): boolean => {
     if (ex.extensionType !== defaultExtensionTypes.external_senders) return false
-    const decoded = externalSenderDecoder(ex.extensionData, 0)
+
+    const decoded = decode(externalSenderDecoder, ex.extensionData)
 
     if (decoded === undefined) throw new ValidationError("Could not decode external_sender extension")
 
-    return constantTimeEqual(decoded[0].signaturePublicKey, signaturePublicKey)
+    return constantTimeEqual(decoded.signaturePublicKey, signaturePublicKey)
   })
 
   if (externalSenderExtensionIndex === -1)

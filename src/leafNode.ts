@@ -5,7 +5,7 @@ import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, varLenDataDecoder, varLenTypeEncoder, varLenTypeDecoder } from "./codec/variableLength.js"
 import { credentialEncoder, credentialDecoder, Credential } from "./credential.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { Extension, extensionEncoder, extensionDecoder } from "./extension.js"
+import { extensionEncoder, leafNodeExtensionDecoder, LeafNodeExtension } from "./extension.js"
 import { leafNodeSources, leafNodeSourceValueDecoder, leafNodeSourceValueEncoder } from "./leafNodeSource.js"
 import { Lifetime, lifetimeEncoder, lifetimeDecoder } from "./lifetime.js"
 
@@ -38,21 +38,21 @@ export type LeafNodeInfoOmitted = LeafNodeInfoKeyPackage | LeafNodeInfoUpdateOmi
 /** @public */
 export interface LeafNodeInfoUpdateOmitted {
   leafNodeSource: typeof leafNodeSources.update
-  extensions: Extension[]
+  extensions: LeafNodeExtension[]
 }
 
 /** @public */
 export interface LeafNodeInfoCommitOmitted {
   leafNodeSource: typeof leafNodeSources.commit
   parentHash: Uint8Array
-  extensions: Extension[]
+  extensions: LeafNodeExtension[]
 }
 
 /** @public */
 export interface LeafNodeInfoKeyPackage {
   leafNodeSource: typeof leafNodeSources.key_package
   lifetime: Lifetime
-  extensions: Extension[]
+  extensions: LeafNodeExtension[]
 }
 
 export const leafNodeInfoKeyPackageEncoder: Encoder<LeafNodeInfoKeyPackage> = contramapBufferEncoders(
@@ -82,7 +82,7 @@ export const leafNodeInfoOmittedEncoder: Encoder<LeafNodeInfoOmitted> = (info) =
 }
 
 export const leafNodeInfoKeyPackageDecoder: Decoder<LeafNodeInfoKeyPackage> = mapDecoders(
-  [lifetimeDecoder, varLenTypeDecoder(extensionDecoder)],
+  [lifetimeDecoder, varLenTypeDecoder(leafNodeExtensionDecoder)],
   (lifetime, extensions) => ({
     leafNodeSource: leafNodeSources.key_package,
     lifetime,
@@ -91,7 +91,7 @@ export const leafNodeInfoKeyPackageDecoder: Decoder<LeafNodeInfoKeyPackage> = ma
 )
 
 export const leafNodeInfoUpdateOmittedDecoder: Decoder<LeafNodeInfoUpdateOmitted> = mapDecoder(
-  varLenTypeDecoder(extensionDecoder),
+  varLenTypeDecoder(leafNodeExtensionDecoder),
   (extensions) => ({
     leafNodeSource: leafNodeSources.update,
     extensions,
@@ -99,7 +99,7 @@ export const leafNodeInfoUpdateOmittedDecoder: Decoder<LeafNodeInfoUpdateOmitted
 )
 
 export const leafNodeInfoCommitOmittedDecoder: Decoder<LeafNodeInfoCommitOmitted> = mapDecoders(
-  [varLenDataDecoder, varLenTypeDecoder(extensionDecoder)],
+  [varLenDataDecoder, varLenTypeDecoder(leafNodeExtensionDecoder)],
   (parentHash, extensions) => ({
     leafNodeSource: leafNodeSources.commit,
     parentHash,

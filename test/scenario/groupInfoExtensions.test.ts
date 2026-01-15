@@ -6,7 +6,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { Extension } from "../../src/extension.js"
+import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 
@@ -17,7 +17,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
-  const customExtensionType: number = 7
+  const customExtensionType: number = 71
 
   const capabilities: Capabilities = {
     extensions: [customExtensionType],
@@ -39,10 +39,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const extensionData = new TextEncoder().encode("custom extension data")
 
-  const customExtension: Extension = {
-    extensionType: customExtensionType,
-    extensionData: extensionData,
-  }
+  const customExtension: CustomExtension = makeCustomExtension(customExtensionType, extensionData)
 
   const gi = await createGroupInfoWithExternalPub(aliceGroup, [customExtension], impl)
 

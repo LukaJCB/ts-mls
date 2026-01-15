@@ -1,4 +1,9 @@
-export { type Extension } from "./extension.js"
+export {
+  type CustomExtension,
+  type GroupContextExtension,
+  type GroupInfoExtension,
+  type LeafNodeExtension,
+} from "./extension.js"
 
 export { defaultProposalTypes, type DefaultProposalTypeName } from "./defaultProposalType.js"
 
@@ -130,9 +135,8 @@ export { type FramedContent, type FramedContentAuthData } from "./framedContent.
 export { type Lifetime, defaultLifetime } from "./lifetime.js"
 export { type Capabilities } from "./capabilities.js"
 export { defaultCapabilities } from "./defaultCapabilities.js"
-
 export { type Decoder, decode } from "./codec/tlsDecoder.js"
-export { type Encoder as BufferEncoder, encode } from "./codec/tlsEncoder.js"
+export { type Encoder, encode } from "./codec/tlsEncoder.js"
 
 export { type Brand } from "./util/brand.js"
 

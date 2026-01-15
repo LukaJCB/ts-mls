@@ -1,3 +1,6 @@
+import { uint16Decoder } from "./codec/number.js"
+import { Decoder, mapDecoderOption } from "./codec/tlsDecoder.js"
+
 /** @public */
 export const defaultExtensionTypes = {
   application_id: 1,
@@ -14,3 +17,8 @@ export type DefaultExtensionTypeValue = (typeof defaultExtensionTypes)[DefaultEx
 export function isDefaultExtensionTypeValue(v: number): v is DefaultExtensionTypeValue {
   return Object.values(defaultExtensionTypes).includes(v as DefaultExtensionTypeValue)
 }
+
+export const decodeDefaultExtensionTypeValue: Decoder<DefaultExtensionTypeValue> = mapDecoderOption(
+  uint16Decoder,
+  (n) => (isDefaultExtensionTypeValue(n) ? n : undefined),
+)

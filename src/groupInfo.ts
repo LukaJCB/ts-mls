@@ -5,16 +5,16 @@ import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEnco
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { extensionDecoder, extensionEncoder, Extension } from "./extension.js"
+import { extensionEncoder, ExtensionRatchetTree, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
 import { groupContextDecoder, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
-import { CodecError } from "./mlsError.js"
 import { ratchetTreeDecoder, RatchetTree } from "./ratchetTree.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
+import { CodecError } from "./mlsError.js"
 
 /** @public */
 export interface GroupInfoTBS {
   groupContext: GroupContext
-  extensions: Extension[]
+  extensions: GroupInfoExtension[]
   confirmationTag: Uint8Array
   signer: number
 }
@@ -25,7 +25,7 @@ export const groupInfoTBSEncoder: Encoder<GroupInfoTBS> = contramapBufferEncoder
 )
 
 export const groupInfoTBSDecoder: Decoder<GroupInfoTBS> = mapDecoders(
-  [groupContextDecoder, varLenTypeDecoder(extensionDecoder), varLenDataDecoder, uint32Decoder],
+  [groupContextDecoder, varLenTypeDecoder(groupInfoExtensionDecoder), varLenDataDecoder, uint32Decoder],
   (groupContext, extensions, confirmationTag, signer) => ({
     groupContext,
     extensions,
@@ -53,7 +53,9 @@ export const groupInfoDecoder: Decoder<GroupInfo> = mapDecoders(
 )
 
 export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefined {
-  const treeExtension = info.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
+  const treeExtension = info.extensions.find(
+    (ex): ex is ExtensionRatchetTree => ex.extensionType === defaultExtensionTypes.ratchet_tree,
+  )
 
   if (treeExtension !== undefined) {
     const tree = ratchetTreeDecoder(treeExtension.extensionData, 0)

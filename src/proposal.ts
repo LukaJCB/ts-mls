@@ -3,7 +3,7 @@ import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, orDecoder } from "./c
 import { contramapBufferEncoder, contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
-import { extensionDecoder, extensionEncoder, Extension } from "./extension.js"
+import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
 import { keyPackageDecoder, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { pskIdDecoder, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
 import {
@@ -52,7 +52,7 @@ export interface Reinit {
   groupId: Uint8Array
   version: ProtocolVersionValue
   cipherSuite: CiphersuiteId
-  extensions: Extension[]
+  extensions: GroupContextExtension[]
 }
 
 export const reinitEncoder: Encoder<Reinit> = contramapBufferEncoders(
@@ -61,7 +61,7 @@ export const reinitEncoder: Encoder<Reinit> = contramapBufferEncoders(
 )
 
 export const reinitDecoder: Decoder<Reinit> = mapDecoders(
-  [varLenDataDecoder, protocolVersionDecoder, ciphersuiteDecoder, varLenTypeDecoder(extensionDecoder)],
+  [varLenDataDecoder, protocolVersionDecoder, ciphersuiteDecoder, varLenTypeDecoder(groupContextExtensionDecoder)],
   (groupId, version, cipherSuite, extensions) => ({ groupId, version, cipherSuite, extensions }),
 )
 
@@ -75,7 +75,7 @@ export const externalInitDecoder: Decoder<ExternalInit> = mapDecoder(varLenDataD
 
 /** @public */
 export interface GroupContextExtensions {
-  extensions: Extension[]
+  extensions: GroupContextExtension[]
 }
 
 export const groupContextExtensionsEncoder: Encoder<GroupContextExtensions> = contramapBufferEncoder(
@@ -84,7 +84,7 @@ export const groupContextExtensionsEncoder: Encoder<GroupContextExtensions> = co
 )
 
 export const groupContextExtensionsDecoder: Decoder<GroupContextExtensions> = mapDecoder(
-  varLenTypeDecoder(extensionDecoder),
+  varLenTypeDecoder(groupContextExtensionDecoder),
   (extensions) => ({ extensions }),
 )
 

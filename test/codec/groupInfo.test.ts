@@ -22,7 +22,7 @@ const dummyGroupContext: GroupContext = {
   extensions: [],
 }
 const dummyExtension = {
-  extensionType: defaultExtensionTypes.ratchet_tree,
+  extensionType: defaultExtensionTypes.external_pub,
   extensionData: new Uint8Array([8, 9]),
 } as const
 

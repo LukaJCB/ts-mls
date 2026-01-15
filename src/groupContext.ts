@@ -5,7 +5,7 @@ import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEnco
 import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 
 import { expandWithLabel, Kdf } from "./crypto/kdf.js"
-import { extensionDecoder, extensionEncoder, Extension } from "./extension.js"
+import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
 
 import { protocolVersionDecoder, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 
@@ -17,7 +17,7 @@ export interface GroupContext {
   epoch: bigint
   treeHash: Uint8Array
   confirmedTranscriptHash: Uint8Array
-  extensions: Extension[]
+  extensions: GroupContextExtension[]
 }
 
 export const groupContextEncoder: Encoder<GroupContext> = contramapBufferEncoders(
@@ -42,7 +42,7 @@ export const groupContextDecoder: Decoder<GroupContext> = mapDecoders(
     uint64Decoder, // epoch
     varLenDataDecoder, // treeHash
     varLenDataDecoder, // confirmedTranscriptHash
-    varLenTypeDecoder(extensionDecoder),
+    varLenTypeDecoder(groupContextExtensionDecoder),
   ],
   (version, cipherSuite, groupId, epoch, treeHash, confirmedTranscriptHash, extensions) => ({
     version,

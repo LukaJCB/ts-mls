@@ -5,6 +5,7 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { createRoundtripTest } from "./roundtrip.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
+import { makeCustomExtension } from "../../src/extension.js"
 
 describe("KeyPackageTBS roundtrip", () => {
   const roundtrip = createRoundtripTest(keyPackageTBSEncoder, keyPackageTBSDecoder)
@@ -61,9 +62,7 @@ describe("KeyPackageTBS roundtrip", () => {
         ],
         signature: new Uint8Array([39, 40, 41, 42, 43]),
       },
-      extensions: [
-        { extensionType: defaultExtensionTypes.application_id, extensionData: new Uint8Array([44, 45, 46]) },
-      ],
+      extensions: [makeCustomExtension(932, new Uint8Array([44, 45, 46]))],
     }
     roundtrip(tbs)
   })
