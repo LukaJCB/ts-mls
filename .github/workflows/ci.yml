@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 21, 22, 23, 24]
+        node-version: [20, 22, 24, 25]
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -19,10 +19,24 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - run: pnpm verify
       - name: Coveralls
         if: matrix.node-version == 24
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  test-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.13.0"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm playwright:install
+      - run: pnpm test:browser
