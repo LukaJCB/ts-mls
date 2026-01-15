@@ -1,11 +1,10 @@
 import { makeAead as defaultMakeAead } from "../../src/crypto/implementation/default/makeAead.js"
 import { makeAead as nobleMakeAead } from "../../src/crypto/implementation/noble/makeAead.js"
-import { randomBytes } from "crypto"
 
-const key128 = randomBytes(16)
-const key256 = randomBytes(32)
-const nonce = randomBytes(12)
-const aad = randomBytes(12)
+const key128 = crypto.getRandomValues(new Uint8Array(16))
+const key256 = crypto.getRandomValues(new Uint8Array(32))
+const nonce = crypto.getRandomValues(new Uint8Array(12))
+const aad = crypto.getRandomValues(new Uint8Array(12))
 const plaintext = new TextEncoder().encode("Hello world!")
 
 describe("Default aead", () => {

@@ -51,6 +51,14 @@ To run all tests:
 pnpm test
 ```
 
+To run the tests in a real browser (Vitest Browser Mode via Playwright):
+
+```bash
+pnpm playwright:install
+
+pnpm test:browser
+```
+
 To run a specific test by name:
 
 ```bash

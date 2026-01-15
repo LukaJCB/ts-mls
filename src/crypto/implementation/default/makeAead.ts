@@ -59,15 +59,15 @@ async function encryptAesGcm(
   plaintext: Uint8Array,
 ): Promise<Uint8Array> {
   const cryptoKey = await crypto.subtle.importKey("raw", toBufferSource(key), { name: "AES-GCM" }, false, ["encrypt"])
-  const result = await crypto.subtle.encrypt(
-    {
-      name: "AES-GCM",
-      iv: toBufferSource(nonce),
-      additionalData: aad.length > 0 ? toBufferSource(aad) : undefined,
-    },
-    cryptoKey,
-    toBufferSource(plaintext),
-  )
+  const params: AesGcmParams = {
+    name: "AES-GCM",
+    iv: toBufferSource(nonce),
+  }
+
+  if (aad.length > 0) {
+    params.additionalData = toBufferSource(aad)
+  }
+  const result = await crypto.subtle.encrypt(params, cryptoKey, toBufferSource(plaintext))
   return new Uint8Array(result)
 }
 
@@ -78,14 +78,14 @@ async function decryptAesGcm(
   ciphertext: Uint8Array,
 ): Promise<Uint8Array> {
   const cryptoKey = await crypto.subtle.importKey("raw", toBufferSource(key), { name: "AES-GCM" }, false, ["decrypt"])
-  const result = await crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv: toBufferSource(nonce),
-      additionalData: aad.length > 0 ? toBufferSource(aad) : undefined,
-    },
-    cryptoKey,
-    toBufferSource(ciphertext),
-  )
+  const params: AesGcmParams = {
+    name: "AES-GCM",
+    iv: toBufferSource(nonce),
+  }
+
+  if (aad.length > 0) {
+    params.additionalData = toBufferSource(aad)
+  }
+  const result = await crypto.subtle.decrypt(params, cryptoKey, toBufferSource(ciphertext))
   return new Uint8Array(result)
 }

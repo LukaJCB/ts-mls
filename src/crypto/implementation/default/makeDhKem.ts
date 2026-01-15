@@ -2,7 +2,6 @@ import {
   KemInterface,
   DhkemP256HkdfSha256,
   DhkemX25519HkdfSha256,
-  DhkemX448HkdfSha512,
   DhkemP521HkdfSha512,
   DhkemP384HkdfSha384,
 } from "@hpke/core"
@@ -15,8 +14,16 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
       return new DhkemP256HkdfSha256()
     case "DHKEM-X25519-HKDF-SHA256":
       return new DhkemX25519HkdfSha256()
-    case "DHKEM-X448-HKDF-SHA512":
-      return new DhkemX448HkdfSha512()
+    case "DHKEM-X448-HKDF-SHA512": {
+      try {
+        const { DhkemX448HkdfSha512 } = await import("@hpke/dhkem-x448")
+        return new DhkemX448HkdfSha512()
+      } catch (err) {
+        throw new DependencyError(
+          "Optional dependency '@hpke/dhkem-x448' is not installed. Please install it to use this feature.",
+        )
+      }
+    }
     case "DHKEM-P521-HKDF-SHA512":
       return new DhkemP521HkdfSha512()
     case "DHKEM-P384-HKDF-SHA384":
