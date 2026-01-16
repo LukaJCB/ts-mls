@@ -16,6 +16,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { pskTypes } from "../../src/presharedkey.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External PSK %s`, async (cs) => {
   await externalPsk(cs as CiphersuiteName)
@@ -32,7 +33,14 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -51,6 +59,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -64,6 +73,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -109,6 +119,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
       state: aliceGroup,
       pskIndex: makePskIndex(aliceGroup, sharedPsks),
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [pskProposal1, pskProposal2],
@@ -123,6 +134,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     bobGroup,
     pskCommitResult.commit.privateMessage,
     makePskIndex(bobGroup, sharedPsks),
+    unsafeTestingAuthenticationService,
     impl,
   )
 

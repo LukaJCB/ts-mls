@@ -9,6 +9,7 @@ import {
   generateKeyPackage,
   getCiphersuiteFromName,
   getCiphersuiteImpl,
+  unsafeTestingAuthenticationService,
 } from "../../src/index.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
@@ -35,7 +36,14 @@ describe("EpochReceiverData roundtrip", () => {
 
     const groupId = new TextEncoder().encode("test-group")
 
-    const state = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+    const state = await createGroup(
+      groupId,
+      alice.publicPackage,
+      alice.privatePackage,
+      [],
+      unsafeTestingAuthenticationService,
+      impl,
+    )
 
     const [historical] = addHistoricalReceiverData(state)
 

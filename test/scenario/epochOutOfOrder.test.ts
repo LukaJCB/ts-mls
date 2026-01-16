@@ -21,6 +21,7 @@ import { ValidationError } from "../../src/mlsError.js"
 import { defaultClientConfig } from "../../src/clientConfig.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 describe("Out of order message processing by epoch", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
@@ -57,7 +58,14 @@ async function setupTestParticipants(
   const groupId = new TextEncoder().encode("group1")
 
   // group starts at epoch 0
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -77,6 +85,7 @@ async function setupTestParticipants(
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -91,6 +100,7 @@ async function setupTestParticipants(
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     undefined,
     undefined,
@@ -127,6 +137,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   const emptyCommitResult1 = await createCommit({
     state: bobGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
   bobGroup = emptyCommitResult1.newState
 
@@ -138,6 +149,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     aliceGroup,
     emptyCommitResult1.commit.privateMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
   aliceGroup = aliceProcessFirstCommitResult.newState
@@ -150,6 +162,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   const emptyCommitResult2 = await createCommit({
     state: bobGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
   bobGroup = emptyCommitResult2.newState
 
@@ -161,6 +174,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     aliceGroup,
     emptyCommitResult2.commit.privateMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
   aliceGroup = aliceProcessSecondCommitResult.newState
@@ -173,6 +187,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   const emptyCommitResult3 = await createCommit({
     state: bobGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
   bobGroup = emptyCommitResult3.newState
 
@@ -184,6 +199,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     aliceGroup,
     emptyCommitResult3.commit.privateMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
   aliceGroup = aliceProcessThirdCommitResult.newState
@@ -193,6 +209,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     bobGroup,
     aliceCreateThirdMessageResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = bobProcessThirdMessageResult.newState
@@ -202,6 +219,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     bobGroup,
     aliceCreateFirstMessageResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = bobProcessFirstMessageResult.newState
@@ -211,6 +229,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     bobGroup,
     aliceCreateSecondMessageResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = bobProcessSecondMessageResult.newState
@@ -221,7 +240,13 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   await expect(
-    processPrivateMessage(bobGroup, aliceCreateFirstProposalResult.message.privateMessage, emptyPskIndex, impl),
+    processPrivateMessage(
+      bobGroup,
+      aliceCreateFirstProposalResult.message.privateMessage,
+      emptyPskIndex,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(ValidationError)
 
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
@@ -245,6 +270,7 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
     const emptyCommitResult = await createCommit({
       state: bobGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     })
     bobGroup = emptyCommitResult.newState
 
@@ -256,6 +282,7 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
       aliceGroup,
       emptyCommitResult.commit.privateMessage,
       emptyPskIndex,
+      unsafeTestingAuthenticationService,
       impl,
     )
     aliceGroup = aliceProcessCommitResult.newState
@@ -265,7 +292,13 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
   const shuffledMessages = shuffledIndices(messages).map((i) => messages[i]!)
 
   for (const msg of shuffledMessages) {
-    const bobProcessMessageResult = await processPrivateMessage(bobGroup, msg, makePskIndex(bobGroup, {}), impl)
+    const bobProcessMessageResult = await processPrivateMessage(
+      bobGroup,
+      msg,
+      makePskIndex(bobGroup, {}),
+      unsafeTestingAuthenticationService,
+      impl,
+    )
     bobGroup = bobProcessMessageResult.newState
   }
 
@@ -295,6 +328,7 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
     const emptyCommitResult = await createCommit({
       state: bobGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     })
     bobGroup = emptyCommitResult.newState
 
@@ -306,6 +340,7 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
       aliceGroup,
       emptyCommitResult.commit.privateMessage,
       emptyPskIndex,
+      unsafeTestingAuthenticationService,
       impl,
     )
     aliceGroup = aliceProcessCommitResult.newState
@@ -313,5 +348,7 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
   }
 
   //process last message
-  await expect(processPrivateMessage(bobGroup, messages.at(0)!, emptyPskIndex, impl)).rejects.toThrow(ValidationError)
+  await expect(
+    processPrivateMessage(bobGroup, messages.at(0)!, emptyPskIndex, unsafeTestingAuthenticationService, impl),
+  ).rejects.toThrow(ValidationError)
 }

@@ -13,6 +13,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { pskTypes } from "../../src/presharedkey.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External PSK Join %s`, async (cs) => {
   await externalPskJoin(cs as CiphersuiteName)
@@ -29,7 +30,14 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -69,6 +77,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
       state: aliceGroup,
       pskIndex: makePskIndex(aliceGroup, sharedPsks),
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal, pskProposal],
@@ -82,6 +91,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     makePskIndex(undefined, sharedPsks),
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )

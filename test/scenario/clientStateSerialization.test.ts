@@ -16,6 +16,7 @@ import {
   defaultProposalTypes,
   groupStateEncoder,
   encode,
+  unsafeTestingAuthenticationService,
 } from "../../src/index.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serialization round-trip %s", async (cs) => {
@@ -34,7 +35,14 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
 
   const groupId = new TextEncoder().encode("test-group")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const { clientConfig: _config, ...firstState } = aliceGroup
 
@@ -80,6 +88,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal, addCharlieProposal],

@@ -19,6 +19,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -57,7 +58,14 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     extensionData: encode(externalSenderEncoder, externalSender),
   }
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [extension], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [extension],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -70,6 +78,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -83,6 +92,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -111,6 +121,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     aliceGroup,
     addCharlieProposal.publicMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -120,6 +131,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     bobGroup,
     addCharlieProposal.publicMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -128,6 +140,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   const removeBobCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = removeBobCommitResult.newState
@@ -139,6 +152,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     bobGroup,
     removeBobCommitResult.commit.privateMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 

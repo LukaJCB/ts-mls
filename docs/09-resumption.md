@@ -38,6 +38,7 @@ import {
   makePskIndex,
   joinGroupFromBranch,
   branchGroup,
+  unsafeTestingAuthenticationService,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -47,7 +48,14 @@ const aliceCredential: Credential = {
 }
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -61,7 +69,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal] },
 )
 aliceGroup = addBobCommitResult.newState
@@ -70,6 +78,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -86,6 +95,7 @@ const branchCommitResult = await branchGroup(
   aliceNewKeyPackage.privatePackage,
   [bobNewKeyPackage.publicPackage],
   newGroupId,
+  unsafeTestingAuthenticationService,
   impl,
 )
 aliceGroup = branchCommitResult.newState
@@ -96,6 +106,7 @@ bobGroup = await joinGroupFromBranch(
   branchCommitResult.welcome!,
   bobNewKeyPackage.publicPackage,
   bobNewKeyPackage.privatePackage,
+  unsafeTestingAuthenticationService,
   aliceGroup.ratchetTree,
   impl,
 )

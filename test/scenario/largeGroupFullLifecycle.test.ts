@@ -13,6 +13,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 function randomInt(maxExclusive: number): number {
   return Math.floor(Math.random() * maxExclusive)
@@ -42,7 +43,14 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
   const initialCreatorName = "member-0"
   const creatorCred = makeCredential(initialCreatorName)
   const creatorKP = await generateKeyPackage(creatorCred, defaultCapabilities(), defaultLifetime, [], impl)
-  const creatorGroup = await createGroup(groupId, creatorKP.publicPackage, creatorKP.privatePackage, [], impl)
+  const creatorGroup = await createGroup(
+    groupId,
+    creatorKP.publicPackage,
+    creatorKP.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   memberStates.push({
     id: initialCreatorName,
@@ -103,6 +111,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       {
         state: remover.state,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       {
         extraProposals: [removeProposal],
@@ -120,6 +129,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
         m.state,
         commitResult.commit.privateMessage,
         makePskIndex(m.state, {}),
+        unsafeTestingAuthenticationService,
         impl,
       )
       m.state = result.newState
@@ -154,6 +164,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     {
       state: adder.state,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addProposal],
@@ -169,6 +180,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     newKP.publicPackage,
     newKP.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     adder.state.ratchetTree,
   )
@@ -181,6 +193,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
       m.state,
       commitResult.commit.privateMessage,
       makePskIndex(m.state, {}),
+      unsafeTestingAuthenticationService,
       impl,
     )
 
@@ -197,6 +210,7 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
   const emptyCommitResult = await createCommit({
     state: updater.state,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   updater.state = emptyCommitResult.newState
@@ -212,6 +226,7 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
       m.state,
       emptyCommitResult.commit.privateMessage,
       makePskIndex(m.state, {}),
+      unsafeTestingAuthenticationService,
       impl,
     )
 

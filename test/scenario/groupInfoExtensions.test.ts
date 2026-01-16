@@ -9,6 +9,7 @@ import { Capabilities } from "../../src/capabilities.js"
 import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
@@ -35,7 +36,14 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const extensionData = new TextEncoder().encode("custom extension data")
 

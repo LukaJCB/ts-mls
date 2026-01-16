@@ -14,6 +14,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Update %s`, async (cs) => {
   await update(cs as CiphersuiteName)
 })
@@ -29,7 +30,14 @@ async function update(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -48,6 +56,7 @@ async function update(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -61,6 +70,7 @@ async function update(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -70,6 +80,7 @@ async function update(cipherSuite: CiphersuiteName) {
   const emptyCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message)
@@ -81,6 +92,7 @@ async function update(cipherSuite: CiphersuiteName) {
     bobGroup,
     emptyCommitResult.commit.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -89,6 +101,7 @@ async function update(cipherSuite: CiphersuiteName) {
   const emptyCommitResult3 = await createCommit({
     state: bobGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
@@ -100,6 +113,7 @@ async function update(cipherSuite: CiphersuiteName) {
     aliceGroup,
     emptyCommitResult3.commit.privateMessage,
     makePskIndex(aliceGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 

@@ -20,7 +20,7 @@ import {
   KeySchedule,
   keyScheduleEncoder,
 } from "./keySchedule.js"
-import { pskIdEncoder, PreSharedKeyID, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
+import { pskIdEncoder, PskId, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -688,7 +688,7 @@ function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined
 export interface ApplyProposalsResult {
   tree: RatchetTree
   pskSecret: Uint8Array
-  pskIds: PreSharedKeyID[]
+  pskIds: PskId[]
   needsUpdatePath: boolean
   additionalResult: ApplyProposalsData
   selfRemoved: boolean
@@ -706,6 +706,7 @@ export async function applyProposals(
   committerLeafIndex: LeafIndex | undefined,
   pskSearch: PskIndex,
   sentByClient: boolean,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<ApplyProposalsResult> {
   const allProposals = proposals.reduce((acc, cur) => {
@@ -758,7 +759,7 @@ export async function applyProposals(
         committerLeafIndex,
         state.groupContext,
         state.clientConfig.keyPackageEqualityConfig,
-        state.clientConfig.authService,
+        authService,
         state.ratchetTree,
       ),
     )
@@ -770,7 +771,7 @@ export async function applyProposals(
       grouped,
       state.groupContext,
       sentByClient,
-      state.clientConfig.authService,
+      authService,
       state.clientConfig.lifetimeConfig,
       cs.signature,
     )
@@ -890,6 +891,7 @@ export async function joinGroup(
   keyPackage: KeyPackage,
   privateKeys: PrivateKeyPackage,
   pskSearch: PskIndex,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
   ratchetTree?: RatchetTree,
   resumingFromState?: ClientState,
@@ -900,6 +902,7 @@ export async function joinGroup(
     keyPackage,
     privateKeys,
     pskSearch,
+    authService,
     cs,
     ratchetTree,
     resumingFromState,
@@ -915,6 +918,7 @@ export async function joinGroupWithExtensions(
   keyPackage: KeyPackage,
   privateKeys: PrivateKeyPackage,
   pskSearch: PskIndex,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
   ratchetTree?: RatchetTree,
   resumingFromState?: ClientState,
@@ -979,7 +983,7 @@ export async function joinGroupWithExtensions(
   }
   if (signerNode.nodeType === nodeTypes.parent) throw new ValidationError("Expected non blank leaf node")
 
-  const credentialVerified = await clientConfig.authService.validateCredential(
+  const credentialVerified = await authService.validateCredential(
     signerNode.leaf.credential,
     signerNode.leaf.signaturePublicKey,
   )
@@ -1002,7 +1006,7 @@ export async function joinGroupWithExtensions(
       tree,
       gi.groupContext,
       clientConfig.lifetimeConfig,
-      clientConfig.authService,
+      authService,
       gi.groupContext.treeHash,
       cs,
     ),
@@ -1070,6 +1074,7 @@ export async function createGroup(
   keyPackage: KeyPackage,
   privateKeyPackage: PrivateKeyPackage,
   extensions: GroupContextExtension[],
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
   clientConfig: ClientConfig = defaultClientConfig,
 ): Promise<ClientState> {
@@ -1092,7 +1097,7 @@ export async function createGroup(
     confirmedTranscriptHash,
   }
 
-  throwIfDefined(await validateExternalSenders(extensions, clientConfig.authService))
+  throwIfDefined(await validateExternalSenders(extensions, authService))
 
   const epochSecret = cs.rng.randomBytes(cs.kdf.size)
 

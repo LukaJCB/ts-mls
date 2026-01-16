@@ -8,6 +8,7 @@ import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { ClientConfig, defaultClientConfig } from "../../src/clientConfig.js"
 import { fromJsonString, toJsonString } from "../../src/codec/json.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("ClientState JSON serialization round-trip %s", async (cs) => {
   await clientStateJsonSerializationTest(cs as CiphersuiteName)
@@ -26,7 +27,14 @@ async function clientStateJsonSerializationTest(cipherSuite: CiphersuiteName) {
 
   const clientConfig: ClientConfig = defaultClientConfig
 
-  const originalState = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const originalState = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
   const { clientConfig: _config, ...firstState } = originalState
 
   const jsonString = toJsonString(originalState)

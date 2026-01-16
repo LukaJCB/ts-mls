@@ -41,6 +41,7 @@ import {
   createApplicationMessage,
   createCommit,
   Proposal,
+  unsafeTestingAuthenticationService,
   zeroOutUint8Array,
 } from "ts-mls"
 
@@ -52,7 +53,14 @@ const aliceCredential: Credential = {
 }
 const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 const groupId = new TextEncoder().encode("group1")
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -65,7 +73,10 @@ const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
+const commitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = commitResult.newState
 
 // Alice deletes the keys used to encrypt the commit message
@@ -77,6 +88,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -94,6 +106,7 @@ const bobProcessMessageResult = await processPrivateMessage(
   bobGroup,
   aliceCreateMessageResult.privateMessage,
   makePskIndex(bobGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 bobGroup = bobProcessMessageResult.newState

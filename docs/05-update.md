@@ -41,6 +41,7 @@ import {
   generateKeyPackage,
   Proposal,
   leafNodeSources,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -53,7 +54,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -67,7 +75,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal] },
 )
 aliceGroup = addBobCommitResult.newState
@@ -78,12 +86,17 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
 
 // Alice updates her key with an empty commit, transitioning to epoch 2
-const emptyCommitResult = await createCommit({ state: aliceGroup, cipherSuite: impl })
+const emptyCommitResult = await createCommit({
+  state: aliceGroup,
+  cipherSuite: impl,
+  authService: unsafeTestingAuthenticationService,
+})
 if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
 
@@ -92,12 +105,17 @@ const bobProcessCommitResult = await processPrivateMessage(
   bobGroup,
   emptyCommitResult.commit.privateMessage,
   makePskIndex(bobGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 bobGroup = bobProcessCommitResult.newState
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
-const emptyCommitResult3 = await createCommit({ state: aliceGroup, cipherSuite: impl })
+const emptyCommitResult3 = await createCommit({
+  state: aliceGroup,
+  cipherSuite: impl,
+  authService: unsafeTestingAuthenticationService,
+})
 if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
@@ -107,6 +125,7 @@ const aliceProcessCommitResult3 = await processPrivateMessage(
   aliceGroup,
   emptyCommitResult3.commit.privateMessage,
   makePskIndex(aliceGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 aliceGroup = aliceProcessCommitResult3.newState
@@ -122,7 +141,7 @@ const updateAliceProposal: Proposal = {
 
 // Bob commits to Alice's proposal and transitions to epoch 4
 const updateBobCommitResult = await createCommit(
-  { state: bobGroup, cipherSuite: impl },
+  { state: bobGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [updateAliceProposal] },
 )
 if (updateBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
@@ -134,6 +153,7 @@ const aliceProcessCommitResult4 = await processPrivateMessage(
   aliceGroup,
   updateBobCommitResult.commit.privateMessage,
   makePskIndex(aliceGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 aliceGroup = aliceProcessCommitResult4.newState

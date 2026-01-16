@@ -17,6 +17,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
   await oneToOne(cs as CiphersuiteName)
 })
@@ -32,7 +33,14 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -65,6 +73,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -91,6 +100,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -123,6 +133,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     bobGroup,
     decodedPrivateMessageAlice.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -153,6 +164,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     aliceGroup,
     decodedPrivateMessageBob.privateMessage,
     makePskIndex(aliceGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 

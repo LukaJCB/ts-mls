@@ -9,7 +9,7 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { createProposal } from "../../src/index.js"
+import { createProposal, unsafeTestingAuthenticationService } from "../../src/index.js"
 import { processMessage } from "../../src/processMessages.js"
 import { externalSenderEncoder } from "../../src/externalSender.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
@@ -33,7 +33,14 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   const groupId = new TextEncoder().encode("group1")
   const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -52,6 +59,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       wireAsPublicMessage: publicMessage,
@@ -66,6 +74,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -98,6 +107,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     aliceGroup,
     emptyPskIndex,
     () => "reject",
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -110,6 +120,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       wireAsPublicMessage: publicMessage,
@@ -126,6 +137,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     bobGroup,
     emptyPskIndex,
     () => "reject",
+    unsafeTestingAuthenticationService,
     impl,
   )
 

@@ -45,6 +45,7 @@ import { addToMap } from "./util/addToMap.js"
 import { WireformatName, wireformats } from "./wireformat.js"
 import { zeroOutUint8Array } from "./util/byteArray.js"
 import { contentTypes } from "./contentType.js"
+import { AuthenticationService } from "./authenticationService.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -65,6 +66,7 @@ export async function processPrivateMessage(
   state: ClientState,
   pm: PrivateMessage,
   pskSearch: PskIndex,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
   callback: IncomingMessageCallback = acceptAll,
 ): Promise<ProcessMessageResult> {
@@ -130,6 +132,7 @@ export async function processPrivateMessage(
       "mls_private_message",
       pskSearch,
       callback,
+      authService,
       cs,
     ) //todo solve with types
     return {
@@ -175,6 +178,7 @@ export async function processPublicMessage(
   state: ClientState,
   pm: PublicMessage,
   pskSearch: PskIndex,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
   callback: IncomingMessageCallback = acceptAll,
 ): Promise<NewStateWithActionTaken> {
@@ -206,7 +210,15 @@ export async function processPublicMessage(
         consumed: [],
       }
   } else {
-    return processCommit(state, content as AuthenticatedContentCommit, "mls_public_message", pskSearch, callback, cs) //todo solve with types
+    return processCommit(
+      state,
+      content as AuthenticatedContentCommit,
+      "mls_public_message",
+      pskSearch,
+      callback,
+      authService,
+      cs,
+    ) //todo solve with types
   }
 }
 
@@ -216,6 +228,7 @@ async function processCommit(
   wireformat: WireformatName,
   pskSearch: PskIndex,
   callback: IncomingMessageCallback,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<NewStateWithActionTaken> {
   if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
@@ -223,7 +236,15 @@ async function processCommit(
   const senderLeafIndex =
     content.content.sender.senderType === senderTypes.member ? toLeafIndex(content.content.sender.leafIndex) : undefined
 
-  const result = await applyProposals(state, content.content.commit.proposals, senderLeafIndex, pskSearch, false, cs)
+  const result = await applyProposals(
+    state,
+    content.content.commit.proposals,
+    senderLeafIndex,
+    pskSearch,
+    false,
+    authService,
+    cs,
+  )
 
   const action = callback({ kind: "commit", senderLeafIndex, proposals: result.allProposals })
 
@@ -244,7 +265,7 @@ async function processCommit(
         content.content.commit.path.leafNode,
         committerLeafIndex,
         state.groupContext,
-        state.clientConfig.authService,
+        authService,
         cs.signature,
       ),
     )
@@ -424,11 +445,12 @@ export async function processMessage(
   state: ClientState,
   pskIndex: PskIndex,
   action: IncomingMessageCallback,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<ProcessMessageResult> {
   if (message.wireformat === wireformats.mls_public_message) {
-    const result = await processPublicMessage(state, message.publicMessage, pskIndex, cs, action)
+    const result = await processPublicMessage(state, message.publicMessage, pskIndex, authService, cs, action)
 
     return { ...result, kind: "newState" }
-  } else return processPrivateMessage(state, message.privateMessage, emptyPskIndex, cs, action)
+  } else return processPrivateMessage(state, message.privateMessage, emptyPskIndex, authService, cs, action)
 }

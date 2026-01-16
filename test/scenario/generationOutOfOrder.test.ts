@@ -17,6 +17,7 @@ import { defaultKeyRetentionConfig, KeyRetentionConfig } from "../../src/keyRete
 import { ValidationError } from "../../src/mlsError.js"
 import { defaultClientConfig } from "../../src/clientConfig.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 describe("Out of order message processing by generation", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order generation %s`, async (cs) => {
@@ -51,7 +52,14 @@ async function setupTestParticipants(
   const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
 
   const groupId = new TextEncoder().encode("group1")
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -70,6 +78,7 @@ async function setupTestParticipants(
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -83,6 +92,7 @@ async function setupTestParticipants(
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     undefined,
     undefined,
@@ -117,6 +127,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     bobGroup,
     aliceCreateThirdMessageResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = bobProcessThirdMessageResult.newState
@@ -126,6 +137,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     bobGroup,
     aliceCreateFirstMessageResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = bobProcessFirstMessageResult.newState
@@ -135,6 +147,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     bobGroup,
     aliceCreateSecondMessageResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = bobProcessSecondMessageResult.newState
@@ -160,7 +173,13 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
   const shuffledMessages = shuffledIndices(messages).map((i) => messages[i]!)
 
   for (const msg of shuffledMessages) {
-    const bobProcessMessageResult = await processPrivateMessage(bobGroup, msg, makePskIndex(bobGroup, {}), impl)
+    const bobProcessMessageResult = await processPrivateMessage(
+      bobGroup,
+      msg,
+      makePskIndex(bobGroup, {}),
+      unsafeTestingAuthenticationService,
+      impl,
+    )
     bobGroup = bobProcessMessageResult.newState
   }
 
@@ -188,9 +207,17 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
   }
 
   // read the last message first
-  const processResult = await processPrivateMessage(bobGroup, messages.at(-1)!, emptyPskIndex, impl)
+  const processResult = await processPrivateMessage(
+    bobGroup,
+    messages.at(-1)!,
+    emptyPskIndex,
+    unsafeTestingAuthenticationService,
+    impl,
+  )
   bobGroup = processResult.newState
 
   // should fail reading the first message
-  await expect(processPrivateMessage(bobGroup, messages.at(0)!, emptyPskIndex, impl)).rejects.toThrow(ValidationError)
+  await expect(
+    processPrivateMessage(bobGroup, messages.at(0)!, emptyPskIndex, unsafeTestingAuthenticationService, impl),
+  ).rejects.toThrow(ValidationError)
 }

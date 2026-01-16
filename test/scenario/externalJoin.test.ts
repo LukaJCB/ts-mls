@@ -14,6 +14,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External join %s`, async (cs) => {
   await externalJoin(cs as CiphersuiteName)
@@ -30,7 +31,14 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -55,6 +63,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -68,6 +77,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -81,6 +91,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     charlie.publicPackage,
     charlie.privatePackage,
     false,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -90,6 +101,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     aliceGroup,
     charlieJoinGroupCommitResult.publicMessage,
     makePskIndex(aliceGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -99,6 +111,7 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     bobGroup,
     charlieJoinGroupCommitResult.publicMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
