@@ -14,6 +14,7 @@ import { ValidationError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
@@ -44,7 +45,14 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const customExtension: CustomExtension = makeCustomExtension(customExtensionType, extensionData)
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [customExtension], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [customExtension],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -63,6 +71,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -76,6 +85,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -103,6 +113,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
       {
         state: aliceGroup,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       { extraProposals: [addCharlieProposal] },
     ),

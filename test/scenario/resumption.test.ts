@@ -13,6 +13,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Resumption %s`, async (cs) => {
   await resumption(cs as CiphersuiteName)
@@ -29,7 +30,14 @@ async function resumption(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -48,6 +56,7 @@ async function resumption(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -61,6 +70,7 @@ async function resumption(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -77,6 +87,7 @@ async function resumption(cipherSuite: CiphersuiteName) {
     aliceNewKeyPackage.privatePackage,
     [bobNewKeyPackage.publicPackage],
     newGroupId,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -87,6 +98,7 @@ async function resumption(cipherSuite: CiphersuiteName) {
     branchCommitResult.welcome!,
     bobNewKeyPackage.publicPackage,
     bobNewKeyPackage.privatePackage,
+    unsafeTestingAuthenticationService,
     aliceGroup.ratchetTree,
     impl,
   )

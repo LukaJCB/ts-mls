@@ -3,7 +3,7 @@ import { extensionsSupportedByCapabilities } from "./extension.js"
 import { externalSenderDecoder } from "./externalSender.js"
 import { GroupInfo } from "./groupInfo.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
-import { MLSMessage } from "./message.js"
+import { MlsMessage } from "./message.js"
 import { protectExternalProposalPublic } from "./messageProtectionPublic.js"
 import { UsageError, ValidationError } from "./mlsError.js"
 import { Proposal } from "./proposal.js"
@@ -21,7 +21,7 @@ export async function proposeAddExternal(
   privateKeyPackage: PrivateKeyPackage,
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<MLSMessage> {
+): Promise<MlsMessage> {
   const allExtensionsSupported = extensionsSupportedByCapabilities(
     groupInfo.groupContext.extensions,
     keyPackage.leafNode.capabilities,
@@ -59,7 +59,7 @@ export async function proposeExternal(
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<MLSMessage> {
+): Promise<MlsMessage> {
   const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex): boolean => {
     if (ex.extensionType !== defaultExtensionTypes.external_senders) return false
 

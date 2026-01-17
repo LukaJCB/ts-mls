@@ -39,6 +39,7 @@ import {
   processPublicMessage,
   createGroupInfoWithExternalPubAndRatchetTree,
   makePskIndex,
+  unsafeTestingAuthenticationService,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -50,7 +51,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -69,7 +77,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal] },
 )
 aliceGroup = addBobCommitResult.newState
@@ -80,6 +88,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -93,6 +102,7 @@ const charlieJoinGroupCommitResult = await joinGroupExternal(
   charlie.publicPackage,
   charlie.privatePackage,
   false,
+  unsafeTestingAuthenticationService,
   impl,
 )
 let charlieGroup = charlieJoinGroupCommitResult.newState
@@ -102,6 +112,7 @@ const aliceProcessCharlieJoinResult = await processPublicMessage(
   aliceGroup,
   charlieJoinGroupCommitResult.publicMessage,
   makePskIndex(aliceGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 
@@ -111,6 +122,7 @@ const bobProcessCharlieJoinResult = await processPublicMessage(
   bobGroup,
   charlieJoinGroupCommitResult.publicMessage,
   makePskIndex(bobGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 

@@ -89,6 +89,7 @@ import {
   mlsMessageEncoder,
   mlsMessageDecoder,
   protocolVersions,
+  unsafeTestingAuthenticationService,
   wireformats,
   Proposal,
   zeroOutUint8Array,
@@ -106,7 +107,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // alice creates a new group
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 // bob generates his key package
 const bobCredential: Credential = {
@@ -136,7 +144,10 @@ const addBobProposal: Proposal = {
 }
 
 // alice commits
-const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
+const commitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  { extraProposals: [addBobProposal] },
+)
 
 aliceGroup = commitResult.newState
 
@@ -161,6 +172,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -193,6 +205,7 @@ const bobProcessMessageResult = await processPrivateMessage(
   bobGroup,
   decodedPrivateMessageAlice.privateMessage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
 )
 

@@ -18,6 +18,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { makeCustomExtension } from "../../src/extension.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit Validation %s`, async (cs) => {
   await reinitValidation(cs as CiphersuiteName)
@@ -34,7 +35,14 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -53,6 +61,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     { extraProposals: [addBobProposal] },
   )
@@ -64,6 +73,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -71,6 +81,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
   const bobCommitResult = await createCommit({
     state: bobGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   bobGroup = bobCommitResult.newState
@@ -82,6 +93,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     aliceGroup,
     emptyPskIndex,
     acceptAll,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -93,7 +105,15 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
 
   const newGroupId = new TextEncoder().encode("new-group1")
 
-  const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", cipherSuite, [], impl)
+  const reinitCommitResult = await reinitGroup(
+    aliceGroup,
+    newGroupId,
+    "mls10",
+    cipherSuite,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   aliceGroup = reinitCommitResult.newState
 
@@ -105,6 +125,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     bobGroup,
     makePskIndex(bobGroup, {}),
     acceptAll,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -121,6 +142,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     newGroupId,
     cipherSuite,
     [],
+    unsafeTestingAuthenticationService,
   )
 
   aliceGroup = resumeGroupResult.newState
@@ -142,6 +164,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
       resumeGroupResult.welcome!,
       bobNewKeyPackage.publicPackage,
       bobNewKeyPackage.privatePackage,
+      unsafeTestingAuthenticationService,
       aliceGroup.ratchetTree,
     ),
   ).rejects.toThrow(ValidationError)
@@ -160,6 +183,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
       resumeGroupResult.welcome!,
       bobNewKeyPackage.publicPackage,
       bobNewKeyPackage.privatePackage,
+      unsafeTestingAuthenticationService,
       aliceGroup.ratchetTree,
     ),
   ).rejects.toThrow(ValidationError)
@@ -178,6 +202,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
       resumeGroupResult.welcome!,
       bobNewKeyPackage.publicPackage,
       bobNewKeyPackage.privatePackage,
+      unsafeTestingAuthenticationService,
       aliceGroup.ratchetTree,
     ),
   ).rejects.toThrow(ValidationError)

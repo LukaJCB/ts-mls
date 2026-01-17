@@ -3,6 +3,7 @@ import { createApplicationMessage } from "../../src/createMessage.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { UsageError } from "../../src/mlsError.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 export async function testEveryoneCanMessageEveryone(
   clients: ClientState[],
@@ -25,7 +26,13 @@ export async function testEveryoneCanMessageEveryone(
     for (const [receiverIndex, receiverGroup] of updatedGroups.entries()) {
       if (receiverIndex === senderIndex) continue
 
-      const result = await processPrivateMessage(receiverGroup, privateMessage, makePskIndex(receiverGroup, {}), impl)
+      const result = await processPrivateMessage(
+        receiverGroup,
+        privateMessage,
+        makePskIndex(receiverGroup, {}),
+        unsafeTestingAuthenticationService,
+        impl,
+      )
 
       if (result.kind === "newState") {
         throw new Error(`Expected application message for member ${receiverIndex} from ${senderIndex}`)

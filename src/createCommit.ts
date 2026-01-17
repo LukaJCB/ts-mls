@@ -31,7 +31,7 @@ import {
 } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage.js"
 import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
-import { MLSMessage } from "./message.js"
+import { MlsMessage } from "./message.js"
 import { protect } from "./messageProtection.js"
 import { protectPublicMessage } from "./messageProtectionPublic.js"
 import { pathToPathSecrets } from "./pathSecrets.js"
@@ -67,11 +67,13 @@ import {
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
 import { wireformats } from "./wireformat.js"
+import { AuthenticationService } from "./authenticationService.js"
 
 /** @public */
 export interface MLSContext {
   state: ClientState
   cipherSuite: CiphersuiteImpl
+  authService: AuthenticationService
   pskIndex?: PskIndex
 }
 
@@ -79,7 +81,7 @@ export interface MLSContext {
 export interface CreateCommitResult {
   newState: ClientState
   welcome: Welcome | undefined
-  commit: MLSMessage
+  commit: MlsMessage
   consumed: Uint8Array[]
 }
 
@@ -115,6 +117,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     toLeafIndex(state.privatePath.leafIndex),
     pskIndex,
     true,
+    context.authService,
     cipherSuite,
   )
 
@@ -425,7 +428,7 @@ async function protectCommit(
   content: FramedContentCommit,
   authData: FramedContentAuthDataCommit,
   cs: CiphersuiteImpl,
-): Promise<[MLSMessage, SecretTree, Uint8Array[]]> {
+): Promise<[MlsMessage, SecretTree, Uint8Array[]]> {
   const wireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
   const authenticatedContent: AuthenticatedContentCommit = {
@@ -512,6 +515,7 @@ export async function joinGroupExternal(
   keyPackage: KeyPackage,
   privateKeys: PrivateKeyPackage,
   resync: boolean,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
   tree?: RatchetTree,
   clientConfig: ClientConfig = defaultClientConfig,
@@ -540,7 +544,7 @@ export async function joinGroupExternal(
       ratchetTree,
       groupInfo.groupContext,
       clientConfig.lifetimeConfig,
-      clientConfig.authService,
+      authService,
       groupInfo.groupContext.treeHash,
       cs,
     ),
@@ -550,7 +554,7 @@ export async function joinGroupExternal(
 
   const signerCredential = getCredentialFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
 
-  const credentialVerified = await clientConfig.authService.validateCredential(signerCredential, signaturePublicKey)
+  const credentialVerified = await authService.validateCredential(signerCredential, signaturePublicKey)
 
   if (!credentialVerified) throw new ValidationError("Could not validate credential")
 

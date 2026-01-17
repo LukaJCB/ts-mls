@@ -20,6 +20,7 @@ import { defaultProposalTypes } from "../src/defaultProposalType.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 import { LeafNode } from "../src/leafNode.js"
 import { wireformats } from "../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../src/authenticationService.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
@@ -45,11 +46,18 @@ async function buildThreeMemberGroup() {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const addBobProposal: ProposalAdd = { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }
   const addBobCommitResult = await createCommit(
-    { state: aliceGroup, cipherSuite: impl },
+    { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     { extraProposals: [addBobProposal] },
   )
   aliceGroup = addBobCommitResult.newState
@@ -58,6 +66,7 @@ async function buildThreeMemberGroup() {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -67,7 +76,7 @@ async function buildThreeMemberGroup() {
     add: { keyPackage: charlie.publicPackage },
   }
   const addCharlieCommitResult = await createCommit(
-    { state: aliceGroup, cipherSuite: impl },
+    { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     { extraProposals: [addCharlieProposal] },
   )
   aliceGroup = addCharlieCommitResult.newState
@@ -77,6 +86,7 @@ async function buildThreeMemberGroup() {
     bobGroup,
     addCharlieCommitResult.commit.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
   bobGroup = processAddCharlieResult.newState
@@ -85,6 +95,7 @@ async function buildThreeMemberGroup() {
     charlie.publicPackage,
     charlie.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )

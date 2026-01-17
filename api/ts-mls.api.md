@@ -23,7 +23,7 @@ export interface AuthenticationService {
 }
 
 // @public (undocumented)
-export function branchGroup(state: ClientState, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, memberKeyPackages: KeyPackage[], newGroupId: Uint8Array, cs: CiphersuiteImpl): Promise<CreateCommitResult>;
+export function branchGroup(state: ClientState, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, memberKeyPackages: KeyPackage[], newGroupId: Uint8Array, authService: AuthenticationService, cs: CiphersuiteImpl): Promise<CreateCommitResult>;
 
 // @public (undocumented)
 export type Brand<T, B> = T & {
@@ -103,8 +103,6 @@ export const ciphersuites: {
 // @public (undocumented)
 export interface ClientConfig {
     // (undocumented)
-    authService: AuthenticationService;
-    // (undocumented)
     keyPackageEqualityConfig: KeyPackageEqualityConfig;
     // (undocumented)
     keyRetentionConfig: KeyRetentionConfig;
@@ -177,7 +175,7 @@ export interface CreateCommitResult {
 }
 
 // @public (undocumented)
-export function createGroup(groupId: Uint8Array, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, extensions: GroupContextExtension[], cs: CiphersuiteImpl, clientConfig?: ClientConfig): Promise<ClientState>;
+export function createGroup(groupId: Uint8Array, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, extensions: GroupContextExtension[], authService: AuthenticationService, cs: CiphersuiteImpl, clientConfig?: ClientConfig): Promise<ClientState>;
 
 // @public (undocumented)
 export function createGroupInfoWithExternalPub(state: ClientState, extensions: CustomExtension[], cs: CiphersuiteImpl): Promise<GroupInfo>;
@@ -236,11 +234,6 @@ export function decode<T>(dec: Decoder<T>, t: Uint8Array): T | undefined;
 
 // @public (undocumented)
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined;
-
-// @public (undocumented)
-export const defaultAuthenticationService: {
-    validateCredential(_credential: Credential_2, _signaturePublicKey: Uint8Array): Promise<boolean>;
-};
 
 // @public (undocumented)
 export function defaultCapabilities(): Capabilities;
@@ -633,22 +626,22 @@ export type IncomingMessageCallback = (incoming: {
 }) => IncomingMessageAction;
 
 // @public (undocumented)
-export function joinGroup(welcome: Welcome, keyPackage: KeyPackage, privateKeys: PrivateKeyPackage, pskSearch: PskIndex, cs: CiphersuiteImpl, ratchetTree?: RatchetTree, resumingFromState?: ClientState, clientConfig?: ClientConfig): Promise<ClientState>;
+export function joinGroup(welcome: Welcome, keyPackage: KeyPackage, privateKeys: PrivateKeyPackage, pskSearch: PskIndex, authService: AuthenticationService, cs: CiphersuiteImpl, ratchetTree?: RatchetTree, resumingFromState?: ClientState, clientConfig?: ClientConfig): Promise<ClientState>;
 
 // @public (undocumented)
-export function joinGroupExternal(groupInfo: GroupInfo, keyPackage: KeyPackage, privateKeys: PrivateKeyPackage, resync: boolean, cs: CiphersuiteImpl, tree?: RatchetTree, clientConfig?: ClientConfig, authenticatedData?: Uint8Array): Promise<{
+export function joinGroupExternal(groupInfo: GroupInfo, keyPackage: KeyPackage, privateKeys: PrivateKeyPackage, resync: boolean, authService: AuthenticationService, cs: CiphersuiteImpl, tree?: RatchetTree, clientConfig?: ClientConfig, authenticatedData?: Uint8Array): Promise<{
     publicMessage: PublicMessage;
     newState: ClientState;
 }>;
 
 // @public (undocumented)
-export function joinGroupFromBranch(oldState: ClientState, welcome: Welcome, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, ratchetTree: RatchetTree | undefined, cs: CiphersuiteImpl): Promise<ClientState>;
+export function joinGroupFromBranch(oldState: ClientState, welcome: Welcome, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, authService: AuthenticationService, ratchetTree: RatchetTree | undefined, cs: CiphersuiteImpl): Promise<ClientState>;
 
 // @public (undocumented)
-export function joinGroupFromReinit(suspendedState: ClientState, welcome: Welcome, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, ratchetTree: RatchetTree | undefined, provider?: CryptoProvider): Promise<ClientState>;
+export function joinGroupFromReinit(suspendedState: ClientState, welcome: Welcome, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, authService: AuthenticationService, ratchetTree: RatchetTree | undefined, provider?: CryptoProvider): Promise<ClientState>;
 
 // @public (undocumented)
-export function joinGroupWithExtensions(welcome: Welcome, keyPackage: KeyPackage, privateKeys: PrivateKeyPackage, pskSearch: PskIndex, cs: CiphersuiteImpl, ratchetTree?: RatchetTree, resumingFromState?: ClientState, clientConfig?: ClientConfig): Promise<[ClientState, GroupInfoExtension[]]>;
+export function joinGroupWithExtensions(welcome: Welcome, keyPackage: KeyPackage, privateKeys: PrivateKeyPackage, pskSearch: PskIndex, authService: AuthenticationService, cs: CiphersuiteImpl, ratchetTree?: RatchetTree, resumingFromState?: ClientState, clientConfig?: ClientConfig): Promise<[ClientState, GroupInfoExtension[]]>;
 
 // @public (undocumented)
 export interface Kdf {
@@ -824,6 +817,8 @@ export function makePskIndex(state: ClientState | undefined, externalPsks: Recor
 // @public (undocumented)
 export interface MLSContext {
     // (undocumented)
+    authService: AuthenticationService;
+    // (undocumented)
     cipherSuite: CiphersuiteImpl;
     // (undocumented)
     pskIndex?: PskIndex;
@@ -992,7 +987,7 @@ export interface PrivateMessage {
 }
 
 // @public (undocumented)
-export function processMessage(message: MlsPrivateMessage | MlsPublicMessage, state: ClientState, pskIndex: PskIndex, action: IncomingMessageCallback, cs: CiphersuiteImpl): Promise<ProcessMessageResult>;
+export function processMessage(message: MlsPrivateMessage | MlsPublicMessage, state: ClientState, pskIndex: PskIndex, action: IncomingMessageCallback, authService: AuthenticationService, cs: CiphersuiteImpl): Promise<ProcessMessageResult>;
 
 // @public (undocumented)
 export type ProcessMessageResult = {
@@ -1008,10 +1003,10 @@ export type ProcessMessageResult = {
 };
 
 // @public
-export function processPrivateMessage(state: ClientState, pm: PrivateMessage, pskSearch: PskIndex, cs: CiphersuiteImpl, callback?: IncomingMessageCallback): Promise<ProcessMessageResult>;
+export function processPrivateMessage(state: ClientState, pm: PrivateMessage, pskSearch: PskIndex, authService: AuthenticationService, cs: CiphersuiteImpl, callback?: IncomingMessageCallback): Promise<ProcessMessageResult>;
 
 // @public (undocumented)
-export function processPublicMessage(state: ClientState, pm: PublicMessage, pskSearch: PskIndex, cs: CiphersuiteImpl, callback?: IncomingMessageCallback): Promise<NewStateWithActionTaken>;
+export function processPublicMessage(state: ClientState, pm: PublicMessage, pskSearch: PskIndex, authService: AuthenticationService, cs: CiphersuiteImpl, callback?: IncomingMessageCallback): Promise<NewStateWithActionTaken>;
 
 // Warning: (ae-forgotten-export) The symbol "DefaultProposal" needs to be exported by the entry point index.d.ts
 //
@@ -1221,10 +1216,10 @@ export interface Reinit {
 }
 
 // @public (undocumented)
-export function reinitCreateNewGroup(state: ClientState, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, memberKeyPackages: KeyPackage[], groupId: Uint8Array, cipherSuite: CiphersuiteName, extensions: CustomExtension[], provider?: CryptoProvider): Promise<CreateCommitResult>;
+export function reinitCreateNewGroup(state: ClientState, keyPackage: KeyPackage, privateKeyPackage: PrivateKeyPackage, memberKeyPackages: KeyPackage[], groupId: Uint8Array, cipherSuite: CiphersuiteName, extensions: GroupContextExtension[], authService: AuthenticationService, provider?: CryptoProvider): Promise<CreateCommitResult>;
 
 // @public (undocumented)
-export function reinitGroup(state: ClientState, groupId: Uint8Array, version: ProtocolVersionName, cipherSuite: CiphersuiteName, extensions: GroupContextExtension[], cs: CiphersuiteImpl): Promise<CreateCommitResult>;
+export function reinitGroup(state: ClientState, groupId: Uint8Array, version: ProtocolVersionName, cipherSuite: CiphersuiteName, extensions: GroupContextExtension[], authService: AuthenticationService, cs: CiphersuiteImpl): Promise<CreateCommitResult>;
 
 // @public (undocumented)
 export interface Remove {
@@ -1351,6 +1346,9 @@ export type SignatureAlgorithm = "Ed25519" | "Ed448" | "P256" | "P384" | "P521" 
 
 // @public (undocumented)
 export type UnappliedProposals = Record<string, ProposalWithSender>;
+
+// @public (undocumented)
+export const unsafeTestingAuthenticationService: AuthenticationService;
 
 // @public (undocumented)
 export interface Update {

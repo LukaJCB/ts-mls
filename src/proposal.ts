@@ -5,7 +5,7 @@ import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEnco
 import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
 import { keyPackageDecoder, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
-import { pskIdDecoder, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
+import { pskIdDecoder, pskIdEncoder, PskId } from "./presharedkey.js"
 import {
   decodeDefaultProposalTypeValue,
   defaultProposalTypeValueEncoder,
@@ -41,7 +41,7 @@ export const removeDecoder: Decoder<Remove> = mapDecoder(uint32Decoder, (removed
 
 /** @public */
 export interface PSK {
-  preSharedKeyId: PreSharedKeyID
+  preSharedKeyId: PskId
 }
 
 export const pskEncoder: Encoder<PSK> = contramapBufferEncoder(pskIdEncoder, (p) => p.preSharedKeyId)

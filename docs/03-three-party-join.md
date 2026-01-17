@@ -37,6 +37,7 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -49,7 +50,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -69,7 +77,7 @@ const addBobProposal: Proposal = {
 }
 // Alice adds Bob and commits, this is epoch 1
 const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal] },
 )
 
@@ -84,6 +92,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -94,7 +103,7 @@ const addCharlieProposal: Proposal = {
 }
 // Alice adds Charlie, transitioning into epoch 2
 const addCharlieCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addCharlieProposal] },
 )
 aliceGroup = addCharlieCommitResult.newState
@@ -106,6 +115,7 @@ const processAddCharlieResult = await processPrivateMessage(
   bobGroup,
   addCharlieCommitResult.commit.privateMessage,
   makePskIndex(bobGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 bobGroup = processAddCharlieResult.newState
@@ -116,6 +126,7 @@ let charlieGroup = await joinGroup(
   charlie.publicPackage,
   charlie.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )

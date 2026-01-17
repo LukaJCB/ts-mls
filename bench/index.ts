@@ -24,6 +24,7 @@ import {
   createApplicationMessage,
   processMessage,
   acceptAll,
+  unsafeTestingAuthenticationService,
 } from "../src/index.js"
 import { MlsPrivateMessage } from "../src/message.js"
 
@@ -65,7 +66,15 @@ async function joinGroupBench(
   kp: KeyPackage,
   result: CreateCommitResult,
 ) {
-  await joinGroup(result.welcome!, kp, pkp, emptyPskIndex, impl, result.newState.ratchetTree)
+  await joinGroup(
+    result.welcome!,
+    kp,
+    pkp,
+    emptyPskIndex,
+    unsafeTestingAuthenticationService,
+    impl,
+    result.newState.ratchetTree,
+  )
 }
 
 async function createCommitBench(impl: CiphersuiteImpl, aliceGroup: ClientState) {
@@ -73,11 +82,18 @@ async function createCommitBench(impl: CiphersuiteImpl, aliceGroup: ClientState)
     state: aliceGroup,
     pskIndex: emptyPskIndex,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 }
 
 async function processCommitBench(impl: CiphersuiteImpl, bobGroup: ClientState, result: CreateCommitResult) {
-  await processPrivateMessage(bobGroup, (result.commit as MlsPrivateMessage).privateMessage, emptyPskIndex, impl)
+  await processPrivateMessage(
+    bobGroup,
+    (result.commit as MlsPrivateMessage).privateMessage,
+    emptyPskIndex,
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 }
 
 async function initGroup(impl: CiphersuiteImpl) {
@@ -89,7 +105,14 @@ async function initGroup(impl: CiphersuiteImpl) {
 
   const groupId = new Uint8Array([0, 1, 2])
 
-  const result = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const result = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   return { alice, result }
 }
@@ -107,6 +130,7 @@ async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
       state,
       pskIndex: emptyPskIndex,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [removeBobProposal],
@@ -135,6 +159,7 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
       state,
       pskIndex: emptyPskIndex,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -182,6 +207,7 @@ async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps:
         state,
         pskIndex: emptyPskIndex,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       {
         extraProposals: proposals,
@@ -231,6 +257,7 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
     initResult.bob.publicPackage,
     initResult.bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     initResult.result.newState.ratchetTree,
   )
@@ -239,6 +266,7 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
     state: initResult.result.newState,
     pskIndex: emptyPskIndex,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   const sendMessageResult = await createApplicationMessage(
@@ -265,7 +293,14 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
     )
     .add(
       "Receive application message",
-      async () => await processPrivateMessage(joinResult, sendMessageResult.privateMessage, emptyPskIndex, impl),
+      async () =>
+        await processPrivateMessage(
+          joinResult,
+          sendMessageResult.privateMessage,
+          emptyPskIndex,
+          unsafeTestingAuthenticationService,
+          impl,
+        ),
     )
     .add("Add member", async () => await addMember(impl, addMembersResult))
     .add(
@@ -276,6 +311,7 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
           joinResult,
           emptyPskIndex,
           acceptAll,
+          unsafeTestingAuthenticationService,
           impl,
         ),
     )
@@ -288,6 +324,7 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
           joinResult,
           emptyPskIndex,
           acceptAll,
+          unsafeTestingAuthenticationService,
           impl,
         ),
     )

@@ -16,6 +16,7 @@ import { processMessage } from "../../src/processMessages.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
   await leaveProposal(cs as CiphersuiteName, true)
   await leaveProposal(cs as CiphersuiteName, false)
@@ -33,7 +34,14 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -65,6 +73,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       wireAsPublicMessage: publicMessage,
@@ -80,6 +89,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -90,6 +100,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     charlie.publicPackage,
     charlie.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -112,6 +123,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     bobGroup,
     emptyPskIndex,
     acceptAll,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -122,6 +134,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     charlieGroup,
     emptyPskIndex,
     acceptAll,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -132,6 +145,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     {
       state: bobGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       wireAsPublicMessage: publicMessage,
@@ -149,6 +163,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     aliceGroup,
     emptyPskIndex,
     acceptAll,
+    unsafeTestingAuthenticationService,
     impl,
   )
   aliceGroup = aliceProcessCommitResult.newState
@@ -158,6 +173,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     charlieGroup,
     emptyPskIndex,
     acceptAll,
+    unsafeTestingAuthenticationService,
     impl,
   )
   charlieGroup = charlieProcessCommitResult.newState

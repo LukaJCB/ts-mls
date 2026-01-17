@@ -20,6 +20,7 @@ import { PrivateMessage } from "../../src/privateMessage.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
@@ -36,7 +37,14 @@ async function cleanup(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -68,6 +76,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -81,6 +90,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -90,7 +100,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
   const sendMessageFn = async () => await createApplicationMessage(aliceGroup, messageToBob, impl)
 
   const receiveMessageFn = async (pm: PrivateMessage) =>
-    await processPrivateMessage(bobGroup, pm, makePskIndex(bobGroup, {}), impl)
+    await processPrivateMessage(bobGroup, pm, makePskIndex(bobGroup, {}), unsafeTestingAuthenticationService, impl)
 
   //alice can create messages to bob as many times as she wants with the same ClientState
   const aliceCreateMessageResult1 = await sendMessageFn()

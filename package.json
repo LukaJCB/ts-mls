@@ -23,6 +23,7 @@
   "files": [
     "dist/src/"
   ],
+  "sideEffects": false,
   "dependencies": {
     "@hpke/core": "1.7.5"
   },

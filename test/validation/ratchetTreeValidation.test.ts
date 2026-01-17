@@ -14,7 +14,7 @@ import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
 import { ratchetTreeEncoder, RatchetTree, addLeafNode } from "../../src/ratchetTree.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { defaultLifetimeConfig } from "../../src/lifetimeConfig.js"
-import { defaultAuthenticationService } from "../../src/authenticationService.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { Proposal } from "../../src/proposal.js"
 import {
@@ -120,7 +120,7 @@ async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
     invalidTree,
     groupContext,
     defaultLifetimeConfig,
-    defaultAuthenticationService,
+    unsafeTestingAuthenticationService,
     new Uint8Array(),
     impl,
   )
@@ -140,7 +140,14 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -165,6 +172,7 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -176,6 +184,7 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
   const emptyCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = emptyCommitResult.newState
@@ -198,7 +207,14 @@ async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
   treeExtension!.extensionData = encode(ratchetTreeEncoder, tree)
 
   await expect(
-    joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
+    joinGroupExternal(
+      groupInfo,
+      charlie.publicPackage,
+      charlie.privatePackage,
+      false,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(new CryptoVerificationError("Unable to verify parent hash"))
 }
 
@@ -243,7 +259,14 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -268,6 +291,7 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -279,6 +303,7 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
   const emptyCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = emptyCommitResult.newState
@@ -301,7 +326,14 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
   groupInfo.groupContext.treeHash = await treeHashRoot(tree, impl.hash)
 
   await expect(
-    joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
+    joinGroupExternal(
+      groupInfo,
+      charlie.publicPackage,
+      charlie.privatePackage,
+      false,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(new ValidationError("hpke keys not unique"))
 }
 
@@ -316,7 +348,14 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -341,6 +380,7 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -352,6 +392,7 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
   const emptyCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = emptyCommitResult.newState
@@ -373,7 +414,14 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
   groupInfo.groupContext.treeHash = await treeHashRoot(tree, impl.hash)
 
   await expect(
-    joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
+    joinGroupExternal(
+      groupInfo,
+      charlie.publicPackage,
+      charlie.privatePackage,
+      false,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(new CryptoVerificationError("Could not verify leaf node signature"))
 }
 
@@ -388,7 +436,14 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -417,9 +472,16 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
 
   groupInfo.groupContext.treeHash = await treeHashRoot(tree, impl.hash)
 
-  await expect(joinGroupExternal(groupInfo, bob.publicPackage, bob.privatePackage, false, impl)).rejects.toThrow(
-    new CryptoVerificationError("Could not verify leaf node signature"),
-  )
+  await expect(
+    joinGroupExternal(
+      groupInfo,
+      bob.publicPackage,
+      bob.privatePackage,
+      false,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
+  ).rejects.toThrow(new CryptoVerificationError("Could not verify leaf node signature"))
 }
 
 async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
@@ -433,7 +495,14 @@ async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -456,6 +525,7 @@ async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
       {
         state: aliceGroup,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       {
         extraProposals: [addBobProposal],
@@ -475,7 +545,14 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -498,6 +575,7 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
       {
         state: aliceGroup,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       {
         extraProposals: [addBobProposal],
@@ -517,7 +595,14 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -540,6 +625,7 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
       {
         state: aliceGroup,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       {
         extraProposals: [addBobProposal],
@@ -559,7 +645,14 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -578,6 +671,7 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -589,6 +683,7 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
   const emptyCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = emptyCommitResult.newState
@@ -637,7 +732,14 @@ async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  const aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -663,7 +765,14 @@ async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
   groupInfo.groupContext.treeHash = await treeHashRoot(newTree, impl.hash)
 
   await expect(
-    joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
+    joinGroupExternal(
+      groupInfo,
+      charlie.publicPackage,
+      charlie.privatePackage,
+      false,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(new ValidationError("signature keys not unique"))
 }
 
@@ -678,7 +787,14 @@ async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -703,6 +819,7 @@ async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -714,6 +831,7 @@ async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
   const emptyCommitResult = await createCommit({
     state: aliceGroup,
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = emptyCommitResult.newState
@@ -724,6 +842,13 @@ async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
   groupInfo.groupContext.treeHash[0] = (groupInfo.groupContext.treeHash[0]! + 1) & 0xff
 
   await expect(
-    joinGroupExternal(groupInfo, charlie.publicPackage, charlie.privatePackage, false, impl),
+    joinGroupExternal(
+      groupInfo,
+      charlie.publicPackage,
+      charlie.privatePackage,
+      false,
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(new ValidationError("Unable to verify tree hash"))
 }

@@ -14,6 +14,7 @@ import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External join Resync %s`, async (cs) => {
   await externalJoinResyncTest(cs as CiphersuiteName)
@@ -30,7 +31,14 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -62,6 +70,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal, addCharlieProposal],
@@ -76,6 +85,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -86,6 +96,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     charlie.publicPackage,
     charlie.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -98,6 +109,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     charlie.publicPackage,
     charlie.privatePackage,
     true,
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -107,6 +119,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     aliceGroup,
     charlieResyncCommitResult.publicMessage,
     makePskIndex(aliceGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -116,6 +129,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     bobGroup,
     charlieResyncCommitResult.publicMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 

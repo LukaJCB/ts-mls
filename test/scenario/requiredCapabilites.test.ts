@@ -16,6 +16,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -56,6 +57,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     alice.publicPackage,
     alice.privatePackage,
     [requiredCapabilitiesExtension],
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -90,6 +92,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -103,6 +106,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -121,6 +125,7 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
       {
         state: aliceGroup,
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
       {
         extraProposals: [addCharlieProposal],

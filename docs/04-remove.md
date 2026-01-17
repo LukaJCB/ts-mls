@@ -35,6 +35,7 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -47,7 +48,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -61,7 +69,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal] },
 )
 aliceGroup = addBobCommitResult.newState
@@ -72,6 +80,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -82,7 +91,7 @@ const removeBobProposal: Proposal = {
   remove: { removed: 1 }, // Bob's leaf index
 }
 const removeBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [removeBobProposal] },
 )
 aliceGroup = removeBobCommitResult.newState
@@ -94,6 +103,7 @@ const bobProcessRemoveResult = await processPrivateMessage(
   bobGroup,
   removeBobCommitResult.commit.privateMessage,
   makePskIndex(bobGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 bobGroup = bobProcessRemoveResult.newState

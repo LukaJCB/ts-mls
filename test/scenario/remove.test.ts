@@ -15,6 +15,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
@@ -30,7 +31,14 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -62,6 +70,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal, addCharlieProposal],
@@ -75,6 +84,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -86,6 +96,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     charlie.publicPackage,
     charlie.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -103,6 +114,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [removeBobProposal],
@@ -118,6 +130,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     bobGroup,
     removeBobCommitResult.commit.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -128,6 +141,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     charlieGroup,
     removeBobCommitResult.commit.privateMessage,
     makePskIndex(charlieGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -140,6 +154,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     createCommit({
       state: bobGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     }),
   ).rejects.toThrow(UsageError)
 

@@ -41,6 +41,7 @@ import {
   generateKeyPackage,
   defaultCapabilities,
   defaultLifetime,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -53,7 +54,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -66,7 +74,10 @@ const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
+const commitResult = await createCommit(
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  { extraProposals: [addBobProposal] },
+)
 aliceGroup = commitResult.newState
 
 // Bob joins the group (epoch 1)
@@ -75,6 +86,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -82,7 +94,15 @@ let bobGroup = await joinGroup(
 // Alice proposes to reinitialize the group with a new group ID and ciphersuite
 const newCiphersuite = "MLS_256_XWING_AES256GCM_SHA512_Ed25519" // or another supported ciphersuite
 const newGroupId = new TextEncoder().encode("new-group1")
-const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", newCiphersuite, [], impl)
+const reinitCommitResult = await reinitGroup(
+  aliceGroup,
+  newGroupId,
+  "mls10",
+  newCiphersuite,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 aliceGroup = reinitCommitResult.newState
 
 if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
@@ -93,6 +113,7 @@ const processReinitResult = await processPrivateMessage(
   bobGroup,
   reinitCommitResult.commit.privateMessage,
   makePskIndex(bobGroup, {}),
+  unsafeTestingAuthenticationService,
   impl,
 )
 bobGroup = processReinitResult.newState
@@ -117,6 +138,7 @@ const resumeGroupResult = await reinitCreateNewGroup(
   newGroupId,
   newCiphersuite,
   [],
+  unsafeTestingAuthenticationService,
 )
 aliceGroup = resumeGroupResult.newState
 
@@ -126,6 +148,7 @@ bobGroup = await joinGroupFromReinit(
   resumeGroupResult.welcome!,
   bobNewKeyPackage.publicPackage,
   bobNewKeyPackage.privatePackage,
+  unsafeTestingAuthenticationService,
   aliceGroup.ratchetTree,
 )
 ```

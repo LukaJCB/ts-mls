@@ -32,6 +32,7 @@ import {
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -44,7 +45,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -68,7 +76,7 @@ const addCharlieProposal: Proposal = {
   add: { keyPackage: charlie.publicPackage },
 }
 const addCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal, addCharlieProposal] },
 )
 aliceGroup = addCommitResult.newState
@@ -80,6 +88,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -88,6 +97,7 @@ let charlieGroup = await joinGroup(
   charlie.publicPackage,
   charlie.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )

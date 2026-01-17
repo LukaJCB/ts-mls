@@ -6,7 +6,7 @@ export interface AuthenticationService {
 }
 
 /** @public */
-export const defaultAuthenticationService = {
+export const unsafeTestingAuthenticationService: AuthenticationService = {
   async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<boolean> {
     return true
   },

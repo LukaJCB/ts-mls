@@ -27,7 +27,7 @@ export {
   type RequiredCapabilities,
 } from "./requiredCapabilities.js"
 
-export { type AuthenticationService, defaultAuthenticationService } from "./authenticationService.js"
+export { type AuthenticationService, unsafeTestingAuthenticationService } from "./authenticationService.js"
 
 export { type PaddingConfig, defaultPaddingConfig } from "./paddingConfig.js"
 
@@ -124,7 +124,7 @@ export { bytesToBase64 } from "./util/byteArray.js"
 export {
   mlsMessageDecoder,
   mlsMessageEncoder,
-  type MLSMessage,
+  type MlsMessage as MLSMessage,
   type MlsPublicMessage,
   type MlsWelcome,
   type MlsGroupInfo,
@@ -156,9 +156,9 @@ export {
   pskTypes,
   type PSKTypeName,
   type PSKTypeValue,
-  type PreSharedKeyID,
-  type PSKInfo,
-  type PSKNonce,
+  type PskId as PreSharedKeyID,
+  type PskInfo as PSKInfo,
+  type PskNonce as PSKNonce,
 } from "./presharedkey.js"
 
 export {
@@ -260,7 +260,7 @@ export { type UpdatePathNode } from "./updatePath.js"
 export { type ProposalOrRef } from "./proposalOrRefType.js"
 export { type ProposalOrRefProposal, type ProposalOrRefProposalRef } from "./proposalOrRefType.js"
 
-export { type PSKInfoExternal, type PSKInfoResumption } from "./presharedkey.js"
+export { type PskInfoExternal as PSKInfoExternal, type PskInfoResumption as PSKInfoResumption } from "./presharedkey.js"
 
 export { resumptionPSKUsages, type ResumptionPSKUsageName, type ResumptionPSKUsageValue } from "./presharedkey.js"
 

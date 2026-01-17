@@ -33,6 +33,7 @@ import {
   processPrivateMessage,
   createCommit,
   Proposal,
+  unsafeTestingAuthenticationService,
 } from "ts-mls"
 
 // Setup ciphersuite and credentials
@@ -45,7 +46,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -60,7 +68,7 @@ const addBobProposal: Proposal = {
 
 // Alice adds Bob with the ratchetTreeExtension = true
 const commitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   {
     extraProposals: [addBobProposal],
     ratchetTreeExtension: true,
@@ -69,7 +77,14 @@ const commitResult = await createCommit(
 aliceGroup = commitResult.newState
 
 // Bob joins using the welcome message and does not need to provide a ratchetTree
-let bobGroup = await joinGroup(commitResult.welcome!, bob.publicPackage, bob.privatePackage, emptyPskIndex, impl)
+let bobGroup = await joinGroup(
+  commitResult.welcome!,
+  bob.publicPackage,
+  bob.privatePackage,
+  emptyPskIndex,
+  unsafeTestingAuthenticationService,
+  impl,
+)
 ```
 
 ---

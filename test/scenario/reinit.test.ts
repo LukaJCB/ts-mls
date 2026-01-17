@@ -16,6 +16,7 @@ import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
   await reinit(cs as CiphersuiteName)
 })
@@ -31,7 +32,14 @@ async function reinit(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -50,6 +58,7 @@ async function reinit(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       extraProposals: [addBobProposal],
@@ -63,6 +72,7 @@ async function reinit(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -71,7 +81,15 @@ async function reinit(cipherSuite: CiphersuiteName) {
 
   const newGroupId = new TextEncoder().encode("new-group1")
 
-  const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", newCiphersuite, [], impl)
+  const reinitCommitResult = await reinitGroup(
+    aliceGroup,
+    newGroupId,
+    "mls10",
+    newCiphersuite,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   aliceGroup = reinitCommitResult.newState
 
@@ -82,6 +100,7 @@ async function reinit(cipherSuite: CiphersuiteName) {
     bobGroup,
     reinitCommitResult.commit.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -95,6 +114,7 @@ async function reinit(cipherSuite: CiphersuiteName) {
     createCommit({
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     }),
   ).rejects.toThrow(UsageError)
 
@@ -118,6 +138,7 @@ async function reinit(cipherSuite: CiphersuiteName) {
     newGroupId,
     newCiphersuite,
     [],
+    unsafeTestingAuthenticationService,
   )
 
   aliceGroup = resumeGroupResult.newState
@@ -127,6 +148,7 @@ async function reinit(cipherSuite: CiphersuiteName) {
     resumeGroupResult.welcome!,
     bobNewKeyPackage.publicPackage,
     bobNewKeyPackage.privatePackage,
+    unsafeTestingAuthenticationService,
     aliceGroup.ratchetTree,
   )
 

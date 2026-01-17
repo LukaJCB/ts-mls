@@ -10,15 +10,16 @@ import {
 import { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
 import { defaultCryptoProvider } from "./crypto/implementation/default/provider.js"
 import { CryptoProvider } from "./crypto/provider.js"
-import { CustomExtension, GroupContextExtension } from "./extension.js"
+import { GroupContextExtension } from "./extension.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
 import { UsageError } from "./mlsError.js"
-import { pskTypes, resumptionPSKUsages, type ResumptionPSKUsageValue, PreSharedKeyID } from "./presharedkey.js"
+import { pskTypes, resumptionPSKUsages, type ResumptionPSKUsageValue, PskId } from "./presharedkey.js"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { protocolVersions, ProtocolVersionName } from "./protocolVersion.js"
 import { RatchetTree } from "./ratchetTree.js"
 import { Welcome } from "./welcome.js"
+import { AuthenticationService } from "./authenticationService.js"
 
 /** @public */
 export async function reinitGroup(
@@ -27,6 +28,7 @@ export async function reinitGroup(
   version: ProtocolVersionName,
   cipherSuite: CiphersuiteName,
   extensions: GroupContextExtension[],
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<CreateCommitResult> {
   const reinitProposal: Proposal = {
@@ -44,6 +46,7 @@ export async function reinitGroup(
       state,
       pskIndex: makePskIndex(state, {}),
       cipherSuite: cs,
+      authService,
     },
     {
       extraProposals: [reinitProposal],
@@ -59,11 +62,12 @@ export async function reinitCreateNewGroup(
   memberKeyPackages: KeyPackage[],
   groupId: Uint8Array,
   cipherSuite: CiphersuiteName,
-  extensions: CustomExtension[],
+  extensions: GroupContextExtension[],
+  authService: AuthenticationService,
   provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<CreateCommitResult> {
   const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider)
-  const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, cs)
+  const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, authService, cs)
 
   const addProposals: Proposal[] = memberKeyPackages.map((kp) => ({
     proposalType: defaultProposalTypes.add,
@@ -84,6 +88,7 @@ export async function reinitCreateNewGroup(
       state: newGroup,
       pskIndex: makePskIndex(state, {}),
       cipherSuite: cs,
+      authService,
     },
     {
       extraProposals: [...addProposals, resumptionPsk],
@@ -95,7 +100,7 @@ export function makeResumptionPsk(
   state: ClientState,
   usage: ResumptionPSKUsageValue,
   cs: CiphersuiteImpl,
-): { id: PreSharedKeyID; secret: Uint8Array } {
+): { id: PskId; secret: Uint8Array } {
   const secret = state.keySchedule.resumptionPsk
 
   const pskNonce = cs.rng.randomBytes(cs.kdf.size)
@@ -118,13 +123,21 @@ export async function branchGroup(
   privateKeyPackage: PrivateKeyPackage,
   memberKeyPackages: KeyPackage[],
   newGroupId: Uint8Array,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<CreateCommitResult> {
   const resumptionPsk = makeResumptionPsk(state, resumptionPSKUsages.branch, cs)
 
   const pskSearch = makePskIndex(state, {})
 
-  const newGroup = await createGroup(newGroupId, keyPackage, privateKeyPackage, state.groupContext.extensions, cs)
+  const newGroup = await createGroup(
+    newGroupId,
+    keyPackage,
+    privateKeyPackage,
+    state.groupContext.extensions,
+    authService,
+    cs,
+  )
 
   const addMemberProposals: ProposalAdd[] = memberKeyPackages.map((kp) => ({
     proposalType: defaultProposalTypes.add,
@@ -145,6 +158,7 @@ export async function branchGroup(
       state: newGroup,
       pskIndex: pskSearch,
       cipherSuite: cs,
+      authService,
     },
     {
       extraProposals: [...addMemberProposals, branchPskProposal],
@@ -158,12 +172,13 @@ export async function joinGroupFromBranch(
   welcome: Welcome,
   keyPackage: KeyPackage,
   privateKeyPackage: PrivateKeyPackage,
+  authService: AuthenticationService,
   ratchetTree: RatchetTree | undefined,
   cs: CiphersuiteImpl,
 ): Promise<ClientState> {
   const pskSearch = makePskIndex(oldState, {})
 
-  return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, oldState)
+  return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, authService, cs, ratchetTree, oldState)
 }
 
 /** @public */
@@ -172,6 +187,7 @@ export async function joinGroupFromReinit(
   welcome: Welcome,
   keyPackage: KeyPackage,
   privateKeyPackage: PrivateKeyPackage,
+  authService: AuthenticationService,
   ratchetTree: RatchetTree | undefined,
   provider: CryptoProvider = defaultCryptoProvider,
 ): Promise<ClientState> {
@@ -184,5 +200,14 @@ export async function joinGroupFromReinit(
     provider,
   )
 
-  return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, cs, ratchetTree, suspendedState)
+  return await joinGroup(
+    welcome,
+    keyPackage,
+    privateKeyPackage,
+    pskSearch,
+    authService,
+    cs,
+    ratchetTree,
+    suspendedState,
+  )
 }

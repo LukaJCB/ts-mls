@@ -9,7 +9,12 @@ import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
 import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
-import { createApplicationMessage, createProposal, processPrivateMessage } from "../../src/index.js"
+import {
+  createApplicationMessage,
+  createProposal,
+  processPrivateMessage,
+  unsafeTestingAuthenticationService,
+} from "../../src/index.js"
 import { UsageError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -41,7 +46,14 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -60,6 +72,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     { extraProposals: [addBobProposal] },
   )
@@ -71,6 +84,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -93,6 +107,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     aliceGroup,
     createProposalResult.message.privateMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     (p) => {
       if (p.kind !== "proposal") throw new Error("Expected proposal")
@@ -108,8 +123,8 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
 
   const createCommitResult = await createCommit({
     state: aliceGroup,
-
     cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = createCommitResult.newState
@@ -121,6 +136,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     bobGroup,
     createCommitResult.commit.privateMessage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     (p) => {
       if (p.kind !== "commit") throw new Error("Expected commit")

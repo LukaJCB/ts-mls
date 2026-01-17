@@ -38,6 +38,7 @@ import {
   makePskIndex,
   bytesToBase64,
   pskTypes,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -50,7 +51,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -64,7 +72,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
+  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   { extraProposals: [addBobProposal] },
 )
 aliceGroup = addBobCommitResult.newState
@@ -75,6 +83,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   emptyPskIndex,
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )
@@ -104,6 +113,7 @@ const pskCommitResult = await createCommit(
     state: aliceGroup,
     cipherSuite: impl,
     pskIndex: makePskIndex(aliceGroup, sharedPsks),
+    authService: unsafeTestingAuthenticationService,
   },
   { extraProposals: [pskProposal] },
 )
@@ -116,6 +126,7 @@ const processPskResult = await processPrivateMessage(
   bobGroup,
   pskCommitResult.commit.privateMessage,
   makePskIndex(bobGroup, sharedPsks),
+  unsafeTestingAuthenticationService,
   impl,
 )
 bobGroup = processPskResult.newState
@@ -167,6 +178,7 @@ import {
   makePskIndex,
   bytesToBase64,
   pskTypes,
+  unsafeTestingAuthenticationService,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -178,7 +190,14 @@ const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), d
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup(
+  groupId,
+  alice.publicPackage,
+  alice.privatePackage,
+  [],
+  unsafeTestingAuthenticationService,
+  impl,
+)
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -213,6 +232,7 @@ const commitResult = await createCommit(
     state: aliceGroup,
     cipherSuite: impl,
     pskIndex: makePskIndex(aliceGroup, sharedPsks),
+    authService: unsafeTestingAuthenticationService,
   },
   { extraProposals: [addBobProposal, pskProposal] },
 )
@@ -224,6 +244,7 @@ let bobGroup = await joinGroup(
   bob.publicPackage,
   bob.privatePackage,
   makePskIndex(undefined, sharedPsks),
+  unsafeTestingAuthenticationService,
   impl,
   aliceGroup.ratchetTree,
 )

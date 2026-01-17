@@ -15,6 +15,7 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal } from "../../src/proposal.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("authenticatedData verified for app/proposal/commit %s", async (cs) => {
   await authenticatedDataScenario(cs as CiphersuiteName)
@@ -49,12 +50,20 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
 
   const groupId = encoder.encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup(
+    groupId,
+    alice.publicPackage,
+    alice.privatePackage,
+    [],
+    unsafeTestingAuthenticationService,
+    impl,
+  )
 
   const addBobCommitResult = await createCommit(
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     { extraProposals: [{ proposalType: 1, add: { keyPackage: bob.publicPackage } }] },
   )
@@ -66,6 +75,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     bob.publicPackage,
     bob.privatePackage,
     emptyPskIndex,
+    unsafeTestingAuthenticationService,
     impl,
     aliceGroup.ratchetTree,
   )
@@ -77,14 +87,15 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceAppResult.newState
 
   const tamperedApp = { ...aliceAppResult.privateMessage, authenticatedData: encoder.encode("aad-app-tampered") }
-  await expect(processPrivateMessage(bobGroup, tamperedApp, makePskIndex(bobGroup, {}), impl)).rejects.toThrow(
-    CryptoError,
-  )
+  await expect(
+    processPrivateMessage(bobGroup, tamperedApp, makePskIndex(bobGroup, {}), unsafeTestingAuthenticationService, impl),
+  ).rejects.toThrow(CryptoError)
 
   const bobAppResult = await processPrivateMessage(
     bobGroup,
     aliceAppResult.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
   )
 
@@ -109,15 +120,23 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     authenticatedData: encoder.encode("aad-proposal-tampered"),
   }
   await expect(
-    processPrivateMessage(aliceGroup, tamperedProposal, makePskIndex(aliceGroup, {}), impl, () => {
-      throw new Error("Callback should not run for tampered authenticatedData")
-    }),
+    processPrivateMessage(
+      aliceGroup,
+      tamperedProposal,
+      makePskIndex(aliceGroup, {}),
+      unsafeTestingAuthenticationService,
+      impl,
+      () => {
+        throw new Error("Callback should not run for tampered authenticatedData")
+      },
+    ),
   ).rejects.toThrow(CryptoError)
 
   const aliceProcessProposalResult = await processPrivateMessage(
     aliceGroup,
     bobProposalResult.message.privateMessage,
     makePskIndex(aliceGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
     (incoming) => {
       if (incoming.kind !== "proposal") throw new Error("Expected proposal")
@@ -135,6 +154,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     { authenticatedData: commitAuthenticatedData },
   )
@@ -149,15 +169,23 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     authenticatedData: encoder.encode("aad-commit-tampered"),
   }
   await expect(
-    processPrivateMessage(bobGroup, tamperedCommit, makePskIndex(bobGroup, {}), impl, () => {
-      throw new Error("Callback should not run for tampered authenticatedData")
-    }),
+    processPrivateMessage(
+      bobGroup,
+      tamperedCommit,
+      makePskIndex(bobGroup, {}),
+      unsafeTestingAuthenticationService,
+      impl,
+      () => {
+        throw new Error("Callback should not run for tampered authenticatedData")
+      },
+    ),
   ).rejects.toThrow(CryptoError)
 
   const bobProcessCommitResult = await processPrivateMessage(
     bobGroup,
     aliceCommitResult.commit.privateMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
     (incoming) => {
       if (incoming.kind !== "commit") throw new Error("Expected commit")
@@ -197,13 +225,20 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
   }
 
   await expect(
-    processPublicMessage(aliceGroup, tamperedPublicProposal, makePskIndex(aliceGroup, {}), impl),
+    processPublicMessage(
+      aliceGroup,
+      tamperedPublicProposal,
+      makePskIndex(aliceGroup, {}),
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
   ).rejects.toThrow(CryptoVerificationError)
 
   const aliceProcessPublicProposalResult = await processPublicMessage(
     aliceGroup,
     bobProposalPublicResult.message.publicMessage,
     makePskIndex(aliceGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
     (incoming) => {
       if (incoming.kind !== "proposal") throw new Error("Expected proposal")
@@ -220,6 +255,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     {
       state: aliceGroup,
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
     {
       wireAsPublicMessage: true,
@@ -240,14 +276,21 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     },
   }
 
-  await expect(processPublicMessage(bobGroup, tamperedPublicCommit, makePskIndex(bobGroup, {}), impl)).rejects.toThrow(
-    CryptoVerificationError,
-  )
+  await expect(
+    processPublicMessage(
+      bobGroup,
+      tamperedPublicCommit,
+      makePskIndex(bobGroup, {}),
+      unsafeTestingAuthenticationService,
+      impl,
+    ),
+  ).rejects.toThrow(CryptoVerificationError)
 
   const bobProcessPublicCommitResult = await processPublicMessage(
     bobGroup,
     alicePublicCommitResult.commit.publicMessage,
     makePskIndex(bobGroup, {}),
+    unsafeTestingAuthenticationService,
     impl,
     (incoming) => {
       if (incoming.kind !== "commit") throw new Error("Expected commit")
