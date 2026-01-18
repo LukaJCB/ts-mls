@@ -31,7 +31,7 @@ import {
 } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage.js"
 import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
-import { MlsMessage } from "./message.js"
+import { MlsFramedMessage } from "./message.js"
 import { protect } from "./messageProtection.js"
 import { protectPublicMessage } from "./messageProtectionPublic.js"
 import { pathToPathSecrets } from "./pathSecrets.js"
@@ -41,7 +41,6 @@ import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import { nodeTypes } from "./nodeType.js"
-import { PskIndex } from "./pskIndex.js"
 import {
   RatchetTree,
   addLeafNode,
@@ -58,30 +57,17 @@ import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
-import {
-  CustomExtension,
-  ExtensionExternalPub,
-  extensionsSupportedByCapabilities,
-  GroupInfoExtension,
-} from "./extension.js"
+import { ExtensionExternalPub, extensionsSupportedByCapabilities, GroupInfoExtension } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { PublicMessage } from "./publicMessage.js"
 import { wireformats } from "./wireformat.js"
-import { AuthenticationService } from "./authenticationService.js"
-
-/** @public */
-export interface MLSContext {
-  state: ClientState
-  cipherSuite: CiphersuiteImpl
-  authService: AuthenticationService
-  pskIndex?: PskIndex
-}
+import { MlsContext } from "./mlsContext.js"
 
 /** @public */
 export interface CreateCommitResult {
   newState: ClientState
   welcome: Welcome | undefined
-  commit: MlsMessage
+  commit: MlsFramedMessage
   consumed: Uint8Array[]
 }
 
@@ -95,15 +81,23 @@ export interface CreateCommitOptions {
 }
 
 /** @public */
-export async function createCommit(context: MLSContext, options?: CreateCommitOptions): Promise<CreateCommitResult> {
-  const { state, pskIndex = makePskIndex(state, {}), cipherSuite } = context
+export interface CreateCommitParams extends CreateCommitOptions {
+  context: MlsContext
+  state: ClientState
+}
+
+/** @public */
+export async function createCommit(params: CreateCommitParams): Promise<CreateCommitResult> {
+  const { context, state, ...options } = params
+  const { pskIndex = makePskIndex(state, {}), cipherSuite } = context
+  const clientConfig = context.clientConfig ?? defaultClientConfig
   const {
     wireAsPublicMessage = false,
     extraProposals = [],
     ratchetTreeExtension = false,
     authenticatedData = new Uint8Array(),
     groupInfoExtensions = [],
-  } = options ?? {}
+  } = options
 
   checkCanSendHandshakeMessages(state)
 
@@ -117,6 +111,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     toLeafIndex(state.privatePath.leafIndex),
     pskIndex,
     true,
+    clientConfig,
     context.authService,
     cipherSuite,
   )
@@ -201,6 +196,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
   const [commit, _newTree, consumedSecrets] = await protectCommit(
     wireAsPublicMessage,
     state,
+    clientConfig,
     authenticatedData,
     framedContent,
     authData,
@@ -226,7 +222,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
       ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
       : { kind: "active" }
 
-  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state)
+  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state, clientConfig)
 
   const newState: ClientState = {
     groupContext: updatedGroupContext,
@@ -239,7 +235,6 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
     confirmationTag,
     signaturePrivateKey: state.signaturePrivateKey,
     groupActiveState,
-    clientConfig: state.clientConfig,
   }
 
   zeroOutUint8Array(commitSecret)
@@ -378,7 +373,7 @@ async function createGroupInfoWithRatchetTree(
 /** @public */
 export async function createGroupInfoWithExternalPub(
   state: ClientState,
-  extensions: CustomExtension[],
+  extensions: GroupInfoExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
@@ -398,7 +393,7 @@ export async function createGroupInfoWithExternalPub(
 /** @public */
 export async function createGroupInfoWithExternalPubAndRatchetTree(
   state: ClientState,
-  extensions: CustomExtension[],
+  extensions: GroupInfoExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
   const encodedTree = encode(ratchetTreeEncoder, state.ratchetTree)
@@ -424,11 +419,12 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
 async function protectCommit(
   publicMessage: boolean,
   state: ClientState,
+  clientConfig: ClientConfig,
   authenticatedData: Uint8Array,
   content: FramedContentCommit,
   authData: FramedContentAuthDataCommit,
   cs: CiphersuiteImpl,
-): Promise<[MlsMessage, SecretTree, Uint8Array[]]> {
+): Promise<[MlsFramedMessage, SecretTree, Uint8Array[]]> {
   const wireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
   const authenticatedContent: AuthenticatedContentCommit = {
@@ -458,7 +454,7 @@ async function protectCommit(
       state.secretTree,
       { ...content, auth: authData },
       state.privatePath.leafIndex,
-      state.clientConfig.paddingConfig,
+      clientConfig.paddingConfig,
       cs,
     )
 
@@ -510,17 +506,28 @@ export async function applyUpdatePathSecret(
 }
 
 /** @public */
-export async function joinGroupExternal(
-  groupInfo: GroupInfo,
-  keyPackage: KeyPackage,
-  privateKeys: PrivateKeyPackage,
-  resync: boolean,
-  authService: AuthenticationService,
-  cs: CiphersuiteImpl,
-  tree?: RatchetTree,
-  clientConfig: ClientConfig = defaultClientConfig,
-  authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
+export async function joinGroupExternal(params: {
+  context: MlsContext
+  groupInfo: GroupInfo
+  keyPackage: KeyPackage
+  privateKeys: PrivateKeyPackage
+  resync: boolean
+  tree?: RatchetTree
+  authenticatedData?: Uint8Array
+}): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
+  const context = params.context
+  const groupInfo = params.groupInfo
+  const keyPackage = params.keyPackage
+  const privateKeys = params.privateKeys
+  const resync = params.resync
+
+  const authService = context.authService
+  const cs = context.cipherSuite
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const tree = params.tree
+  const authenticatedData = params.authenticatedData ?? new Uint8Array()
+
   const externalPub = groupInfo.extensions.find(
     (ex): ex is ExtensionExternalPub => ex.extensionType === defaultExtensionTypes.external_pub,
   )
@@ -656,7 +663,6 @@ export async function joinGroupExternal(
     keySchedule: epochSecrets.keySchedule,
     unappliedProposals: {},
     groupActiveState: { kind: "active" },
-    clientConfig,
   }
 
   const authenticatedContent: AuthenticatedContentCommit = {

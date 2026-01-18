@@ -22,7 +22,10 @@ export const lifetimeDecoder: Decoder<Lifetime> = mapDecoders(
 )
 
 /** @public */
-export const defaultLifetime: Lifetime = {
-  notBefore: 0n,
-  notAfter: 9223372036854775807n,
+export function defaultLifetime(): Lifetime {
+  const now = Math.floor(Date.now() / 1000)
+  return {
+    notBefore: BigInt(now - 86400),
+    notAfter: BigInt(now + 1314000), // Half month
+  }
 }

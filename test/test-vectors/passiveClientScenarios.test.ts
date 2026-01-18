@@ -64,15 +64,17 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
     (acc, psk) => ({ ...acc, [bytesToBase64(hexToBytes(psk.psk_id))]: hexToBytes(psk.psk) }),
     {},
   )
-  let state = await joinGroup(
-    welcome[0].welcome,
-    kp[0].keyPackage,
-    pks,
-    makePskIndex(undefined, psks),
-    unsafeTestingAuthenticationService,
-    impl,
-    tree,
-  )
+  let state = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(undefined, psks),
+    },
+    welcome: welcome[0].welcome,
+    keyPackage: kp[0].keyPackage,
+    privateKeys: pks,
+    ratchetTree: tree,
+  })
 
   expect(state.keySchedule.epochAuthenticator).toStrictEqual(hexToBytes(data.initial_epoch_authenticator))
 
@@ -87,23 +89,27 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
         throw new Error("Could not decode proposal message")
 
       if (mlsProposal[0].wireformat === wireformats.mls_private_message) {
-        const res = await processPrivateMessage(
+        const res = await processPrivateMessage({
+          context: {
+            cipherSuite: impl,
+            authService: unsafeTestingAuthenticationService,
+            pskIndex: makePskIndex(state, psks),
+          },
           state,
-          mlsProposal[0].privateMessage,
-          makePskIndex(state, psks),
-          unsafeTestingAuthenticationService,
-          impl,
-        )
+          privateMessage: mlsProposal[0].privateMessage,
+        })
 
         state = res.newState
       } else {
-        const res = await processPublicMessage(
+        const res = await processPublicMessage({
+          context: {
+            cipherSuite: impl,
+            authService: unsafeTestingAuthenticationService,
+            pskIndex: makePskIndex(state, psks),
+          },
           state,
-          mlsProposal[0].publicMessage,
-          makePskIndex(state, psks),
-          unsafeTestingAuthenticationService,
-          impl,
-        )
+          publicMessage: mlsProposal[0].publicMessage,
+        })
 
         state = res.newState
       }
@@ -118,23 +124,27 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
       throw new Error("Could not decode commit message")
 
     if (mlsCommit[0].wireformat === wireformats.mls_private_message) {
-      const res = await processPrivateMessage(
+      const res = await processPrivateMessage({
+        context: {
+          cipherSuite: impl,
+          authService: unsafeTestingAuthenticationService,
+          pskIndex: makePskIndex(state, psks),
+        },
         state,
-        mlsCommit[0].privateMessage,
-        makePskIndex(state, psks),
-        unsafeTestingAuthenticationService,
-        impl,
-      )
+        privateMessage: mlsCommit[0].privateMessage,
+      })
 
       state = res.newState
     } else {
-      const res = await processPublicMessage(
+      const res = await processPublicMessage({
+        context: {
+          cipherSuite: impl,
+          authService: unsafeTestingAuthenticationService,
+          pskIndex: makePskIndex(state, psks),
+        },
         state,
-        mlsCommit[0].publicMessage,
-        makePskIndex(state, psks),
-        unsafeTestingAuthenticationService,
-        impl,
-      )
+        publicMessage: mlsCommit[0].publicMessage,
+      })
       state = res.newState
     }
 

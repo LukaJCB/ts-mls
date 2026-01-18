@@ -22,12 +22,9 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
-  emptyPskIndex,
   joinGroup,
   makePskIndex,
   processPrivateMessage,
@@ -42,24 +39,22 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group
-let aliceGroup = await createGroup(
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   groupId,
-  alice.publicPackage,
-  alice.privatePackage,
-  [],
-  unsafeTestingAuthenticationService,
-  impl,
-)
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
@@ -67,24 +62,21 @@ const addBobProposal: Proposal = {
 }
 
 // Alice adds Bob with the ratchetTreeExtension = true
-const commitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  {
-    extraProposals: [addBobProposal],
-    ratchetTreeExtension: true,
-  },
-)
+const commitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+  ratchetTreeExtension: true,
+})
 aliceGroup = commitResult.newState
 
 // Bob joins using the welcome message and does not need to provide a ratchetTree
-let bobGroup = await joinGroup(
-  commitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  unsafeTestingAuthenticationService,
-  impl,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: commitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+})
 ```
 
 ---

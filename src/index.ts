@@ -1,8 +1,14 @@
 export {
   type CustomExtension,
+  type ExtensionApplicationId,
+  type ExtensionExternalPub,
+  type ExtensionExternalSenders,
+  type ExtensionRatchetTree,
+  type ExtensionRequiredCapabilities,
   type GroupContextExtension,
   type GroupInfoExtension,
   type LeafNodeExtension,
+  makeCustomExtension,
 } from "./extension.js"
 
 export { defaultProposalTypes, type DefaultProposalTypeName } from "./defaultProposalType.js"
@@ -35,7 +41,14 @@ export { defaultKeyPackageEqualityConfig, type KeyPackageEqualityConfig } from "
 
 export { type LifetimeConfig, defaultLifetimeConfig } from "./lifetimeConfig.js"
 
-export { type PrivateKeyPackage, type KeyPackage, generateKeyPackage, generateKeyPackageWithKey } from "./keyPackage.js"
+export {
+  type PrivateKeyPackage,
+  type KeyPackage,
+  type GenerateKeyPackageParams,
+  type GenerateKeyPackageWithKeyParams,
+  generateKeyPackage,
+  generateKeyPackageWithKey,
+} from "./keyPackage.js"
 export { type KeyRetentionConfig, defaultKeyRetentionConfig } from "./keyRetentionConfig.js"
 
 export {
@@ -43,9 +56,14 @@ export {
   makePskIndex,
   joinGroup,
   joinGroupWithExtensions,
+  clientStateDecoder,
   groupStateDecoder,
+  clientStateEncoder,
   groupStateEncoder,
   type GroupState,
+  type PublicGroupState,
+  type CreateGroupParams,
+  type JoinGroupResult,
   type ClientState,
 } from "./clientState.js"
 
@@ -53,7 +71,7 @@ export { type GroupActiveState } from "./groupActiveState.js"
 
 export { type EpochReceiverData } from "./epochReceiverData.js"
 
-export { createApplicationMessage, createProposal } from "./createMessage.js"
+export { createApplicationMessage, createProposal, type CreateMessageResult } from "./createMessage.js"
 
 export { zeroOutUint8Array } from "./util/byteArray.js"
 
@@ -90,7 +108,11 @@ export {
 
 export { type Credential } from "./credential.js"
 
+export { type DefaultCredential, type CredentialCustom } from "./credential.js"
+
 export { type Proposal, type Reinit } from "./proposal.js"
+
+export { type DefaultProposal } from "./proposal.js"
 
 export { type LeafIndex } from "./treemath.js"
 
@@ -124,11 +146,12 @@ export { bytesToBase64 } from "./util/byteArray.js"
 export {
   mlsMessageDecoder,
   mlsMessageEncoder,
-  type MlsMessage as MLSMessage,
+  type MlsMessage,
   type MlsPublicMessage,
   type MlsWelcome,
   type MlsGroupInfo,
   type MlsPrivateMessage,
+  type MlsFramedMessage,
 } from "./message.js"
 
 export { type FramedContent, type FramedContentAuthData } from "./framedContent.js"
@@ -147,7 +170,10 @@ export { wireformats, type WireformatName, type WireformatValue } from "./wirefo
 export { type DefaultCredentialTypeName, type DefaultCredentialTypeValue } from "./defaultCredentialType.js"
 export { type CredentialBasic, type CredentialX509 } from "./credential.js"
 
-export { type MLSContext, type CreateCommitOptions } from "./createCommit.js"
+export { type CreateCommitOptions, type CreateCommitParams } from "./createCommit.js"
+export { type MlsContext } from "./mlsContext.js"
+
+export { proposalOrRefTypes } from "./proposalOrRefType.js"
 export { type NewStateWithActionTaken } from "./processMessages.js"
 
 export { type GroupInfo } from "./groupInfo.js"
@@ -156,9 +182,9 @@ export {
   pskTypes,
   type PSKTypeName,
   type PSKTypeValue,
-  type PskId as PreSharedKeyID,
-  type PskInfo as PSKInfo,
-  type PskNonce as PSKNonce,
+  type PskId,
+  type PskInfo,
+  type PskNonce,
 } from "./presharedkey.js"
 
 export {
@@ -260,7 +286,7 @@ export { type UpdatePathNode } from "./updatePath.js"
 export { type ProposalOrRef } from "./proposalOrRefType.js"
 export { type ProposalOrRefProposal, type ProposalOrRefProposalRef } from "./proposalOrRefType.js"
 
-export { type PskInfoExternal as PSKInfoExternal, type PskInfoResumption as PSKInfoResumption } from "./presharedkey.js"
+export { type PskInfoExternal, type PskInfoResumption } from "./presharedkey.js"
 
 export { resumptionPSKUsages, type ResumptionPSKUsageName, type ResumptionPSKUsageValue } from "./presharedkey.js"
 

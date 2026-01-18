@@ -7,8 +7,7 @@ import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { createProposal, unsafeTestingAuthenticationService } from "../../src/index.js"
 import { processMessage } from "../../src/processMessages.js"
 import { externalSenderEncoder } from "../../src/externalSender.js"
@@ -28,25 +27,29 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
   const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
 
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -55,29 +58,28 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     },
   }
 
-  const addBobCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      wireAsPublicMessage: publicMessage,
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    wireAsPublicMessage: publicMessage,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = addBobCommitResult.newState
 
-  let bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   const bobProposeExtensions: Proposal = {
     proposalType: defaultProposalTypes.group_context_extensions,
@@ -94,7 +96,12 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     },
   }
 
-  const createExtensionsProposalResults = await createProposal(bobGroup, publicMessage, bobProposeExtensions, impl)
+  const createExtensionsProposalResults = await createProposal({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: bobGroup,
+    wireAsPublicMessage: publicMessage,
+    proposal: bobProposeExtensions,
+  })
 
   bobGroup = createExtensionsProposalResults.newState
 
@@ -102,44 +109,46 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     throw new Error(`Expected ${preferredWireformat} message`)
 
   //alice rejects the proposal
-  const aliceRejectsProposalResult = await processMessage(
-    createExtensionsProposalResults.message,
-    aliceGroup,
-    emptyPskIndex,
-    () => "reject",
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const aliceRejectsProposalResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: aliceGroup,
+    message: createExtensionsProposalResults.message,
+    callback: () => "reject",
+  })
 
   aliceGroup = aliceRejectsProposalResult.newState
 
   expect(aliceGroup.unappliedProposals).toStrictEqual({})
 
   // alice commits without the proposal
-  const aliceCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const aliceCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      wireAsPublicMessage: publicMessage,
-    },
-  )
+    state: aliceGroup,
+    wireAsPublicMessage: publicMessage,
+  })
 
   aliceGroup = aliceCommitResult.newState
 
   if (aliceCommitResult.commit.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
-  const bobRejectsAliceCommitResult = await processMessage(
-    aliceCommitResult.commit,
-    bobGroup,
-    emptyPskIndex,
-    () => "reject",
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const bobRejectsAliceCommitResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: bobGroup,
+    message: aliceCommitResult.commit,
+    callback: () => "reject",
+  })
 
   // group context and keySchedule haven't changed since bob rejected the commit
   expect(bobRejectsAliceCommitResult.newState.groupContext).toStrictEqual(bobGroup.groupContext)

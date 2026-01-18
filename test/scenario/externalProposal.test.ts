@@ -10,8 +10,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { ExternalSender, externalSenderEncoder } from "../../src/externalSender.js"
 import { GroupContextExtension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
@@ -32,19 +31,28 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const charlieCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
@@ -58,14 +66,13 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     extensionData: encode(externalSenderEncoder, externalSender),
   }
 
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [extension],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+    extensions: [extension],
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -74,28 +81,27 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = addBobCommitResult.newState
 
-  let bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   // external pub not really necessary here
   const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
@@ -117,30 +123,36 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   if (addCharlieProposal.wireformat !== wireformats.mls_public_message) throw new Error("Expected public message")
 
-  const aliceProcessCharlieProposalResult = await processPublicMessage(
-    aliceGroup,
-    addCharlieProposal.publicMessage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const aliceProcessCharlieProposalResult = await processPublicMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: aliceGroup,
+    publicMessage: addCharlieProposal.publicMessage,
+  })
 
   aliceGroup = aliceProcessCharlieProposalResult.newState
 
-  const bobProcessCharlieProposalResult = await processPublicMessage(
-    bobGroup,
-    addCharlieProposal.publicMessage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const bobProcessCharlieProposalResult = await processPublicMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: bobGroup,
+    publicMessage: addCharlieProposal.publicMessage,
+  })
 
   bobGroup = bobProcessCharlieProposalResult.newState
 
   const removeBobCommitResult = await createCommit({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
     state: aliceGroup,
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
   })
 
   aliceGroup = removeBobCommitResult.newState
@@ -148,13 +160,15 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processRemoveBobResult = await processPrivateMessage(
-    bobGroup,
-    removeBobCommitResult.commit.privateMessage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const processRemoveBobResult = await processPrivateMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: bobGroup,
+    privateMessage: removeBobCommitResult.commit.privateMessage,
+  })
 
   bobGroup = processRemoveBobResult.newState
 

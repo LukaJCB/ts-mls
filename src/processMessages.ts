@@ -3,6 +3,7 @@ import {
   ClientState,
   addHistoricalReceiverData,
   applyProposals,
+  makePskIndex,
   nextEpochContext,
   processProposal,
   throwIfDefined,
@@ -17,7 +18,7 @@ import { verifyConfirmationTag } from "./framedContent.js"
 import { GroupContext } from "./groupContext.js"
 import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./incomingMessageAction.js"
 import { initializeEpoch } from "./keySchedule.js"
-import { MlsPrivateMessage, MlsPublicMessage } from "./message.js"
+import { MlsFramedMessage } from "./message.js"
 import { unprotectPrivateMessage } from "./messageProtection.js"
 import { unprotectPublicMessage } from "./messageProtectionPublic.js"
 import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError.js"
@@ -46,6 +47,8 @@ import { WireformatName, wireformats } from "./wireformat.js"
 import { zeroOutUint8Array } from "./util/byteArray.js"
 import { contentTypes } from "./contentType.js"
 import { AuthenticationService } from "./authenticationService.js"
+import type { MlsContext } from "./mlsContext.js"
+import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -62,14 +65,22 @@ export type ProcessMessageResult =
  *
  * @public
  */
-export async function processPrivateMessage(
-  state: ClientState,
-  pm: PrivateMessage,
-  pskSearch: PskIndex,
-  authService: AuthenticationService,
-  cs: CiphersuiteImpl,
-  callback: IncomingMessageCallback = acceptAll,
-): Promise<ProcessMessageResult> {
+export async function processPrivateMessage(params: {
+  context: MlsContext
+  state: ClientState
+  privateMessage: PrivateMessage
+  callback?: IncomingMessageCallback
+}): Promise<ProcessMessageResult> {
+  const context = params.context
+  const state = params.state
+  const cipherSuite = context.cipherSuite
+  const pskSearch = context.pskIndex ?? makePskIndex(state, {})
+  const auth = context.authService
+  const cb = params.callback ?? acceptAll
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const pm = params.privateMessage
+
   if (pm.epoch < state.groupContext.epoch) {
     const receiverData = state.historicalReceiverData.get(pm.epoch)
 
@@ -80,8 +91,8 @@ export async function processPrivateMessage(
         receiverData.secretTree,
         receiverData.ratchetTree,
         receiverData.groupContext,
-        state.clientConfig.keyRetentionConfig,
-        cs,
+        clientConfig.keyRetentionConfig,
+        cipherSuite,
       )
 
       const newHistoricalReceiverData = addToMap(state.historicalReceiverData, pm.epoch, {
@@ -112,8 +123,8 @@ export async function processPrivateMessage(
     state.secretTree,
     state.ratchetTree,
     state.groupContext,
-    state.clientConfig.keyRetentionConfig,
-    cs,
+    clientConfig.keyRetentionConfig,
+    cipherSuite,
   )
 
   const updatedState = { ...state, secretTree: result.tree }
@@ -131,9 +142,10 @@ export async function processPrivateMessage(
       result.content as AuthenticatedContentCommit,
       "mls_private_message",
       pskSearch,
-      callback,
-      authService,
-      cs,
+      cb,
+      auth,
+      clientConfig,
+      cipherSuite,
     ) //todo solve with types
     return {
       kind: "newState",
@@ -142,7 +154,7 @@ export async function processPrivateMessage(
       consumed: [...result.consumed, ...consumed],
     }
   } else {
-    const action = callback({
+    const action = cb({
       kind: "proposal",
       proposal: {
         proposal: result.content.content.proposal,
@@ -159,7 +171,12 @@ export async function processPrivateMessage(
     else
       return {
         kind: "newState",
-        newState: await processProposal(updatedState, result.content, result.content.content.proposal, cs.hash),
+        newState: await processProposal(
+          updatedState,
+          result.content,
+          result.content.content.proposal,
+          cipherSuite.hash,
+        ),
         actionTaken: action,
         consumed: result.consumed,
       }
@@ -174,14 +191,22 @@ export interface NewStateWithActionTaken {
 }
 
 /** @public */
-export async function processPublicMessage(
-  state: ClientState,
-  pm: PublicMessage,
-  pskSearch: PskIndex,
-  authService: AuthenticationService,
-  cs: CiphersuiteImpl,
-  callback: IncomingMessageCallback = acceptAll,
-): Promise<NewStateWithActionTaken> {
+export async function processPublicMessage(params: {
+  context: MlsContext
+  state: ClientState
+  publicMessage: PublicMessage
+  callback?: IncomingMessageCallback
+}): Promise<NewStateWithActionTaken> {
+  const context = params.context
+  const state = params.state
+  const cipherSuite = context.cipherSuite
+  const pskSearch = context.pskIndex ?? makePskIndex(state, {})
+  const auth = context.authService
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const pm = params.publicMessage
+  const callback = params.callback ?? acceptAll
+
   if (pm.content.epoch < state.groupContext.epoch) throw new ValidationError("Cannot process message, epoch too old")
 
   const content = await unprotectPublicMessage(
@@ -189,7 +214,7 @@ export async function processPublicMessage(
     state.groupContext,
     state.ratchetTree,
     pm,
-    cs,
+    cipherSuite,
   )
 
   if (content.content.contentType === contentTypes.proposal) {
@@ -205,7 +230,7 @@ export async function processPublicMessage(
       }
     else
       return {
-        newState: await processProposal(state, content, content.content.proposal, cs.hash),
+        newState: await processProposal(state, content, content.content.proposal, cipherSuite.hash),
         actionTaken: action,
         consumed: [],
       }
@@ -216,8 +241,9 @@ export async function processPublicMessage(
       "mls_public_message",
       pskSearch,
       callback,
-      authService,
-      cs,
+      auth,
+      clientConfig,
+      cipherSuite,
     ) //todo solve with types
   }
 }
@@ -229,6 +255,7 @@ async function processCommit(
   pskSearch: PskIndex,
   callback: IncomingMessageCallback,
   authService: AuthenticationService,
+  clientConfig: ClientConfig,
   cs: CiphersuiteImpl,
 ): Promise<NewStateWithActionTaken> {
   if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
@@ -242,6 +269,7 @@ async function processCommit(
     senderLeafIndex,
     pskSearch,
     false,
+    clientConfig,
     authService,
     cs,
   )
@@ -339,7 +367,7 @@ async function processCommit(
       ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
       : { kind: "active" }
 
-  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state)
+  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state, clientConfig)
 
   zeroOutUint8Array(commitSecret)
   zeroOutUint8Array(epochSecrets.joinerSecret)
@@ -440,17 +468,36 @@ async function updatePrivateKeyPath(
 }
 
 /** @public */
-export async function processMessage(
-  message: MlsPrivateMessage | MlsPublicMessage,
-  state: ClientState,
-  pskIndex: PskIndex,
-  action: IncomingMessageCallback,
-  authService: AuthenticationService,
-  cs: CiphersuiteImpl,
-): Promise<ProcessMessageResult> {
+export async function processMessage(params: {
+  context: MlsContext
+  state: ClientState
+  message: MlsFramedMessage
+  callback?: IncomingMessageCallback
+}): Promise<ProcessMessageResult> {
+  const context = params.context
+  const state = params.state
+  const authService = context.authService
+  const cs = context.cipherSuite
+  const pskIndex = context.pskIndex ?? emptyPskIndex
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const message = params.message
+  const action = params.callback ?? acceptAll
+
   if (message.wireformat === wireformats.mls_public_message) {
-    const result = await processPublicMessage(state, message.publicMessage, pskIndex, authService, cs, action)
+    const result = await processPublicMessage({
+      context: { cipherSuite: cs, authService, pskIndex, clientConfig },
+      state,
+      publicMessage: message.publicMessage,
+      callback: action,
+    })
 
     return { ...result, kind: "newState" }
-  } else return processPrivateMessage(state, message.privateMessage, emptyPskIndex, authService, cs, action)
+  } else
+    return processPrivateMessage({
+      context: { cipherSuite: cs, authService, pskIndex: emptyPskIndex, clientConfig },
+      state,
+      privateMessage: message.privateMessage,
+      callback: action,
+    })
 }

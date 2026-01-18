@@ -21,14 +21,11 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
   Proposal,
-  emptyPskIndex,
   joinGroup,
   processPrivateMessage,
   makePskIndex,
@@ -41,30 +38,28 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   groupId,
-  alice.publicPackage,
-  alice.privatePackage,
-  [],
-  unsafeTestingAuthenticationService,
-  impl,
-)
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 const charlieCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("charlie"),
 }
-const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const charlie = await generateKeyPackage({ credential: charlieCredential, cipherSuite: impl })
 
 // Alice adds Bob and Charlie in the same commit, transitioning to epoch 1
 const addBobProposal: Proposal = {
@@ -75,32 +70,29 @@ const addCharlieProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: charlie.publicPackage },
 }
-const addCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  { extraProposals: [addBobProposal, addCharlieProposal] },
-)
+const addCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal, addCharlieProposal],
+})
 aliceGroup = addCommitResult.newState
 if (addCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
 // Bob and Charlie join the group, both are now in epoch 1
-let bobGroup = await joinGroup(
-  addCommitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  unsafeTestingAuthenticationService,
-  impl,
-  aliceGroup.ratchetTree,
-)
-let charlieGroup = await joinGroup(
-  addCommitResult.welcome!,
-  charlie.publicPackage,
-  charlie.privatePackage,
-  emptyPskIndex,
-  unsafeTestingAuthenticationService,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: addCommitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
+let charlieGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: addCommitResult.welcome!,
+  keyPackage: charlie.publicPackage,
+  privateKeys: charlie.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 ```
 
 ---

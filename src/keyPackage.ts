@@ -4,7 +4,7 @@ import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEnco
 import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { extensionEncoder, CustomExtension, customExtensionDecoder } from "./extension.js"
+import { extensionEncoder, CustomExtension, customExtensionDecoder, LeafNodeExtension } from "./extension.js"
 import {
   protocolVersionDecoder,
   protocolVersionEncoder,
@@ -20,8 +20,9 @@ import {
 } from "./leafNode.js"
 import { leafNodeSources } from "./leafNodeSource.js"
 import { Capabilities } from "./capabilities.js"
-import { Lifetime } from "./lifetime.js"
+import { defaultLifetime, Lifetime } from "./lifetime.js"
 import { Credential } from "./credential.js"
+import { defaultCapabilities } from "./defaultCapabilities.js"
 
 /** @public */
 export type KeyPackageTBS = {
@@ -103,15 +104,25 @@ export interface PrivateKeyPackage {
 }
 
 /** @public */
+export interface GenerateKeyPackageWithKeyParams {
+  credential: Credential
+  capabilities?: Capabilities
+  lifetime?: Lifetime
+  extensions?: CustomExtension[]
+  signatureKeyPair: { signKey: Uint8Array; publicKey: Uint8Array }
+  cipherSuite: CiphersuiteImpl
+  leafNodeExtensions?: LeafNodeExtension[]
+}
+
+/** @public */
 export async function generateKeyPackageWithKey(
-  credential: Credential,
-  capabilities: Capabilities,
-  lifetime: Lifetime,
-  extensions: CustomExtension[],
-  signatureKeyPair: { signKey: Uint8Array; publicKey: Uint8Array },
-  cs: CiphersuiteImpl,
-  leafNodeExtensions?: CustomExtension[],
+  params: GenerateKeyPackageWithKeyParams,
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
+  const { credential, signatureKeyPair, cipherSuite, leafNodeExtensions } = params
+  const capabilities = params.capabilities ?? defaultCapabilities()
+  const lifetime = params.lifetime ?? defaultLifetime()
+  const extensions = params.extensions ?? []
+  const cs = cipherSuite
   const initKeys = await cs.hpke.generateKeyPair()
   const hpkeKeys = await cs.hpke.generateKeyPair()
 
@@ -136,21 +147,36 @@ export async function generateKeyPackageWithKey(
     cipherSuite: cs.name,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
     leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),
-    extensions,
+    extensions: extensions ?? [],
   }
 
   return { publicPackage: await signKeyPackage(tbs, signatureKeyPair.signKey, cs.signature), privatePackage }
 }
 
 /** @public */
+export interface GenerateKeyPackageParams {
+  credential: Credential
+  capabilities?: Capabilities
+  lifetime?: Lifetime
+  extensions?: CustomExtension[]
+  cipherSuite: CiphersuiteImpl
+  leafNodeExtensions?: LeafNodeExtension[]
+}
+
+/** @public */
 export async function generateKeyPackage(
-  credential: Credential,
-  capabilities: Capabilities,
-  lifetime: Lifetime,
-  extensions: CustomExtension[],
-  cs: CiphersuiteImpl,
-  leafNodeExtensions?: CustomExtension[],
+  params: GenerateKeyPackageParams,
 ): Promise<{ publicPackage: KeyPackage; privatePackage: PrivateKeyPackage }> {
-  const sigKeys = await cs.signature.keygen()
-  return generateKeyPackageWithKey(credential, capabilities, lifetime, extensions, sigKeys, cs, leafNodeExtensions)
+  const { credential, cipherSuite, leafNodeExtensions, capabilities, lifetime } = params
+  const extensions = params.extensions ?? []
+  const sigKeys = await cipherSuite.signature.keygen()
+  return generateKeyPackageWithKey({
+    credential,
+    capabilities,
+    lifetime,
+    extensions,
+    signatureKeyPair: sigKeys,
+    cipherSuite,
+    leafNodeExtensions,
+  })
 }

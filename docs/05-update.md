@@ -29,12 +29,9 @@ import {
   Credential,
   defaultCredentialTypes,
   createGroup,
-  emptyPskIndex,
   joinGroup,
   makePskIndex,
   processPrivateMessage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
@@ -50,88 +47,93 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   groupId,
-  alice.publicPackage,
-  alice.privatePackage,
-  [],
-  unsafeTestingAuthenticationService,
-  impl,
-)
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 // Alice adds Bob and commits, this is epoch 1
 const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  { extraProposals: [addBobProposal] },
-)
+const addBobCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+})
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
-let bobGroup = await joinGroup(
-  addBobCommitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  unsafeTestingAuthenticationService,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: addBobCommitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 
 // Alice updates her key with an empty commit, transitioning to epoch 2
 const emptyCommitResult = await createCommit({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+  },
   state: aliceGroup,
-  cipherSuite: impl,
-  authService: unsafeTestingAuthenticationService,
 })
 if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
 
 // Bob processes Alice's update and transitions to epoch 2
-const bobProcessCommitResult = await processPrivateMessage(
-  bobGroup,
-  emptyCommitResult.commit.privateMessage,
-  makePskIndex(bobGroup, {}),
-  unsafeTestingAuthenticationService,
-  impl,
-)
+const bobProcessCommitResult = await processPrivateMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(bobGroup, {}),
+  },
+  state: bobGroup,
+  privateMessage: emptyCommitResult.commit.privateMessage,
+})
 bobGroup = bobProcessCommitResult.newState
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
 const emptyCommitResult3 = await createCommit({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+  },
   state: aliceGroup,
-  cipherSuite: impl,
-  authService: unsafeTestingAuthenticationService,
 })
 if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
 
 // Alice processes Bob's update and transitions to epoch 3
-const aliceProcessCommitResult3 = await processPrivateMessage(
-  aliceGroup,
-  emptyCommitResult3.commit.privateMessage,
-  makePskIndex(aliceGroup, {}),
-  unsafeTestingAuthenticationService,
-  impl,
-)
+const aliceProcessCommitResult3 = await processPrivateMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(aliceGroup, {}),
+  },
+  state: aliceGroup,
+  privateMessage: emptyCommitResult3.commit.privateMessage,
+})
 aliceGroup = aliceProcessCommitResult3.newState
 
 // Bob creates a new KeyPackage
-const alice2 = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice2 = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 
 // Alice proposes to update her keys
 const updateAliceProposal: Proposal = {
@@ -140,22 +142,25 @@ const updateAliceProposal: Proposal = {
 }
 
 // Bob commits to Alice's proposal and transitions to epoch 4
-const updateBobCommitResult = await createCommit(
-  { state: bobGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  { extraProposals: [updateAliceProposal] },
-)
+const updateBobCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: bobGroup,
+  extraProposals: [updateAliceProposal],
+})
 if (updateBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 bobGroup = updateBobCommitResult.newState
 
 // Alice processes Bob's commit and transitions to epoch 4
-const aliceProcessCommitResult4 = await processPrivateMessage(
-  aliceGroup,
-  updateBobCommitResult.commit.privateMessage,
-  makePskIndex(aliceGroup, {}),
-  unsafeTestingAuthenticationService,
-  impl,
-)
+const aliceProcessCommitResult4 = await processPrivateMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(aliceGroup, {}),
+  },
+  state: aliceGroup,
+  privateMessage: updateBobCommitResult.commit.privateMessage,
+})
 aliceGroup = aliceProcessCommitResult4.newState
 ```
 

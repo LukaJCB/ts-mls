@@ -19,55 +19,73 @@ import { defaultProposalTypes } from "./defaultProposalType.js"
 import { protocolVersions, ProtocolVersionName } from "./protocolVersion.js"
 import { RatchetTree } from "./ratchetTree.js"
 import { Welcome } from "./welcome.js"
-import { AuthenticationService } from "./authenticationService.js"
+import type { MlsContext } from "./mlsContext.js"
 
 /** @public */
-export async function reinitGroup(
-  state: ClientState,
-  groupId: Uint8Array,
-  version: ProtocolVersionName,
-  cipherSuite: CiphersuiteName,
-  extensions: GroupContextExtension[],
-  authService: AuthenticationService,
-  cs: CiphersuiteImpl,
-): Promise<CreateCommitResult> {
+export async function reinitGroup(params: {
+  context: MlsContext
+  state: ClientState
+  groupId: Uint8Array
+  version: ProtocolVersionName
+  cipherSuite: CiphersuiteName
+  extensions?: GroupContextExtension[]
+}): Promise<CreateCommitResult> {
+  const { context, state, groupId, version, cipherSuite, extensions } = params
+  const cs = context.cipherSuite
+  const authService = context.authService
   const reinitProposal: Proposal = {
     proposalType: defaultProposalTypes.reinit,
     reinit: {
       groupId,
       version: protocolVersions[version],
       cipherSuite: ciphersuites[cipherSuite],
-      extensions,
+      extensions: extensions ?? [],
     },
   }
 
-  return createCommit(
-    {
-      state,
+  return createCommit({
+    context: {
       pskIndex: makePskIndex(state, {}),
       cipherSuite: cs,
       authService,
     },
-    {
-      extraProposals: [reinitProposal],
-    },
-  )
+    state,
+    extraProposals: [reinitProposal],
+  })
 }
 
 /** @public */
-export async function reinitCreateNewGroup(
-  state: ClientState,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  memberKeyPackages: KeyPackage[],
-  groupId: Uint8Array,
-  cipherSuite: CiphersuiteName,
-  extensions: GroupContextExtension[],
-  authService: AuthenticationService,
-  provider: CryptoProvider = defaultCryptoProvider,
-): Promise<CreateCommitResult> {
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider)
-  const newGroup = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, authService, cs)
+export async function reinitCreateNewGroup(params: {
+  context: MlsContext
+  state: ClientState
+  keyPackage: KeyPackage
+  privateKeyPackage: PrivateKeyPackage
+  memberKeyPackages: KeyPackage[]
+  groupId: Uint8Array
+  cipherSuite: CiphersuiteName
+  extensions?: GroupContextExtension[]
+  provider?: CryptoProvider
+}): Promise<CreateCommitResult> {
+  const {
+    context,
+    state,
+    keyPackage,
+    privateKeyPackage,
+    memberKeyPackages,
+    groupId,
+    cipherSuite,
+    extensions,
+    provider,
+  } = params
+  const authService = context.authService
+  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider ?? defaultCryptoProvider)
+  const newGroup = await createGroup({
+    context: { cipherSuite: cs, authService: context.authService },
+    groupId,
+    keyPackage,
+    privateKeyPackage,
+    extensions,
+  })
 
   const addProposals: Proposal[] = memberKeyPackages.map((kp) => ({
     proposalType: defaultProposalTypes.add,
@@ -83,17 +101,15 @@ export async function reinitCreateNewGroup(
     },
   }
 
-  return createCommit(
-    {
-      state: newGroup,
+  return createCommit({
+    context: {
       pskIndex: makePskIndex(state, {}),
       cipherSuite: cs,
       authService,
     },
-    {
-      extraProposals: [...addProposals, resumptionPsk],
-    },
-  )
+    state: newGroup,
+    extraProposals: [...addProposals, resumptionPsk],
+  })
 }
 
 export function makeResumptionPsk(
@@ -117,27 +133,28 @@ export function makeResumptionPsk(
 }
 
 /** @public */
-export async function branchGroup(
-  state: ClientState,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  memberKeyPackages: KeyPackage[],
-  newGroupId: Uint8Array,
-  authService: AuthenticationService,
-  cs: CiphersuiteImpl,
-): Promise<CreateCommitResult> {
+export async function branchGroup(params: {
+  context: MlsContext
+  state: ClientState
+  keyPackage: KeyPackage
+  privateKeyPackage: PrivateKeyPackage
+  memberKeyPackages: KeyPackage[]
+  newGroupId: Uint8Array
+}): Promise<CreateCommitResult> {
+  const { context, state, keyPackage, privateKeyPackage, memberKeyPackages, newGroupId } = params
+  const cs = context.cipherSuite
+  const authService = context.authService
   const resumptionPsk = makeResumptionPsk(state, resumptionPSKUsages.branch, cs)
 
   const pskSearch = makePskIndex(state, {})
 
-  const newGroup = await createGroup(
-    newGroupId,
+  const newGroup = await createGroup({
+    context: { cipherSuite: cs, authService },
+    groupId: newGroupId,
     keyPackage,
     privateKeyPackage,
-    state.groupContext.extensions,
-    authService,
-    cs,
-  )
+    extensions: state.groupContext.extensions,
+  })
 
   const addMemberProposals: ProposalAdd[] = memberKeyPackages.map((kp) => ({
     proposalType: defaultProposalTypes.add,
@@ -153,61 +170,67 @@ export async function branchGroup(
     },
   }
 
-  return createCommit(
-    {
-      state: newGroup,
+  return createCommit({
+    context: {
       pskIndex: pskSearch,
       cipherSuite: cs,
       authService,
     },
-    {
-      extraProposals: [...addMemberProposals, branchPskProposal],
-    },
-  )
+    state: newGroup,
+    extraProposals: [...addMemberProposals, branchPskProposal],
+  })
 }
 
 /** @public */
-export async function joinGroupFromBranch(
-  oldState: ClientState,
-  welcome: Welcome,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  authService: AuthenticationService,
-  ratchetTree: RatchetTree | undefined,
-  cs: CiphersuiteImpl,
-): Promise<ClientState> {
+export async function joinGroupFromBranch(params: {
+  context: MlsContext
+  oldState: ClientState
+  welcome: Welcome
+  keyPackage: KeyPackage
+  privateKeyPackage: PrivateKeyPackage
+  ratchetTree?: RatchetTree
+}): Promise<ClientState> {
+  const context = params.context
+  const oldState = params.oldState
   const pskSearch = makePskIndex(oldState, {})
 
-  return await joinGroup(welcome, keyPackage, privateKeyPackage, pskSearch, authService, cs, ratchetTree, oldState)
+  return await joinGroup({
+    context: { ...context, pskIndex: pskSearch },
+    welcome: params.welcome,
+    keyPackage: params.keyPackage,
+    privateKeys: params.privateKeyPackage,
+    ratchetTree: params.ratchetTree,
+    resumingFromState: oldState,
+  })
 }
 
 /** @public */
-export async function joinGroupFromReinit(
-  suspendedState: ClientState,
-  welcome: Welcome,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  authService: AuthenticationService,
-  ratchetTree: RatchetTree | undefined,
-  provider: CryptoProvider = defaultCryptoProvider,
-): Promise<ClientState> {
+export async function joinGroupFromReinit(params: {
+  context: MlsContext
+  suspendedState: ClientState
+  welcome: Welcome
+  keyPackage: KeyPackage
+  privateKeyPackage: PrivateKeyPackage
+  ratchetTree?: RatchetTree
+  provider?: CryptoProvider
+}): Promise<ClientState> {
+  const context = params.context
+  const suspendedState = params.suspendedState
   const pskSearch = makePskIndex(suspendedState, {})
   if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
     throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
   const cs = await getCiphersuiteImpl(
     getCiphersuiteFromId(suspendedState.groupActiveState.reinit.cipherSuite),
-    provider,
+    params.provider ?? defaultCryptoProvider,
   )
 
-  return await joinGroup(
-    welcome,
-    keyPackage,
-    privateKeyPackage,
-    pskSearch,
-    authService,
-    cs,
-    ratchetTree,
-    suspendedState,
-  )
+  return await joinGroup({
+    context: { ...context, cipherSuite: cs, pskIndex: pskSearch },
+    welcome: params.welcome,
+    keyPackage: params.keyPackage,
+    privateKeys: params.privateKeyPackage,
+    ratchetTree: params.ratchetTree,
+    resumingFromState: suspendedState,
+  })
 }

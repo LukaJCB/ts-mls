@@ -1,13 +1,11 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { Capabilities } from "../../src/capabilities.js"
 import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { ValidationError } from "../../src/mlsError.js"
@@ -37,7 +35,11 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    capabilities,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
@@ -45,20 +47,23 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const customExtension: CustomExtension = makeCustomExtension(customExtensionType, extensionData)
 
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [customExtension],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+    extensions: [customExtension],
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    capabilities,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -67,28 +72,27 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = addBobCommitResult.newState
 
-  const bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   expect(bobGroup.groupContext.extensions.find((e) => e.extensionType === customExtensionType)).toStrictEqual(
     customExtension,
@@ -99,7 +103,10 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const addCharlieProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -109,13 +116,13 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
   }
 
   await expect(
-    createCommit(
-      {
-        state: aliceGroup,
+    createCommit({
+      context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
-      { extraProposals: [addCharlieProposal] },
-    ),
+      state: aliceGroup,
+      extraProposals: [addCharlieProposal],
+    }),
   ).rejects.toThrow(ValidationError)
 }

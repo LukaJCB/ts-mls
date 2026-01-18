@@ -25,14 +25,11 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
   Proposal,
-  emptyPskIndex,
   joinGroup,
   joinGroupExternal,
   processPrivateMessage,
@@ -47,84 +44,84 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   groupId,
-  alice.publicPackage,
-  alice.privatePackage,
-  [],
-  unsafeTestingAuthenticationService,
-  impl,
-)
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 const charlieCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("charlie"),
 }
-const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const charlie = await generateKeyPackage({ credential: charlieCredential, cipherSuite: impl })
 
 // Alice adds Bob and commits, this is epoch 1
 const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  { extraProposals: [addBobProposal] },
-)
+const addBobCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+})
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
-let bobGroup = await joinGroup(
-  addBobCommitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  unsafeTestingAuthenticationService,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: addBobCommitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 
 // Alice creates GroupInfo with external public key and ratchet tree extensions and sends it to Charlie
 const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, [], impl)
 
 // Charlie joins externally using GroupInfo and creates an external commit (epoch 2)
-const charlieJoinGroupCommitResult = await joinGroupExternal(
+const charlieJoinGroupCommitResult = await joinGroupExternal({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   groupInfo,
-  charlie.publicPackage,
-  charlie.privatePackage,
-  false,
-  unsafeTestingAuthenticationService,
-  impl,
-)
+  keyPackage: charlie.publicPackage,
+  privateKeys: charlie.privatePackage,
+  resync: false,
+})
 let charlieGroup = charlieJoinGroupCommitResult.newState
 
 // All members process the external join commit to update their state (epoch 2)
-const aliceProcessCharlieJoinResult = await processPublicMessage(
-  aliceGroup,
-  charlieJoinGroupCommitResult.publicMessage,
-  makePskIndex(aliceGroup, {}),
-  unsafeTestingAuthenticationService,
-  impl,
-)
+const aliceProcessCharlieJoinResult = await processPublicMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(aliceGroup, {}),
+  },
+  state: aliceGroup,
+  publicMessage: charlieJoinGroupCommitResult.publicMessage,
+})
 
 aliceGroup = aliceProcessCharlieJoinResult.newState
 
-const bobProcessCharlieJoinResult = await processPublicMessage(
-  bobGroup,
-  charlieJoinGroupCommitResult.publicMessage,
-  makePskIndex(bobGroup, {}),
-  unsafeTestingAuthenticationService,
-  impl,
-)
+const bobProcessCharlieJoinResult = await processPublicMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(bobGroup, {}),
+  },
+  state: bobGroup,
+  publicMessage: charlieJoinGroupCommitResult.publicMessage,
+})
 
 bobGroup = bobProcessCharlieJoinResult.newState
 ```

@@ -29,15 +29,12 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
-  emptyPskIndex,
   joinGroup,
   makePskIndex,
-  processPrivateMessage,
+  processMessage,
   createApplicationMessage,
   createCommit,
   Proposal,
@@ -51,64 +48,67 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
-let aliceGroup = await createGroup(
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   groupId,
-  alice.publicPackage,
-  alice.privatePackage,
-  [],
-  unsafeTestingAuthenticationService,
-  impl,
-)
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 // Alice adds Bob
 const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const commitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  { extraProposals: [addBobProposal] },
-)
+const commitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+})
 aliceGroup = commitResult.newState
 
 // Alice deletes the keys used to encrypt the commit message
 commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins using the welcome message
-let bobGroup = await joinGroup(
-  commitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  unsafeTestingAuthenticationService,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: commitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 
 // Alice sends a message to Bob
 const messageToBob = new TextEncoder().encode("Hello bob!")
-const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, messageToBob, impl)
+const aliceCreateMessageResult = await createApplicationMessage({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  message: messageToBob,
+})
 aliceGroup = aliceCreateMessageResult.newState
 
 // Alice deletes the keys used to encrypt the application message
 aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob receives the message
-const bobProcessMessageResult = await processPrivateMessage(
-  bobGroup,
-  aliceCreateMessageResult.privateMessage,
-  makePskIndex(bobGroup, {}),
-  unsafeTestingAuthenticationService,
-  impl,
-)
+const bobProcessMessageResult = await processMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(bobGroup, {}),
+  },
+  state: bobGroup,
+  message: aliceCreateMessageResult.message,
+})
 bobGroup = bobProcessMessageResult.newState
 
 // Bob deletes the keys used to decrypt the application message

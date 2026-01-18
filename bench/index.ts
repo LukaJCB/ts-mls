@@ -5,8 +5,6 @@ import {
   defaultCredentialTypes,
   defaultProposalTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   CiphersuiteImpl,
   CiphersuiteName,
   getCiphersuiteFromName,
@@ -51,7 +49,7 @@ async function createKeyPackageBench(impl: CiphersuiteImpl) {
     credentialType: defaultCredentialTypes.basic,
     identity: new Uint8Array([0, 1, 2]),
   }
-  return await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  return await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 }
 
 async function createGroupBench(impl: CiphersuiteImpl) {
@@ -66,34 +64,39 @@ async function joinGroupBench(
   kp: KeyPackage,
   result: CreateCommitResult,
 ) {
-  await joinGroup(
-    result.welcome!,
-    kp,
-    pkp,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    result.newState.ratchetTree,
-  )
+  await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: result.welcome!,
+    keyPackage: kp,
+    privateKeys: pkp,
+    ratchetTree: result.newState.ratchetTree,
+  })
 }
 
 async function createCommitBench(impl: CiphersuiteImpl, aliceGroup: ClientState) {
   await createCommit({
+    context: {
+      pskIndex: emptyPskIndex,
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
     state: aliceGroup,
-    pskIndex: emptyPskIndex,
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
   })
 }
 
 async function processCommitBench(impl: CiphersuiteImpl, bobGroup: ClientState, result: CreateCommitResult) {
-  await processPrivateMessage(
-    bobGroup,
-    (result.commit as MlsPrivateMessage).privateMessage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  await processPrivateMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: bobGroup,
+    privateMessage: (result.commit as MlsPrivateMessage).privateMessage,
+  })
 }
 
 async function initGroup(impl: CiphersuiteImpl) {
@@ -101,18 +104,16 @@ async function initGroup(impl: CiphersuiteImpl) {
     credentialType: defaultCredentialTypes.basic,
     identity: new Uint8Array([0, 1, 2]),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 
   const groupId = new Uint8Array([0, 1, 2])
 
-  const result = await createGroup(
+  const result = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   return { alice, result }
 }
@@ -125,17 +126,15 @@ async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
     },
   }
 
-  const result = await createCommit(
-    {
-      state,
+  const result = await createCommit({
+    context: {
       pskIndex: emptyPskIndex,
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [removeBobProposal],
-    },
-  )
+    state,
+    extraProposals: [removeBobProposal],
+  })
 
   return result
 }
@@ -145,7 +144,7 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
     credentialType: defaultCredentialTypes.basic,
     identity: new Uint8Array([0, 1, 3]),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
   const addBobProposal: Proposal = {
     proposalType: defaultProposalTypes.add,
@@ -154,17 +153,15 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
     },
   }
 
-  const result = await createCommit(
-    {
-      state,
+  const result = await createCommit({
+    context: {
       pskIndex: emptyPskIndex,
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state,
+    extraProposals: [addBobProposal],
+  })
 
   return { bob, result }
 }
@@ -177,7 +174,7 @@ async function generateKeyPackages(impl: CiphersuiteImpl, members: number): Prom
       identity: new TextEncoder().encode(i.toString()),
     }
 
-    const member = await generateKeyPackage(cred, defaultCapabilities(), defaultLifetime, [], impl)
+    const member = await generateKeyPackage({ credential: cred, cipherSuite: impl })
     kps.push(member.publicPackage)
   }
 
@@ -202,17 +199,15 @@ async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps:
       })
     }
 
-    const result = await createCommit(
-      {
-        state,
+    const result = await createCommit({
+      context: {
         pskIndex: emptyPskIndex,
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
-      {
-        extraProposals: proposals,
-      },
-    )
+      state,
+      extraProposals: proposals,
+    })
 
     state = result.newState
   }
@@ -252,28 +247,31 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
   const addMembersResult = await addMembers(impl, createResult.result, kps)
   const initResult = await addMember(impl, addMembersResult)
 
-  const joinResult = await joinGroup(
-    initResult.result.welcome!,
-    initResult.bob.publicPackage,
-    initResult.bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    initResult.result.newState.ratchetTree,
-  )
-
-  const commitResult = await createCommit({
-    state: initResult.result.newState,
-    pskIndex: emptyPskIndex,
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
+  const joinResult = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: initResult.result.welcome!,
+    keyPackage: initResult.bob.publicPackage,
+    privateKeys: initResult.bob.privatePackage,
+    ratchetTree: initResult.result.newState.ratchetTree,
   })
 
-  const sendMessageResult = await createApplicationMessage(
-    initResult.result.newState,
-    new Uint8Array([1, 2, 3, 4, 5]),
-    impl,
-  )
+  const commitResult = await createCommit({
+    context: {
+      pskIndex: emptyPskIndex,
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    state: initResult.result.newState,
+  })
+
+  const sendMessageResult = await createApplicationMessage({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: initResult.result.newState,
+    message: new Uint8Array([1, 2, 3, 4, 5]),
+  })
   const addMemberResult = await addMember(impl, initResult.result.newState)
 
   const removeMemberResult = await removeMember(impl, initResult.result.newState)
@@ -289,44 +287,58 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
     .add("Process empty commit", async () => await processCommitBench(impl, joinResult, commitResult))
     .add(
       "Send application message",
-      async () => await createApplicationMessage(initResult.result.newState, new Uint8Array([1, 2, 3, 4, 5]), impl),
+      async () =>
+        await createApplicationMessage({
+          context: {
+            cipherSuite: impl,
+            authService: unsafeTestingAuthenticationService,
+          },
+          state: initResult.result.newState,
+          message: new Uint8Array([1, 2, 3, 4, 5]),
+        }),
     )
     .add(
       "Receive application message",
       async () =>
-        await processPrivateMessage(
-          joinResult,
-          sendMessageResult.privateMessage,
-          emptyPskIndex,
-          unsafeTestingAuthenticationService,
-          impl,
-        ),
+        await processMessage({
+          context: {
+            cipherSuite: impl,
+            authService: unsafeTestingAuthenticationService,
+            pskIndex: emptyPskIndex,
+          },
+          state: joinResult,
+          message: sendMessageResult.message as any,
+        }),
     )
     .add("Add member", async () => await addMember(impl, addMembersResult))
     .add(
       "Receive add member commit",
       async () =>
-        await processMessage(
-          addMemberResult.result.commit as MlsPrivateMessage,
-          joinResult,
-          emptyPskIndex,
-          acceptAll,
-          unsafeTestingAuthenticationService,
-          impl,
-        ),
+        await processMessage({
+          context: {
+            cipherSuite: impl,
+            authService: unsafeTestingAuthenticationService,
+            pskIndex: emptyPskIndex,
+          },
+          state: joinResult,
+          message: addMemberResult.result.commit,
+          callback: acceptAll,
+        }),
     )
     .add("Remove member", async () => await removeMember(impl, initResult.result.newState))
     .add(
       "Receive remove member commit",
       async () =>
-        await processMessage(
-          removeMemberResult.commit as MlsPrivateMessage,
-          joinResult,
-          emptyPskIndex,
-          acceptAll,
-          unsafeTestingAuthenticationService,
-          impl,
-        ),
+        await processMessage({
+          context: {
+            cipherSuite: impl,
+            authService: unsafeTestingAuthenticationService,
+            pskIndex: emptyPskIndex,
+          },
+          state: joinResult,
+          message: removeMemberResult.commit,
+          callback: acceptAll,
+        }),
     )
 
   await bench.run()

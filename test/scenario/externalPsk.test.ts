@@ -1,7 +1,6 @@
 import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -11,8 +10,7 @@ import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { pskTypes } from "../../src/presharedkey.js"
@@ -29,24 +27,28 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -55,28 +57,27 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const commitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = commitResult.newState
 
-  let bobGroup = await joinGroup(
-    commitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: commitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   const pskSecret1 = impl.rng.randomBytes(impl.kdf.size)
   const pskSecret2 = impl.rng.randomBytes(impl.kdf.size)
@@ -114,29 +115,29 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   const sharedPsks = { [base64PskId1]: pskSecret1, [base64PskId2]: pskSecret2 }
 
-  const pskCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const pskCommitResult = await createCommit({
+    context: {
       pskIndex: makePskIndex(aliceGroup, sharedPsks),
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [pskProposal1, pskProposal2],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [pskProposal1, pskProposal2],
+  })
 
   aliceGroup = pskCommitResult.newState
 
   if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const processPskResult = await processPrivateMessage(
-    bobGroup,
-    pskCommitResult.commit.privateMessage,
-    makePskIndex(bobGroup, sharedPsks),
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const processPskResult = await processPrivateMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(bobGroup, sharedPsks),
+    },
+    state: bobGroup,
+    privateMessage: pskCommitResult.commit.privateMessage,
+  })
 
   bobGroup = processPskResult.newState
 

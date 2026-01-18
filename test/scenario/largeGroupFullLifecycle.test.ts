@@ -1,7 +1,6 @@
 import { createGroup, joinGroup, ClientState, makePskIndex } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
@@ -9,8 +8,7 @@ import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
@@ -42,15 +40,16 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
 
   const initialCreatorName = "member-0"
   const creatorCred = makeCredential(initialCreatorName)
-  const creatorKP = await generateKeyPackage(creatorCred, defaultCapabilities(), defaultLifetime, [], impl)
-  const creatorGroup = await createGroup(
+  const creatorKP = await generateKeyPackage({
+    credential: creatorCred,
+    cipherSuite: impl,
+  })
+  const creatorGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    creatorKP.publicPackage,
-    creatorKP.privatePackage,
-    [],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: creatorKP.publicPackage,
+    privateKeyPackage: creatorKP.privatePackage,
+  })
 
   memberStates.push({
     id: initialCreatorName,
@@ -107,16 +106,14 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       },
     }
 
-    const commitResult = await createCommit(
-      {
-        state: remover.state,
+    const commitResult = await createCommit({
+      context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
-      {
-        extraProposals: [removeProposal],
-      },
-    )
+      state: remover.state,
+      extraProposals: [removeProposal],
+    })
 
     if (commitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
     remover.state = commitResult.newState
@@ -125,13 +122,15 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
     for (let i = 0; i < memberStates.length; i++) {
       if (i === removerIndex) continue
       const m = memberStates[i]!
-      const result = await processPrivateMessage(
-        m.state,
-        commitResult.commit.privateMessage,
-        makePskIndex(m.state, {}),
-        unsafeTestingAuthenticationService,
-        impl,
-      )
+      const result = await processPrivateMessage({
+        context: {
+          cipherSuite: impl,
+          authService: unsafeTestingAuthenticationService,
+          pskIndex: makePskIndex(m.state, {}),
+        },
+        state: m.state,
+        privateMessage: commitResult.commit.privateMessage,
+      })
       m.state = result.newState
     }
 
@@ -151,7 +150,10 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode(newName),
   }
-  const newKP = await generateKeyPackage(newCred, defaultCapabilities(), defaultLifetime, [], impl)
+  const newKP = await generateKeyPackage({
+    credential: newCred,
+    cipherSuite: impl,
+  })
 
   const adder = memberStates[adderIndex]!
 
@@ -160,42 +162,40 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     add: { keyPackage: newKP.publicPackage },
   }
 
-  const commitResult = await createCommit(
-    {
-      state: adder.state,
+  const commitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addProposal],
-    },
-  )
+    state: adder.state,
+    extraProposals: [addProposal],
+  })
 
   if (commitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
   adder.state = commitResult.newState
 
-  const newState = await joinGroup(
-    commitResult.welcome!,
-    newKP.publicPackage,
-    newKP.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    adder.state.ratchetTree,
-  )
+  const newState = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: commitResult.welcome!,
+    keyPackage: newKP.publicPackage,
+    privateKeys: newKP.privatePackage,
+    ratchetTree: adder.state.ratchetTree,
+  })
 
   // Update all existing members (excluding adder)
   for (let i = 0; i < memberStates.length; i++) {
     if (i === adderIndex) continue
     const m = memberStates[i]!
-    const result = await processPrivateMessage(
-      m.state,
-      commitResult.commit.privateMessage,
-      makePskIndex(m.state, {}),
-      unsafeTestingAuthenticationService,
-      impl,
-    )
+    const result = await processPrivateMessage({
+      context: {
+        cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
+        pskIndex: makePskIndex(m.state, {}),
+      },
+      state: m.state,
+      privateMessage: commitResult.commit.privateMessage,
+    })
 
     m.state = result.newState
   }
@@ -208,9 +208,11 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
   const updater = memberStates[updateIndex]!
 
   const emptyCommitResult = await createCommit({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
     state: updater.state,
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
   })
 
   updater.state = emptyCommitResult.newState
@@ -222,13 +224,15 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
   for (let i = 0; i < memberStates.length; i++) {
     if (i === updateIndex) continue
     const m = memberStates[i]!
-    const result = await processPrivateMessage(
-      m.state,
-      emptyCommitResult.commit.privateMessage,
-      makePskIndex(m.state, {}),
-      unsafeTestingAuthenticationService,
-      impl,
-    )
+    const result = await processPrivateMessage({
+      context: {
+        cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
+        pskIndex: makePskIndex(m.state, {}),
+      },
+      state: m.state,
+      privateMessage: emptyCommitResult.commit.privateMessage,
+    })
 
     m.state = result.newState
   }

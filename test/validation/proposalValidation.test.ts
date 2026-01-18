@@ -1,13 +1,14 @@
-import { ClientState, createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit, createGroupInfoWithExternalPub } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit as createCommitBase, createGroupInfoWithExternalPub } from "../../src/createCommit.js"
+import type { CreateCommitOptions } from "../../src/createCommit.js"
+import type { ClientState } from "../../src/clientState.js"
+import type { MlsContext } from "../../src/mlsContext.js"
 import { Credential, isDefaultCredential } from "../../src/credential.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd, ProposalRemove } from "../../src/proposal.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { CodecError, ValidationError } from "../../src/mlsError.js"
 import { requiredCapabilitiesEncoder } from "../../src/requiredCapabilities.js"
 import { externalSenderEncoder } from "../../src/externalSender.js"
@@ -18,12 +19,19 @@ import { createCustomCredential } from "../../src/customCredential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
-import { proposeExternal } from "../../src/index.js"
+import { defaultCapabilities, proposeExternal } from "../../src/index.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { pskTypes } from "../../src/presharedkey.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+
+type CommitContext = MlsContext & { state: ClientState }
+
+const createCommit = (context: CommitContext, options?: CreateCommitOptions) => {
+  const { state, ...baseContext } = context
+  return createCommitBase({ context: baseContext, state, ...(options ?? {}) })
+}
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -101,13 +109,11 @@ describe("Proposal Validation", () => {
         credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode("diana"),
       }
-      const diana = await generateKeyPackage(
-        dianaCredential,
-        { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
-        defaultLifetime,
-        [],
-        impl,
-      )
+      const diana = await generateKeyPackage({
+        credential: dianaCredential,
+        capabilities: { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
+        cipherSuite: impl,
+      })
 
       const addDiana: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: diana.publicPackage } }
 
@@ -210,7 +216,7 @@ describe("Proposal Validation", () => {
 
       await expect(
         createCommit(
-          { state: withAuthService(aliceGroup, authService), cipherSuite: impl, authService },
+          { state: aliceGroup, cipherSuite: impl, authService },
           { extraProposals: [proposalUnauthenticatedExternalSenders] },
         ),
       ).rejects.toThrow(new ValidationError("Could not validate external credential"))
@@ -224,13 +230,12 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("edward"),
     }
-    const edward = await generateKeyPackage(
-      edwardCredential,
-      { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
-      defaultLifetime,
-      [],
-      impl,
-    )
+    const edward = await generateKeyPackage({
+      credential: edwardCredential,
+      capabilities: { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
+
+      cipherSuite: impl,
+    })
     const addEdward: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: edward.publicPackage } }
 
     const authServiceEdward: AuthenticationService = {
@@ -247,7 +252,7 @@ describe("Proposal Validation", () => {
 
     await expect(
       createCommit(
-        { state: withAuthService(aliceGroup, authServiceEdward), cipherSuite: impl, authService: authServiceEdward },
+        { state: aliceGroup, cipherSuite: impl, authService: authServiceEdward },
         { extraProposals: [addEdward] },
       ),
     ).rejects.toThrow(new ValidationError("Could not validate credential"))
@@ -257,7 +262,11 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
     const frankCredential: Credential = createCustomCredential(5, new Uint8Array([1, 2]))
-    const frank = await generateKeyPackage(frankCredential, defaultCapabilities(), defaultLifetime, [], impl)
+    const frank = await generateKeyPackage({
+      credential: frankCredential,
+
+      cipherSuite: impl,
+    })
     const addFrank: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: frank.publicPackage } }
 
     await expect(
@@ -276,9 +285,12 @@ describe("Proposal Validation", () => {
       identity: new TextEncoder().encode("george"),
     }
     const georgeExtension: CustomExtension = makeCustomExtension(8545, new Uint8Array())
-    const george = await generateKeyPackage(georgeCredential, defaultCapabilities(), defaultLifetime, [], impl, [
-      georgeExtension,
-    ])
+    const george = await generateKeyPackage({
+      credential: georgeCredential,
+
+      cipherSuite: impl,
+      leafNodeExtensions: [georgeExtension],
+    })
     const addGeorge: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: george.publicPackage } }
 
     await expect(
@@ -335,7 +347,11 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("bob"),
     }
-    const hannah = await generateKeyPackage(hannahCredential, defaultCapabilities(), defaultLifetime, [], impl)
+    const hannah = await generateKeyPackage({
+      credential: hannahCredential,
+
+      cipherSuite: impl,
+    })
     const addHannahProposal: ProposalAdd = {
       proposalType: defaultProposalTypes.add,
       add: { keyPackage: hannah.publicPackage },
@@ -456,10 +472,6 @@ describe("Proposal Validation", () => {
   )
 })
 
-function withAuthService(state: ClientState, authService: AuthenticationService) {
-  return { ...state, clientConfig: { ...state.clientConfig, authService: authService } }
-}
-
 async function setupThreeMembers(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
@@ -467,29 +479,36 @@ async function setupThreeMembers(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const charlieCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -508,25 +527,21 @@ async function setupThreeMembers(cipherSuite: CiphersuiteName) {
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  const bobGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const bobGroup = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
-  const charlieGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    charlie.publicPackage,
-    charlie.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const charlieGroup = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   return { impl, alice, aliceGroup, bob, bobGroup, charlie, charlieGroup, addBobProposal }
 }

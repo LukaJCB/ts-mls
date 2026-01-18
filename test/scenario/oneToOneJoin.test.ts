@@ -1,8 +1,7 @@
 import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
-import { processPrivateMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
+import { processMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -12,10 +11,9 @@ import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import { protocolVersions } from "../../src/protocolVersion.js"
+
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { protocolVersions } from "../../src/protocolVersion.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
@@ -29,24 +27,28 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [],
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   // bob sends keyPackage to alice
   const keyPackageMessage = encode(mlsMessageEncoder, {
@@ -69,16 +71,14 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   }
 
   // alice commits
-  const commitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const commitResult = await createCommit({
+    context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = commitResult.newState
 
@@ -95,15 +95,16 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
   // bob creates his own group state
-  let bobGroup = await joinGroup(
-    decodedWelcome.welcome,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    unsafeTestingAuthenticationService,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: decodedWelcome.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   // ensure epochAuthenticator values are equal
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
@@ -111,16 +112,16 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   const messageToBob = new TextEncoder().encode("Hello bob!")
 
   // alice creates a message to the group
-  const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, messageToBob, impl)
+  const aliceCreateMessageResult = await createApplicationMessage({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    message: messageToBob,
+  })
 
   aliceGroup = aliceCreateMessageResult.newState
 
   // alice sends the message to bob
-  const encodedPrivateMessageAlice = encode(mlsMessageEncoder, {
-    privateMessage: aliceCreateMessageResult.privateMessage,
-    wireformat: wireformats.mls_private_message,
-    version: protocolVersions.mls10,
-  })
+  const encodedPrivateMessageAlice = encode(mlsMessageEncoder, aliceCreateMessageResult.message)
 
   // bob decodes the message
   const decodedPrivateMessageAlice = mlsMessageDecoder(encodedPrivateMessageAlice, 0)![0]
@@ -129,13 +130,15 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   // bob receives the message
-  const bobProcessMessageResult = await processPrivateMessage(
-    bobGroup,
-    decodedPrivateMessageAlice.privateMessage,
-    makePskIndex(bobGroup, {}),
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const bobProcessMessageResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(bobGroup, {}),
+    },
+    state: bobGroup,
+    message: decodedPrivateMessageAlice,
+  })
 
   bobGroup = bobProcessMessageResult.newState
 
@@ -145,28 +148,30 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
 
   const messageToAlice = new TextEncoder().encode("Hello alice!")
 
-  const bobCreateMessageResult = await createApplicationMessage(bobGroup, messageToAlice, impl)
+  const bobCreateMessageResult = await createApplicationMessage({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: bobGroup,
+    message: messageToAlice,
+  })
 
   bobGroup = bobCreateMessageResult.newState
 
-  const encodedPrivateMessageBob = encode(mlsMessageEncoder, {
-    privateMessage: bobCreateMessageResult.privateMessage,
-    wireformat: wireformats.mls_private_message,
-    version: protocolVersions.mls10,
-  })
+  const encodedPrivateMessageBob = encode(mlsMessageEncoder, bobCreateMessageResult.message)
 
   const decodedPrivateMessageBob = mlsMessageDecoder(encodedPrivateMessageBob, 0)![0]
 
   if (decodedPrivateMessageBob.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const aliceProcessMessageResult = await processPrivateMessage(
-    aliceGroup,
-    decodedPrivateMessageBob.privateMessage,
-    makePskIndex(aliceGroup, {}),
-    unsafeTestingAuthenticationService,
-    impl,
-  )
+  const aliceProcessMessageResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(aliceGroup, {}),
+    },
+    state: aliceGroup,
+    message: decodedPrivateMessageBob,
+  })
 
   aliceGroup = aliceProcessMessageResult.newState
 
