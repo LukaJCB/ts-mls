@@ -436,12 +436,6 @@ export interface ExternalSender {
 }
 
 // @public (undocumented)
-export const externalSenderDecoder: Decoder<ExternalSender>;
-
-// @public (undocumented)
-export const externalSenderEncoder: Encoder<ExternalSender>;
-
-// @public (undocumented)
 export type FramedContent = FramedContentData & FramedContentInfo;
 
 // @public (undocumented)
@@ -1442,12 +1436,6 @@ export interface RequiredCapabilities {
     // (undocumented)
     proposalTypes: number[];
 }
-
-// @public (undocumented)
-export const requiredCapabilitiesDecoder: Decoder<RequiredCapabilities>;
-
-// @public (undocumented)
-export const requiredCapabilitiesEncoder: Encoder<RequiredCapabilities>;
 
 // @public (undocumented)
 export type ResumptionPSKUsageName = keyof typeof resumptionPSKUsages;
