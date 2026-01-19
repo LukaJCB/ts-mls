@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
@@ -95,7 +95,6 @@ async function update(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     privateMessage: emptyCommitResult.commit.privateMessage,
@@ -120,7 +119,6 @@ async function update(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(aliceGroup, {}),
     },
     state: aliceGroup,
     privateMessage: emptyCommitResult3.commit.privateMessage,

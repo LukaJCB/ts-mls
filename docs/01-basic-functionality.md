@@ -33,7 +33,6 @@ import {
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   joinGroup,
-  makePskIndex,
   processMessage,
   createApplicationMessage,
   createCommit,
@@ -44,6 +43,7 @@ import {
 
 // Setup ciphersuite and credentials
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -51,7 +51,7 @@ const aliceCredential: Credential = {
 const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -80,7 +80,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins using the welcome message
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: commitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
@@ -90,7 +90,7 @@ let bobGroup = await joinGroup({
 // Alice sends a message to Bob
 const messageToBob = new TextEncoder().encode("Hello bob!")
 const aliceCreateMessageResult = await createApplicationMessage({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   message: messageToBob,
 })
@@ -101,11 +101,7 @@ aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob receives the message
 const bobProcessMessageResult = await processMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(bobGroup, {}),
-  },
+  context,
   state: bobGroup,
   message: aliceCreateMessageResult.message,
 })

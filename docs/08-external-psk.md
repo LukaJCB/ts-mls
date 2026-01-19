@@ -15,7 +15,7 @@ This scenario demonstrates how to use an external pre-shared key (PSK) in a grou
 
 - **External PSK**: A pre-shared key that is not derived from group operations, but is provided out-of-band and referenced by a unique ID and nonce.
 - **PSK Proposal**: A proposal to inject a PSK into the group key schedule, increasing entropy and enabling advanced scenarios.
-- **PSK Index**: A mapping from PSK IDs to secrets, provided by each client when processing commits involving PSKs.
+- **External PSK Map**: A mapping from base64-encoded PSK IDs to secrets, provided via `MlsContext.externalPsks`.
 
 ---
 
@@ -32,7 +32,6 @@ import {
   Proposal,
   joinGroup,
   processPrivateMessage,
-  makePskIndex,
   bytesToBase64,
   pskTypes,
   unsafeTestingAuthenticationService,
@@ -41,6 +40,16 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+
+// Prepare an external PSK and share it out-of-band
+const pskSecret = impl.rng.randomBytes(impl.kdf.size)
+const pskNonce = impl.rng.randomBytes(impl.kdf.size)
+const pskId = new TextEncoder().encode("psk-1")
+
+const base64PskId = bytesToBase64(pskId)
+const sharedPsks = { [base64PskId]: pskSecret }
+
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService, externalPsks: sharedPsks }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -50,7 +59,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -68,7 +77,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
 })
@@ -77,17 +86,12 @@ addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group (epoch 1)
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,
 })
-
-// Prepare an external PSK and share it out-of-band
-const pskSecret = impl.rng.randomBytes(impl.kdf.size)
-const pskNonce = impl.rng.randomBytes(impl.kdf.size)
-const pskId = new TextEncoder().encode("psk-1")
 
 const pskProposal: Proposal = {
   proposalType: defaultProposalTypes.psk,
@@ -100,16 +104,9 @@ const pskProposal: Proposal = {
   },
 }
 
-const base64PskId = bytesToBase64(pskId)
-const sharedPsks = { [base64PskId]: pskSecret }
-
 // Alice commits with the PSK proposal (epoch 2)
 const pskCommitResult = await createCommit({
-  context: {
-    cipherSuite: impl,
-    pskIndex: makePskIndex(aliceGroup, sharedPsks),
-    authService: unsafeTestingAuthenticationService,
-  },
+  context,
   state: aliceGroup,
   extraProposals: [pskProposal],
 })
@@ -120,11 +117,7 @@ if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw
 
 // Bob processes the commit using the PSK
 const processPskResult = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(bobGroup, sharedPsks),
-  },
+  context,
   state: bobGroup,
   privateMessage: pskCommitResult.commit.privateMessage,
 })
@@ -174,7 +167,6 @@ import {
   Proposal,
   joinGroup,
   processPrivateMessage,
-  makePskIndex,
   bytesToBase64,
   pskTypes,
   unsafeTestingAuthenticationService,
@@ -182,6 +174,19 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+
+// Prepare external PSK and share it out-of-band
+const pskSecret = impl.rng.randomBytes(impl.kdf.size)
+const pskNonce = impl.rng.randomBytes(impl.kdf.size)
+const pskId = new TextEncoder().encode("psk-1")
+const base64PskId = bytesToBase64(pskId)
+const sharedPsks = { [base64PskId]: pskSecret }
+
+const context = {
+  cipherSuite: impl,
+  authService: unsafeTestingAuthenticationService,
+  externalPsks: sharedPsks,
+}
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -191,7 +196,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -203,10 +208,6 @@ const bobCredential: Credential = {
 }
 const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
-// Prepare external PSK and share it out-of-band
-const pskSecret = impl.rng.randomBytes(impl.kdf.size)
-const pskNonce = impl.rng.randomBytes(impl.kdf.size)
-const pskId = new TextEncoder().encode("psk-1")
 const pskProposal: Proposal = {
   proposalType: defaultProposalTypes.psk,
   psk: {
@@ -217,8 +218,6 @@ const pskProposal: Proposal = {
     },
   },
 }
-const base64PskId = bytesToBase64(pskId)
-const sharedPsks = { [base64PskId]: pskSecret }
 
 // Add Bob and use PSK in the same commit (epoch 1)
 const addBobProposal: Proposal = {
@@ -226,11 +225,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit({
-  context: {
-    cipherSuite: impl,
-    pskIndex: makePskIndex(aliceGroup, sharedPsks),
-    authService: unsafeTestingAuthenticationService,
-  },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal, pskProposal],
 })
@@ -239,11 +234,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins using the Welcome message and the external PSK (epoch 1)
 let bobGroup = await joinGroup({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(undefined, sharedPsks),
-  },
+  context,
   welcome: commitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,

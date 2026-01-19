@@ -12,7 +12,6 @@ import {
   createGroup,
   Proposal,
   createCommit,
-  emptyPskIndex,
   KeyPackage,
   PrivateKeyPackage,
   CreateCommitResult,
@@ -79,7 +78,6 @@ async function joinGroupBench(
 async function createCommitBench(impl: CiphersuiteImpl, aliceGroup: ClientState) {
   await createCommit({
     context: {
-      pskIndex: emptyPskIndex,
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
@@ -92,7 +90,6 @@ async function processCommitBench(impl: CiphersuiteImpl, bobGroup: ClientState, 
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: bobGroup,
     privateMessage: (result.commit as MlsPrivateMessage).privateMessage,
@@ -128,7 +125,6 @@ async function removeMember(impl: CiphersuiteImpl, state: ClientState) {
 
   const result = await createCommit({
     context: {
-      pskIndex: emptyPskIndex,
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
@@ -155,7 +151,6 @@ async function addMember(impl: CiphersuiteImpl, state: ClientState) {
 
   const result = await createCommit({
     context: {
-      pskIndex: emptyPskIndex,
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
@@ -201,7 +196,6 @@ async function addMembers(impl: CiphersuiteImpl, initialState: ClientState, kps:
 
     const result = await createCommit({
       context: {
-        pskIndex: emptyPskIndex,
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
@@ -260,7 +254,6 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
 
   const commitResult = await createCommit({
     context: {
-      pskIndex: emptyPskIndex,
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
@@ -304,7 +297,6 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
           context: {
             cipherSuite: impl,
             authService: unsafeTestingAuthenticationService,
-            pskIndex: emptyPskIndex,
           },
           state: joinResult,
           message: sendMessageResult.message as any,
@@ -318,7 +310,6 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
           context: {
             cipherSuite: impl,
             authService: unsafeTestingAuthenticationService,
-            pskIndex: emptyPskIndex,
           },
           state: joinResult,
           message: addMemberResult.result.commit,
@@ -333,7 +324,6 @@ async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: numb
           context: {
             cipherSuite: impl,
             authService: unsafeTestingAuthenticationService,
-            pskIndex: emptyPskIndex,
           },
           state: joinResult,
           message: removeMemberResult.commit,

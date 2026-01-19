@@ -32,7 +32,6 @@ import {
   Proposal,
   joinGroup,
   processPrivateMessage,
-  makePskIndex,
   joinGroupFromBranch,
   branchGroup,
   unsafeTestingAuthenticationService,
@@ -40,6 +39,7 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -47,7 +47,7 @@ const aliceCredential: Credential = {
 const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -65,14 +65,16 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
 })
+
 aliceGroup = addBobCommitResult.newState
 addBobCommitResult.consumed.forEach(zeroOutUint8Array)
+
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
@@ -86,7 +88,7 @@ const newGroupId = new TextEncoder().encode("new-group1")
 
 // Alice branches the old group into a new one with new key packages and a new group id
 const branchCommitResult = await branchGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   keyPackage: aliceNewKeyPackage.publicPackage,
   privateKeyPackage: aliceNewKeyPackage.privatePackage,
@@ -98,7 +100,7 @@ branchCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the branched group
 bobGroup = await joinGroupFromBranch({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   oldState: bobGroup,
   welcome: branchCommitResult.welcome!.welcome,
   keyPackage: bobNewKeyPackage.publicPackage,

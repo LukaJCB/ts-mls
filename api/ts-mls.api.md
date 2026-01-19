@@ -990,7 +990,7 @@ export interface MlsContext {
     // (undocumented)
     clientConfig?: ClientConfig;
     // (undocumented)
-    pskIndex?: PskIndex;
+    externalPsks?: Record<string, Uint8Array>;
 }
 
 // @public (undocumented)

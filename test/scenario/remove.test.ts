@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
@@ -133,7 +133,6 @@ async function remove(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     privateMessage: removeBobCommitResult.commit.privateMessage,
@@ -146,7 +145,6 @@ async function remove(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(charlieGroup, {}),
     },
     state: charlieGroup,
     privateMessage: removeBobCommitResult.commit.privateMessage,

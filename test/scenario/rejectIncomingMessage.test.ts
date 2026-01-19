@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -113,7 +112,6 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: aliceGroup,
     message: createExtensionsProposalResults.message,
@@ -143,7 +141,6 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: bobGroup,
     message: aliceCommitResult.commit,

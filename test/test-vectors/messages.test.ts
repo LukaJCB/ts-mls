@@ -10,7 +10,7 @@ import {
   addDecoder,
   externalInitDecoder,
   groupContextExtensionsDecoder,
-  pSKDecoder,
+  pskDecoder,
   reinitDecoder,
   removeDecoder,
   updateDecoder,
@@ -163,7 +163,7 @@ const groupSecrets = createTest(groupSecretsEncoder, groupSecretsDecoder, "group
 const ratchetTree = createTest(ratchetTreeEncoder, ratchetTreeDecoder, "ratchet_tree")
 const updateProposal = createTest(updateEncoder, updateDecoder, "update_proposal")
 const addProposal = createTest(addEncoder, addDecoder, "add_proposal")
-const pskProposal = createTest(pskEncoder, pSKDecoder, "pre_shared_key_proposal")
+const pskProposal = createTest(pskEncoder, pskDecoder, "pre_shared_key_proposal")
 const removeProposal = createTest(removeEncoder, removeDecoder, "remove_proposal")
 const reinitProposal = createTest(reinitEncoder, reinitDecoder, "re_init_proposal")
 const externalInitProposal = createTest(externalInitEncoder, externalInitDecoder, "external_init_proposal")

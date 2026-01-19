@@ -1,7 +1,6 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createProposal } from "../../src/createMessage.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -133,7 +132,6 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: bobGroup,
     message: createLeaveProposalResult.message,
@@ -146,7 +144,6 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: charlieGroup,
     message: createLeaveProposalResult.message,
@@ -175,7 +172,6 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: aliceGroup,
     message: bobCommitResult.commit,
@@ -187,7 +183,6 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: charlieGroup,
     message: bobCommitResult.commit,

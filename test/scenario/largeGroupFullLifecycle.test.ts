@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, ClientState, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup, ClientState } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
@@ -126,7 +126,6 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
-          pskIndex: makePskIndex(m.state, {}),
         },
         state: m.state,
         privateMessage: commitResult.commit.privateMessage,
@@ -191,7 +190,6 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(m.state, {}),
       },
       state: m.state,
       privateMessage: commitResult.commit.privateMessage,
@@ -228,7 +226,6 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(m.state, {}),
       },
       state: m.state,
       privateMessage: emptyCommitResult.commit.privateMessage,

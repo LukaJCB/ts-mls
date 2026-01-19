@@ -33,13 +33,13 @@ import {
   Proposal,
   joinGroup,
   processPrivateMessage,
-  makePskIndex,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -49,7 +49,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -73,7 +73,7 @@ const addBobProposal: Proposal = {
 }
 // Alice adds Bob and commits, this is epoch 1
 const addBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
 })
@@ -86,7 +86,7 @@ addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
@@ -99,7 +99,7 @@ const addCharlieProposal: Proposal = {
 }
 // Alice adds Charlie, transitioning into epoch 2
 const addCharlieCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addCharlieProposal],
 })
@@ -110,11 +110,7 @@ if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message
 
 // Bob processes the commit and transitions to epoch 2 as well
 const processAddCharlieResult = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(bobGroup, {}),
-  },
+  context,
   state: bobGroup,
   privateMessage: addCharlieCommitResult.commit.privateMessage,
 })
@@ -123,7 +119,7 @@ processAddCharlieResult.consumed.forEach(zeroOutUint8Array)
 
 // Charlie joins and is also in epoch 2
 let charlieGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addCharlieCommitResult.welcome!.welcome,
   keyPackage: charlie.publicPackage,
   privateKeys: charlie.privatePackage,

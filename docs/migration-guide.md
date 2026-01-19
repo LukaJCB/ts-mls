@@ -93,14 +93,14 @@ After:
 
 ````text
 const state = await joinGroup(
-  { context: { cipherSuite, authService, pskIndex }, welcome, keyPackage, privateKeys, ratchetTree },
+  { context: { cipherSuite, authService, externalPsks }, welcome, keyPackage, privateKeys, ratchetTree },
 )
 
 If your welcome comes from a commit result:
 
 ```text
 const state = await joinGroup(
-  { context: { cipherSuite, authService, pskIndex }, welcome: commitResult.welcome!.welcome, keyPackage, privateKeys, ratchetTree },
+  { context: { cipherSuite, authService, externalPsks }, welcome: commitResult.welcome!.welcome, keyPackage, privateKeys, ratchetTree },
 )
 ````
 
@@ -125,7 +125,7 @@ After:
 
 ```text
 const { state, groupInfoExtensions } = await joinGroupWithExtensions(
-  { context: { cipherSuite, authService, pskIndex }, welcome, keyPackage, privateKeys, ratchetTree },
+  { context: { cipherSuite, authService, externalPsks }, welcome, keyPackage, privateKeys, ratchetTree },
 )
 ```
 
@@ -159,13 +159,13 @@ After:
 
 ```text
 await processPrivateMessage(
-  { context: { cipherSuite, authService, pskIndex }, state, privateMessage },
+  { context: { cipherSuite, authService, externalPsks }, state, privateMessage },
 )
 await processPublicMessage(
-  { context: { cipherSuite, authService, pskIndex }, state, publicMessage },
+  { context: { cipherSuite, authService, externalPsks }, state, publicMessage },
 )
 await processMessage(
-  { context: { cipherSuite, authService, pskIndex }, state, message, callback: acceptAll },
+  { context: { cipherSuite, authService, externalPsks }, state, message, callback: acceptAll },
 )
 ```
 
@@ -182,11 +182,11 @@ After:
 
 ```text
 const { newState, message } = await createApplicationMessage(
-  { context: { cipherSuite, authService, pskIndex }, state, message: bytes, authenticatedData },
+  { context: { cipherSuite, authService, externalPsks }, state, message: bytes, authenticatedData },
 )
 
 const { newState, message } = await createProposal(
-  { context: { cipherSuite, authService, pskIndex }, state, proposal, wireAsPublicMessage: false, authenticatedData },
+  { context: { cipherSuite, authService, externalPsks }, state, proposal, wireAsPublicMessage: false, authenticatedData },
 )
 ```
 
