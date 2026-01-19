@@ -24,17 +24,15 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
   Proposal,
-  emptyPskIndex,
   joinGroup,
   processPrivateMessage,
   makePskIndex,
+  unsafeTestingAuthenticationService,
   wireformats,
 } from "ts-mls"
 
@@ -43,59 +41,68 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  groupId,
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 // Alice adds Bob and commits, this is epoch 1
 const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
-  { extraProposals: [addBobProposal] },
-)
+const addBobCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+})
 aliceGroup = addBobCommitResult.newState
 
 // Bob joins the group, he is now also in epoch 1
-let bobGroup = await joinGroup(
-  addBobCommitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: addBobCommitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 
 // Alice removes Bob, transitioning to epoch 2
 const removeBobProposal: Proposal = {
   proposalType: defaultProposalTypes.remove,
   remove: { removed: 1 }, // Bob's leaf index
 }
-const removeBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
-  { extraProposals: [removeBobProposal] },
-)
+const removeBobCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [removeBobProposal],
+})
 aliceGroup = removeBobCommitResult.newState
 if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 
 // Bob processes the removal and is removed from the group (epoch 2)
-const bobProcessRemoveResult = await processPrivateMessage(
-  bobGroup,
-  removeBobCommitResult.commit.privateMessage,
-  makePskIndex(bobGroup, {}),
-  impl,
-)
+const bobProcessRemoveResult = await processPrivateMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: makePskIndex(bobGroup, {}),
+  },
+  state: bobGroup,
+  privateMessage: removeBobCommitResult.commit.privateMessage,
+})
 bobGroup = bobProcessRemoveResult.newState
 ```
 

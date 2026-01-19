@@ -3,13 +3,13 @@ import { bigintMapEncoder, bigintMapDecoder } from "../../src/codec/variableLeng
 import { epochReceiverDataDecoder, epochReceiverDataEncoder } from "../../src/epochReceiverData.js"
 import {
   createGroup,
-  defaultCapabilities,
   defaultCredentialTypes,
-  defaultLifetime,
   generateKeyPackage,
   getCiphersuiteFromName,
   getCiphersuiteImpl,
+  unsafeTestingAuthenticationService,
 } from "../../src/index.js"
+import { defaultClientConfig } from "../../src/clientConfig.js"
 import { createRoundtripTestBufferEncoder } from "./roundtrip.js"
 
 describe("EpochReceiverData roundtrip", () => {
@@ -31,13 +31,22 @@ describe("EpochReceiverData roundtrip", () => {
       identity: new TextEncoder().encode("alice"),
     }
 
-    const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+    const alice = await generateKeyPackage({
+      credential: aliceCredential,
+      cipherSuite: impl,
+    })
 
     const groupId = new TextEncoder().encode("test-group")
 
-    const state = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+    const state = await createGroup({
+      context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+      groupId,
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+      extensions: [],
+    })
 
-    const [historical] = addHistoricalReceiverData(state)
+    const [historical] = addHistoricalReceiverData(state, defaultClientConfig)
 
     expect(historical.size).toBeGreaterThan(0)
 

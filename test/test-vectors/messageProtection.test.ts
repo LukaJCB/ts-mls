@@ -17,7 +17,7 @@ import {
   unprotectPublicMessage,
 } from "../../src/messageProtectionPublic.js"
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { RatchetTree } from "../../src/ratchetTree.js"
 import { UsageError } from "../../src/mlsError.js"
 import { defaultPaddingConfig } from "../../src/paddingConfig.js"
@@ -29,6 +29,7 @@ import { contentTypes } from "../../src/contentType.js"
 import { senderTypes } from "../../src/sender.js"
 import { wireformats } from "../../src/wireformat.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+import { defaultCapabilities } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))

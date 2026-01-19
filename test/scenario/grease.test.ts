@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -9,11 +8,12 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { defaultGreaseConfig, greaseExtensions } from "../../src/grease.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Grease %s`, async (cs) => {
   await greaseTest(cs as CiphersuiteName)
@@ -31,17 +31,30 @@ async function greaseTest(cipherSuite: CiphersuiteName) {
     ...defaultCapabilities(),
     extensions: greased.map((n) => n.extensionType),
   }
-  const alice = await generateKeyPackage(aliceCredential, caps, defaultLifetime, greased, impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    capabilities: caps,
+    extensions: greased,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -50,26 +63,27 @@ async function greaseTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = addBobCommitResult.newState
 
-  const bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 

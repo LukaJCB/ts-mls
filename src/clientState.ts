@@ -20,7 +20,7 @@ import {
   KeySchedule,
   keyScheduleEncoder,
 } from "./keySchedule.js"
-import { pskIdEncoder, PreSharedKeyID, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
+import { pskIdEncoder, PskId, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
   addLeafNode,
@@ -53,10 +53,6 @@ import {
   toLeafIndex,
   toNodeIndex,
 } from "./treemath.js"
-import { firstCommonAncestor } from "./updatePath.js"
-import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
-import { constantTimeEqual } from "./util/constantTimeCompare.js"
-import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
 import { WireformatName, wireformats } from "./wireformat.js"
 import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import {
@@ -89,9 +85,11 @@ import {
   unappliedProposalsEncoder,
   unappliedProposalsDecoder,
 } from "./unappliedProposals.js"
-import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
+import { accumulatePskSecret, emptyPskIndex, PskIndex } from "./pskIndex.js"
 import { getSenderLeafNodeIndex } from "./sender.js"
 import { addToMap } from "./util/addToMap.js"
+import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import {
   CryptoVerificationError,
   CodecError,
@@ -115,6 +113,8 @@ import { protocolVersions } from "./protocolVersion.js"
 import { RequiredCapabilities } from "./requiredCapabilities.js"
 import { Capabilities } from "./capabilities.js"
 import { verifyParentHashes } from "./parentHash.js"
+import { firstCommonAncestor } from "./updatePath.js"
+import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
 import { AuthenticationService } from "./authenticationService.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
 import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
@@ -127,16 +127,21 @@ import { groupActiveStateDecoder, GroupActiveState, groupActiveStateEncoder } fr
 import { epochReceiverDataDecoder, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
 import { decode, Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { deriveSecret } from "./crypto/kdf.js"
+import { MlsContext } from "./mlsContext.js"
 
 /** @public */
-export type ClientState = GroupState & { clientConfig: ClientConfig }
+export type ClientState = GroupState & PublicGroupState
+
+/** @public */
+export interface PublicGroupState {
+  ratchetTree: RatchetTree
+  groupContext: GroupContext
+}
 
 /** @public */
 export interface GroupState {
-  groupContext: GroupContext
   keySchedule: KeySchedule
   secretTree: SecretTree
-  ratchetTree: RatchetTree
   privatePath: PrivateKeyPath
   signaturePrivateKey: Uint8Array
   unappliedProposals: UnappliedProposals
@@ -146,12 +151,16 @@ export interface GroupState {
 }
 
 /** @public */
+export const publicGroupStateEncoder: Encoder<PublicGroupState> = contramapBufferEncoders(
+  [groupContextEncoder, ratchetTreeEncoder],
+  (state) => [state.groupContext, state.ratchetTree] as const,
+)
+
+/** @public */
 export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
   [
-    groupContextEncoder,
     keyScheduleEncoder,
     secretTreeEncoder,
-    ratchetTreeEncoder,
     privateKeyPathEncoder,
     varLenDataEncoder,
     unappliedProposalsEncoder,
@@ -161,10 +170,8 @@ export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
   ],
   (state) =>
     [
-      state.groupContext,
       state.keySchedule,
       state.secretTree,
-      state.ratchetTree,
       state.privatePath,
       state.signaturePrivateKey,
       state.unappliedProposals,
@@ -175,12 +182,25 @@ export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
 )
 
 /** @public */
+export const clientStateEncoder: Encoder<ClientState> = contramapBufferEncoders(
+  [publicGroupStateEncoder, groupStateEncoder],
+  (state) => [state, state] as const,
+)
+
+/** @public */
+export const publicGroupStateDecoder: Decoder<PublicGroupState> = mapDecoders(
+  [groupContextDecoder, ratchetTreeDecoder],
+  (groupContext, ratchetTree) => ({
+    groupContext,
+    ratchetTree,
+  }),
+)
+
+/** @public */
 export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
   [
-    groupContextDecoder,
     keyScheduleDecoder,
     secretTreeDecoder,
-    ratchetTreeDecoder,
     privateKeyPathDecoder,
     varLenDataDecoder,
     unappliedProposalsDecoder,
@@ -189,10 +209,8 @@ export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
     groupActiveStateDecoder,
   ],
   (
-    groupContext,
     keySchedule,
     secretTree,
-    ratchetTree,
     privatePath,
     signaturePrivateKey,
     unappliedProposals,
@@ -200,16 +218,23 @@ export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
     historicalReceiverData,
     groupActiveState,
   ) => ({
-    groupContext,
     keySchedule,
     secretTree,
-    ratchetTree,
     privatePath,
     signaturePrivateKey,
     unappliedProposals,
     confirmationTag,
     historicalReceiverData,
     groupActiveState,
+  }),
+)
+
+/** @public */
+export const clientStateDecoder: Decoder<ClientState> = mapDecoders(
+  [publicGroupStateDecoder, groupStateDecoder],
+  (publicState, state) => ({
+    ...publicState,
+    ...state,
   }),
 )
 
@@ -688,7 +713,7 @@ function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined
 export interface ApplyProposalsResult {
   tree: RatchetTree
   pskSecret: Uint8Array
-  pskIds: PreSharedKeyID[]
+  pskIds: PskId[]
   needsUpdatePath: boolean
   additionalResult: ApplyProposalsData
   selfRemoved: boolean
@@ -706,6 +731,8 @@ export async function applyProposals(
   committerLeafIndex: LeafIndex | undefined,
   pskSearch: PskIndex,
   sentByClient: boolean,
+  clientConfig: ClientConfig,
+  authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<ApplyProposalsResult> {
   const allProposals = proposals.reduce((acc, cur) => {
@@ -757,8 +784,8 @@ export async function applyProposals(
         grouped,
         committerLeafIndex,
         state.groupContext,
-        state.clientConfig.keyPackageEqualityConfig,
-        state.clientConfig.authService,
+        clientConfig.keyPackageEqualityConfig,
+        authService,
         state.ratchetTree,
       ),
     )
@@ -770,8 +797,8 @@ export async function applyProposals(
       grouped,
       state.groupContext,
       sentByClient,
-      state.clientConfig.authService,
-      state.clientConfig.lifetimeConfig,
+      authService,
+      clientConfig.lifetimeConfig,
       cs.signature,
     )
 
@@ -885,41 +912,47 @@ export async function nextEpochContext(
 }
 
 /** @public */
-export async function joinGroup(
-  welcome: Welcome,
-  keyPackage: KeyPackage,
-  privateKeys: PrivateKeyPackage,
-  pskSearch: PskIndex,
-  cs: CiphersuiteImpl,
-  ratchetTree?: RatchetTree,
-  resumingFromState?: ClientState,
-  clientConfig: ClientConfig = defaultClientConfig,
-): Promise<ClientState> {
-  const res = await joinGroupWithExtensions(
-    welcome,
-    keyPackage,
-    privateKeys,
-    pskSearch,
-    cs,
-    ratchetTree,
-    resumingFromState,
-    clientConfig,
-  )
+export async function joinGroup(params: {
+  context: MlsContext
+  welcome: Welcome
+  keyPackage: KeyPackage
+  privateKeys: PrivateKeyPackage
+  ratchetTree?: RatchetTree
+  resumingFromState?: ClientState
+}): Promise<ClientState> {
+  const res = await joinGroupWithExtensions(params)
 
-  return res[0]
+  return res.state
 }
 
 /** @public */
-export async function joinGroupWithExtensions(
-  welcome: Welcome,
-  keyPackage: KeyPackage,
-  privateKeys: PrivateKeyPackage,
-  pskSearch: PskIndex,
-  cs: CiphersuiteImpl,
-  ratchetTree?: RatchetTree,
-  resumingFromState?: ClientState,
-  clientConfig: ClientConfig = defaultClientConfig,
-): Promise<[ClientState, GroupInfoExtension[]]> {
+export interface JoinGroupResult {
+  state: ClientState
+  groupInfoExtensions: GroupInfoExtension[]
+}
+
+/** @public */
+export async function joinGroupWithExtensions(params: {
+  context: MlsContext
+  welcome: Welcome
+  keyPackage: KeyPackage
+  privateKeys: PrivateKeyPackage
+  ratchetTree?: RatchetTree
+  resumingFromState?: ClientState
+}): Promise<JoinGroupResult> {
+  const context = params.context
+  const welcome = params.welcome
+  const keyPackage = params.keyPackage
+  const privateKeys = params.privateKeys
+
+  const pskSearch = context.pskIndex ?? emptyPskIndex
+  const authService = context.authService
+  const cs = context.cipherSuite
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const ratchetTree = params.ratchetTree
+  const resumingFromState = params.resumingFromState
+
   const keyPackageRef = await makeKeyPackageRef(keyPackage, cs.hash)
   const privKey = await cs.hpke.importPrivateKey(privateKeys.initPrivateKey)
   const groupSecrets = await decryptGroupSecrets(privKey, keyPackageRef, welcome, cs.hpke)
@@ -979,7 +1012,7 @@ export async function joinGroupWithExtensions(
   }
   if (signerNode.nodeType === nodeTypes.parent) throw new ValidationError("Expected non blank leaf node")
 
-  const credentialVerified = await clientConfig.authService.validateCredential(
+  const credentialVerified = await authService.validateCredential(
     signerNode.leaf.credential,
     signerNode.leaf.signaturePublicKey,
   )
@@ -1002,7 +1035,7 @@ export async function joinGroupWithExtensions(
       tree,
       gi.groupContext,
       clientConfig.lifetimeConfig,
-      clientConfig.authService,
+      authService,
       gi.groupContext.treeHash,
       cs,
     ),
@@ -1046,8 +1079,8 @@ export async function joinGroupWithExtensions(
 
   zeroOutUint8Array(groupSecrets.joinerSecret)
 
-  return [
-    {
+  return {
+    state: {
       groupContext: gi.groupContext,
       ratchetTree: tree,
       privatePath: updatedPkp,
@@ -1058,21 +1091,26 @@ export async function joinGroupWithExtensions(
       secretTree,
       historicalReceiverData: new Map(),
       groupActiveState: { kind: "active" },
-      clientConfig,
     },
-    gi.extensions,
-  ]
+    groupInfoExtensions: gi.extensions,
+  }
 }
 
 /** @public */
-export async function createGroup(
-  groupId: Uint8Array,
-  keyPackage: KeyPackage,
-  privateKeyPackage: PrivateKeyPackage,
-  extensions: GroupContextExtension[],
-  cs: CiphersuiteImpl,
-  clientConfig: ClientConfig = defaultClientConfig,
-): Promise<ClientState> {
+export interface CreateGroupParams {
+  context: MlsContext
+  groupId: Uint8Array
+  keyPackage: KeyPackage
+  privateKeyPackage: PrivateKeyPackage
+  extensions?: GroupContextExtension[]
+}
+
+/** @public */
+export async function createGroup(params: CreateGroupParams): Promise<ClientState> {
+  const { context, groupId, keyPackage, privateKeyPackage } = params
+  const extensions = params.extensions ?? []
+  const authService = context.authService
+  const cs = context.cipherSuite
   const ratchetTree: RatchetTree = [{ nodeType: nodeTypes.leaf, leaf: keyPackage.leafNode }]
 
   const privatePath: PrivateKeyPath = {
@@ -1092,7 +1130,7 @@ export async function createGroup(
     confirmedTranscriptHash,
   }
 
-  throwIfDefined(await validateExternalSenders(extensions, clientConfig.authService))
+  throwIfDefined(await validateExternalSenders(extensions, authService))
 
   const epochSecret = cs.rng.randomBytes(cs.kdf.size)
 
@@ -1117,7 +1155,6 @@ export async function createGroup(
     groupContext,
     confirmationTag,
     groupActiveState: { kind: "active" },
-    clientConfig,
   }
 }
 
@@ -1219,7 +1256,10 @@ export async function processProposal(
   }
 }
 
-export function addHistoricalReceiverData(state: ClientState): [Map<bigint, EpochReceiverData>, Uint8Array[]] {
+export function addHistoricalReceiverData(
+  state: ClientState,
+  clientConfig: ClientConfig,
+): [Map<bigint, EpochReceiverData>, Uint8Array[]] {
   const withNew = addToMap(state.historicalReceiverData, state.groupContext.epoch, {
     secretTree: state.secretTree,
     ratchetTree: state.ratchetTree,
@@ -1231,8 +1271,8 @@ export function addHistoricalReceiverData(state: ClientState): [Map<bigint, Epoc
   const epochs = [...withNew.keys()]
 
   const result: [Map<bigint, EpochReceiverData>, Uint8Array[]] =
-    epochs.length >= state.clientConfig.keyRetentionConfig.retainKeysForEpochs
-      ? removeOldHistoricalReceiverData(withNew, state.clientConfig.keyRetentionConfig.retainKeysForEpochs)
+    epochs.length >= clientConfig.keyRetentionConfig.retainKeysForEpochs
+      ? removeOldHistoricalReceiverData(withNew, clientConfig.keyRetentionConfig.retainKeysForEpochs)
       : [withNew, []]
 
   return result

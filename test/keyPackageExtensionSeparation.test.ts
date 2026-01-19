@@ -1,10 +1,8 @@
 import { generateKeyPackage } from "../src/keyPackage.js"
 import { Credential } from "../src/credential.js"
-import { defaultLifetime } from "../src/lifetime.js"
 import { CustomExtension, makeCustomExtension } from "../src/extension.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
-import { defaultCapabilities } from "../src/defaultCapabilities.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`KeyPackage Extension Separation %s`, async (cs) => {
@@ -28,14 +26,12 @@ async function keyPackageExtensionSeparationTest(cipherSuite: CiphersuiteName) {
     new TextEncoder().encode("leafNode-specific-data"),
   )
 
-  const result = await generateKeyPackage(
+  const result = await generateKeyPackage({
     credential,
-    defaultCapabilities(),
-    defaultLifetime,
-    [keyPackageExtension],
-    impl,
-    [leafNodeExtension],
-  )
+    extensions: [keyPackageExtension],
+    cipherSuite: impl,
+    leafNodeExtensions: [leafNodeExtension],
+  })
   const publicPackage = result.publicPackage
 
   expect(publicPackage.extensions).toHaveLength(1)
@@ -50,13 +46,12 @@ async function keyPackageExtensionSeparationTest(cipherSuite: CiphersuiteName) {
 
   expect(publicPackage.leafNode.extensions).not.toContainEqual(keyPackageExtension)
 
-  const backwardCompatResult = await generateKeyPackage(
+  const backwardCompatResult = await generateKeyPackage({
     credential,
-    defaultCapabilities(),
-    defaultLifetime,
-    [keyPackageExtension],
-    impl,
-  )
+
+    extensions: [keyPackageExtension],
+    cipherSuite: impl,
+  })
   const backwardCompatiblePackage = backwardCompatResult.publicPackage
 
   expect(backwardCompatiblePackage.extensions).toHaveLength(1)

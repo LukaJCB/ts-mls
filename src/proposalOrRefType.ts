@@ -5,6 +5,7 @@ import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { proposalDecoder, Proposal, proposalEncoder } from "./proposal.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
+/** @public */
 export const proposalOrRefTypes = {
   proposal: 1,
   reference: 2,

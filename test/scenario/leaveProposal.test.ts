@@ -10,12 +10,12 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { processMessage } from "../../src/processMessages.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Leave Proposal %s`, async (cs) => {
   await leaveProposal(cs as CiphersuiteName, true)
   await leaveProposal(cs as CiphersuiteName, false)
@@ -28,24 +28,38 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const charlieCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -61,37 +75,40 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     },
   }
 
-  const addBobAndCharlieCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobAndCharlieCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      wireAsPublicMessage: publicMessage,
-      extraProposals: [addBobProposal, addCharlieProposal],
-      ratchetTreeExtension: true,
-    },
-  )
+    state: aliceGroup,
+    wireAsPublicMessage: publicMessage,
+    extraProposals: [addBobProposal, addCharlieProposal],
+    ratchetTreeExtension: true,
+  })
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  let bobGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+  })
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    charlie.publicPackage,
-    charlie.privatePackage,
-    emptyPskIndex,
-    impl,
-  )
+  let charlieGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+  })
 
   expect(charlieGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
@@ -100,66 +117,82 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     remove: { removed: aliceGroup.privatePath.leafIndex },
   }
 
-  const createLeaveProposalResult = await createProposal(aliceGroup, publicMessage, leaveProposal, impl)
+  const createLeaveProposalResult = await createProposal({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    wireAsPublicMessage: publicMessage,
+    proposal: leaveProposal,
+  })
 
   aliceGroup = createLeaveProposalResult.newState
 
   if (createLeaveProposalResult.message.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
-  const bobProcessProposalResult = await processMessage(
-    createLeaveProposalResult.message,
-    bobGroup,
-    emptyPskIndex,
-    acceptAll,
-    impl,
-  )
+  const bobProcessProposalResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: bobGroup,
+    message: createLeaveProposalResult.message,
+    callback: acceptAll,
+  })
 
   bobGroup = bobProcessProposalResult.newState
 
-  const charlieProcessProposalResult = await processMessage(
-    createLeaveProposalResult.message,
-    charlieGroup,
-    emptyPskIndex,
-    acceptAll,
-    impl,
-  )
+  const charlieProcessProposalResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: charlieGroup,
+    message: createLeaveProposalResult.message,
+    callback: acceptAll,
+  })
 
   charlieGroup = charlieProcessProposalResult.newState
 
   //bob commits to alice leaving
-  const bobCommitResult = await createCommit(
-    {
-      state: bobGroup,
+  const bobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      wireAsPublicMessage: publicMessage,
-      ratchetTreeExtension: false,
-    },
-  )
+    state: bobGroup,
+    wireAsPublicMessage: publicMessage,
+    ratchetTreeExtension: false,
+  })
 
   bobGroup = bobCommitResult.newState
 
   if (bobCommitResult.commit.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
-  const aliceProcessCommitResult = await processMessage(
-    bobCommitResult.commit,
-    aliceGroup,
-    emptyPskIndex,
-    acceptAll,
-    impl,
-  )
+  const aliceProcessCommitResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: aliceGroup,
+    message: bobCommitResult.commit,
+    callback: acceptAll,
+  })
   aliceGroup = aliceProcessCommitResult.newState
 
-  const charlieProcessCommitResult = await processMessage(
-    bobCommitResult.commit,
-    charlieGroup,
-    emptyPskIndex,
-    acceptAll,
-    impl,
-  )
+  const charlieProcessCommitResult = await processMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: emptyPskIndex,
+    },
+    state: charlieGroup,
+    message: bobCommitResult.commit,
+    callback: acceptAll,
+  })
   charlieGroup = charlieProcessCommitResult.newState
 
   expect(bobGroup.unappliedProposals).toEqual({})

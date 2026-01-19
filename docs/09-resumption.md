@@ -25,19 +25,17 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultCapabilities,
-  defaultLifetime,
   defaultProposalTypes,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   createCommit,
   Proposal,
-  emptyPskIndex,
   joinGroup,
   processPrivateMessage,
   makePskIndex,
   joinGroupFromBranch,
   branchGroup,
+  unsafeTestingAuthenticationService,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -45,60 +43,65 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const groupId = new TextEncoder().encode("group1")
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  groupId,
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 // Alice adds Bob
 const addBobProposal: Proposal = {
   proposalType: defaultProposalTypes.add,
   add: { keyPackage: bob.publicPackage },
 }
-const addBobCommitResult = await createCommit(
-  { state: aliceGroup, cipherSuite: impl },
-  { extraProposals: [addBobProposal] },
-)
+const addBobCommitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+})
 aliceGroup = addBobCommitResult.newState
-let bobGroup = await joinGroup(
-  addBobCommitResult.welcome!,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: addBobCommitResult.welcome!,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 
 // Prepare new key packages and group ID
-const bobNewKeyPackage = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
-const aliceNewKeyPackage = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bobNewKeyPackage = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
+const aliceNewKeyPackage = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 const newGroupId = new TextEncoder().encode("new-group1")
 
 // Alice branches the old group into a new one with new key packages and a new group id
-const branchCommitResult = await branchGroup(
-  aliceGroup,
-  aliceNewKeyPackage.publicPackage,
-  aliceNewKeyPackage.privatePackage,
-  [bobNewKeyPackage.publicPackage],
+const branchCommitResult = await branchGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  keyPackage: aliceNewKeyPackage.publicPackage,
+  privateKeyPackage: aliceNewKeyPackage.privatePackage,
+  memberKeyPackages: [bobNewKeyPackage.publicPackage],
   newGroupId,
-  impl,
-)
+})
 aliceGroup = branchCommitResult.newState
 
 // Bob joins the branched group
-bobGroup = await joinGroupFromBranch(
-  bobGroup,
-  branchCommitResult.welcome!,
-  bobNewKeyPackage.publicPackage,
-  bobNewKeyPackage.privatePackage,
-  aliceGroup.ratchetTree,
-  impl,
-)
+bobGroup = await joinGroupFromBranch({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  oldState: bobGroup,
+  welcome: branchCommitResult.welcome!,
+  keyPackage: bobNewKeyPackage.publicPackage,
+  privateKeyPackage: bobNewKeyPackage.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 ```
 
 ---

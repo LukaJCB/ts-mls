@@ -1,28 +1,44 @@
 import { checkCanSendApplicationMessages, ClientState, processProposal } from "./clientState.js"
-import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
-import { MLSMessage } from "./message.js"
-import { PrivateMessage } from "./privateMessage.js"
+import { MlsFramedMessage } from "./message.js"
 import { protectProposal, protectApplicationData } from "./messageProtection.js"
 import { protectProposalPublic } from "./messageProtectionPublic.js"
 import { Proposal } from "./proposal.js"
 import { addUnappliedProposal } from "./unappliedProposals.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { wireformats } from "./wireformat.js"
+import type { MlsContext } from "./mlsContext.js"
+import { defaultClientConfig } from "./clientConfig.js"
 
 /** @public */
-export async function createProposal(
-  state: ClientState,
-  publicMessage: boolean,
-  proposal: Proposal,
-  cs: CiphersuiteImpl,
-  authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<{ newState: ClientState; message: MLSMessage; consumed: Uint8Array[] }> {
+export interface CreateMessageResult {
+  newState: ClientState
+  message: MlsFramedMessage
+  consumed: Uint8Array[]
+}
+
+/** @public */
+export async function createProposal(params: {
+  context: MlsContext
+  state: ClientState
+  wireAsPublicMessage?: boolean
+  proposal: Proposal
+  authenticatedData?: Uint8Array
+}): Promise<CreateMessageResult> {
+  const context = params.context
+  const state = params.state
+  const cs = context.cipherSuite
+  const ad = params.authenticatedData ?? new Uint8Array()
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const publicMessage = params.wireAsPublicMessage ?? false
+  const proposal = params.proposal
+
   if (publicMessage) {
     const result = await protectProposalPublic(
       state.signaturePrivateKey,
       state.keySchedule.membershipKey,
       state.groupContext,
-      authenticatedData,
+      ad,
       proposal,
       state.privatePath.leafIndex,
       cs,
@@ -51,11 +67,11 @@ export async function createProposal(
       state.signaturePrivateKey,
       state.keySchedule.senderDataSecret,
       proposal,
-      authenticatedData,
+      ad,
       state.groupContext,
       state.secretTree,
       state.privatePath.leafIndex,
-      state.clientConfig.paddingConfig,
+      clientConfig.paddingConfig,
       cs,
     )
 
@@ -83,29 +99,41 @@ export async function createProposal(
 }
 
 /** @public */
-export async function createApplicationMessage(
-  state: ClientState,
-  message: Uint8Array,
-  cs: CiphersuiteImpl,
-  authenticatedData: Uint8Array = new Uint8Array(),
-): Promise<{ newState: ClientState; privateMessage: PrivateMessage; consumed: Uint8Array[] }> {
+export async function createApplicationMessage(params: {
+  context: MlsContext
+  state: ClientState
+  message: Uint8Array
+  authenticatedData?: Uint8Array
+}): Promise<CreateMessageResult> {
+  const context = params.context
+  const state = params.state
+  const cs = context.cipherSuite
+  const ad = params.authenticatedData ?? new Uint8Array()
+  const clientConfig = context.clientConfig ?? defaultClientConfig
+
+  const message = params.message
+
   checkCanSendApplicationMessages(state)
 
   const result = await protectApplicationData(
     state.signaturePrivateKey,
     state.keySchedule.senderDataSecret,
     message,
-    authenticatedData,
+    ad,
     state.groupContext,
     state.secretTree,
     state.privatePath.leafIndex,
-    state.clientConfig.paddingConfig,
+    clientConfig.paddingConfig,
     cs,
   )
 
   return {
     newState: { ...state, secretTree: result.newSecretTree },
-    privateMessage: result.privateMessage,
+    message: {
+      version: protocolVersions.mls10,
+      wireformat: wireformats.mls_private_message,
+      privateMessage: result.privateMessage,
+    },
     consumed: result.consumed,
   }
 }

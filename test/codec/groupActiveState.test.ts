@@ -5,12 +5,11 @@ import {
   createGroup,
   Credential,
   defaultCredentialTypes,
-  defaultCapabilities,
-  defaultLifetime,
   generateKeyPackage,
   getCiphersuiteFromName,
   getCiphersuiteImpl,
   reinitGroup,
+  unsafeTestingAuthenticationService,
 } from "../../src/index.js"
 
 describe("GroupActiveState roundtrip", () => {
@@ -33,17 +32,34 @@ describe("GroupActiveState roundtrip", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("alice"),
     }
-    const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+    const alice = await generateKeyPackage({
+      credential: aliceCredential,
+      extensions: [],
+      cipherSuite: impl,
+    })
 
     const groupId = new TextEncoder().encode("group1")
 
-    const aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+    const aliceGroup = await createGroup({
+      context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+      groupId,
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+      extensions: [],
+    })
 
     const newCiphersuite: CiphersuiteName = "MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448"
 
     const newGroupId = new TextEncoder().encode("new-group1")
 
-    const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", newCiphersuite, [], impl)
+    const reinitCommitResult = await reinitGroup({
+      context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+      state: aliceGroup,
+      groupId: newGroupId,
+      version: "mls10",
+      cipherSuite: newCiphersuite,
+      extensions: [],
+    })
 
     roundtrip(reinitCommitResult.newState.groupActiveState)
   })

@@ -1,28 +1,37 @@
-import { ClientState, createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit, createGroupInfoWithExternalPub } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { createCommit as createCommitBase, createGroupInfoWithExternalPub } from "../../src/createCommit.js"
+import type { CreateCommitOptions } from "../../src/createCommit.js"
+import type { ClientState } from "../../src/clientState.js"
+import type { MlsContext } from "../../src/mlsContext.js"
 import { Credential, isDefaultCredential } from "../../src/credential.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd, ProposalRemove } from "../../src/proposal.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { CodecError, ValidationError } from "../../src/mlsError.js"
 import { requiredCapabilitiesEncoder } from "../../src/requiredCapabilities.js"
 import { externalSenderEncoder } from "../../src/externalSender.js"
 import { AuthenticationService } from "../../src/authenticationService.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
 import { createCustomCredential } from "../../src/customCredential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { LeafNode } from "../../src/leafNode.js"
-import { proposeExternal } from "../../src/index.js"
+import { defaultCapabilities, proposeExternal } from "../../src/index.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { pskTypes } from "../../src/presharedkey.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+
+type CommitContext = MlsContext & { state: ClientState }
+
+const createCommit = (context: CommitContext, options?: CreateCommitOptions) => {
+  const { state, ...baseContext } = context
+  return createCommitBase({ context: baseContext, state, ...(options ?? {}) })
+}
 
 describe("Proposal Validation", () => {
   const suites = Object.keys(ciphersuites).slice(0, 1)
@@ -42,7 +51,7 @@ describe("Proposal Validation", () => {
 
     await expect(
       createCommit(
-        { state: aliceGroup, cipherSuite: impl },
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [removeBobProposal, removeBobProposal2] },
       ),
     ).rejects.toThrow(
@@ -54,7 +63,10 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup, addBobProposal } = await setupThreeMembers(cs as CiphersuiteName)
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [addBobProposal] },
+      ),
     ).rejects.toThrow(new ValidationError("Commit cannot contain an Add proposal for someone already in the group"))
   })
 
@@ -80,7 +92,10 @@ describe("Proposal Validation", () => {
       }
 
       await expect(
-        createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [proposalRequiredCapabilities] }),
+        createCommit(
+          { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+          { extraProposals: [proposalRequiredCapabilities] },
+        ),
       ).rejects.toThrow(new ValidationError("Not all members support required capabilities"))
     },
   )
@@ -94,13 +109,11 @@ describe("Proposal Validation", () => {
         credentialType: defaultCredentialTypes.basic,
         identity: new TextEncoder().encode("diana"),
       }
-      const diana = await generateKeyPackage(
-        dianaCredential,
-        { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
-        defaultLifetime,
-        [],
-        impl,
-      )
+      const diana = await generateKeyPackage({
+        credential: dianaCredential,
+        capabilities: { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
+        cipherSuite: impl,
+      })
 
       const addDiana: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: diana.publicPackage } }
 
@@ -122,7 +135,7 @@ describe("Proposal Validation", () => {
 
       await expect(
         createCommit(
-          { state: aliceGroup, cipherSuite: impl },
+          { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
           { extraProposals: [addDiana, proposalRequiredCapabilitiesX509] },
         ),
       ).rejects.toThrow(new ValidationError("Commit contains add proposals of member without required capabilities"))
@@ -142,7 +155,10 @@ describe("Proposal Validation", () => {
     }
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [proposalInvalidRequiredCapabilities] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [proposalInvalidRequiredCapabilities] },
+      ),
     ).rejects.toThrow(CodecError)
   })
 
@@ -161,7 +177,10 @@ describe("Proposal Validation", () => {
       }
 
       await expect(
-        createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [proposalInvalidExternalSenders] }),
+        createCommit(
+          { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+          { extraProposals: [proposalInvalidExternalSenders] },
+        ),
       ).rejects.toThrow(CodecError)
 
       const badCredential = {
@@ -197,7 +216,7 @@ describe("Proposal Validation", () => {
 
       await expect(
         createCommit(
-          { state: withAuthService(aliceGroup, authService), cipherSuite: impl },
+          { state: aliceGroup, cipherSuite: impl, authService },
           { extraProposals: [proposalUnauthenticatedExternalSenders] },
         ),
       ).rejects.toThrow(new ValidationError("Could not validate external credential"))
@@ -211,13 +230,12 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("edward"),
     }
-    const edward = await generateKeyPackage(
-      edwardCredential,
-      { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
-      defaultLifetime,
-      [],
-      impl,
-    )
+    const edward = await generateKeyPackage({
+      credential: edwardCredential,
+      capabilities: { ...defaultCapabilities(), credentials: [defaultCredentialTypes.basic] },
+
+      cipherSuite: impl,
+    })
     const addEdward: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: edward.publicPackage } }
 
     const authServiceEdward: AuthenticationService = {
@@ -234,7 +252,7 @@ describe("Proposal Validation", () => {
 
     await expect(
       createCommit(
-        { state: withAuthService(aliceGroup, authServiceEdward), cipherSuite: impl },
+        { state: aliceGroup, cipherSuite: impl, authService: authServiceEdward },
         { extraProposals: [addEdward] },
       ),
     ).rejects.toThrow(new ValidationError("Could not validate credential"))
@@ -244,11 +262,18 @@ describe("Proposal Validation", () => {
     const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
 
     const frankCredential: Credential = createCustomCredential(5, new Uint8Array([1, 2]))
-    const frank = await generateKeyPackage(frankCredential, defaultCapabilities(), defaultLifetime, [], impl)
+    const frank = await generateKeyPackage({
+      credential: frankCredential,
+
+      cipherSuite: impl,
+    })
     const addFrank: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: frank.publicPackage } }
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addFrank] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [addFrank] },
+      ),
     ).rejects.toThrow(new ValidationError("LeafNode has credential that is not supported by member of the group"))
   })
 
@@ -260,13 +285,19 @@ describe("Proposal Validation", () => {
       identity: new TextEncoder().encode("george"),
     }
     const georgeExtension: CustomExtension = makeCustomExtension(8545, new Uint8Array())
-    const george = await generateKeyPackage(georgeCredential, defaultCapabilities(), defaultLifetime, [], impl, [
-      georgeExtension,
-    ])
+    const george = await generateKeyPackage({
+      credential: georgeCredential,
+
+      cipherSuite: impl,
+      leafNodeExtensions: [georgeExtension],
+    })
     const addGeorge: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: george.publicPackage } }
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addGeorge] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [addGeorge] },
+      ),
     ).rejects.toThrow(new ValidationError("LeafNode contains extension not listed in capabilities"))
   })
 
@@ -289,7 +320,10 @@ describe("Proposal Validation", () => {
     }
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [updateProposal] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [updateProposal] },
+      ),
     ).rejects.toThrow(new ValidationError("Commit cannot contain an update proposal sent by committer"))
   })
 
@@ -299,7 +333,10 @@ describe("Proposal Validation", () => {
     const removeProposal: ProposalRemove = { proposalType: defaultProposalTypes.remove, remove: { removed: 0 } }
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [removeProposal] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [removeProposal] },
+      ),
     ).rejects.toThrow(new ValidationError("Commit cannot contain a remove proposal removing committer"))
   })
 
@@ -310,7 +347,11 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("bob"),
     }
-    const hannah = await generateKeyPackage(hannahCredential, defaultCapabilities(), defaultLifetime, [], impl)
+    const hannah = await generateKeyPackage({
+      credential: hannahCredential,
+
+      cipherSuite: impl,
+    })
     const addHannahProposal: ProposalAdd = {
       proposalType: defaultProposalTypes.add,
       add: { keyPackage: hannah.publicPackage },
@@ -318,7 +359,7 @@ describe("Proposal Validation", () => {
 
     await expect(
       createCommit(
-        { state: aliceGroup, cipherSuite: impl },
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [addHannahProposal, addHannahProposal] },
       ),
     ).rejects.toThrow(
@@ -338,7 +379,10 @@ describe("Proposal Validation", () => {
     }
 
     await expect(
-      createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [pskProposal, pskProposal] }),
+      createCommit(
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+        { extraProposals: [pskProposal, pskProposal] },
+      ),
     ).rejects.toThrow(
       new ValidationError("Commit cannot contain PreSharedKey proposals that reference the same PreSharedKeyID"),
     )
@@ -354,7 +398,7 @@ describe("Proposal Validation", () => {
 
     await expect(
       createCommit(
-        { state: aliceGroup, cipherSuite: impl },
+        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [groupContextExtensionsProposal, groupContextExtensionsProposal] },
       ),
     ).rejects.toThrow(new ValidationError("Commit cannot contain multiple GroupContextExtensions proposals"))
@@ -428,10 +472,6 @@ describe("Proposal Validation", () => {
   )
 })
 
-function withAuthService(state: ClientState, authService: AuthenticationService) {
-  return { ...state, clientConfig: { ...state.clientConfig, authService: authService } }
-}
-
 async function setupThreeMembers(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
 
@@ -439,22 +479,36 @@ async function setupThreeMembers(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const charlieCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -467,29 +521,27 @@ async function setupThreeMembers(cipherSuite: CiphersuiteName) {
   }
 
   const addBobAndCharlieCommitResult = await createCommit(
-    { state: aliceGroup, cipherSuite: impl },
+    { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     { extraProposals: [addBobProposal, addCharlieProposal] },
   )
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  const bobGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const bobGroup = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
-  const charlieGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    charlie.publicPackage,
-    charlie.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const charlieGroup = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   return { impl, alice, aliceGroup, bob, bobGroup, charlie, charlieGroup, addBobProposal }
 }

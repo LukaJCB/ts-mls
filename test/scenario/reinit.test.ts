@@ -1,7 +1,6 @@
 import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -11,11 +10,11 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { getRandomElement, testEveryoneCanMessageEveryone } from "./common.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
   await reinit(cs as CiphersuiteName)
 })
@@ -27,17 +26,28 @@ async function reinit(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -46,44 +56,54 @@ async function reinit(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const commitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = commitResult.newState
 
-  let bobGroup = await joinGroup(
-    commitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: commitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   const newCiphersuite = getRandomElement(Object.keys(ciphersuites)) as CiphersuiteName
 
   const newGroupId = new TextEncoder().encode("new-group1")
 
-  const reinitCommitResult = await reinitGroup(aliceGroup, newGroupId, "mls10", newCiphersuite, [], impl)
+  const reinitCommitResult = await reinitGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    groupId: newGroupId,
+    version: "mls10",
+    cipherSuite: newCiphersuite,
+  })
 
   aliceGroup = reinitCommitResult.newState
 
   if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processReinitResult = await processPrivateMessage(
-    bobGroup,
-    reinitCommitResult.commit.privateMessage,
-    makePskIndex(bobGroup, {}),
-    impl,
-  )
+  const processReinitResult = await processPrivateMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(bobGroup, {}),
+    },
+    state: bobGroup,
+    privateMessage: reinitCommitResult.commit.privateMessage,
+  })
 
   bobGroup = processReinitResult.newState
 
@@ -93,42 +113,49 @@ async function reinit(cipherSuite: CiphersuiteName) {
   //creating a message will fail now
   await expect(
     createCommit({
+      context: {
+        cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
+      },
       state: aliceGroup,
-      cipherSuite: impl,
     }),
   ).rejects.toThrow(UsageError)
 
   const newImpl = await getCiphersuiteImpl(getCiphersuiteFromName(newCiphersuite))
 
-  const bobNewKeyPackage = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], newImpl)
+  const bobNewKeyPackage = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: newImpl,
+  })
 
-  const aliceNewKeyPackage = await generateKeyPackage(
-    aliceCredential,
-    defaultCapabilities(),
-    defaultLifetime,
-    [],
-    newImpl,
-  )
+  const aliceNewKeyPackage = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: newImpl,
+  })
 
-  const resumeGroupResult = await reinitCreateNewGroup(
-    aliceGroup,
-    aliceNewKeyPackage.publicPackage,
-    aliceNewKeyPackage.privatePackage,
-    [bobNewKeyPackage.publicPackage],
-    newGroupId,
-    newCiphersuite,
-    [],
-  )
+  const resumeGroupResult = await reinitCreateNewGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    keyPackage: aliceNewKeyPackage.publicPackage,
+    privateKeyPackage: aliceNewKeyPackage.privatePackage,
+    memberKeyPackages: [bobNewKeyPackage.publicPackage],
+    groupId: newGroupId,
+    cipherSuite: newCiphersuite,
+  })
 
   aliceGroup = resumeGroupResult.newState
 
-  bobGroup = await joinGroupFromReinit(
-    bobGroup,
-    resumeGroupResult.welcome!,
-    bobNewKeyPackage.publicPackage,
-    bobNewKeyPackage.privatePackage,
-    aliceGroup.ratchetTree,
-  )
+  bobGroup = await joinGroupFromReinit({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    suspendedState: bobGroup,
+    welcome: resumeGroupResult.welcome!,
+    keyPackage: bobNewKeyPackage.publicPackage,
+    privateKeyPackage: bobNewKeyPackage.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], newImpl)
   await checkHpkeKeysMatch(aliceGroup, newImpl)

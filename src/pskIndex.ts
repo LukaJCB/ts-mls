@@ -1,10 +1,10 @@
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { ValidationError } from "./mlsError.js"
-import { PreSharedKeyID, updatePskSecret } from "./presharedkey.js"
+import { PskId, updatePskSecret } from "./presharedkey.js"
 
 /** @public */
 export interface PskIndex {
-  findPsk(preSharedKeyId: PreSharedKeyID): Uint8Array | undefined
+  findPsk(preSharedKeyId: PskId): Uint8Array | undefined
 }
 
 /** @public */
@@ -15,12 +15,12 @@ export const emptyPskIndex: PskIndex = {
 }
 
 export async function accumulatePskSecret(
-  groupedPsk: PreSharedKeyID[],
+  groupedPsk: PskId[],
   pskSearch: PskIndex,
   cs: CiphersuiteImpl,
   zeroes: Uint8Array,
-): Promise<[Uint8Array, PreSharedKeyID[]]> {
-  return groupedPsk.reduce<Promise<[Uint8Array, PreSharedKeyID[]]>>(
+): Promise<[Uint8Array, PskId[]]> {
+  return groupedPsk.reduce<Promise<[Uint8Array, PskId[]]>>(
     async (acc, cur, index) => {
       const [previousSecret, ids] = await acc
       const psk = pskSearch.findPsk(cur)

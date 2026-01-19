@@ -62,6 +62,7 @@ export type Extension =
   | ExtensionExternalSenders
   | CustomExtension
 
+/** @public */
 export function makeCustomExtension(extensionType: number, extensionData: Uint8Array): CustomExtension {
   if (isDefaultExtensionTypeValue(extensionType)) {
     throw new UsageError("Cannot create custom exception with default extension type")
@@ -141,11 +142,4 @@ export function extensionsSupportedByCapabilities(
   return requiredExtensions
     .filter((ex) => !isDefaultExtensionTypeValue(ex.extensionType))
     .every((ex) => capabilities.extensions.includes(ex.extensionType))
-}
-
-export function decodeFully<T>(dec: Decoder<T>, b: Uint8Array): T | undefined {
-  const decoded = dec(b, 0)
-  if (decoded === undefined) return undefined
-  const [value, len] = decoded
-  return len === b.length ? value : undefined
 }

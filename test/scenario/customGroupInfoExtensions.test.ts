@@ -1,17 +1,16 @@
 import { createGroup, joinGroupWithExtensions } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
-import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { CustomExtension, makeCustomExtension } from "../../src/extension.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom GroupInfoExtensions %s`, async (cs) => {
   await customGroupInfoExtensionTest(cs as CiphersuiteName)
@@ -34,7 +33,11 @@ async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    capabilities,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
@@ -42,13 +45,22 @@ async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
 
   const customExtension: CustomExtension = makeCustomExtension(customExtensionType, extensionData)
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    capabilities,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -57,27 +69,28 @@ async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-      groupInfoExtensions: [customExtension],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+    groupInfoExtensions: [customExtension],
+  })
 
   aliceGroup = addBobCommitResult.newState
 
-  const [bobGroup, groupInfoExtensions] = await joinGroupWithExtensions(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const { state: bobGroup, groupInfoExtensions } = await joinGroupWithExtensions({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   expect(groupInfoExtensions.find((e) => e.extensionType === customExtensionType)).toStrictEqual(customExtension)
 

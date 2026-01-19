@@ -8,9 +8,6 @@ import {
 } from "../src/clientState.js"
 import { generateKeyPackage } from "../src/keyPackage.js"
 import { ProposalAdd } from "../src/proposal.js"
-import { defaultCapabilities } from "../src/defaultCapabilities.js"
-import { defaultLifetime } from "../src/lifetime.js"
-import { emptyPskIndex } from "../src/pskIndex.js"
 import { Credential, isDefaultCredential } from "../src/credential.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { CiphersuiteName, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
@@ -20,6 +17,7 @@ import { defaultProposalTypes } from "../src/defaultProposalType.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 import { LeafNode } from "../src/leafNode.js"
 import { wireformats } from "../src/wireformat.js"
+import { unsafeTestingAuthenticationService } from "../src/authenticationService.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
@@ -39,55 +37,78 @@ async function buildThreeMemberGroup() {
     identity: new TextEncoder().encode("charlie"),
   }
 
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const addBobProposal: ProposalAdd = { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }
-  const addBobCommitResult = await createCommit(
-    { state: aliceGroup, cipherSuite: impl },
-    { extraProposals: [addBobProposal] },
-  )
+  const addBobCommitResult = await createCommit({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
   aliceGroup = addBobCommitResult.newState
-  let bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   const addCharlieProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
     add: { keyPackage: charlie.publicPackage },
   }
-  const addCharlieCommitResult = await createCommit(
-    { state: aliceGroup, cipherSuite: impl },
-    { extraProposals: [addCharlieProposal] },
-  )
+  const addCharlieCommitResult = await createCommit({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    extraProposals: [addCharlieProposal],
+  })
   aliceGroup = addCharlieCommitResult.newState
   if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
-  const processAddCharlieResult = await processPrivateMessage(
-    bobGroup,
-    addCharlieCommitResult.commit.privateMessage,
-    makePskIndex(bobGroup, {}),
-    impl,
-  )
+  const processAddCharlieResult = await processPrivateMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(bobGroup, {}),
+    },
+    state: bobGroup,
+    privateMessage: addCharlieCommitResult.commit.privateMessage,
+  })
   bobGroup = processAddCharlieResult.newState
-  const charlieGroup = await joinGroup(
-    addCharlieCommitResult.welcome!,
-    charlie.publicPackage,
-    charlie.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const charlieGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addCharlieCommitResult.welcome!,
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   return { aliceGroup, bobGroup, charlieGroup }
 }

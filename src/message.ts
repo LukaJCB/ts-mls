@@ -43,9 +43,12 @@ export interface MlsPublicMessage {
 }
 
 /** @public */
+export type MlsFramedMessage = MlsMessageProtocol & (MlsPrivateMessage | MlsPublicMessage)
+
+/** @public */
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
 /** @public */
-export type MLSMessage = MlsMessageProtocol & MlsMessageContent
+export type MlsMessage = MlsMessageProtocol & MlsMessageContent
 
 export const mlsPublicMessageEncoder: Encoder<MlsPublicMessage> = contramapBufferEncoders(
   [wireformatEncoder, publicMessageEncoder],
@@ -106,13 +109,13 @@ export const mlsMessageContentDecoder: Decoder<MlsMessageContent> = flatMapDecod
 )
 
 /** @public */
-export const mlsMessageEncoder: Encoder<MLSMessage> = contramapBufferEncoders(
+export const mlsMessageEncoder: Encoder<MlsMessage> = contramapBufferEncoders(
   [protocolVersionEncoder, mlsMessageContentEncoder],
   (w) => [w.version, w] as const,
 )
 
 /** @public */
-export const mlsMessageDecoder: Decoder<MLSMessage> = mapDecoders(
+export const mlsMessageDecoder: Decoder<MlsMessage> = mapDecoders(
   [protocolVersionDecoder, mlsMessageContentDecoder],
   (version, mc) => ({ ...mc, version }),
 )

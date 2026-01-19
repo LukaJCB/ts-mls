@@ -1,12 +1,10 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
-import { defaultLifetime } from "../../src/lifetime.js"
 import { Capabilities } from "../../src/capabilities.js"
 import { GroupContextExtension } from "../../src/extension.js"
 import { RequiredCapabilities, requiredCapabilitiesEncoder } from "../../src/requiredCapabilities.js"
@@ -16,6 +14,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -42,7 +41,11 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, capabilities, defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    capabilities,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
@@ -51,19 +54,23 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     extensionData: encode(requiredCapabilitiesEncoder, requiredCapabilities),
   }
 
-  let aliceGroup = await createGroup(
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     groupId,
-    alice.publicPackage,
-    alice.privatePackage,
-    [requiredCapabilitiesExtension],
-    impl,
-  )
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+    extensions: [requiredCapabilitiesExtension],
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, capabilities, defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    capabilities,
+    cipherSuite: impl,
+  })
 
   const minimalCapabilites: Capabilities = {
     extensions: [],
@@ -77,7 +84,11 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, minimalCapabilites, defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    capabilities: minimalCapabilites,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -86,26 +97,27 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal],
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal],
+  })
 
   aliceGroup = addBobCommitResult.newState
 
-  const bobGroup = await joinGroup(
-    addBobCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-    aliceGroup.ratchetTree,
-  )
+  const bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
@@ -117,14 +129,13 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
   }
 
   await expect(
-    createCommit(
-      {
-        state: aliceGroup,
+    createCommit({
+      context: {
         cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
       },
-      {
-        extraProposals: [addCharlieProposal],
-      },
-    ),
+      state: aliceGroup,
+      extraProposals: [addCharlieProposal],
+    }),
   ).rejects.toThrow(ValidationError)
 }

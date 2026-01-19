@@ -76,7 +76,7 @@ import {
   defaultProposalTypes,
   defaultCredentialTypes,
   joinGroup,
-  processPrivateMessage,
+  processMessage,
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   Credential,
@@ -89,6 +89,7 @@ import {
   mlsMessageEncoder,
   mlsMessageDecoder,
   protocolVersions,
+  unsafeTestingAuthenticationService,
   wireformats,
   Proposal,
   zeroOutUint8Array,
@@ -101,19 +102,24 @@ const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
 }
-const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
 
 const groupId = new TextEncoder().encode("group1")
 
 // alice creates a new group
-let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+let aliceGroup = await createGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  groupId,
+  keyPackage: alice.publicPackage,
+  privateKeyPackage: alice.privatePackage,
+})
 
 // bob generates his key package
 const bobCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("bob"),
 }
-const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 // bob sends keyPackage to alice
 const keyPackageMessage = encode(mlsMessageEncoder, {
@@ -136,7 +142,11 @@ const addBobProposal: Proposal = {
 }
 
 // alice commits
-const commitResult = await createCommit({ state: aliceGroup, cipherSuite: impl }, { extraProposals: [addBobProposal] })
+const commitResult = await createCommit({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  extraProposals: [addBobProposal],
+})
 
 aliceGroup = commitResult.newState
 
@@ -156,19 +166,22 @@ const decodedWelcome = decode(mlsMessageDecoder, encodedWelcome)!
 if (decodedWelcome.wireformat !== wireformats.mls_welcome) throw new Error("Expected welcome")
 
 // bob creates his own group state
-let bobGroup = await joinGroup(
-  decodedWelcome.welcome,
-  bob.publicPackage,
-  bob.privatePackage,
-  emptyPskIndex,
-  impl,
-  aliceGroup.ratchetTree,
-)
+let bobGroup = await joinGroup({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  welcome: decodedWelcome.welcome,
+  keyPackage: bob.publicPackage,
+  privateKeys: bob.privatePackage,
+  ratchetTree: aliceGroup.ratchetTree,
+})
 
 const messageToBob = new TextEncoder().encode("Hello bob!")
 
 // alice creates a message to the group
-const aliceCreateMessageResult = await createApplicationMessage(aliceGroup, messageToBob, impl)
+const aliceCreateMessageResult = await createApplicationMessage({
+  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  state: aliceGroup,
+  message: messageToBob,
+})
 
 aliceGroup = aliceCreateMessageResult.newState
 
@@ -176,11 +189,7 @@ aliceGroup = aliceCreateMessageResult.newState
 aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
 
 // alice sends the message to bob
-const encodedPrivateMessageAlice = encode(mlsMessageEncoder, {
-  privateMessage: aliceCreateMessageResult.privateMessage,
-  wireformat: wireformats.mls_private_message,
-  version: protocolVersions.mls10,
-})
+const encodedPrivateMessageAlice = encode(mlsMessageEncoder, aliceCreateMessageResult.message)
 
 // bob decodes the message
 const decodedPrivateMessageAlice = decode(mlsMessageDecoder, encodedPrivateMessageAlice)!
@@ -189,12 +198,15 @@ if (decodedPrivateMessageAlice.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 
 // bob receives the message
-const bobProcessMessageResult = await processPrivateMessage(
-  bobGroup,
-  decodedPrivateMessageAlice.privateMessage,
-  emptyPskIndex,
-  impl,
-)
+const bobProcessMessageResult = await processMessage({
+  context: {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    pskIndex: emptyPskIndex,
+  },
+  state: bobGroup,
+  message: decodedPrivateMessageAlice,
+})
 
 bobGroup = bobProcessMessageResult.newState
 

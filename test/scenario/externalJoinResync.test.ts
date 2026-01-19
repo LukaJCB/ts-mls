@@ -2,7 +2,6 @@ import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPubAndRatchetTree, joinGroupExternal } from "../../src/createCommit.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPublicMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -11,9 +10,9 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import { testEveryoneCanMessageEveryone } from "./common.js"
-import { defaultLifetime } from "../../src/lifetime.js"
-import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
+import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External join Resync %s`, async (cs) => {
   await externalJoinResyncTest(cs as CiphersuiteName)
@@ -26,23 +25,37 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
   }
-  const alice = await generateKeyPackage(aliceCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const alice = await generateKeyPackage({
+    credential: aliceCredential,
+    cipherSuite: impl,
+  })
 
   const groupId = new TextEncoder().encode("group1")
 
-  let aliceGroup = await createGroup(groupId, alice.publicPackage, alice.privatePackage, [], impl)
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId,
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
 
   const bobCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("bob"),
   }
-  const bob = await generateKeyPackage(bobCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const bob = await generateKeyPackage({
+    credential: bobCredential,
+    cipherSuite: impl,
+  })
 
   const charlieCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("charlie"),
   }
-  const charlie = await generateKeyPackage(charlieCredential, defaultCapabilities(), defaultLifetime, [], impl)
+  const charlie = await generateKeyPackage({
+    credential: charlieCredential,
+    cipherSuite: impl,
+  })
 
   const addBobProposal: ProposalAdd = {
     proposalType: defaultProposalTypes.add,
@@ -58,66 +71,78 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobAndCharlieCommitResult = await createCommit(
-    {
-      state: aliceGroup,
+  const addBobAndCharlieCommitResult = await createCommit({
+    context: {
       cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
     },
-    {
-      extraProposals: [addBobProposal, addCharlieProposal],
-      ratchetTreeExtension: true,
-    },
-  )
+    state: aliceGroup,
+    extraProposals: [addBobProposal, addCharlieProposal],
+    ratchetTreeExtension: true,
+  })
 
   aliceGroup = addBobAndCharlieCommitResult.newState
 
-  let bobGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    bob.publicPackage,
-    bob.privatePackage,
-    emptyPskIndex,
-    impl,
-  )
+  let bobGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+  })
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  let charlieGroup = await joinGroup(
-    addBobAndCharlieCommitResult.welcome!,
-    charlie.publicPackage,
-    charlie.privatePackage,
-    emptyPskIndex,
-    impl,
-  )
+  let charlieGroup = await joinGroup({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    welcome: addBobAndCharlieCommitResult.welcome!,
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+  })
 
   expect(charlieGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
   const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(charlieGroup, [], impl)
 
-  const charlieResyncCommitResult = await joinGroupExternal(
+  const charlieResyncCommitResult = await joinGroupExternal({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
     groupInfo,
-    charlie.publicPackage,
-    charlie.privatePackage,
-    true,
-    impl,
-  )
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+    resync: true,
+  })
 
   charlieGroup = charlieResyncCommitResult.newState
 
-  const aliceProcessCharlieResyncResult = await processPublicMessage(
-    aliceGroup,
-    charlieResyncCommitResult.publicMessage,
-    makePskIndex(aliceGroup, {}),
-    impl,
-  )
+  const aliceProcessCharlieResyncResult = await processPublicMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(aliceGroup, {}),
+    },
+    state: aliceGroup,
+    publicMessage: charlieResyncCommitResult.publicMessage,
+  })
 
   aliceGroup = aliceProcessCharlieResyncResult.newState
 
-  const bobProcessCharlieResyncResult = await processPublicMessage(
-    bobGroup,
-    charlieResyncCommitResult.publicMessage,
-    makePskIndex(bobGroup, {}),
-    impl,
-  )
+  const bobProcessCharlieResyncResult = await processPublicMessage({
+    context: {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      pskIndex: makePskIndex(bobGroup, {}),
+    },
+    state: bobGroup,
+    publicMessage: charlieResyncCommitResult.publicMessage,
+  })
 
   bobGroup = bobProcessCharlieResyncResult.newState
 

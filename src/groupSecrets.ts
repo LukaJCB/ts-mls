@@ -2,12 +2,12 @@ import { optionalDecoder, optionalEncoder } from "./codec/optional.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { pskIdDecoder, pskIdEncoder, PreSharedKeyID } from "./presharedkey.js"
+import { pskIdDecoder, pskIdEncoder, PskId } from "./presharedkey.js"
 
 export interface GroupSecrets {
   joinerSecret: Uint8Array
   pathSecret: Uint8Array | undefined
-  psks: PreSharedKeyID[]
+  psks: PskId[]
 }
 
 export const groupSecretsEncoder: Encoder<GroupSecrets> = contramapBufferEncoders(
