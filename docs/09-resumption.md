@@ -36,6 +36,7 @@ import {
   joinGroupFromBranch,
   branchGroup,
   unsafeTestingAuthenticationService,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -69,6 +70,7 @@ const addBobCommitResult = await createCommit({
   extraProposals: [addBobProposal],
 })
 aliceGroup = addBobCommitResult.newState
+addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 let bobGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   welcome: addBobCommitResult.welcome!,
@@ -92,6 +94,7 @@ const branchCommitResult = await branchGroup({
   newGroupId,
 })
 aliceGroup = branchCommitResult.newState
+branchCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the branched group
 bobGroup = await joinGroupFromBranch({

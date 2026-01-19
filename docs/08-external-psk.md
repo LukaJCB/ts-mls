@@ -37,6 +37,7 @@ import {
   pskTypes,
   unsafeTestingAuthenticationService,
   wireformats,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -72,6 +73,7 @@ const addBobCommitResult = await createCommit({
   extraProposals: [addBobProposal],
 })
 aliceGroup = addBobCommitResult.newState
+addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group (epoch 1)
 let bobGroup = await joinGroup({
@@ -112,6 +114,7 @@ const pskCommitResult = await createCommit({
   extraProposals: [pskProposal],
 })
 aliceGroup = pskCommitResult.newState
+pskCommitResult.consumed.forEach(zeroOutUint8Array)
 
 if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
@@ -126,6 +129,7 @@ const processPskResult = await processPrivateMessage({
   privateMessage: pskCommitResult.commit.privateMessage,
 })
 bobGroup = processPskResult.newState
+processPskResult.consumed.forEach(zeroOutUint8Array)
 ```
 
 ---
@@ -174,6 +178,7 @@ import {
   bytesToBase64,
   pskTypes,
   unsafeTestingAuthenticationService,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -230,6 +235,7 @@ const commitResult = await createCommit({
   extraProposals: [addBobProposal, pskProposal],
 })
 aliceGroup = commitResult.newState
+commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins using the Welcome message and the external PSK (epoch 1)
 let bobGroup = await joinGroup({

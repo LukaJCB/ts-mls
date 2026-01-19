@@ -40,6 +40,7 @@ import {
   leafNodeSources,
   unsafeTestingAuthenticationService,
   wireformats,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -75,6 +76,7 @@ const addBobCommitResult = await createCommit({
   extraProposals: [addBobProposal],
 })
 aliceGroup = addBobCommitResult.newState
+addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
@@ -95,6 +97,7 @@ const emptyCommitResult = await createCommit({
 })
 if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
+emptyCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob processes Alice's update and transitions to epoch 2
 const bobProcessCommitResult = await processPrivateMessage({
@@ -107,6 +110,7 @@ const bobProcessCommitResult = await processPrivateMessage({
   privateMessage: emptyCommitResult.commit.privateMessage,
 })
 bobGroup = bobProcessCommitResult.newState
+bobProcessCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
 const emptyCommitResult3 = await createCommit({
@@ -119,6 +123,7 @@ const emptyCommitResult3 = await createCommit({
 if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
+emptyCommitResult3.consumed.forEach(zeroOutUint8Array)
 
 // Alice processes Bob's update and transitions to epoch 3
 const aliceProcessCommitResult3 = await processPrivateMessage({
@@ -131,6 +136,7 @@ const aliceProcessCommitResult3 = await processPrivateMessage({
   privateMessage: emptyCommitResult3.commit.privateMessage,
 })
 aliceGroup = aliceProcessCommitResult3.newState
+aliceProcessCommitResult3.consumed.forEach(zeroOutUint8Array)
 
 // Bob creates a new KeyPackage
 const alice2 = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
@@ -150,6 +156,7 @@ const updateBobCommitResult = await createCommit({
 if (updateBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 bobGroup = updateBobCommitResult.newState
+updateBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Alice processes Bob's commit and transitions to epoch 4
 const aliceProcessCommitResult4 = await processPrivateMessage({
@@ -162,6 +169,7 @@ const aliceProcessCommitResult4 = await processPrivateMessage({
   privateMessage: updateBobCommitResult.commit.privateMessage,
 })
 aliceGroup = aliceProcessCommitResult4.newState
+aliceProcessCommitResult4.consumed.forEach(zeroOutUint8Array)
 ```
 
 ---

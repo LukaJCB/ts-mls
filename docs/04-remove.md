@@ -34,6 +34,7 @@ import {
   makePskIndex,
   unsafeTestingAuthenticationService,
   wireformats,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -69,6 +70,7 @@ const addBobCommitResult = await createCommit({
   extraProposals: [addBobProposal],
 })
 aliceGroup = addBobCommitResult.newState
+addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
@@ -90,6 +92,7 @@ const removeBobCommitResult = await createCommit({
   extraProposals: [removeBobProposal],
 })
 aliceGroup = removeBobCommitResult.newState
+removeBobCommitResult.consumed.forEach(zeroOutUint8Array)
 if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
 
@@ -104,6 +107,7 @@ const bobProcessRemoveResult = await processPrivateMessage({
   privateMessage: removeBobCommitResult.commit.privateMessage,
 })
 bobGroup = bobProcessRemoveResult.newState
+bobProcessRemoveResult.consumed.forEach(zeroOutUint8Array)
 ```
 
 ---

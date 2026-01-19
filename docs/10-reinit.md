@@ -40,6 +40,7 @@ import {
   generateKeyPackage,
   unsafeTestingAuthenticationService,
   wireformats,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -75,6 +76,7 @@ const commitResult = await createCommit({
   extraProposals: [addBobProposal],
 })
 aliceGroup = commitResult.newState
+commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group (epoch 1)
 let bobGroup = await joinGroup({
@@ -96,6 +98,7 @@ const reinitCommitResult = await reinitGroup({
   cipherSuite: newCiphersuite,
 })
 aliceGroup = reinitCommitResult.newState
+reinitCommitResult.consumed.forEach(zeroOutUint8Array)
 
 if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
   throw new Error("Expected private message")
@@ -111,6 +114,7 @@ const processReinitResult = await processPrivateMessage({
   privateMessage: reinitCommitResult.commit.privateMessage,
 })
 bobGroup = processReinitResult.newState
+processReinitResult.consumed.forEach(zeroOutUint8Array)
 
 // Alice and Bob generate new key packages for the new group
 const newImpl = await getCiphersuiteImpl(getCiphersuiteFromName(newCiphersuite))
@@ -128,6 +132,7 @@ const resumeGroupResult = await reinitCreateNewGroup({
   cipherSuite: newCiphersuite,
 })
 aliceGroup = resumeGroupResult.newState
+resumeGroupResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the reinitialized group using the Welcome message
 bobGroup = await joinGroupFromReinit({

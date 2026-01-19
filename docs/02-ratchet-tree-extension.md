@@ -31,6 +31,7 @@ import {
   createCommit,
   Proposal,
   unsafeTestingAuthenticationService,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 // Setup ciphersuite and credentials
@@ -69,6 +70,7 @@ const commitResult = await createCommit({
   ratchetTreeExtension: true,
 })
 aliceGroup = commitResult.newState
+commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins using the welcome message and does not need to provide a ratchetTree
 let bobGroup = await joinGroup({
