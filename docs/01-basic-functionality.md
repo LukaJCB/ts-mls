@@ -81,7 +81,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 // Bob joins using the welcome message
 let bobGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  welcome: commitResult.welcome!,
+  welcome: commitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,

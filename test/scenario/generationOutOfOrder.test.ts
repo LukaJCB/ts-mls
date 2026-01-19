@@ -100,7 +100,7 @@ async function setupTestParticipants(
       authService: unsafeTestingAuthenticationService,
       clientConfig,
     },
-    welcome: addBobCommitResult.welcome!,
+    welcome: addBobCommitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
   })

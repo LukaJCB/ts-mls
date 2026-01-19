@@ -152,6 +152,7 @@ export {
   type MlsGroupInfo,
   type MlsPrivateMessage,
   type MlsFramedMessage,
+  type MlsWelcomeMessage,
 } from "./message.js"
 
 export { type FramedContent, type FramedContentAuthData } from "./framedContent.js"

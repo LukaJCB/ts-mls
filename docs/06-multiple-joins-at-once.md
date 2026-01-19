@@ -83,14 +83,14 @@ if (addCommitResult.commit.wireformat !== wireformats.mls_private_message) throw
 // Bob and Charlie join the group, both are now in epoch 1
 let bobGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  welcome: addCommitResult.welcome!,
+  welcome: addCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,
 })
 let charlieGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  welcome: addCommitResult.welcome!,
+  welcome: addCommitResult.welcome!.welcome,
   keyPackage: charlie.publicPackage,
   privateKeys: charlie.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,

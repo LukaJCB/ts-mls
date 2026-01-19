@@ -89,7 +89,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    welcome: commitResult1.welcome!,
+    welcome: commitResult1.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,

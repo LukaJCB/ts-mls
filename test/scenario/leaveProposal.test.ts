@@ -93,7 +93,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    welcome: addBobAndCharlieCommitResult.welcome!,
+    welcome: addBobAndCharlieCommitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
   })
@@ -105,7 +105,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    welcome: addBobAndCharlieCommitResult.welcome!,
+    welcome: addBobAndCharlieCommitResult.welcome!.welcome,
     keyPackage: charlie.publicPackage,
     privateKeys: charlie.privatePackage,
   })

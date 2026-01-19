@@ -73,7 +73,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
 
   let bobGroup = await joinGroup({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-    welcome: commitResult.welcome!,
+    welcome: commitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,
@@ -172,7 +172,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     joinGroupFromReinit({
       context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
       suspendedState: bobGroupIdChanged,
-      welcome: resumeGroupResult.welcome!,
+      welcome: resumeGroupResult.welcome!.welcome,
       keyPackage: bobNewKeyPackage.publicPackage,
       privateKeyPackage: bobNewKeyPackage.privatePackage,
       ratchetTree: aliceGroup.ratchetTree,
@@ -191,7 +191,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     joinGroupFromReinit({
       context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
       suspendedState: bobVersionChanged,
-      welcome: resumeGroupResult.welcome!,
+      welcome: resumeGroupResult.welcome!.welcome,
       keyPackage: bobNewKeyPackage.publicPackage,
       privateKeyPackage: bobNewKeyPackage.privatePackage,
       ratchetTree: aliceGroup.ratchetTree,
@@ -210,7 +210,7 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     joinGroupFromReinit({
       context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
       suspendedState: bobExtensionsChanged,
-      welcome: resumeGroupResult.welcome!,
+      welcome: resumeGroupResult.welcome!.welcome,
       keyPackage: bobNewKeyPackage.publicPackage,
       privateKeyPackage: bobNewKeyPackage.privatePackage,
       ratchetTree: aliceGroup.ratchetTree,

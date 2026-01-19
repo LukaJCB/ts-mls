@@ -529,7 +529,7 @@ async function setupThreeMembers(cipherSuite: CiphersuiteName) {
 
   const bobGroup = await joinGroup({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-    welcome: addBobAndCharlieCommitResult.welcome!,
+    welcome: addBobAndCharlieCommitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,
@@ -537,7 +537,7 @@ async function setupThreeMembers(cipherSuite: CiphersuiteName) {
 
   const charlieGroup = await joinGroup({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-    welcome: addBobAndCharlieCommitResult.welcome!,
+    welcome: addBobAndCharlieCommitResult.welcome!.welcome,
     keyPackage: charlie.publicPackage,
     privateKeys: charlie.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,

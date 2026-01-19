@@ -93,7 +93,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
       authService: unsafeTestingAuthenticationService,
       pskIndex: makePskIndex(undefined, sharedPsks),
     },
-    welcome: commitResult.welcome!,
+    welcome: commitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,

@@ -84,7 +84,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
 
   // alice sends welcome message to bob
   const encodedWelcome = encode(mlsMessageEncoder, {
-    welcome: commitResult.welcome!,
+    welcome: commitResult.welcome!.welcome,
     wireformat: wireformats.mls_welcome,
     version: protocolVersions.mls10,
   })
