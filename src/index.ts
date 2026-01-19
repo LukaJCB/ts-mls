@@ -111,11 +111,7 @@ export { type EpochReceiverData } from "./epochReceiverData.js"
 
 export { type UnappliedProposals, type ProposalWithSender } from "./unappliedProposals.js"
 
-export {
-  requiredCapabilitiesDecoder,
-  requiredCapabilitiesEncoder,
-  type RequiredCapabilities,
-} from "./requiredCapabilities.js"
+export { type RequiredCapabilities } from "./requiredCapabilities.js"
 
 export {
   makeCustomExtension,
@@ -130,7 +126,7 @@ export {
   type LeafNodeExtension,
 } from "./extension.js"
 
-export { externalSenderDecoder, externalSenderEncoder, type ExternalSender } from "./externalSender.js"
+export { type ExternalSender } from "./externalSender.js"
 
 export {
   type PublicMessage,

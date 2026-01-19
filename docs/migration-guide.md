@@ -317,6 +317,7 @@ Examples of signature changes:
 - If you were constructing custom extensions:
   - Use `makeCustomExtension({ extensionType, extensionData })` instead of a plain object.
   - Avoid using reserved/default extension types as `extensionType`.
+- If you were using the `required_capabilities` or `external_senders` extensions, set `extensionData` to the object directly (no encoder/decoder is needed).
 
 Example:
 
@@ -341,8 +342,7 @@ And exported codecs such as:
 
 - `mlsMessageEncoder` / `mlsMessageDecoder`
 - `groupStateEncoder` / `groupStateDecoder`
-- `externalSenderEncoder` / `externalSenderDecoder`
-- `requiredCapabilitiesEncoder` / `requiredCapabilitiesDecoder`
+- `clientStateEncoder` / `clientStateDecoder`
 
 ### How to migrate
 
@@ -398,8 +398,6 @@ These are intentionally “mechanical” edits you can apply with search/replace
 - `decodeMlsMessage(` → `decode(mlsMessageDecoder, `
 - `encodeGroupState(` → `encode(groupStateEncoder, `
 - `decodeGroupState(` → `decode(groupStateDecoder, `
-- `encodeExternalSender(` → `encode(externalSenderEncoder, `
-- `decodeExternalSender(` → `decode(externalSenderDecoder, `
 
 ### Common literal → constant replaces (usually safe with regex)
 

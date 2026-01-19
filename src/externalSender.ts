@@ -9,13 +9,11 @@ export interface ExternalSender {
   credential: Credential
 }
 
-/** @public */
 export const externalSenderEncoder: Encoder<ExternalSender> = contramapBufferEncoders(
   [varLenDataEncoder, credentialEncoder],
   (e) => [e.signaturePublicKey, e.credential] as const,
 )
 
-/** @public */
 export const externalSenderDecoder: Decoder<ExternalSender> = mapDecoders(
   [varLenDataDecoder, credentialDecoder],
   (signaturePublicKey, credential) => ({ signaturePublicKey, credential }),

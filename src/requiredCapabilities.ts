@@ -10,13 +10,11 @@ export interface RequiredCapabilities {
   credentialTypes: number[]
 }
 
-/** @public */
 export const requiredCapabilitiesEncoder: Encoder<RequiredCapabilities> = contramapBufferEncoders(
   [varLenTypeEncoder(uint16Encoder), varLenTypeEncoder(uint16Encoder), varLenTypeEncoder(uint16Encoder)],
   (rc) => [rc.extensionTypes, rc.proposalTypes, rc.credentialTypes] as const,
 )
 
-/** @public */
 export const requiredCapabilitiesDecoder: Decoder<RequiredCapabilities> = mapDecoders(
   [varLenTypeDecoder(uint16Decoder), varLenTypeDecoder(uint16Decoder), varLenTypeDecoder(uint16Decoder)],
   (extensionTypes, proposalTypes, credentialTypes) => ({ extensionTypes, proposalTypes, credentialTypes }),
