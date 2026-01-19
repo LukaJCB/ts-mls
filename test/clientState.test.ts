@@ -1,4 +1,11 @@
-import { createGroup, joinGroup, getOwnLeafNode, extractFromGroupMembers, getGroupMembers } from "../src/clientState.js"
+import {
+  createGroup,
+  joinGroup,
+  getOwnLeafNode,
+  extractFromGroupMembers,
+  getGroupMembers,
+  getOwnSignatureKeyPair,
+} from "../src/clientState.js"
 import { generateKeyPackage } from "../src/keyPackage.js"
 import { ProposalAdd } from "../src/proposal.js"
 import { Credential, isDefaultCredential } from "../src/credential.js"
@@ -113,7 +120,7 @@ function identityOf(l: LeafNode): string {
 }
 
 describe("clientState helpers", () => {
-  test("getOwnLeafNode returns the correct member for each client", async () => {
+  test("getOwnSignatureKeyPair returns the correct member for each client", async () => {
     const { aliceGroup, bobGroup, charlieGroup } = await buildThreeMemberGroup()
 
     const aliceLeaf = getOwnLeafNode(aliceGroup)
@@ -121,8 +128,11 @@ describe("clientState helpers", () => {
     const charlieLeaf = getOwnLeafNode(charlieGroup)
 
     expect(identityOf(aliceLeaf)).toBe("alice")
+    expect(getOwnSignatureKeyPair(aliceGroup).publicKey).toStrictEqual(aliceLeaf.signaturePublicKey)
     expect(identityOf(bobLeaf)).toBe("bob")
+    expect(getOwnSignatureKeyPair(bobGroup).publicKey).toStrictEqual(bobLeaf.signaturePublicKey)
     expect(identityOf(charlieLeaf)).toBe("charlie")
+    expect(getOwnSignatureKeyPair(charlieGroup).publicKey).toStrictEqual(charlieLeaf.signaturePublicKey)
   })
 
   test("extractFromGroupMembers maps identities and supports exclusion", async () => {

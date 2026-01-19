@@ -567,6 +567,15 @@ export function getCiphersuiteFromName(name: CiphersuiteName): Ciphersuite;
 export function getCiphersuiteImpl(cs: Ciphersuite, provider?: CryptoProvider): Promise<CiphersuiteImpl>;
 
 // @public (undocumented)
+export function getGroupMembers(state: ClientState): LeafNode[];
+
+// @public (undocumented)
+export function getOwnLeafNode(state: ClientState): LeafNode;
+
+// @public (undocumented)
+export function getOwnSignatureKeyPair(state: ClientState): SignatureKeyPair;
+
+// @public (undocumented)
 export type GroupActiveState = {
     kind: "active";
 } | {
@@ -1537,6 +1546,14 @@ export interface Signature {
 
 // @public (undocumented)
 export type SignatureAlgorithm = "Ed25519" | "Ed448" | "P256" | "P384" | "P521" | "ML-DSA-87";
+
+// @public (undocumented)
+export interface SignatureKeyPair {
+    // (undocumented)
+    publicKey: Uint8Array;
+    // (undocumented)
+    signKey: Uint8Array;
+}
 
 // @public (undocumented)
 export type UnappliedProposals = Record<string, ProposalWithSender>;
