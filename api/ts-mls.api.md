@@ -400,7 +400,7 @@ export interface ExtensionExternalPub {
 // @public (undocumented)
 export interface ExtensionExternalSenders {
     // (undocumented)
-    extensionData: Uint8Array;
+    extensionData: ExternalSender;
     // (undocumented)
     extensionType: typeof defaultExtensionTypes.external_senders;
 }
@@ -416,7 +416,7 @@ export interface ExtensionRatchetTree {
 // @public (undocumented)
 export interface ExtensionRequiredCapabilities {
     // (undocumented)
-    extensionData: Uint8Array;
+    extensionData: RequiredCapabilities;
     // (undocumented)
     extensionType: typeof defaultExtensionTypes.required_capabilities;
 }
