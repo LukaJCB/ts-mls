@@ -32,7 +32,6 @@ import {
   updateLeafNode,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
-import { externalSenderDecoder } from "./externalSender.js"
 import {
   allSecretTreeValues,
   createSecretTree,
@@ -42,7 +41,6 @@ import {
 } from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
 import { treeHashRoot } from "./treeHash.js"
-import { requiredCapabilitiesDecoder } from "./requiredCapabilities.js"
 import {
   directPath,
   isLeaf,
@@ -125,7 +123,7 @@ import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { bigintMapEncoder, bigintMapDecoder, varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { groupActiveStateDecoder, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
 import { epochReceiverDataDecoder, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
-import { decode, Decoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import { MlsContext } from "./mlsContext.js"
 
@@ -413,9 +411,7 @@ async function validateProposals(
   )
 
   if (requiredCapabilities !== undefined) {
-    const caps = decode(requiredCapabilitiesDecoder, requiredCapabilities.extensionData)
-    if (caps === undefined) return new CodecError("Could not decode required_capabilities")
-
+    const caps = requiredCapabilities.extensionData
     const everyLeafSupportsCapabilities = tree
       .filter((n) => n !== undefined && n.nodeType === nodeTypes.leaf)
       .every((l) => capabiltiesAreSupported(caps, l.leaf.capabilities))
@@ -441,10 +437,10 @@ async function validateExternalSenders(
     (e): e is ExtensionExternalSenders => e.extensionType === defaultExtensionTypes.external_senders,
   )
   for (const externalSender of externalSenders) {
-    const decoded = decode(externalSenderDecoder, externalSender.extensionData)
-    if (decoded === undefined) return new CodecError("Could not decode external_sender extension")
-
-    const validCredential = await authService.validateCredential(decoded.credential, decoded.signaturePublicKey)
+    const validCredential = await authService.validateCredential(
+      externalSender.extensionData.credential,
+      externalSender.extensionData.signaturePublicKey,
+    )
     if (!validCredential) return new ValidationError("Could not validate external credential")
   }
 }
@@ -576,8 +572,7 @@ async function validateLeafNodeCommon(
   )
 
   if (requiredCapabilities !== undefined) {
-    const caps = decode(requiredCapabilitiesDecoder, requiredCapabilities.extensionData)
-    if (caps === undefined) return new CodecError("Could not decode required_capabilities")
+    const caps = requiredCapabilities.extensionData
 
     const leafSupportsCapabilities = capabiltiesAreSupported(caps, leafNode.capabilities)
 

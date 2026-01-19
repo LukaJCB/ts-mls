@@ -1,9 +1,15 @@
 import { uint16Decoder, uint16Encoder } from "./codec/number.js"
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
-import { contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
+import { decode, Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
+import { contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { defaultExtensionTypes, isDefaultExtensionTypeValue } from "./defaultExtensionType.js"
+import { ExternalSender, externalSenderDecoder, externalSenderEncoder } from "./externalSender.js"
 import { UsageError } from "./mlsError.js"
+import {
+  RequiredCapabilities,
+  requiredCapabilitiesDecoder,
+  requiredCapabilitiesEncoder,
+} from "./requiredCapabilities.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 declare const __custom_extension_brand: unique symbol
@@ -30,7 +36,7 @@ export interface ExtensionRatchetTree {
 /** @public */
 export interface ExtensionRequiredCapabilities {
   extensionType: typeof defaultExtensionTypes.required_capabilities
-  extensionData: Uint8Array
+  extensionData: RequiredCapabilities
 }
 
 /** @public */
@@ -42,7 +48,7 @@ export interface ExtensionExternalPub {
 /** @public */
 export interface ExtensionExternalSenders {
   extensionType: typeof defaultExtensionTypes.external_senders
-  extensionData: Uint8Array
+  extensionData: ExternalSender
 }
 
 /** @public */
@@ -54,13 +60,14 @@ export type GroupContextExtension = ExtensionRequiredCapabilities | ExtensionExt
 /** @public */
 export type LeafNodeExtension = ExtensionApplicationId | CustomExtension
 
-export type Extension =
+export type DefaultExtension =
   | ExtensionApplicationId
   | ExtensionRatchetTree
   | ExtensionRequiredCapabilities
   | ExtensionExternalPub
   | ExtensionExternalSenders
-  | CustomExtension
+
+export type Extension = DefaultExtension | CustomExtension
 
 /** @public */
 export function makeCustomExtension(extension: { extensionType: number; extensionData: Uint8Array }): CustomExtension {
@@ -70,10 +77,20 @@ export function makeCustomExtension(extension: { extensionType: number; extensio
   return extension as CustomExtension
 }
 
-export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders(
-  [uint16Encoder, varLenDataEncoder],
-  (e) => [e.extensionType, e.extensionData] as const,
-)
+export function isDefaultExtension(e: Extension): e is DefaultExtension {
+  return isDefaultExtensionTypeValue(e.extensionType)
+}
+
+export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders([uint16Encoder, varLenDataEncoder], (e) => {
+  if (isDefaultExtension(e)) {
+    if (e.extensionType === defaultExtensionTypes.required_capabilities) {
+      return [e.extensionType, encode(requiredCapabilitiesEncoder, e.extensionData)]
+    } else if (e.extensionType === defaultExtensionTypes.external_senders) {
+      return [e.extensionType, encode(externalSenderEncoder, e.extensionData)]
+    }
+    return [e.extensionType, e.extensionData] as const
+  } else return [e.extensionType, e.extensionData] as const
+})
 
 export const customExtensionDecoder: Decoder<CustomExtension> = mapDecoders(
   [uint16Decoder, varLenDataDecoder],
@@ -112,12 +129,14 @@ export const groupContextExtensionDecoder: Decoder<GroupContextExtension> = flat
   uint16Decoder,
   (extensionType): Decoder<GroupContextExtension> => {
     if (extensionType === defaultExtensionTypes.external_senders) {
-      return mapDecoder(varLenDataDecoder, (extensionData) => {
-        return { extensionType: defaultExtensionTypes.external_senders, extensionData: extensionData }
+      return mapDecoderOption(varLenDataDecoder, (extensionData) => {
+        const res = decode(externalSenderDecoder, extensionData)
+        if (res) return { extensionType: defaultExtensionTypes.external_senders, extensionData: res }
       })
     } else if (extensionType === defaultExtensionTypes.required_capabilities) {
-      return mapDecoder(varLenDataDecoder, (extensionData) => {
-        return { extensionType: defaultExtensionTypes.required_capabilities, extensionData }
+      return mapDecoderOption(varLenDataDecoder, (extensionData) => {
+        const res = decode(requiredCapabilitiesDecoder, extensionData)
+        if (res) return { extensionType: defaultExtensionTypes.required_capabilities, extensionData: res }
       })
     } else
       return mapDecoder(varLenDataDecoder, (extensionData) => ({ extensionType, extensionData }) as CustomExtension)
@@ -127,7 +146,22 @@ export const groupContextExtensionDecoder: Decoder<GroupContextExtension> = flat
 export function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boolean {
   if (a.extensionType !== b.extensionType) return false
 
-  return constantTimeEqual(a.extensionData, b.extensionData)
+  if (isDefaultExtension(a) && isDefaultExtension(b)) {
+    if (a.extensionType === defaultExtensionTypes.required_capabilities) {
+      return a.extensionData === b.extensionData
+    } else if (
+      a.extensionType === defaultExtensionTypes.external_senders &&
+      b.extensionType === defaultExtensionTypes.external_senders
+    ) {
+      return constantTimeEqual(
+        encode(externalSenderEncoder, a.extensionData),
+        encode(externalSenderEncoder, b.extensionData),
+      )
+    }
+  }
+
+  //TypeScript isn't smart enough to figure out the extensionTypes are the same
+  return constantTimeEqual(a.extensionData as Uint8Array, b.extensionData as Uint8Array)
 }
 
 export function extensionsEqual(a: GroupContextExtension[], b: GroupContextExtension[]): boolean {

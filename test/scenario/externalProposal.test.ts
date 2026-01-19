@@ -10,13 +10,12 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 
-import { ExternalSender, externalSenderEncoder } from "../../src/externalSender.js"
+import { ExternalSender } from "../../src/externalSender.js"
 import { GroupContextExtension } from "../../src/extension.js"
 import { proposeExternal } from "../../src/externalProposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
-import { encode } from "../../src/codec/tlsEncoder.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
@@ -62,7 +61,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   const extension: GroupContextExtension = {
     extensionType: defaultExtensionTypes.external_senders,
-    extensionData: encode(externalSenderEncoder, externalSender),
+    extensionData: externalSender,
   }
 
   let aliceGroup = await createGroup({
