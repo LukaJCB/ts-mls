@@ -199,7 +199,10 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     ...bobGroup,
     groupActiveState: {
       kind: "suspendedPendingReinit",
-      reinit: { ...reinit!, extensions: [makeCustomExtension(17, new Uint8Array([1]))] },
+      reinit: {
+        ...reinit!,
+        extensions: [makeCustomExtension({ extensionType: 17, extensionData: new Uint8Array([1]) })],
+      },
     },
   }
 

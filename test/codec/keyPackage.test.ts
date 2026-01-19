@@ -51,7 +51,7 @@ const nontrivialKeyPackage: KeyPackage = {
     extensions: [{ extensionType: defaultExtensionTypes.application_id, extensionData: new Uint8Array([10, 11]) }],
     signature: new Uint8Array([12, 13]),
   },
-  extensions: [makeCustomExtension(100, new Uint8Array([14, 15]))],
+  extensions: [makeCustomExtension({ extensionType: 100, extensionData: new Uint8Array([14, 15]) })],
   signature: new Uint8Array([16, 17]),
 }
 

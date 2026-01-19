@@ -62,7 +62,7 @@ describe("KeyPackageTBS roundtrip", () => {
         ],
         signature: new Uint8Array([39, 40, 41, 42, 43]),
       },
-      extensions: [makeCustomExtension(932, new Uint8Array([44, 45, 46]))],
+      extensions: [makeCustomExtension({ extensionType: 932, extensionData: new Uint8Array([44, 45, 46]) })],
     }
     roundtrip(tbs)
   })

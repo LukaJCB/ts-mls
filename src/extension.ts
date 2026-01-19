@@ -63,11 +63,11 @@ export type Extension =
   | CustomExtension
 
 /** @public */
-export function makeCustomExtension(extensionType: number, extensionData: Uint8Array): CustomExtension {
-  if (isDefaultExtensionTypeValue(extensionType)) {
+export function makeCustomExtension(extension: { extensionType: number; extensionData: Uint8Array }): CustomExtension {
+  if (isDefaultExtensionTypeValue(extension.extensionType)) {
     throw new UsageError("Cannot create custom exception with default extension type")
   }
-  return { extensionType, extensionData } as CustomExtension
+  return extension as CustomExtension
 }
 
 export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders(

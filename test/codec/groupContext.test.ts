@@ -21,7 +21,7 @@ const nontrivialGroupContext: GroupContext = {
   epoch: 42n,
   treeHash: new Uint8Array([4, 5]),
   confirmedTranscriptHash: new Uint8Array([6, 7]),
-  extensions: [makeCustomExtension(91, new Uint8Array([0x11]))],
+  extensions: [makeCustomExtension({ extensionType: 91, extensionData: new Uint8Array([0x11]) })],
 }
 
 describe("GroupContext roundtrip", () => {

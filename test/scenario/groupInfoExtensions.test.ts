@@ -48,7 +48,10 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const extensionData = new TextEncoder().encode("custom extension data")
 
-  const customExtension: CustomExtension = makeCustomExtension(customExtensionType, extensionData)
+  const customExtension: CustomExtension = makeCustomExtension({
+    extensionType: customExtensionType,
+    extensionData,
+  })
 
   const gi = await createGroupInfoWithExternalPub(aliceGroup, [customExtension], impl)
 
