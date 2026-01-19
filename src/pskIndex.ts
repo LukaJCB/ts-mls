@@ -2,12 +2,10 @@ import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { ValidationError } from "./mlsError.js"
 import { PskId, updatePskSecret } from "./presharedkey.js"
 
-/** @public */
 export interface PskIndex {
   findPsk(preSharedKeyId: PskId): Uint8Array | undefined
 }
 
-/** @public */
 export const emptyPskIndex: PskIndex = {
   findPsk(_preSharedKeyId) {
     return undefined
