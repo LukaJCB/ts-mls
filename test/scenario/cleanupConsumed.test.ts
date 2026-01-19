@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
 import { processMessage } from "../../src/processMessages.js"
@@ -109,7 +109,6 @@ async function cleanup(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(bobGroup, {}),
       },
       state: bobGroup,
       message,

@@ -1,6 +1,5 @@
-import { ClientState, createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { ClientState, createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -95,7 +94,6 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: aliceGroup,
     message: bobCommitResult.commit,
@@ -133,7 +131,6 @@ async function reinitValidation(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     message: reinitCommitResult.commit,

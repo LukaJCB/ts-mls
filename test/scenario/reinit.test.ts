@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { joinGroupFromReinit, reinitCreateNewGroup, reinitGroup } from "../../src/resumption.js"
@@ -99,7 +99,6 @@ async function reinit(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     privateMessage: reinitCommitResult.commit.privateMessage,

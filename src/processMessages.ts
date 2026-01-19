@@ -25,7 +25,7 @@ import { CryptoVerificationError, InternalError, ValidationError } from "./mlsEr
 import { pathToRoot } from "./pathSecrets.js"
 import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
 import { PrivateMessage } from "./privateMessage.js"
-import { emptyPskIndex, PskIndex } from "./pskIndex.js"
+import { PskIndex } from "./pskIndex.js"
 import { PublicMessage } from "./publicMessage.js"
 import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree.js"
 import { createSecretTree } from "./secretTree.js"
@@ -74,7 +74,7 @@ export async function processPrivateMessage(params: {
   const context = params.context
   const state = params.state
   const cipherSuite = context.cipherSuite
-  const pskSearch = context.pskIndex ?? makePskIndex(state, {})
+  const pskSearch = makePskIndex(state, context.externalPsks ?? {})
   const auth = context.authService
   const cb = params.callback ?? acceptAll
   const clientConfig = context.clientConfig ?? defaultClientConfig
@@ -200,7 +200,7 @@ export async function processPublicMessage(params: {
   const context = params.context
   const state = params.state
   const cipherSuite = context.cipherSuite
-  const pskSearch = context.pskIndex ?? makePskIndex(state, {})
+  const pskSearch = makePskIndex(state, context.externalPsks ?? {})
   const auth = context.authService
   const clientConfig = context.clientConfig ?? defaultClientConfig
 
@@ -478,7 +478,7 @@ export async function processMessage(params: {
   const state = params.state
   const authService = context.authService
   const cs = context.cipherSuite
-  const pskIndex = context.pskIndex ?? emptyPskIndex
+  const externalPsks = context.externalPsks ?? {}
   const clientConfig = context.clientConfig ?? defaultClientConfig
 
   const message = params.message
@@ -486,7 +486,7 @@ export async function processMessage(params: {
 
   if (message.wireformat === wireformats.mls_public_message) {
     const result = await processPublicMessage({
-      context: { cipherSuite: cs, authService, pskIndex, clientConfig },
+      context: { cipherSuite: cs, authService, externalPsks, clientConfig },
       state,
       publicMessage: message.publicMessage,
       callback: action,
@@ -495,7 +495,7 @@ export async function processMessage(params: {
     return { ...result, kind: "newState" }
   } else
     return processPrivateMessage({
-      context: { cipherSuite: cs, authService, pskIndex: emptyPskIndex, clientConfig },
+      context: { cipherSuite: cs, authService, externalPsks: {}, clientConfig },
       state,
       privateMessage: message.privateMessage,
       callback: action,

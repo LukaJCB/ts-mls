@@ -354,9 +354,6 @@ export const defaultProposalTypes: {
 };
 
 // @public (undocumented)
-export const emptyPskIndex: PskIndex;
-
-// @public (undocumented)
 export function encode<T>(enc: Encoder<T>, t: T): Uint8Array;
 
 // @public (undocumented)
@@ -979,9 +976,6 @@ export interface LifetimeConfig {
 export function makeCustomExtension(extensionType: number, extensionData: Uint8Array): CustomExtension;
 
 // @public (undocumented)
-export function makePskIndex(state: ClientState | undefined, externalPsks: Record<string, Uint8Array>): PskIndex;
-
-// @public (undocumented)
 export interface MlsContext {
     // (undocumented)
     authService: AuthenticationService;
@@ -990,7 +984,7 @@ export interface MlsContext {
     // (undocumented)
     clientConfig?: ClientConfig;
     // (undocumented)
-    pskIndex?: PskIndex;
+    externalPsks?: Record<string, Uint8Array>;
 }
 
 // @public (undocumented)
@@ -1318,12 +1312,6 @@ export interface PSK {
 
 // @public (undocumented)
 export type PskId = PskInfo & PskNonce;
-
-// @public (undocumented)
-export interface PskIndex {
-    // (undocumented)
-    findPsk(preSharedKeyId: PskId): Uint8Array | undefined;
-}
 
 // @public (undocumented)
 export type PskInfo = PskInfoExternal | PskInfoResumption;

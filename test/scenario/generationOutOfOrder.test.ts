@@ -1,8 +1,7 @@
-import { ClientState, createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { ClientState, createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
 import { processMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteImpl, CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -150,7 +149,6 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
       clientConfig,
     },
     state: bobGroup,
@@ -163,7 +161,6 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
       clientConfig,
     },
     state: bobGroup,
@@ -176,7 +173,6 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
       clientConfig,
     },
     state: bobGroup,
@@ -218,7 +214,6 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(bobGroup, {}),
         clientConfig,
       },
       state: bobGroup,
@@ -260,7 +255,6 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
       clientConfig,
     },
     state: bobGroup,
@@ -274,7 +268,6 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: emptyPskIndex,
         clientConfig,
       },
       state: bobGroup,

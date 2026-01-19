@@ -31,13 +31,13 @@ import {
   Proposal,
   joinGroup,
   processPrivateMessage,
-  makePskIndex,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -47,7 +47,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -65,7 +65,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
 })
@@ -74,7 +74,7 @@ addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
@@ -87,7 +87,7 @@ const removeBobProposal: Proposal = {
   remove: { removed: 1 }, // Bob's leaf index
 }
 const removeBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [removeBobProposal],
 })
@@ -98,11 +98,7 @@ if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
 
 // Bob processes the removal and is removed from the group (epoch 2)
 const bobProcessRemoveResult = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(bobGroup, {}),
-  },
+  context,
   state: bobGroup,
   privateMessage: removeBobCommitResult.commit.privateMessage,
 })

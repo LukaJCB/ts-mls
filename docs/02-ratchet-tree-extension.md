@@ -26,7 +26,6 @@ import {
   getCiphersuiteImpl,
   getCiphersuiteFromName,
   joinGroup,
-  makePskIndex,
   processPrivateMessage,
   createCommit,
   Proposal,
@@ -36,6 +35,7 @@ import {
 
 // Setup ciphersuite and credentials
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -45,7 +45,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -64,7 +64,7 @@ const addBobProposal: Proposal = {
 
 // Alice adds Bob with the ratchetTreeExtension = true
 const commitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
   ratchetTreeExtension: true,
@@ -74,7 +74,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins using the welcome message and does not need to provide a ratchetTree
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: commitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,

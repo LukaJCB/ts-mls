@@ -1,5 +1,5 @@
-import { ClientState, makePskIndex, createGroup, joinGroup } from "./clientState.js"
-import { CreateCommitResult, createCommit } from "./createCommit.js"
+import { ClientState, createGroup, joinGroup } from "./clientState.js"
+import { CreateCommitResult, createCommit, createCommitInternal } from "./createCommit.js"
 import {
   ciphersuites,
   CiphersuiteName,
@@ -44,11 +44,7 @@ export async function reinitGroup(params: {
   }
 
   return createCommit({
-    context: {
-      pskIndex: makePskIndex(state, {}),
-      cipherSuite: cs,
-      authService,
-    },
+    context: { ...context, cipherSuite: cs, authService },
     state,
     extraProposals: [reinitProposal],
   })
@@ -101,13 +97,10 @@ export async function reinitCreateNewGroup(params: {
     },
   }
 
-  return createCommit({
-    context: {
-      pskIndex: makePskIndex(state, {}),
-      cipherSuite: cs,
-      authService,
-    },
+  return createCommitInternal({
+    context: { ...context, cipherSuite: cs, authService },
     state: newGroup,
+    resumingFromState: state,
     extraProposals: [...addProposals, resumptionPsk],
   })
 }
@@ -146,8 +139,6 @@ export async function branchGroup(params: {
   const authService = context.authService
   const resumptionPsk = makeResumptionPsk(state, resumptionPSKUsages.branch, cs)
 
-  const pskSearch = makePskIndex(state, {})
-
   const newGroup = await createGroup({
     context: { cipherSuite: cs, authService },
     groupId: newGroupId,
@@ -170,13 +161,10 @@ export async function branchGroup(params: {
     },
   }
 
-  return createCommit({
-    context: {
-      pskIndex: pskSearch,
-      cipherSuite: cs,
-      authService,
-    },
+  return createCommitInternal({
+    context: { ...context, cipherSuite: cs, authService },
     state: newGroup,
+    resumingFromState: state,
     extraProposals: [...addMemberProposals, branchPskProposal],
   })
 }
@@ -192,10 +180,9 @@ export async function joinGroupFromBranch(params: {
 }): Promise<ClientState> {
   const context = params.context
   const oldState = params.oldState
-  const pskSearch = makePskIndex(oldState, {})
 
   return await joinGroup({
-    context: { ...context, pskIndex: pskSearch },
+    context,
     welcome: params.welcome,
     keyPackage: params.keyPackage,
     privateKeys: params.privateKeyPackage,
@@ -216,7 +203,6 @@ export async function joinGroupFromReinit(params: {
 }): Promise<ClientState> {
   const context = params.context
   const suspendedState = params.suspendedState
-  const pskSearch = makePskIndex(suspendedState, {})
   if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
     throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
@@ -226,7 +212,7 @@ export async function joinGroupFromReinit(params: {
   )
 
   return await joinGroup({
-    context: { ...context, cipherSuite: cs, pskIndex: pskSearch },
+    context: { ...context, cipherSuite: cs },
     welcome: params.welcome,
     keyPackage: params.keyPackage,
     privateKeys: params.privateKeyPackage,

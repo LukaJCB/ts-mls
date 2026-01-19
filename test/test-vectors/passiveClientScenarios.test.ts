@@ -9,7 +9,7 @@ import { hpkeKeysMatch, signatureKeysMatch } from "../crypto/keyMatch.js"
 import { mlsMessageDecoder } from "../../src/message.js"
 import { ratchetTreeDecoder } from "../../src/ratchetTree.js"
 
-import { joinGroup, makePskIndex } from "../../src/clientState.js"
+import { joinGroup } from "../../src/clientState.js"
 import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
 import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -68,7 +68,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(undefined, psks),
+      externalPsks: psks,
     },
     welcome: welcome[0].welcome,
     keyPackage: kp[0].keyPackage,
@@ -93,7 +93,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
           context: {
             cipherSuite: impl,
             authService: unsafeTestingAuthenticationService,
-            pskIndex: makePskIndex(state, psks),
+            externalPsks: psks,
           },
           state,
           privateMessage: mlsProposal[0].privateMessage,
@@ -105,7 +105,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
           context: {
             cipherSuite: impl,
             authService: unsafeTestingAuthenticationService,
-            pskIndex: makePskIndex(state, psks),
+            externalPsks: psks,
           },
           state,
           publicMessage: mlsProposal[0].publicMessage,
@@ -128,7 +128,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
-          pskIndex: makePskIndex(state, psks),
+          externalPsks: psks,
         },
         state,
         privateMessage: mlsCommit[0].privateMessage,
@@ -140,7 +140,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
-          pskIndex: makePskIndex(state, psks),
+          externalPsks: psks,
         },
         state,
         publicMessage: mlsCommit[0].publicMessage,

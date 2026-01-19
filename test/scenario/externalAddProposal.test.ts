@@ -2,7 +2,6 @@ import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -100,7 +99,6 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: aliceGroup,
     publicMessage: addCharlieProposal.publicMessage,
@@ -112,7 +110,6 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: bobGroup,
     publicMessage: addCharlieProposal.publicMessage,
@@ -137,7 +134,6 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
     },
     state: bobGroup,
     privateMessage: addCharlieCommitResult.commit.privateMessage,

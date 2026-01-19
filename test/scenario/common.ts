@@ -1,4 +1,4 @@
-import { ClientState, makePskIndex } from "../../src/clientState.js"
+import { ClientState } from "../../src/clientState.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
 import { processMessage } from "../../src/processMessages.js"
 import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
@@ -30,7 +30,6 @@ export async function testEveryoneCanMessageEveryone(
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
-          pskIndex: makePskIndex(receiverGroup, {}),
         },
         state: receiverGroup,
         message,

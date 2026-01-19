@@ -86,10 +86,12 @@ export interface CreateCommitParams extends CreateCommitOptions {
   state: ClientState
 }
 
-/** @public */
-export async function createCommit(params: CreateCommitParams): Promise<CreateCommitResult> {
-  const { context, state, ...options } = params
-  const { pskIndex = makePskIndex(state, {}), cipherSuite } = context
+export async function createCommitInternal(
+  params: CreateCommitParams & { resumingFromState?: ClientState },
+): Promise<CreateCommitResult> {
+  const { context, state, resumingFromState: pskState, ...options } = params
+  const { cipherSuite } = context
+  const pskIndex = makePskIndex(pskState, context.externalPsks ?? {})
   const clientConfig = context.clientConfig ?? defaultClientConfig
   const {
     wireAsPublicMessage = false,
@@ -247,6 +249,11 @@ export async function createCommit(params: CreateCommitParams): Promise<CreateCo
     : undefined
 
   return { newState, welcome: mlsWelcome, commit, consumed }
+}
+
+/** @public */
+export async function createCommit(params: CreateCommitParams): Promise<CreateCommitResult> {
+  return createCommitInternal(params)
 }
 
 function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): ProposalOrRef[] {

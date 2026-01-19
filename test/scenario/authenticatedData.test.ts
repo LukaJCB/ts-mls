@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage, createProposal } from "../../src/createMessage.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -108,7 +108,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(bobGroup, {}),
       },
       state: bobGroup,
       privateMessage: tamperedApp,
@@ -119,7 +118,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     message: aliceAppResult.message,
@@ -156,7 +154,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(aliceGroup, {}),
       },
       state: aliceGroup,
       privateMessage: tamperedProposal,
@@ -170,7 +167,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(aliceGroup, {}),
     },
     state: aliceGroup,
     message: bobProposalResult.message,
@@ -209,7 +205,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(bobGroup, {}),
       },
       state: bobGroup,
       privateMessage: tamperedCommit,
@@ -223,7 +218,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     privateMessage: aliceCommitResult.commit.privateMessage,
@@ -269,7 +263,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(aliceGroup, {}),
       },
       state: aliceGroup,
       publicMessage: tamperedPublicProposal,
@@ -280,7 +273,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(aliceGroup, {}),
     },
     state: aliceGroup,
     publicMessage: bobProposalPublicResult.message.publicMessage,
@@ -323,7 +315,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(bobGroup, {}),
       },
       state: bobGroup,
       publicMessage: tamperedPublicCommit,
@@ -334,7 +325,6 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     publicMessage: alicePublicCommitResult.commit.publicMessage,

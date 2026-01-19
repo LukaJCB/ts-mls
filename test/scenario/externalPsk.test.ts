@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
@@ -117,9 +117,9 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   const pskCommitResult = await createCommit({
     context: {
-      pskIndex: makePskIndex(aliceGroup, sharedPsks),
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
+      externalPsks: sharedPsks,
     },
     state: aliceGroup,
     extraProposals: [pskProposal1, pskProposal2],
@@ -133,7 +133,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, sharedPsks),
+      externalPsks: sharedPsks,
     },
     state: bobGroup,
     privateMessage: pskCommitResult.commit.privateMessage,

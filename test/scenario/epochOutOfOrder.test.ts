@@ -1,8 +1,7 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage, createProposal } from "../../src/createMessage.js"
 import { processMessage, processPrivateMessage } from "../../src/processMessages.js"
-import { emptyPskIndex } from "../../src/pskIndex.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
@@ -167,7 +166,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
       clientConfig,
     },
     state: aliceGroup,
@@ -202,7 +200,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
       clientConfig,
     },
     state: aliceGroup,
@@ -237,7 +234,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: emptyPskIndex,
       clientConfig,
     },
     state: aliceGroup,
@@ -250,7 +246,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
       clientConfig,
     },
     state: bobGroup,
@@ -263,7 +258,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
       clientConfig,
     },
     state: bobGroup,
@@ -276,7 +270,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
       clientConfig,
     },
     state: bobGroup,
@@ -294,7 +287,6 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: emptyPskIndex,
         clientConfig,
       },
       state: bobGroup,
@@ -347,7 +339,6 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: emptyPskIndex,
         clientConfig,
       },
       state: aliceGroup,
@@ -364,7 +355,6 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: makePskIndex(bobGroup, {}),
         clientConfig,
       },
       state: bobGroup,
@@ -419,7 +409,6 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: emptyPskIndex,
         clientConfig,
       },
       state: aliceGroup,
@@ -435,7 +424,6 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
-        pskIndex: emptyPskIndex,
         clientConfig,
       },
       state: bobGroup,

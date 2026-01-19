@@ -30,7 +30,6 @@ import {
   defaultCredentialTypes,
   createGroup,
   joinGroup,
-  makePskIndex,
   processPrivateMessage,
   defaultProposalTypes,
   getCiphersuiteImpl,
@@ -44,6 +43,7 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -53,7 +53,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -71,7 +71,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const addBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
 })
@@ -80,7 +80,7 @@ addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
@@ -89,10 +89,7 @@ let bobGroup = await joinGroup({
 
 // Alice updates her key with an empty commit, transitioning to epoch 2
 const emptyCommitResult = await createCommit({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-  },
+  context,
   state: aliceGroup,
 })
 if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
@@ -101,11 +98,7 @@ emptyCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob processes Alice's update and transitions to epoch 2
 const bobProcessCommitResult = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(bobGroup, {}),
-  },
+  context,
   state: bobGroup,
   privateMessage: emptyCommitResult.commit.privateMessage,
 })
@@ -114,10 +107,7 @@ bobProcessCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob updates his key with an empty commit, transitioning to epoch 3
 const emptyCommitResult3 = await createCommit({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-  },
+  context,
   state: aliceGroup,
 })
 if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
@@ -127,11 +117,7 @@ emptyCommitResult3.consumed.forEach(zeroOutUint8Array)
 
 // Alice processes Bob's update and transitions to epoch 3
 const aliceProcessCommitResult3 = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(aliceGroup, {}),
-  },
+  context,
   state: aliceGroup,
   privateMessage: emptyCommitResult3.commit.privateMessage,
 })
@@ -149,7 +135,7 @@ const updateAliceProposal: Proposal = {
 
 // Bob commits to Alice's proposal and transitions to epoch 4
 const updateBobCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: bobGroup,
   extraProposals: [updateAliceProposal],
 })
@@ -160,11 +146,7 @@ updateBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Alice processes Bob's commit and transitions to epoch 4
 const aliceProcessCommitResult4 = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(aliceGroup, {}),
-  },
+  context,
   state: aliceGroup,
   privateMessage: updateBobCommitResult.commit.privateMessage,
 })

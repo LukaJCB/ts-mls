@@ -45,7 +45,7 @@ export interface PSK {
 }
 
 export const pskEncoder: Encoder<PSK> = contramapBufferEncoder(pskIdEncoder, (p) => p.preSharedKeyId)
-export const pSKDecoder: Decoder<PSK> = mapDecoder(pskIdDecoder, (preSharedKeyId) => ({ preSharedKeyId }))
+export const pskDecoder: Decoder<PSK> = mapDecoder(pskIdDecoder, (preSharedKeyId) => ({ preSharedKeyId }))
 
 /** @public */
 export interface Reinit {
@@ -229,7 +229,7 @@ export const proposalRemoveDecoder: Decoder<ProposalRemove> = mapDecoder(removeD
   remove,
 }))
 
-export const proposalPSKDecoder: Decoder<ProposalPSK> = mapDecoder(pSKDecoder, (psk) => ({
+export const proposalPSKDecoder: Decoder<ProposalPSK> = mapDecoder(pskDecoder, (psk) => ({
   proposalType: defaultProposalTypes.psk,
   psk,
 }))

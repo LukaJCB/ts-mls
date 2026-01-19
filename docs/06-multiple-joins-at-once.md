@@ -28,13 +28,13 @@ import {
   Proposal,
   joinGroup,
   processPrivateMessage,
-  makePskIndex,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -44,7 +44,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group, this is epoch 0
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -72,7 +72,7 @@ const addCharlieProposal: Proposal = {
   add: { keyPackage: charlie.publicPackage },
 }
 const addCommitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal, addCharlieProposal],
 })
@@ -82,14 +82,14 @@ if (addCommitResult.commit.wireformat !== wireformats.mls_private_message) throw
 
 // Bob and Charlie join the group, both are now in epoch 1
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,
 })
 let charlieGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: addCommitResult.welcome!.welcome,
   keyPackage: charlie.publicPackage,
   privateKeys: charlie.privatePackage,

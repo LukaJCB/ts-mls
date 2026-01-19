@@ -85,7 +85,7 @@ import {
   unappliedProposalsEncoder,
   unappliedProposalsDecoder,
 } from "./unappliedProposals.js"
-import { accumulatePskSecret, emptyPskIndex, PskIndex } from "./pskIndex.js"
+import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
 import { getSenderLeafNodeIndex } from "./sender.js"
 import { addToMap } from "./util/addToMap.js"
 import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
@@ -945,7 +945,7 @@ export async function joinGroupWithExtensions(params: {
   const keyPackage = params.keyPackage
   const privateKeys = params.privateKeys
 
-  const pskSearch = context.pskIndex ?? emptyPskIndex
+  const pskSearch = makePskIndex(params.resumingFromState, context.externalPsks ?? {})
   const authService = context.authService
   const cs = context.cipherSuite
   const clientConfig = context.clientConfig ?? defaultClientConfig

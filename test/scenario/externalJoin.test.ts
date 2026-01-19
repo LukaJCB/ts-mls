@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPubAndRatchetTree, joinGroupExternal } from "../../src/createCommit.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPublicMessage } from "../../src/processMessages.js"
@@ -107,7 +107,6 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(aliceGroup, {}),
     },
     state: aliceGroup,
     publicMessage: charlieJoinGroupCommitResult.publicMessage,
@@ -119,7 +118,6 @@ async function externalJoin(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     publicMessage: charlieJoinGroupCommitResult.publicMessage,

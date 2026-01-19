@@ -30,7 +30,6 @@ import {
   defaultProposalTypes,
   joinGroup,
   joinGroupFromReinit,
-  makePskIndex,
   processPrivateMessage,
   reinitCreateNewGroup,
   reinitGroup,
@@ -44,6 +43,7 @@ import {
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
   identity: new TextEncoder().encode("alice"),
@@ -53,7 +53,7 @@ const groupId = new TextEncoder().encode("group1")
 
 // Alice creates the group (epoch 0)
 let aliceGroup = await createGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   groupId,
   keyPackage: alice.publicPackage,
   privateKeyPackage: alice.privatePackage,
@@ -71,7 +71,7 @@ const addBobProposal: Proposal = {
   add: { keyPackage: bob.publicPackage },
 }
 const commitResult = await createCommit({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   extraProposals: [addBobProposal],
 })
@@ -80,7 +80,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group (epoch 1)
 let bobGroup = await joinGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   welcome: commitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
@@ -91,7 +91,7 @@ let bobGroup = await joinGroup({
 const newCiphersuite = "MLS_256_XWING_AES256GCM_SHA512_Ed25519" // or another supported ciphersuite
 const newGroupId = new TextEncoder().encode("new-group1")
 const reinitCommitResult = await reinitGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   groupId: newGroupId,
   version: "mls10",
@@ -105,11 +105,7 @@ if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
 
 // Bob processes the reinit commit and prepares to join the new group
 const processReinitResult = await processPrivateMessage({
-  context: {
-    cipherSuite: impl,
-    authService: unsafeTestingAuthenticationService,
-    pskIndex: makePskIndex(bobGroup, {}),
-  },
+  context,
   state: bobGroup,
   privateMessage: reinitCommitResult.commit.privateMessage,
 })
@@ -118,12 +114,13 @@ processReinitResult.consumed.forEach(zeroOutUint8Array)
 
 // Alice and Bob generate new key packages for the new group
 const newImpl = await getCiphersuiteImpl(getCiphersuiteFromName(newCiphersuite))
+const newContext = { cipherSuite: newImpl, authService: unsafeTestingAuthenticationService }
 const bobNewKeyPackage = await generateKeyPackage({ credential: bobCredential, cipherSuite: newImpl })
 const aliceNewKeyPackage = await generateKeyPackage({ credential: aliceCredential, cipherSuite: newImpl })
 
 // Alice creates the new group using the new parameters
 const resumeGroupResult = await reinitCreateNewGroup({
-  context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  context,
   state: aliceGroup,
   keyPackage: aliceNewKeyPackage.publicPackage,
   privateKeyPackage: aliceNewKeyPackage.privatePackage,
@@ -136,7 +133,7 @@ resumeGroupResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the reinitialized group using the Welcome message
 bobGroup = await joinGroupFromReinit({
-  context: { cipherSuite: newImpl, authService: unsafeTestingAuthenticationService },
+  context: newContext,
   suspendedState: bobGroup,
   welcome: resumeGroupResult.welcome!.welcome,
   keyPackage: bobNewKeyPackage.publicPackage,

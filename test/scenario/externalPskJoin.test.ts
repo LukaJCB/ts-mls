@@ -1,4 +1,4 @@
-import { createGroup, joinGroup, makePskIndex } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -77,9 +77,9 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
 
   const commitResult = await createCommit({
     context: {
-      pskIndex: makePskIndex(aliceGroup, sharedPsks),
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
+      externalPsks: sharedPsks,
     },
     state: aliceGroup,
     extraProposals: [addBobProposal, pskProposal],
@@ -91,7 +91,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(undefined, sharedPsks),
+      externalPsks: sharedPsks,
     },
     welcome: commitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,

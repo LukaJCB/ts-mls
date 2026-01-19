@@ -1,11 +1,4 @@
-import {
-  createGroup,
-  joinGroup,
-  makePskIndex,
-  getOwnLeafNode,
-  extractFromGroupMembers,
-  getGroupMembers,
-} from "../src/clientState.js"
+import { createGroup, joinGroup, getOwnLeafNode, extractFromGroupMembers, getGroupMembers } from "../src/clientState.js"
 import { generateKeyPackage } from "../src/keyPackage.js"
 import { ProposalAdd } from "../src/proposal.js"
 import { Credential, isDefaultCredential } from "../src/credential.js"
@@ -93,7 +86,6 @@ async function buildThreeMemberGroup() {
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
-      pskIndex: makePskIndex(bobGroup, {}),
     },
     state: bobGroup,
     privateMessage: addCharlieCommitResult.commit.privateMessage,

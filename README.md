@@ -82,7 +82,6 @@ import {
   Credential,
   defaultCapabilities,
   defaultLifetime,
-  emptyPskIndex,
   generateKeyPackage,
   MlsContext,
   encode,
