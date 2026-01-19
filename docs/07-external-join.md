@@ -37,6 +37,7 @@ import {
   createGroupInfoWithExternalPubAndRatchetTree,
   makePskIndex,
   unsafeTestingAuthenticationService,
+  zeroOutUint8Array,
 } from "ts-mls"
 
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
@@ -77,6 +78,7 @@ const addBobCommitResult = await createCommit({
   extraProposals: [addBobProposal],
 })
 aliceGroup = addBobCommitResult.newState
+addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
@@ -112,6 +114,7 @@ const aliceProcessCharlieJoinResult = await processPublicMessage({
 })
 
 aliceGroup = aliceProcessCharlieJoinResult.newState
+aliceProcessCharlieJoinResult.consumed.forEach(zeroOutUint8Array)
 
 const bobProcessCharlieJoinResult = await processPublicMessage({
   context: {
@@ -124,6 +127,7 @@ const bobProcessCharlieJoinResult = await processPublicMessage({
 })
 
 bobGroup = bobProcessCharlieJoinResult.newState
+bobProcessCharlieJoinResult.consumed.forEach(zeroOutUint8Array)
 ```
 
 ---
