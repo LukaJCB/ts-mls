@@ -139,46 +139,10 @@ describe("Proposal Validation", () => {
     },
   )
 
-  // test.concurrent.each(suites)("can't add groupContextExtensions with invalid requiredCapabilities %s", async (cs) => {
-  //   const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
-
-  //   const proposalInvalidRequiredCapabilities: Proposal = {
-  //     proposalType: defaultProposalTypes.group_context_extensions,
-  //     groupContextExtensions: {
-  //       extensions: [
-  //         { extensionType: defaultExtensionTypes.required_capabilities, extensionData: new Uint8Array([1, 2]) as },
-  //       ],
-  //     },
-  //   }
-
-  //   await expect(
-  //     createCommit(
-  //       { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  //       { extraProposals: [proposalInvalidRequiredCapabilities] },
-  //     ),
-  //   ).rejects.toThrow(CodecError)
-  // })
-
   test.concurrent.each(suites)(
     "can't add groupContextExtensions with external senders that can't be auth'd %s",
     async (cs) => {
       const { impl, aliceGroup } = await setupThreeMembers(cs as CiphersuiteName)
-
-      // const proposalInvalidExternalSenders: Proposal = {
-      //   proposalType: defaultProposalTypes.group_context_extensions,
-      //   groupContextExtensions: {
-      //     extensions: [
-      //       { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2]) },
-      //     ],
-      //   },
-      // }
-
-      // await expect(
-      //   createCommit(
-      //     { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-      //     { extraProposals: [proposalInvalidExternalSenders] },
-      //   ),
-      // ).rejects.toThrow(CodecError)
 
       const badCredential = {
         credentialType: defaultCredentialTypes.basic,
@@ -421,55 +385,7 @@ describe("Proposal Validation", () => {
         impl,
       ),
     ).rejects.toThrow(new ValidationError("Could not find external_sender extension in groupContext.extensions"))
-
-    // await expect(
-    //   proposeExternal(
-    //     {
-    //       ...groupInfo,
-    //       groupContext: {
-    //         ...groupInfo.groupContext,
-    //         extensions: [
-    //           { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2, 3]) },
-    //         ],
-    //       },
-    //     },
-    //     removeBobProposal,
-    //     charlie.publicPackage.leafNode.signaturePublicKey,
-    //     charlie.privatePackage.signaturePrivateKey,
-    //     impl,
-    //   ),
-    // ).rejects.toThrow(new ValidationError("Could not decode external_sender extension"))
   })
-
-  // test.concurrent.each(suites)(
-  //   "can't use proposeExternal on a group with malformed external_senders %s",
-  //   async (cs) => {
-  //     const { impl, aliceGroup, charlie } = await setupThreeMembers(cs as CiphersuiteName)
-
-  //     // external pub not really necessary here
-  //     const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
-
-  //     const removeBobProposal: ProposalRemove = { proposalType: defaultProposalTypes.remove, remove: { removed: 1 } }
-
-  //     await expect(
-  //       proposeExternal(
-  //         {
-  //           ...groupInfo,
-  //           groupContext: {
-  //             ...groupInfo.groupContext,
-  //             extensions: [
-  //               { extensionType: defaultExtensionTypes.external_senders, extensionData: new Uint8Array([1, 2, 3]) },
-  //             ],
-  //           },
-  //         },
-  //         removeBobProposal,
-  //         charlie.publicPackage.leafNode.signaturePublicKey,
-  //         charlie.privatePackage.signaturePrivateKey,
-  //         impl,
-  //       ),
-  //     ).rejects.toThrow(new ValidationError("Could not decode external_sender extension"))
-  //   },
-  // )
 })
 
 async function setupThreeMembers(cipherSuite: CiphersuiteName) {
