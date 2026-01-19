@@ -81,7 +81,7 @@ commitResult.consumed.forEach(zeroOutUint8Array)
 // Bob joins the group (epoch 1)
 let bobGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  welcome: commitResult.welcome!,
+  welcome: commitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,
@@ -138,7 +138,7 @@ resumeGroupResult.consumed.forEach(zeroOutUint8Array)
 bobGroup = await joinGroupFromReinit({
   context: { cipherSuite: newImpl, authService: unsafeTestingAuthenticationService },
   suspendedState: bobGroup,
-  welcome: resumeGroupResult.welcome!,
+  welcome: resumeGroupResult.welcome!.welcome,
   keyPackage: bobNewKeyPackage.publicPackage,
   privateKeyPackage: bobNewKeyPackage.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,

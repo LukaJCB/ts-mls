@@ -88,7 +88,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    welcome: addBobCommitResult.welcome!,
+    welcome: addBobCommitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,

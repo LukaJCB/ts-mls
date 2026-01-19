@@ -31,7 +31,7 @@ import {
 } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage.js"
 import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
-import { MlsFramedMessage } from "./message.js"
+import { MlsFramedMessage, MlsWelcomeMessage } from "./message.js"
 import { protect } from "./messageProtection.js"
 import { protectPublicMessage } from "./messageProtectionPublic.js"
 import { pathToPathSecrets } from "./pathSecrets.js"
@@ -66,7 +66,7 @@ import { MlsContext } from "./mlsContext.js"
 /** @public */
 export interface CreateCommitResult {
   newState: ClientState
-  welcome: Welcome | undefined
+  welcome: MlsWelcomeMessage | undefined
   commit: MlsFramedMessage
   consumed: Uint8Array[]
 }
@@ -242,7 +242,11 @@ export async function createCommit(params: CreateCommitParams): Promise<CreateCo
 
   const consumed = [...consumedSecrets, ...consumedEpochData, state.keySchedule.initSecret]
 
-  return { newState, welcome, commit, consumed }
+  const mlsWelcome: MlsWelcomeMessage | undefined = welcome
+    ? { welcome, wireformat: wireformats.mls_welcome, version: protocolVersions.mls10 }
+    : undefined
+
+  return { newState, welcome: mlsWelcome, commit, consumed }
 }
 
 function bundleAllProposals(state: ClientState, extraProposals: Proposal[]): ProposalOrRef[] {

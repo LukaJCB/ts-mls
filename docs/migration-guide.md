@@ -35,6 +35,8 @@ Additionally, several helpers now take `context: MlsContext` explicitly (rather 
 - `reinitGroup(...)`
 - `reinitCreateNewGroup(...)`
 
+`createCommit(...)` now returns `welcome` as a wrapped `MlsWelcomeMessage`. When calling `joinGroup*`, pass the inner `welcome` payload (e.g. `commitResult.welcome!.welcome`).
+
 Key package generation now uses a params object as well:
 
 - `generateKeyPackage(...)`
@@ -89,11 +91,20 @@ const state = await joinGroup(welcome, keyPackage, privateKeys, pskIndex, cipher
 
 After:
 
-```text
+````text
 const state = await joinGroup(
   { context: { cipherSuite, authService, pskIndex }, welcome, keyPackage, privateKeys, ratchetTree },
 )
-```
+
+If your welcome comes from a commit result:
+
+```text
+const state = await joinGroup(
+  { context: { cipherSuite, authService, pskIndex }, welcome: commitResult.welcome!.welcome, keyPackage, privateKeys, ratchetTree },
+)
+````
+
+````
 
 **`joinGroupWithExtensions` (return type change)**
 
@@ -108,7 +119,7 @@ const [state, groupInfoExtensions] = await joinGroupWithExtensions(
   cipherSuite,
   ratchetTree,
 )
-```
+````
 
 After:
 
@@ -373,6 +384,14 @@ These are intentionally “mechanical” edits you can apply with search/replace
 
 ### Common symbol renames (safe global replaces)
 
+- `MLSContext` → `MlsContext`
+- `MLSMessage` → `MlsMessage`
+- `PreSharedKeyID` → `PskId`
+- `PSKInfo` → `PskInfo`
+- `PSKInfoExternal` → `PskInfoExternal`
+- `PSKInfoResumption` → `PskInfoResumption`
+- `PSKNonce` → `PskNonce`
+- `welcome: <expr>.welcome!` → `welcome: <expr>.welcome!.welcome`
 - `defaultAuthenticationService` → `unsafeTestingAuthenticationService`
 - `credentialTypes.` → `defaultCredentialTypes.`
 - `encodeMlsMessage(` → `encode(mlsMessageEncoder, `

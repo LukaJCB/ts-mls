@@ -81,7 +81,7 @@ addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 // Bob joins the group, he is now also in epoch 1
 let bobGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  welcome: addBobCommitResult.welcome!,
+  welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,

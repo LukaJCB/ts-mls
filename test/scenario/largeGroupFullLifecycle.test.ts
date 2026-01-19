@@ -177,7 +177,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
 
   const newState = await joinGroup({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-    welcome: commitResult.welcome!,
+    welcome: commitResult.welcome!.welcome,
     keyPackage: newKP.publicPackage,
     privateKeys: newKP.privatePackage,
     ratchetTree: adder.state.ratchetTree,

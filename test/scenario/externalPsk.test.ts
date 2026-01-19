@@ -73,7 +73,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
-    welcome: commitResult.welcome!,
+    welcome: commitResult.welcome!.welcome,
     keyPackage: bob.publicPackage,
     privateKeys: bob.privatePackage,
     ratchetTree: aliceGroup.ratchetTree,

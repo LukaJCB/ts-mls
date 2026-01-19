@@ -96,6 +96,7 @@ export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Arra
   return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder, value), h)
 }
 
+//todo we should add encoders/decoders
 /** @public */
 export interface PrivateKeyPackage {
   initPrivateKey: Uint8Array

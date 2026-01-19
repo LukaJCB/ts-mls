@@ -191,7 +191,7 @@ export interface CreateCommitResult {
     // (undocumented)
     newState: ClientState;
     // (undocumented)
-    welcome: Welcome | undefined;
+    welcome: MlsWelcomeMessage | undefined;
 }
 
 // @public (undocumented)
@@ -1056,6 +1056,9 @@ export interface MlsWelcome {
     // (undocumented)
     wireformat: typeof wireformats.mls_welcome;
 }
+
+// @public (undocumented)
+export type MlsWelcomeMessage = MlsMessageProtocol & MlsWelcome;
 
 // @public (undocumented)
 export interface NewStateWithActionTaken {

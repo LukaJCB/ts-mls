@@ -73,7 +73,7 @@ aliceGroup = addBobCommitResult.newState
 addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 let bobGroup = await joinGroup({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-  welcome: addBobCommitResult.welcome!,
+  welcome: addBobCommitResult.welcome!.welcome,
   keyPackage: bob.publicPackage,
   privateKeys: bob.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,
@@ -100,7 +100,7 @@ branchCommitResult.consumed.forEach(zeroOutUint8Array)
 bobGroup = await joinGroupFromBranch({
   context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
   oldState: bobGroup,
-  welcome: branchCommitResult.welcome!,
+  welcome: branchCommitResult.welcome!.welcome,
   keyPackage: bobNewKeyPackage.publicPackage,
   privateKeyPackage: bobNewKeyPackage.privatePackage,
   ratchetTree: aliceGroup.ratchetTree,

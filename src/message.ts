@@ -46,7 +46,11 @@ export interface MlsPublicMessage {
 export type MlsFramedMessage = MlsMessageProtocol & (MlsPrivateMessage | MlsPublicMessage)
 
 /** @public */
+export type MlsWelcomeMessage = MlsMessageProtocol & MlsWelcome
+
+/** @public */
 export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
+
 /** @public */
 export type MlsMessage = MlsMessageProtocol & MlsMessageContent
 
