@@ -5,7 +5,7 @@ import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 import { varLenDataEncoder, varLenDataDecoder, varLenTypeEncoder, varLenTypeDecoder } from "./codec/variableLength.js"
 import { credentialEncoder, credentialDecoder, Credential } from "./credential.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { extensionEncoder, leafNodeExtensionDecoder, LeafNodeExtension } from "./extension.js"
+import { leafNodeExtensionDecoder, leafNodeExtensionEncoder, LeafNodeExtension } from "./leafNodeExtension.js"
 import { leafNodeSources, leafNodeSourceValueDecoder, leafNodeSourceValueEncoder } from "./leafNodeSource.js"
 import { Lifetime, lifetimeEncoder, lifetimeDecoder } from "./lifetime.js"
 
@@ -56,17 +56,17 @@ export interface LeafNodeInfoKeyPackage {
 }
 
 export const leafNodeInfoKeyPackageEncoder: Encoder<LeafNodeInfoKeyPackage> = contramapBufferEncoders(
-  [leafNodeSourceValueEncoder, lifetimeEncoder, varLenTypeEncoder(extensionEncoder)],
+  [leafNodeSourceValueEncoder, lifetimeEncoder, varLenTypeEncoder(leafNodeExtensionEncoder)],
   (info) => [leafNodeSources.key_package, info.lifetime, info.extensions] as const,
 )
 
 export const leafNodeInfoUpdateOmittedEncoder: Encoder<LeafNodeInfoUpdateOmitted> = contramapBufferEncoders(
-  [leafNodeSourceValueEncoder, varLenTypeEncoder(extensionEncoder)],
+  [leafNodeSourceValueEncoder, varLenTypeEncoder(leafNodeExtensionEncoder)],
   (i) => [i.leafNodeSource, i.extensions] as const,
 )
 
 export const leafNodeInfoCommitOmittedEncoder: Encoder<LeafNodeInfoCommitOmitted> = contramapBufferEncoders(
-  [leafNodeSourceValueEncoder, varLenDataEncoder, varLenTypeEncoder(extensionEncoder)],
+  [leafNodeSourceValueEncoder, varLenDataEncoder, varLenTypeEncoder(leafNodeExtensionEncoder)],
   (info) => [info.leafNodeSource, info.parentHash, info.extensions] as const,
 )
 

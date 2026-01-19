@@ -5,7 +5,14 @@ import { Encoder } from "./tlsEncoder.js"
 export function optionalEncoder<T>(encodeT: Encoder<T>): Encoder<T | undefined> {
   return (t) => {
     if (t) {
-      const [len, write] = encodeT(t)
+      const x = encodeT(t)
+      if (!x) {
+        console.log(t)
+        console.log(encodeT)
+        console.log("foo")
+        throw new Error("Failed to encode")
+      }
+      const [len, write] = x
       return [
         len + 1,
         (offset, buffer) => {
