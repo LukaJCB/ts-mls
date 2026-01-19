@@ -236,6 +236,7 @@ export const clientStateDecoder: Decoder<ClientState> = mapDecoders(
   }),
 )
 
+/** @public */
 export function getOwnLeafNode(state: ClientState): LeafNode {
   const idx = leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))
   const leaf = state.ratchetTree[idx]
@@ -243,6 +244,21 @@ export function getOwnLeafNode(state: ClientState): LeafNode {
   return leaf.leaf
 }
 
+/** @public */
+export interface SignatureKeyPair {
+  signKey: Uint8Array
+  publicKey: Uint8Array
+}
+
+/** @public */
+export function getOwnSignatureKeyPair(state: ClientState): SignatureKeyPair {
+  return {
+    signKey: state.signaturePrivateKey,
+    publicKey: getOwnLeafNode(state).signaturePublicKey,
+  }
+}
+
+/** @public */
 export function getGroupMembers(state: ClientState): LeafNode[] {
   return extractFromGroupMembers(
     state,
