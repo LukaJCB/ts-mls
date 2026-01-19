@@ -284,7 +284,10 @@ describe("Proposal Validation", () => {
       credentialType: defaultCredentialTypes.basic,
       identity: new TextEncoder().encode("george"),
     }
-    const georgeExtension: CustomExtension = makeCustomExtension(8545, new Uint8Array())
+    const georgeExtension: CustomExtension = makeCustomExtension({
+      extensionType: 8545,
+      extensionData: new Uint8Array(),
+    })
     const george = await generateKeyPackage({
       credential: georgeCredential,
 

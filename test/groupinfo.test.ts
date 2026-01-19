@@ -18,7 +18,7 @@ describe("GroupInfo signing and verification", () => {
     epoch: BigInt(42),
     treeHash: new Uint8Array([0xaa]),
     confirmedTranscriptHash: new Uint8Array([0xbb]),
-    extensions: [makeCustomExtension(91, new Uint8Array([0x11]))],
+    extensions: [makeCustomExtension({ extensionType: 91, extensionData: new Uint8Array([0x11]) })],
   }
 
   const baseTBS: GroupInfoTBS = {

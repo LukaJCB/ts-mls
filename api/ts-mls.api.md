@@ -973,7 +973,10 @@ export interface LifetimeConfig {
 }
 
 // @public (undocumented)
-export function makeCustomExtension(extensionType: number, extensionData: Uint8Array): CustomExtension;
+export function makeCustomExtension(extension: {
+    extensionType: number;
+    extensionData: Uint8Array;
+}): CustomExtension;
 
 // @public (undocumented)
 export interface MlsContext {

@@ -45,7 +45,10 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
 
   const extensionData = new TextEncoder().encode("custom extension data")
 
-  const customExtension: CustomExtension = makeCustomExtension(customExtensionType, extensionData)
+  const customExtension: CustomExtension = makeCustomExtension({
+    extensionType: customExtensionType,
+    extensionData,
+  })
 
   let aliceGroup = await createGroup({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },

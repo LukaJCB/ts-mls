@@ -315,7 +315,7 @@ Examples of signature changes:
 
 - If you weren’t using extensions: pass `[]` as before (but update the parameter type as needed).
 - If you were constructing custom extensions:
-  - Use `makeCustomExtension(extensionType, extensionData)` instead of casting a plain object.
+  - Use `makeCustomExtension({ extensionType, extensionData })` instead of a plain object.
   - Avoid using reserved/default extension types as `extensionType`.
 
 Example:
@@ -323,7 +323,7 @@ Example:
 ```text
 import { makeCustomExtension } from "ts-mls"
 
-const ext = makeCustomExtension(0xff00, new Uint8Array([1, 2, 3]))
+const ext = makeCustomExtension({ extensionType: 0xff00, extensionData: new Uint8Array([1, 2, 3]) })
 ```
 
 ## 4) Encoding/decoding API reshuffle (breaking)

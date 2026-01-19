@@ -17,14 +17,14 @@ async function keyPackageExtensionSeparationTest(cipherSuite: CiphersuiteName) {
     identity: new TextEncoder().encode("test-user"),
   }
 
-  const keyPackageExtension: CustomExtension = makeCustomExtension(
-    1000,
-    new TextEncoder().encode("keyPackage-specific-data"),
-  )
-  const leafNodeExtension: CustomExtension = makeCustomExtension(
-    2000,
-    new TextEncoder().encode("leafNode-specific-data"),
-  )
+  const keyPackageExtension: CustomExtension = makeCustomExtension({
+    extensionType: 1000,
+    extensionData: new TextEncoder().encode("keyPackage-specific-data"),
+  })
+  const leafNodeExtension: CustomExtension = makeCustomExtension({
+    extensionType: 2000,
+    extensionData: new TextEncoder().encode("leafNode-specific-data"),
+  })
 
   const result = await generateKeyPackage({
     credential,
