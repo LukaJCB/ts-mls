@@ -929,9 +929,8 @@ export async function joinGroup(params: {
   keyPackage: KeyPackage
   privateKeys: PrivateKeyPackage
   ratchetTree?: RatchetTree
-  resumingFromState?: ClientState
 }): Promise<ClientState> {
-  const res = await joinGroupWithExtensions(params)
+  const res = await joinGroupInternal(params)
 
   return res.state
 }
@@ -942,8 +941,7 @@ export interface JoinGroupResult {
   groupInfoExtensions: GroupInfoExtension[]
 }
 
-/** @public */
-export async function joinGroupWithExtensions(params: {
+export async function joinGroupInternal(params: {
   context: MlsContext
   welcome: Welcome
   keyPackage: KeyPackage
@@ -1105,6 +1103,17 @@ export async function joinGroupWithExtensions(params: {
     },
     groupInfoExtensions: gi.extensions,
   }
+}
+
+/** @public */
+export async function joinGroupWithExtensions(params: {
+  context: MlsContext
+  welcome: Welcome
+  keyPackage: KeyPackage
+  privateKeys: PrivateKeyPackage
+  ratchetTree?: RatchetTree
+}): Promise<JoinGroupResult> {
+  return joinGroupInternal(params)
 }
 
 /** @public */

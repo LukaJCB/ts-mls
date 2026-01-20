@@ -753,7 +753,6 @@ export function joinGroup(params: {
     keyPackage: KeyPackage;
     privateKeys: PrivateKeyPackage;
     ratchetTree?: RatchetTree;
-    resumingFromState?: ClientState;
 }): Promise<ClientState>;
 
 // @public (undocumented)
@@ -806,7 +805,6 @@ export function joinGroupWithExtensions(params: {
     keyPackage: KeyPackage;
     privateKeys: PrivateKeyPackage;
     ratchetTree?: RatchetTree;
-    resumingFromState?: ClientState;
 }): Promise<JoinGroupResult>;
 
 // @public (undocumented)

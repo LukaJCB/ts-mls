@@ -1,4 +1,4 @@
-import { ClientState, createGroup, joinGroup } from "./clientState.js"
+import { ClientState, createGroup, joinGroupInternal } from "./clientState.js"
 import { CreateCommitResult, createCommit, createCommitInternal } from "./createCommit.js"
 import {
   ciphersuites,
@@ -181,7 +181,7 @@ export async function joinGroupFromBranch(params: {
   const context = params.context
   const oldState = params.oldState
 
-  return await joinGroup({
+  const result = await joinGroupInternal({
     context,
     welcome: params.welcome,
     keyPackage: params.keyPackage,
@@ -189,6 +189,8 @@ export async function joinGroupFromBranch(params: {
     ratchetTree: params.ratchetTree,
     resumingFromState: oldState,
   })
+
+  return result.state
 }
 
 /** @public */
@@ -211,7 +213,7 @@ export async function joinGroupFromReinit(params: {
     params.provider ?? defaultCryptoProvider,
   )
 
-  return await joinGroup({
+  const result = await joinGroupInternal({
     context: { ...context, cipherSuite: cs },
     welcome: params.welcome,
     keyPackage: params.keyPackage,
@@ -219,4 +221,6 @@ export async function joinGroupFromReinit(params: {
     ratchetTree: params.ratchetTree,
     resumingFromState: suspendedState,
   })
+
+  return result.state
 }
