@@ -45,6 +45,25 @@ Key package generation now uses a params object as well:
 `capabilities`, `lifetime`, and `extensions` are optional in these helpers; if omitted they default to
 `defaultCapabilities()`, `defaultLifetime()`, and `[]`.
 
+### `defaultLifetime` is now a function (breaking for value imports)
+
+In v1, `defaultLifetime` was a constant `Lifetime` value. In v2, it is a function that returns a fresh
+`Lifetime` value. If your code referenced the value directly, call it instead (though if you are using the defaultLifetime you can just omit it when calling the above `generateKeyPackage` functions).
+
+Before:
+
+```text
+const lifetime = defaultLifetime
+await generateKeyPackage(credential, capabilities, lifetime, extensions, cipherSuite)
+```
+
+After:
+
+```text
+const lifetime = defaultLifetime()
+await generateKeyPackage({ credential, capabilities, lifetime, extensions, cipherSuite })
+```
+
 As part of that, `ClientConfig` no longer carries `authService`; it is now passed explicitly to the operations that need it.
 
 ### Why
