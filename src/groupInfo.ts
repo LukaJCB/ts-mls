@@ -7,9 +7,8 @@ import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { extensionEncoder, ExtensionRatchetTree, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
 import { groupContextDecoder, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
-import { ratchetTreeDecoder, RatchetTree } from "./ratchetTree.js"
+import { RatchetTree } from "./ratchetTree.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
-import { CodecError } from "./mlsError.js"
 
 /** @public */
 export interface GroupInfoTBS {
@@ -58,9 +57,7 @@ export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefin
   )
 
   if (treeExtension !== undefined) {
-    const tree = ratchetTreeDecoder(treeExtension.extensionData, 0)
-    if (tree === undefined) throw new CodecError("Could not decode RatchetTree")
-    return tree[0]
+    return treeExtension.extensionData
   }
 }
 
