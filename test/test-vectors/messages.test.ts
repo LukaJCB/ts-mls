@@ -1,6 +1,6 @@
 import json from "../../test_vectors/messages.json"
-
-import { hexToBytes } from "@noble/ciphers/utils.js"
+import fs from "fs"
+import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
 import { commitDecoder, commitEncoder } from "../../src/commit.js"
 import { contentTypes } from "../../src/contentType.js"
@@ -25,10 +25,51 @@ import {
 import { ratchetTreeDecoder, ratchetTreeEncoder } from "../../src/ratchetTree.js"
 import { groupSecretsDecoder, groupSecretsEncoder } from "../../src/groupSecrets.js"
 import { wireformats } from "../../src/wireformat.js"
+import { constantTimeEqual } from "../../src/util/constantTimeCompare"
+import { defaultCredentialTypes, defaultExtensionTypes, defaultProposalTypes, ExternalSender, GroupContextExtension, RequiredCapabilities } from "../../src"
 
+const result: Messages[] = []
+let ww: Uint8Array | null = null
 test.concurrent.each(json.map((x, index) => [index, x]))(`messages test vectors %i`, (_index, x) => {
   codecRoundtrip(x)
+
+
+  // const newProposal = reinitDecoder(hexToBytes(x.re_init_proposal), 0)![0]
+  // if (ww !== null) {
+  //   if (!constantTimeEqual(newProposal.extensions[0]!.extensionData as Uint8Array, ww)) {
+  //      console.log("FOO")
+  //      console.log(newProposal.extensions[0]!.extensionData)
+  //      console.log(ww)
+  //   }
+  // } 
+  // ww = newProposal.extensions[0]!.extensionData as Uint8Array
+
+  // const requiredCapabilities: RequiredCapabilities = {
+  //   extensionTypes: [11, 14],
+  //   proposalTypes: [9, 13],
+  //   credentialTypes: [defaultCredentialTypes.x509, 5]
+  // }
+
+
+  // const externalSender: ExternalSender = {
+  //   signaturePublicKey: crypto.getRandomValues(new Uint8Array(32)),
+  //   credential: { credentialType: defaultCredentialTypes.basic, identity: crypto.getRandomValues(new Uint8Array(16)) }
+  // }
+  // const extension = _index % 3 === 0 ? {extensionType: defaultExtensionTypes.required_capabilities, extensionData: requiredCapabilities } : {extensionType: defaultExtensionTypes.external_senders, extensionData: externalSender }
+
+  // newProposal.extensions = [extension]
+  
+  // const y = {...x, re_init_proposal: bytesToHex(encode(reinitEncoder, newProposal))}
+
+  // result[_index] = y
+  // if (_index === json.length - 1) {
+
+
+  //   fs.mkdirSync("results", { recursive: true })
+  //   fs.writeFileSync("results/message.json", JSON.stringify(result, null, 2))
+  // }
 })
+
 
 type Messages = {
   mls_welcome: string
@@ -157,7 +198,6 @@ function publicMessageCommit(s: string) {
   }
 }
 
-//const keyPackage = createTest(encodeKeyPackage, keyPackageDecoder, '')
 const commit = createTest(commitEncoder, commitDecoder, "commit")
 const groupSecrets = createTest(groupSecretsEncoder, groupSecretsDecoder, "group_secrets")
 const ratchetTree = createTest(ratchetTreeEncoder, ratchetTreeDecoder, "ratchet_tree")
@@ -181,8 +221,16 @@ function createTest<T>(enc: Encoder<T>, dec: Decoder<T>, typeName: string): (s: 
     if (decoded === undefined) {
       throw new Error(`could not decode ${typeName}`)
     } else {
-      const reEncoded = encode(enc, decoded[0])
-      expect(reEncoded).toStrictEqual(inputBytes)
+      try {
+        const reEncoded = encode(enc, decoded[0])
+        expect(reEncoded).toStrictEqual(inputBytes)
+      } catch (e) {
+        // console.log(inputBytes)
+        console.log(decoded[0])
+        throw e 
+      }
+      
+
     }
   }
 }

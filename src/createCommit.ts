@@ -44,7 +44,6 @@ import { nodeTypes } from "./nodeType.js"
 import {
   RatchetTree,
   addLeafNode,
-  ratchetTreeEncoder,
   getCredentialFromLeafIndex,
   getSignaturePublicKeyFromLeafIndex,
   removeLeafNode,
@@ -371,10 +370,7 @@ async function createGroupInfoWithRatchetTree(
     groupContext,
     confirmationTag,
     state,
-    [
-      ...extensions,
-      { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encode(ratchetTreeEncoder, tree) },
-    ],
+    [...extensions, { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: tree }],
     cs,
   )
 
@@ -407,8 +403,6 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
   extensions: GroupInfoExtension[],
   cs: CiphersuiteImpl,
 ): Promise<GroupInfo> {
-  const encodedTree = encode(ratchetTreeEncoder, state.ratchetTree)
-
   const externalKeyPair = await cs.hpke.deriveKeyPair(state.keySchedule.externalSecret)
   const externalPub = await cs.hpke.exportPublicKey(externalKeyPair.publicKey)
 
@@ -419,7 +413,7 @@ export async function createGroupInfoWithExternalPubAndRatchetTree(
     [
       ...extensions,
       { extensionType: defaultExtensionTypes.external_pub, extensionData: externalPub },
-      { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: encodedTree },
+      { extensionType: defaultExtensionTypes.ratchet_tree, extensionData: state.ratchetTree },
     ],
     cs,
   )
