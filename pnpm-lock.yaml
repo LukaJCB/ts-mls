@@ -29,7 +29,7 @@ importers:
         version: 0.2.1
       '@microsoft/api-extractor':
         specifier: ^7.52.13
-        version: 7.55.2(@types/node@25.1.0)
+        version: 7.56.0(@types/node@25.1.0)
       '@noble/ciphers':
         specifier: 2.1.1
         version: 2.1.1
@@ -580,8 +580,8 @@ packages:
   '@microsoft/api-extractor-model@7.32.2':
     resolution: {integrity: sha512-Ussc25rAalc+4JJs9HNQE7TuO9y6jpYQX9nWD1DhqUzYPBr3Lr7O9intf+ZY8kD5HnIqeIRJX7ccCT0QyBy2Ww==}
 
-  '@microsoft/api-extractor@7.55.2':
-    resolution: {integrity: sha512-1jlWO4qmgqYoVUcyh+oXYRztZde/pAi7cSVzBz/rc+S7CoVzDasy8QE13dx6sLG4VRo8SfkkLbFORR6tBw4uGQ==}
+  '@microsoft/api-extractor@7.56.0':
+    resolution: {integrity: sha512-H0V69QG5jIb9Ayx35NVBv2lOgFSS3q+Eab2oyGEy0POL3ovYPST+rCNPbwYoczOZXNG8IKjWUmmAMxmDTsXlQA==}
     hasBin: true
 
   '@microsoft/tsdoc-config@0.18.0':
@@ -731,16 +731,16 @@ packages:
   '@rushstack/rig-package@0.6.0':
     resolution: {integrity: sha512-ZQmfzsLE2+Y91GF15c65L/slMRVhF6Hycq04D4TwtdGaUAbIXXg9c5pKA5KFU7M4QMaihoobp9JJYpYcaY3zOw==}
 
-  '@rushstack/terminal@0.19.5':
-    resolution: {integrity: sha512-6k5tpdB88G0K7QrH/3yfKO84HK9ggftfUZ51p7fePyCE7+RLLHkWZbID9OFWbXuna+eeCFE7AkKnRMHMxNbz7Q==}
+  '@rushstack/terminal@0.21.0':
+    resolution: {integrity: sha512-cLaI4HwCNYmknM5ns4G+drqdEB6q3dCPV423+d3TZeBusYSSm09+nR7CnhzJMjJqeRcdMAaLnrA4M/3xDz4R3w==}
     peerDependencies:
       '@types/node': '*'
     peerDependenciesMeta:
       '@types/node':
         optional: true
 
-  '@rushstack/ts-command-line@5.1.5':
-    resolution: {integrity: sha512-YmrFTFUdHXblYSa+Xc9OO9FsL/XFcckZy0ycQ6q7VSBsVs5P0uD9vcges5Q9vctGlVdu27w+Ct6IuJ458V0cTQ==}
+  '@rushstack/ts-command-line@5.1.7':
+    resolution: {integrity: sha512-Ugwl6flarZcL2nqH5IXFYk3UR3mBVDsVFlCQW/Oaqidvdb/5Ota6b/Z3JXWIdqV3rOR2/JrYoAHanWF5rgenXA==}
 
   '@sinclair/typebox@0.34.35':
     resolution: {integrity: sha512-C6ypdODf2VZkgRT6sFM8E1F8vR+HcffniX0Kp8MsU8PIfrlXbNCBz0jzj17GjdmjTx1OtZzdH8+iALL21UjF5A==}
@@ -2108,8 +2108,8 @@ packages:
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
 
-  resolve@1.22.10:
-    resolution: {integrity: sha512-NPRy+/ncIMeDlTAsuqwKIiferiawhefFJtkNSW0qZJEqMEb+qBt/77B/jGeeek+F0uOeN05CDa6HXbbIgtVX4w==}
+  resolve@1.22.11:
+    resolution: {integrity: sha512-RfqAvLnMl313r7c9oclB1HhUEAezcpLjz95wFH4LVuhk9JF/r22qmVP9AMmOU4vMX7Q8pN8jwNg/CSpdFnMjTQ==}
     engines: {node: '>= 0.4'}
     hasBin: true
 
@@ -2895,19 +2895,19 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.55.2(@types/node@25.1.0)':
+  '@microsoft/api-extractor@7.56.0(@types/node@25.1.0)':
     dependencies:
       '@microsoft/api-extractor-model': 7.32.2(@types/node@25.1.0)
       '@microsoft/tsdoc': 0.16.0
       '@microsoft/tsdoc-config': 0.18.0
       '@rushstack/node-core-library': 5.19.1(@types/node@25.1.0)
       '@rushstack/rig-package': 0.6.0
-      '@rushstack/terminal': 0.19.5(@types/node@25.1.0)
-      '@rushstack/ts-command-line': 5.1.5(@types/node@25.1.0)
+      '@rushstack/terminal': 0.21.0(@types/node@25.1.0)
+      '@rushstack/ts-command-line': 5.1.7(@types/node@25.1.0)
       diff: 8.0.3
       lodash: 4.17.23
       minimatch: 10.0.3
-      resolve: 1.22.10
+      resolve: 1.22.11
       semver: 7.5.4
       source-map: 0.6.1
       typescript: 5.8.2
@@ -2919,7 +2919,7 @@ snapshots:
       '@microsoft/tsdoc': 0.16.0
       ajv: 8.12.0
       jju: 1.4.0
-      resolve: 1.22.10
+      resolve: 1.22.11
 
   '@microsoft/tsdoc@0.16.0': {}
 
@@ -3008,7 +3008,7 @@ snapshots:
       fs-extra: 11.3.3
       import-lazy: 4.0.0
       jju: 1.4.0
-      resolve: 1.22.10
+      resolve: 1.22.11
       semver: 7.5.4
     optionalDependencies:
       '@types/node': 25.1.0
@@ -3019,10 +3019,10 @@ snapshots:
 
   '@rushstack/rig-package@0.6.0':
     dependencies:
-      resolve: 1.22.10
+      resolve: 1.22.11
       strip-json-comments: 3.1.1
 
-  '@rushstack/terminal@0.19.5(@types/node@25.1.0)':
+  '@rushstack/terminal@0.21.0(@types/node@25.1.0)':
     dependencies:
       '@rushstack/node-core-library': 5.19.1(@types/node@25.1.0)
       '@rushstack/problem-matcher': 0.1.1(@types/node@25.1.0)
@@ -3030,9 +3030,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.1.0
 
-  '@rushstack/ts-command-line@5.1.5(@types/node@25.1.0)':
+  '@rushstack/ts-command-line@5.1.7(@types/node@25.1.0)':
     dependencies:
-      '@rushstack/terminal': 0.19.5(@types/node@25.1.0)
+      '@rushstack/terminal': 0.21.0(@types/node@25.1.0)
       '@types/argparse': 1.0.38
       argparse: 1.0.10
       string-argv: 0.3.2
@@ -3810,7 +3810,7 @@ snapshots:
     dependencies:
       debug: 3.2.7
       is-core-module: 2.16.1
-      resolve: 1.22.10
+      resolve: 1.22.11
     transitivePeerDependencies:
       - supports-color
 
@@ -3959,7 +3959,7 @@ snapshots:
       enhanced-resolve: 5.18.1
       module-definition: 6.0.1
       module-lookup-amd: 9.0.4
-      resolve: 1.22.10
+      resolve: 1.22.11
       resolve-dependency-path: 4.0.1
       sass-lookup: 6.1.0
       stylus-lookup: 6.1.0
@@ -4676,7 +4676,7 @@ snapshots:
 
   resolve-pkg-maps@1.0.0: {}
 
-  resolve@1.22.10:
+  resolve@1.22.11:
     dependencies:
       is-core-module: 2.16.1
       path-parse: 1.0.7
