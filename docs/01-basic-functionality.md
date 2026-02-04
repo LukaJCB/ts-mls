@@ -19,7 +19,7 @@ This scenario demonstrates the most fundamental workflow in MLS: creating a grou
 - **Application Message**: An encrypted message sent within the group. Only current group members can decrypt these messages.
 - **Deletion Schedule**: It is advisable to delete all security-sensitive values as soon as they are consumed, this includes all keys used to encrypt and decrypt messages. These keys should be used only once and the next message will be encrypted with a new key.
 
-Note that Bob will have to receive the ratchet tree out-of-band from Alice, if you wish to include the ratchet tree in the welcome message, check out [how to use the ratchet_tree extension](02-ratchet-tree-extension.md).
+Note that Bob will have to receive the ratchet tree over a **secure** out-of-band channel from Alice. If you wish to include the ratchet tree in the welcome message, check out [how to use the ratchet_tree extension](02-ratchet-tree-extension.md).
 
 ---
 
