@@ -1,3 +1,4 @@
+/** @public */
 export class MlsError extends Error {
   constructor(message: string) {
     super(message)
@@ -5,6 +6,7 @@ export class MlsError extends Error {
   }
 }
 
+/** @public */
 export class ValidationError extends MlsError {
   constructor(message: string) {
     super(message)
@@ -12,6 +14,7 @@ export class ValidationError extends MlsError {
   }
 }
 
+/** @public */
 export class CodecError extends MlsError {
   constructor(message: string) {
     super(message)
@@ -19,6 +22,7 @@ export class CodecError extends MlsError {
   }
 }
 
+/** @public */
 export class UsageError extends MlsError {
   constructor(message: string) {
     super(message)
@@ -26,6 +30,7 @@ export class UsageError extends MlsError {
   }
 }
 
+/** @public */
 export class DependencyError extends MlsError {
   constructor(message: string) {
     super(message)
@@ -33,6 +38,7 @@ export class DependencyError extends MlsError {
   }
 }
 
+/** @public */
 export class CryptoVerificationError extends MlsError {
   constructor(message: string) {
     super(message)
@@ -40,6 +46,7 @@ export class CryptoVerificationError extends MlsError {
   }
 }
 
+/** @public */
 export class CryptoError extends MlsError {
   constructor(message: string) {
     super(message)
@@ -47,6 +54,7 @@ export class CryptoError extends MlsError {
   }
 }
 
+/** @public */
 export class InternalError extends MlsError {
   constructor(message: string) {
     super(`This error should never occur, if you see this please submit a bug report. Message: ${message}`)

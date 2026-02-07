@@ -16,6 +16,7 @@ export {
   type Reinit,
   type Remove,
   type Update,
+  isDefaultProposal,
 } from "./proposal.js"
 
 export {
@@ -36,6 +37,17 @@ export {
   type JoinGroupResult,
   type PublicGroupState,
 } from "./clientState.js"
+
+export {
+  ValidationError,
+  MlsError,
+  CryptoVerificationError,
+  CodecError,
+  UsageError,
+  DependencyError,
+  CryptoError,
+  InternalError,
+} from "./mlsError.js"
 
 export {
   createCommit,
@@ -119,6 +131,9 @@ export { type RequiredCapabilities } from "./requiredCapabilities.js"
 
 export {
   makeCustomExtension,
+  isDefaultExtension,
+  type Extension,
+  type DefaultExtension,
   type CustomExtension,
   type ExtensionApplicationId,
   type ExtensionExternalPub,
@@ -284,6 +299,7 @@ export {
   type CredentialCustom,
   type CredentialX509,
   type DefaultCredential,
+  isDefaultCredential,
 } from "./credential.js"
 
 export {

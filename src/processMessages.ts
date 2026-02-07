@@ -57,8 +57,9 @@ export type ProcessMessageResult =
       newState: ClientState
       actionTaken: IncomingMessageAction
       consumed: Uint8Array[]
+      aad: Uint8Array
     }
-  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState; consumed: Uint8Array[] }
+  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState; consumed: Uint8Array[]; aad: Uint8Array }
 
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
@@ -108,6 +109,7 @@ export async function processPrivateMessage(params: {
           message: result.content.content.applicationData,
           newState,
           consumed: result.consumed,
+          aad: result.content.content.authenticatedData,
         }
       } else {
         throw new ValidationError("Cannot process commit or proposal from former epoch")
@@ -135,6 +137,7 @@ export async function processPrivateMessage(params: {
       message: result.content.content.applicationData,
       newState: updatedState,
       consumed: result.consumed,
+      aad: result.content.content.authenticatedData,
     }
   } else if (result.content.content.contentType === contentTypes.commit) {
     const { newState, actionTaken, consumed } = await processCommit(
@@ -152,6 +155,7 @@ export async function processPrivateMessage(params: {
       newState,
       actionTaken,
       consumed: [...result.consumed, ...consumed],
+      aad: result.content.content.authenticatedData,
     }
   } else {
     const action = cb({
@@ -167,6 +171,7 @@ export async function processPrivateMessage(params: {
         newState: updatedState,
         actionTaken: action,
         consumed: result.consumed,
+        aad: result.content.content.authenticatedData,
       }
     else
       return {
@@ -179,6 +184,7 @@ export async function processPrivateMessage(params: {
         ),
         actionTaken: action,
         consumed: result.consumed,
+        aad: result.content.content.authenticatedData,
       }
   }
 }
@@ -188,6 +194,7 @@ export interface NewStateWithActionTaken {
   newState: ClientState
   actionTaken: IncomingMessageAction
   consumed: Uint8Array[]
+  aad: Uint8Array
 }
 
 /** @public */
@@ -227,12 +234,14 @@ export async function processPublicMessage(params: {
         newState: state,
         actionTaken: action,
         consumed: [],
+        aad: content.content.authenticatedData,
       }
     else
       return {
         newState: await processProposal(state, content, content.content.proposal, cipherSuite.hash),
         actionTaken: action,
         consumed: [],
+        aad: content.content.authenticatedData,
       }
   } else {
     return processCommit(
@@ -277,7 +286,7 @@ async function processCommit(
   const action = callback({ kind: "commit", senderLeafIndex, proposals: result.allProposals })
 
   if (action === "reject") {
-    return { newState: state, actionTaken: action, consumed: [] }
+    return { newState: state, actionTaken: action, consumed: [], aad: content.content.authenticatedData }
   }
 
   if (content.content.commit.path !== undefined) {
@@ -389,6 +398,7 @@ async function processCommit(
     },
     actionTaken: action,
     consumed,
+    aad: content.content.authenticatedData,
   }
 }
 

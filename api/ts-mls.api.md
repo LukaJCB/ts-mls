@@ -129,6 +129,11 @@ export const clientStateDecoder: Decoder<ClientState>;
 export const clientStateEncoder: Encoder<ClientState>;
 
 // @public (undocumented)
+export class CodecError extends MlsError {
+    constructor(message: string);
+}
+
+// @public (undocumented)
 export interface Commit {
     // (undocumented)
     path: UpdatePath | undefined;
@@ -265,9 +270,19 @@ export interface CredentialX509 {
 }
 
 // @public (undocumented)
+export class CryptoError extends MlsError {
+    constructor(message: string);
+}
+
+// @public (undocumented)
 export interface CryptoProvider {
     // (undocumented)
     getCiphersuiteImpl(id: number): Promise<CiphersuiteImpl>;
+}
+
+// @public (undocumented)
+export class CryptoVerificationError extends MlsError {
+    constructor(message: string);
 }
 
 // @public (undocumented)
@@ -306,6 +321,9 @@ export type DefaultCredentialTypeValue = (typeof defaultCredentialTypes)[Default
 
 // @public (undocumented)
 export const defaultCryptoProvider: CryptoProvider;
+
+// @public (undocumented)
+export type DefaultExtension = ExtensionApplicationId | ExtensionRatchetTree | ExtensionRequiredCapabilities | ExtensionExternalPub | ExtensionExternalSenders;
 
 // @public (undocumented)
 export type DefaultExtensionTypeName = keyof typeof defaultExtensionTypes;
@@ -352,6 +370,11 @@ export const defaultProposalTypes: {
 };
 
 // @public (undocumented)
+export class DependencyError extends MlsError {
+    constructor(message: string);
+}
+
+// @public (undocumented)
 export function encode<T>(enc: Encoder<T>, t: T): Uint8Array;
 
 // @public (undocumented)
@@ -378,6 +401,9 @@ export interface EpochReceiverData {
     // (undocumented)
     senderDataSecret: Uint8Array;
 }
+
+// @public (undocumented)
+export type Extension = DefaultExtension | CustomExtension;
 
 // @public (undocumented)
 export interface ExtensionApplicationId {
@@ -742,6 +768,20 @@ export type IncomingMessageCallback = (incoming: {
 }) => IncomingMessageAction;
 
 // @public (undocumented)
+export class InternalError extends MlsError {
+    constructor(message: string);
+}
+
+// @public (undocumented)
+export function isDefaultCredential(c: Credential_2): c is DefaultCredential;
+
+// @public (undocumented)
+export function isDefaultExtension(e: Extension): e is DefaultExtension;
+
+// @public (undocumented)
+export function isDefaultProposal(p: Proposal): p is DefaultProposal;
+
+// @public (undocumented)
 export function joinGroup(params: {
     context: MlsContext;
     welcome: Welcome;
@@ -987,6 +1027,11 @@ export interface MlsContext {
 }
 
 // @public (undocumented)
+export class MlsError extends Error {
+    constructor(message: string);
+}
+
+// @public (undocumented)
 export function mlsExporter(exporterSecret: Uint8Array, label: string, context: Uint8Array, length: number, cs: CiphersuiteImpl): Promise<Uint8Array>;
 
 // @public (undocumented)
@@ -1055,6 +1100,8 @@ export type MlsWelcomeMessage = MlsMessageProtocol & MlsWelcome;
 
 // @public (undocumented)
 export interface NewStateWithActionTaken {
+    // (undocumented)
+    aad: Uint8Array;
     // (undocumented)
     actionTaken: IncomingMessageAction;
     // (undocumented)
@@ -1161,11 +1208,13 @@ export type ProcessMessageResult = {
     newState: ClientState;
     actionTaken: IncomingMessageAction;
     consumed: Uint8Array[];
+    aad: Uint8Array;
 } | {
     kind: "applicationMessage";
     message: Uint8Array;
     newState: ClientState;
     consumed: Uint8Array[];
+    aad: Uint8Array;
 };
 
 // @public
@@ -1572,6 +1621,16 @@ export interface UpdatePathNode {
     encryptedPathSecret: HPKECiphertext[];
     // (undocumented)
     hpkePublicKey: Uint8Array;
+}
+
+// @public (undocumented)
+export class UsageError extends MlsError {
+    constructor(message: string);
+}
+
+// @public (undocumented)
+export class ValidationError extends MlsError {
+    constructor(message: string);
 }
 
 // @public (undocumented)

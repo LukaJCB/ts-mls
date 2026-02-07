@@ -60,6 +60,7 @@ export type GroupContextExtension = ExtensionRequiredCapabilities | ExtensionExt
 /** @public */
 export type LeafNodeExtension = ExtensionApplicationId | CustomExtension
 
+/** @public */
 export type DefaultExtension =
   | ExtensionApplicationId
   | ExtensionRatchetTree
@@ -67,6 +68,7 @@ export type DefaultExtension =
   | ExtensionExternalPub
   | ExtensionExternalSenders
 
+/** @public */
 export type Extension = DefaultExtension | CustomExtension
 
 /** @public */
@@ -77,6 +79,7 @@ export function makeCustomExtension(extension: { extensionType: number; extensio
   return extension as CustomExtension
 }
 
+/** @public */
 export function isDefaultExtension(e: Extension): e is DefaultExtension {
   return isDefaultExtensionTypeValue(e.extensionType)
 }
