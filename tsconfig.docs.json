@@ -4,7 +4,6 @@
     "noEmit": true,
     "module": "ESNext",
     "esModuleInterop": true,
-    "types": [],
     "baseUrl": ".",
     "paths": {
       "ts-mls": ["./src/index.ts"]
