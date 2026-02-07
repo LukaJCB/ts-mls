@@ -43,7 +43,7 @@ export function bytesToBase64(bytes: Uint8Array): string;
 // @public (undocumented)
 export interface Capabilities {
     // (undocumented)
-    ciphersuites: CiphersuiteId[];
+    ciphersuites: number[];
     // (undocumented)
     credentials: number[];
     // (undocumented)
@@ -72,7 +72,7 @@ export interface CiphersuiteImpl {
     // (undocumented)
     hpke: Hpke;
     // (undocumented)
-    id: CiphersuiteId;
+    id: number;
     // (undocumented)
     kdf: Kdf;
     // (undocumented)
@@ -583,7 +583,7 @@ export type GroupActiveState = {
 // @public (undocumented)
 export interface GroupContext {
     // (undocumented)
-    cipherSuite: CiphersuiteId;
+    cipherSuite: number;
     // (undocumented)
     confirmedTranscriptHash: Uint8Array;
     // (undocumented)
@@ -834,7 +834,7 @@ export interface KeyPackageEqualityConfig {
 // @public (undocumented)
 export type KeyPackageTBS = {
     version: ProtocolVersionValue;
-    cipherSuite: CiphersuiteId;
+    cipherSuite: number;
     initKey: Uint8Array;
     leafNode: LeafNodeKeyPackage;
     extensions: CustomExtension[];
@@ -1389,7 +1389,7 @@ export type RatchetTree = (Node_2 | undefined)[];
 // @public (undocumented)
 export interface Reinit {
     // (undocumented)
-    cipherSuite: CiphersuiteId;
+    cipherSuite: number;
     // (undocumented)
     extensions: GroupContextExtension[];
     // (undocumented)
@@ -1577,7 +1577,7 @@ export interface UpdatePathNode {
 // @public (undocumented)
 export interface Welcome {
     // (undocumented)
-    cipherSuite: CiphersuiteId;
+    cipherSuite: number;
     // (undocumented)
     encryptedGroupInfo: Uint8Array;
     // (undocumented)

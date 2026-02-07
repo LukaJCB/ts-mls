@@ -2,7 +2,6 @@ import { uint16Decoder, uint32Decoder, uint16Encoder, uint32Encoder } from "./co
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, orDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoder, contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
 import { keyPackageDecoder, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
 import { pskIdDecoder, pskIdEncoder, PskId } from "./presharedkey.js"
@@ -51,17 +50,17 @@ export const pskDecoder: Decoder<PSK> = mapDecoder(pskIdDecoder, (preSharedKeyId
 export interface Reinit {
   groupId: Uint8Array
   version: ProtocolVersionValue
-  cipherSuite: CiphersuiteId
+  cipherSuite: number
   extensions: GroupContextExtension[]
 }
 
 export const reinitEncoder: Encoder<Reinit> = contramapBufferEncoders(
-  [varLenDataEncoder, protocolVersionEncoder, ciphersuiteEncoder, varLenTypeEncoder(extensionEncoder)],
+  [varLenDataEncoder, protocolVersionEncoder, uint16Encoder, varLenTypeEncoder(extensionEncoder)],
   (r) => [r.groupId, r.version, r.cipherSuite, r.extensions] as const,
 )
 
 export const reinitDecoder: Decoder<Reinit> = mapDecoders(
-  [varLenDataDecoder, protocolVersionDecoder, ciphersuiteDecoder, varLenTypeDecoder(groupContextExtensionDecoder)],
+  [varLenDataDecoder, protocolVersionDecoder, uint16Decoder, varLenTypeDecoder(groupContextExtensionDecoder)],
   (groupId, version, cipherSuite, extensions) => ({ groupId, version, cipherSuite, extensions }),
 )
 

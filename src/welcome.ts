@@ -1,7 +1,8 @@
+import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { PublicKey, Hpke, encryptWithLabel, PrivateKey, decryptWithLabel } from "./crypto/hpke.js"
 import { expandWithLabel } from "./crypto/kdf.js"
 import { groupInfoDecoder, groupInfoEncoder, extractWelcomeSecret, GroupInfo } from "./groupInfo.js"
@@ -28,18 +29,18 @@ export const encryptedGroupSecretsDecoder: Decoder<EncryptedGroupSecrets> = mapD
 
 /** @public */
 export interface Welcome {
-  cipherSuite: CiphersuiteId
+  cipherSuite: number
   secrets: EncryptedGroupSecrets[]
   encryptedGroupInfo: Uint8Array
 }
 
 export const welcomeEncoder: Encoder<Welcome> = contramapBufferEncoders(
-  [ciphersuiteEncoder, varLenTypeEncoder(encryptedGroupSecretsEncoder), varLenDataEncoder],
+  [uint16Encoder, varLenTypeEncoder(encryptedGroupSecretsEncoder), varLenDataEncoder],
   (welcome) => [welcome.cipherSuite, welcome.secrets, welcome.encryptedGroupInfo] as const,
 )
 
 export const welcomeDecoder: Decoder<Welcome> = mapDecoders(
-  [ciphersuiteDecoder, varLenTypeDecoder(encryptedGroupSecretsDecoder), varLenDataDecoder],
+  [uint16Decoder, varLenTypeDecoder(encryptedGroupSecretsDecoder), varLenDataDecoder],
   (cipherSuite, secrets, encryptedGroupInfo) => ({ cipherSuite, secrets, encryptedGroupInfo }),
 )
 

@@ -2,9 +2,6 @@ import { Signature, SignatureAlgorithm } from "./signature.js"
 import { Hash, HashAlgorithm } from "./hash.js"
 import { Kdf } from "./kdf.js"
 import { Hpke, HpkeAlgorithm } from "./hpke.js"
-import { Encoder } from "../codec/tlsEncoder.js"
-import { uint16Decoder, uint16Encoder } from "../codec/number.js"
-import { Decoder } from "../codec/tlsDecoder.js"
 import { Rng } from "./rng.js"
 
 /** @public */
@@ -14,7 +11,7 @@ export interface CiphersuiteImpl {
   signature: Signature
   kdf: Kdf
   rng: Rng
-  id: CiphersuiteId
+  id: number
 }
 
 /** @public */
@@ -47,13 +44,6 @@ export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
 export function isDefaultCiphersuiteId(id: number): id is CiphersuiteId {
   return ciphersuiteValues[id as CiphersuiteId] ? true : false
-}
-
-export const ciphersuiteEncoder: Encoder<CiphersuiteId> = uint16Encoder
-
-export const ciphersuiteDecoder: Decoder<CiphersuiteId> = (b, offset) => {
-  const decoded = uint16Decoder(b, offset)
-  return decoded === undefined ? undefined : [decoded[0] as CiphersuiteId, decoded[1]]
 }
 
 export function getCiphersuiteFromId(id: CiphersuiteId): Ciphersuite {
