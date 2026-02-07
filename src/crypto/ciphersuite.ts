@@ -46,10 +46,6 @@ export function isDefaultCiphersuiteId(id: number): id is CiphersuiteId {
   return ciphersuiteValues[id as CiphersuiteId] ? true : false
 }
 
-export function getCiphersuiteFromId(id: CiphersuiteId): Ciphersuite {
-  return ciphersuiteValues[id]
-}
-
 /** @public */
 export function getCiphersuiteFromName(name: CiphersuiteName): Ciphersuite {
   return ciphersuiteValues[ciphersuites[name]]

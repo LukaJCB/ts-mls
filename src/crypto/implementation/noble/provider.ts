@@ -1,12 +1,11 @@
 import { CiphersuiteImpl, ciphersuiteValues, isDefaultCiphersuiteId } from "../../ciphersuite.js"
-
 import { makeHashImpl } from "./makeHashImpl.js"
-import { makeNobleSignatureImpl } from "./makeNobleSignatureImpl.js"
-import { makeHpke } from "./makeHpke.js"
-import { makeKdfImpl, makeKdf } from "./makeKdfImpl.js"
-import { defaultRng } from "./rng.js"
 import { DependencyError } from "../../../mlsError.js"
 import { CryptoProvider } from "../../provider.js"
+import { defaultRng } from "../default/rng.js"
+import { makeNobleSignatureImpl } from "../default/makeNobleSignatureImpl.js"
+import { makeKdf, makeKdfImpl } from "../default/makeKdfImpl.js"
+import { makeHpke } from "../default/makeHpke.js"
 
 /** @public */
 export const nobleCryptoProvider: CryptoProvider = {
