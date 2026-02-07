@@ -148,6 +148,7 @@ export type DefaultProposal =
 /** @public */
 export type Proposal = DefaultProposal | ProposalCustom
 
+/** @public */
 export function isDefaultProposal(p: Proposal): p is DefaultProposal {
   return isDefaultProposalTypeValue(p.proposalType)
 }

@@ -125,6 +125,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
 
   if (bobAppResult.kind === "newState") throw new Error("Expected application message")
   expect(bobAppResult.message).toStrictEqual(appMessage)
+  expect(bobAppResult.aad).toStrictEqual(appAuthenticatedData)
   bobGroup = bobAppResult.newState
 
   const proposalAuthenticatedData = encoder.encode("aad-proposal")
@@ -178,6 +179,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
   })
 
   if (aliceProcessProposalResult.kind !== "newState") throw new Error("Expected new state")
+  expect(aliceProcessProposalResult.aad).toStrictEqual(proposalAuthenticatedData)
   aliceGroup = aliceProcessProposalResult.newState
 
   const commitAuthenticatedData = encoder.encode("aad-commit")
@@ -229,6 +231,8 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
   })
 
   if (bobProcessCommitResult.kind !== "newState") throw new Error("Expected new state")
+
+  expect(bobProcessCommitResult.aad).toStrictEqual(commitAuthenticatedData)
   bobGroup = bobProcessCommitResult.newState
 
   const publicProposalAuthenticatedData = encoder.encode("aad-proposal-public")
@@ -283,6 +287,8 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     },
   })
 
+  expect(aliceProcessPublicProposalResult.aad).toStrictEqual(publicProposalAuthenticatedData)
+
   aliceGroup = aliceProcessPublicProposalResult.newState
 
   const publicCommitAuthenticatedData = encoder.encode("aad-commit-public")
@@ -334,6 +340,8 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
       return "accept"
     },
   })
+
+  expect(bobProcessPublicCommitResult.aad).toStrictEqual(publicCommitAuthenticatedData)
 
   bobGroup = bobProcessPublicCommitResult.newState
 

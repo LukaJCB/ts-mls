@@ -28,6 +28,7 @@ export interface CredentialCustom {
   data: Uint8Array
 }
 
+/** @public */
 export function isDefaultCredential(c: Credential): c is DefaultCredential {
   return isDefaultCredentialTypeValue(c.credentialType)
 }
