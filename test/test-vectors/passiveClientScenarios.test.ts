@@ -1,5 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import jsonCommit from "../../test_vectors/passive-client-handling-commit.json"
@@ -14,11 +13,12 @@ import { processPrivateMessage, processPublicMessage } from "../../src/processMe
 import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,
   async (_index, x) => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
     await testPassiveClientScenario(x, impl)
   },
 )
@@ -26,7 +26,7 @@ test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
 test.concurrent.each(jsonRandom.map((x, index) => [index, x]))(
   `passive-client-random test vectors %i`,
   async (_index, x) => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
     await testPassiveClientScenario(x, impl)
   },
   60000,
@@ -35,7 +35,7 @@ test.concurrent.each(jsonRandom.map((x, index) => [index, x]))(
 test.concurrent.each(jsonWelcome.map((x, index) => [index, x]))(
   `passive-client-welcome test vectors %i`,
   async (_index, x) => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
     await testPassiveClientScenario(x, impl)
   },
 )

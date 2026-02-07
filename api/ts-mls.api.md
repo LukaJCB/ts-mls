@@ -59,7 +59,7 @@ export type Ciphersuite = {
     hash: HashAlgorithm;
     hpke: HpkeAlgorithm;
     signature: SignatureAlgorithm;
-    name: CiphersuiteId;
+    id: number;
 };
 
 // @public (undocumented)
@@ -72,9 +72,9 @@ export interface CiphersuiteImpl {
     // (undocumented)
     hpke: Hpke;
     // (undocumented)
-    kdf: Kdf;
+    id: CiphersuiteId;
     // (undocumented)
-    name: CiphersuiteId;
+    kdf: Kdf;
     // (undocumented)
     rng: Rng;
     // (undocumented)
@@ -267,7 +267,7 @@ export interface CredentialX509 {
 // @public (undocumented)
 export interface CryptoProvider {
     // (undocumented)
-    getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl>;
+    getCiphersuiteImpl(id: number): Promise<CiphersuiteImpl>;
 }
 
 // @public (undocumented)
@@ -305,9 +305,7 @@ export const defaultCredentialTypes: {
 export type DefaultCredentialTypeValue = (typeof defaultCredentialTypes)[DefaultCredentialTypeName];
 
 // @public (undocumented)
-export const defaultCryptoProvider: {
-    getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl>;
-};
+export const defaultCryptoProvider: CryptoProvider;
 
 // @public (undocumented)
 export type DefaultExtensionTypeName = keyof typeof defaultExtensionTypes;
@@ -561,10 +559,7 @@ export interface GenerationSecret {
 }
 
 // @public (undocumented)
-export function getCiphersuiteFromName(name: CiphersuiteName): Ciphersuite;
-
-// @public (undocumented)
-export function getCiphersuiteImpl(cs: Ciphersuite, provider?: CryptoProvider): Promise<CiphersuiteImpl>;
+export function getCiphersuiteImpl(cs: CiphersuiteName, provider?: CryptoProvider): Promise<CiphersuiteImpl>;
 
 // @public (undocumented)
 export function getGroupMembers(state: ClientState): LeafNode[];
@@ -1069,9 +1064,7 @@ export interface NewStateWithActionTaken {
 }
 
 // @public (undocumented)
-export const nobleCryptoProvider: {
-    getCiphersuiteImpl(cs: Ciphersuite): Promise<CiphersuiteImpl>;
-};
+export const nobleCryptoProvider: CryptoProvider;
 
 // @public (undocumented)
 type Node_2 = NodeParent | NodeLeaf;

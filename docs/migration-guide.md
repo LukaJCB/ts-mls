@@ -391,7 +391,27 @@ Notable changes:
 
 - Replace string-literal values with the exported constants (e.g. `defaultProposalTypes.add`, `defaultCredentialTypes.basic`).
 
-## 6) Find/replace cookbook (names + common literals)
+## 6) `getCiphersuiteImpl` parameter type change
+
+In v1, `getCiphersuiteImpl` took a `Ciphersuite` object as the first parameter. In v2, it takes a `CiphersuiteName` (string key) instead.
+
+Before:
+
+```text
+const cipherSuiteName: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519";
+const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuiteName));
+```
+
+After:
+
+```text
+const cipherSuiteName: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519";
+const impl = await getCiphersuiteImpl(cipherSuiteName);
+```
+
+If you have a `Ciphersuite` object from v1, you can find the corresponding name by looking up the `id` in the `ciphersuites` object (e.g., using `Object.keys(ciphersuites).find(key => ciphersuites[key] === cipherSuite.id)`).
+
+## 7) Find/replace cookbook (names + common literals)
 
 These are intentionally “mechanical” edits you can apply with search/replace. For call signature changes (positional → `{ ... }` options objects), you’ll usually still need to touch the surrounding code manually.
 
@@ -451,3 +471,4 @@ These are intentionally “mechanical” edits you can apply with search/replace
 - [ ] Replace string literals (wireformats, sender types, leaf node sources, etc.) with exported constants
 - [ ] Update extension arrays to the new `*Extension` union types (or pass `[]`)
 - [ ] Update encoding/decoding to `encode(...)` / `decode(...)` + exported codecs
+- [ ] Update getCiphersuiteImpl to take a `CiphersuiteName`

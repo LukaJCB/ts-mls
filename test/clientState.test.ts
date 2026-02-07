@@ -10,7 +10,7 @@ import { generateKeyPackage } from "../src/keyPackage.js"
 import { ProposalAdd } from "../src/proposal.js"
 import { Credential, isDefaultCredential } from "../src/credential.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
-import { CiphersuiteName, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
+import { CiphersuiteName } from "../src/crypto/ciphersuite.js"
 import { createCommit } from "../src/createCommit.js"
 import { processPrivateMessage } from "../src/processMessages.js"
 import { defaultProposalTypes } from "../src/defaultProposalType.js"
@@ -22,7 +22,7 @@ import { unsafeTestingAuthenticationService } from "../src/authenticationService
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
 async function buildThreeMemberGroup() {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(SUITE))
+  const impl = await getCiphersuiteImpl(SUITE)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,

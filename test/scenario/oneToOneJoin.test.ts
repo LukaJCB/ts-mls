@@ -4,7 +4,7 @@ import { createApplicationMessage } from "../../src/createMessage.js"
 import { processMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { mlsMessageDecoder, mlsMessageEncoder } from "../../src/message.js"
@@ -21,7 +21,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
 })
 
 async function oneToOne(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,

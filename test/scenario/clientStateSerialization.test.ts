@@ -6,7 +6,6 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  getCiphersuiteFromName,
   getCiphersuiteImpl,
   Proposal,
   createApplicationMessage,
@@ -22,7 +21,7 @@ test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serializatio
 })
 
 async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,

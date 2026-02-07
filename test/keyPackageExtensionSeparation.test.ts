@@ -1,7 +1,7 @@
 import { generateKeyPackage } from "../src/keyPackage.js"
 import { Credential } from "../src/credential.js"
 import { CustomExtension, makeCustomExtension } from "../src/extension.js"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 
@@ -10,7 +10,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`KeyPackage Extension Separation
 })
 
 async function keyPackageExtensionSeparationTest(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const credential: Credential = {
     credentialType: defaultCredentialTypes.basic,

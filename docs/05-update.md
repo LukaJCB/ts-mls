@@ -33,7 +33,6 @@ import {
   processPrivateMessage,
   defaultProposalTypes,
   getCiphersuiteImpl,
-  getCiphersuiteFromName,
   generateKeyPackage,
   Proposal,
   leafNodeSources,
@@ -42,7 +41,7 @@ import {
   zeroOutUint8Array,
 } from "ts-mls"
 
-const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const impl = await getCiphersuiteImpl("MLS_256_XWING_AES256GCM_SHA512_Ed25519")
 const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,

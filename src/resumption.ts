@@ -1,12 +1,6 @@
 import { ClientState, createGroup, joinGroupInternal } from "./clientState.js"
 import { CreateCommitResult, createCommit, createCommitInternal } from "./createCommit.js"
-import {
-  ciphersuites,
-  CiphersuiteName,
-  CiphersuiteImpl,
-  getCiphersuiteFromId,
-  getCiphersuiteFromName,
-} from "./crypto/ciphersuite.js"
+import { ciphersuites, CiphersuiteName, CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"
 import { defaultCryptoProvider } from "./crypto/implementation/default/provider.js"
 import { CryptoProvider } from "./crypto/provider.js"
@@ -74,7 +68,7 @@ export async function reinitCreateNewGroup(params: {
     provider,
   } = params
   const authService = context.authService
-  const cs = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite), provider ?? defaultCryptoProvider)
+  const cs = await getCiphersuiteImpl(cipherSuite, provider ?? defaultCryptoProvider)
   const newGroup = await createGroup({
     context: { cipherSuite: cs, authService: context.authService },
     groupId,
@@ -208,10 +202,8 @@ export async function joinGroupFromReinit(params: {
   if (suspendedState.groupActiveState.kind !== "suspendedPendingReinit")
     throw new UsageError("Cannot reinit because no init proposal found in last commit")
 
-  const cs = await getCiphersuiteImpl(
-    getCiphersuiteFromId(suspendedState.groupActiveState.reinit.cipherSuite),
-    params.provider ?? defaultCryptoProvider,
-  )
+  const provider = params.provider ?? defaultCryptoProvider
+  const cs = await provider.getCiphersuiteImpl(suspendedState.groupActiveState.reinit.cipherSuite)
 
   const result = await joinGroupInternal({
     context: { ...context, cipherSuite: cs },

@@ -1,5 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import {
   addLeafNode,
   ratchetTreeDecoder,
@@ -15,9 +14,10 @@ import { proposalDecoder, isDefaultProposal, Proposal } from "../../src/proposal
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { treeHashRoot } from "../../src/treeHash.js"
 import { toLeafIndex } from "../../src/treemath.js"
+import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`tree-operations test vectors %i`, async (_index, x) => {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
   await treeOperationsTest(x, impl)
 })
 

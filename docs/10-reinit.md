@@ -35,14 +35,13 @@ import {
   reinitGroup,
   Proposal,
   getCiphersuiteImpl,
-  getCiphersuiteFromName,
   generateKeyPackage,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
 } from "ts-mls"
 
-const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const impl = await getCiphersuiteImpl("MLS_256_XWING_AES256GCM_SHA512_Ed25519")
 const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,
@@ -113,7 +112,7 @@ bobGroup = processReinitResult.newState
 processReinitResult.consumed.forEach(zeroOutUint8Array)
 
 // Alice and Bob generate new key packages for the new group
-const newImpl = await getCiphersuiteImpl(getCiphersuiteFromName(newCiphersuite))
+const newImpl = await getCiphersuiteImpl(newCiphersuite)
 const newContext = { cipherSuite: newImpl, authService: unsafeTestingAuthenticationService }
 const bobNewKeyPackage = await generateKeyPackage({ credential: bobCredential, cipherSuite: newImpl })
 const aliceNewKeyPackage = await generateKeyPackage({ credential: aliceCredential, cipherSuite: newImpl })

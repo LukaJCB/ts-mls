@@ -236,7 +236,6 @@ export {
   type CiphersuiteImpl,
   type CiphersuiteName,
   ciphersuites,
-  getCiphersuiteFromName,
 } from "./crypto/ciphersuite.js"
 
 export { getCiphersuiteImpl } from "./crypto/getCiphersuiteImpl.js"

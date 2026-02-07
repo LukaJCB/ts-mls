@@ -31,7 +31,6 @@ import {
   generateKeyPackage,
   defaultProposalTypes,
   getCiphersuiteImpl,
-  getCiphersuiteFromName,
   joinGroup,
   processMessage,
   createApplicationMessage,
@@ -42,7 +41,7 @@ import {
 } from "ts-mls"
 
 // Setup ciphersuite and credentials
-const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+const impl = await getCiphersuiteImpl("MLS_256_XWING_AES256GCM_SHA512_Ed25519")
 const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 const aliceCredential: Credential = {
   credentialType: defaultCredentialTypes.basic,

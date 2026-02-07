@@ -145,7 +145,7 @@ export async function generateKeyPackageWithKey(
 
   const tbs: KeyPackageTBS = {
     version: protocolVersions.mls10,
-    cipherSuite: cs.name,
+    cipherSuite: cs.id,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
     leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),
     extensions: extensions ?? [],
