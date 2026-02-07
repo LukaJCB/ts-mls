@@ -1,11 +1,11 @@
-import { ciphersuites, getCiphersuiteFromId } from "../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
+import { ciphersuites } from "../src/crypto/ciphersuite.js"
 import { GroupContext } from "../src/groupContext.js"
 import { GroupInfoTBS, signGroupInfo, verifyGroupInfoSignature } from "../src/groupInfo.js"
 import { ed25519 } from "@noble/curves/ed25519.js"
 import { protocolVersions } from "../src/protocolVersion.js"
 import { defaultExtensionTypes } from "../src/defaultExtensionType.js"
 import { makeCustomExtension } from "../src/extension.js"
+import { defaultCryptoProvider } from "../src/index.js"
 
 describe("GroupInfo signing and verification", () => {
   const privateKey = ed25519.utils.randomSecretKey()
@@ -29,20 +29,20 @@ describe("GroupInfo signing and verification", () => {
   }
 
   test("signs and verifies successfully", async () => {
-    const cs = await getCiphersuiteImpl(getCiphersuiteFromId(1))
+    const cs = await defaultCryptoProvider.getCiphersuiteImpl(1)
     const gi = await signGroupInfo(baseTBS, privateKey, cs.signature)
     expect(await verifyGroupInfoSignature(gi, publicKey, cs.signature)).toBe(true)
   })
 
   test("fails verification if confirmationTag is changed", async () => {
-    const cs = await getCiphersuiteImpl(getCiphersuiteFromId(1))
+    const cs = await defaultCryptoProvider.getCiphersuiteImpl(1)
     const gi = await signGroupInfo(baseTBS, privateKey, cs.signature)
     const modified = { ...gi, confirmationTag: new Uint8Array([0xdd]) }
     expect(await verifyGroupInfoSignature(modified, publicKey, cs.signature)).toBe(false)
   })
 
   test("fails verification if signature is tampered", async () => {
-    const cs = await getCiphersuiteImpl(getCiphersuiteFromId(1))
+    const cs = await defaultCryptoProvider.getCiphersuiteImpl(1)
     const gi = await signGroupInfo(baseTBS, privateKey, cs.signature)
     const tampered = { ...gi, signature: gi.signature.fill(0, 2, 4) }
     expect(await verifyGroupInfoSignature(tampered, publicKey, cs.signature)).toBe(false)

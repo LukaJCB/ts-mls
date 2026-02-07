@@ -7,7 +7,6 @@ import {
   generateKeyPackage,
   CiphersuiteImpl,
   CiphersuiteName,
-  getCiphersuiteFromName,
   getCiphersuiteImpl,
   createGroup,
   Proposal,
@@ -222,7 +221,7 @@ async function runBenchmark(outputPath: string, bench: Bench) {
 
 async function runBenchBasic(outputPath: string, cs: CiphersuiteName) {
   const bench = new Bench({ name: `basic ${cs}`, iterations: 1000 })
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cs))
+  const impl = await getCiphersuiteImpl(cs)
 
   bench
     .add("Generate KeyPackage", async () => await createKeyPackageBench(impl))
@@ -234,7 +233,7 @@ async function runBenchBasic(outputPath: string, cs: CiphersuiteName) {
 async function runBench(outputPath: string, cs: CiphersuiteName, groupSize: number) {
   const bench = new Bench({ name: `${cs}, ${groupSize} members`, iterations: 10 })
 
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cs))
+  const impl = await getCiphersuiteImpl(cs)
 
   const createResult = await initGroup(impl)
   const kps = await generateKeyPackages(impl, groupSize - 1)

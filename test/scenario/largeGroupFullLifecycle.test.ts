@@ -1,7 +1,7 @@
 import { createGroup, joinGroup, ClientState } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { processPrivateMessage } from "../../src/processMessages.js"
-import { getCiphersuiteFromName, CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
@@ -28,7 +28,7 @@ test.concurrent.each(Object.keys(ciphersuites))(
 type MemberState = { id: string; state: ClientState; public: KeyPackage; private: PrivateKeyPackage }
 
 async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize: number, targetSize: number) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
   const groupId = new TextEncoder().encode("dynamic-group")
 
   const makeCredential = (name: string): Credential => ({

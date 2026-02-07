@@ -1,5 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { groupContextEncoder, GroupContext } from "../../src/groupContext.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/key-schedule.json"
@@ -7,10 +6,11 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 
 import { initializeEpoch, mlsExporter } from "../../src/keySchedule.js"
+import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`key-schedule test vectors %i`, async (_index, x) => {
   const cipherSuite = x.cipher_suite as CiphersuiteId
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(cipherSuite))
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(cipherSuite)
   await testKeySchedule(x.group_id, x.initial_init_secret, x.epochs, cipherSuite, impl)
 })
 

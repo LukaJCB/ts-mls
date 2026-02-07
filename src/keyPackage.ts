@@ -1,7 +1,7 @@
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, CiphersuiteImpl, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash, refhash } from "./crypto/hash.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
 import { extensionEncoder, CustomExtension, customExtensionDecoder, LeafNodeExtension } from "./extension.js"
@@ -23,18 +23,19 @@ import { Capabilities } from "./capabilities.js"
 import { defaultLifetime, Lifetime } from "./lifetime.js"
 import { Credential } from "./credential.js"
 import { defaultCapabilities } from "./defaultCapabilities.js"
+import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 
 /** @public */
 export type KeyPackageTBS = {
   version: ProtocolVersionValue
-  cipherSuite: CiphersuiteId
+  cipherSuite: number
   initKey: Uint8Array
   leafNode: LeafNodeKeyPackage
   extensions: CustomExtension[]
 }
 
 export const keyPackageTBSEncoder: Encoder<KeyPackageTBS> = contramapBufferEncoders(
-  [protocolVersionEncoder, ciphersuiteEncoder, varLenDataEncoder, leafNodeEncoder, varLenTypeEncoder(extensionEncoder)],
+  [protocolVersionEncoder, uint16Encoder, varLenDataEncoder, leafNodeEncoder, varLenTypeEncoder(extensionEncoder)],
   (keyPackageTBS) =>
     [
       keyPackageTBS.version,
@@ -48,7 +49,7 @@ export const keyPackageTBSEncoder: Encoder<KeyPackageTBS> = contramapBufferEncod
 export const keyPackageTBSDecoder: Decoder<KeyPackageTBS> = mapDecoders(
   [
     protocolVersionDecoder,
-    ciphersuiteDecoder,
+    uint16Decoder,
     varLenDataDecoder,
     leafNodeKeyPackageDecoder,
     varLenTypeDecoder(customExtensionDecoder),
@@ -145,7 +146,7 @@ export async function generateKeyPackageWithKey(
 
   const tbs: KeyPackageTBS = {
     version: protocolVersions.mls10,
-    cipherSuite: cs.name,
+    cipherSuite: cs.id,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
     leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),
     extensions: extensions ?? [],

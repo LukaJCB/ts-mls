@@ -6,7 +6,6 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  getCiphersuiteFromName,
   getCiphersuiteImpl,
   reinitGroup,
   unsafeTestingAuthenticationService,
@@ -26,7 +25,7 @@ describe("GroupActiveState roundtrip", () => {
   })
 
   test("roundtrips suspendedPendingReinit", async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
+    const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
 
     const aliceCredential: Credential = {
       credentialType: defaultCredentialTypes.basic,

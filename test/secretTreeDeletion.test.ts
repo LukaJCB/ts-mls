@@ -1,7 +1,7 @@
 import { describe, expect } from "vitest"
 import { createSecretTree, consumeRatchet, ratchetToGeneration } from "../src/secretTree.js"
 import { toLeafIndex, root } from "../src/treemath.js"
-import { getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
+
 import { defaultKeyRetentionConfig } from "../src/keyRetentionConfig.js"
 import { ReuseGuard } from "../src/sender.js"
 import { contentTypes, getCiphersuiteImpl } from "../src/index.js"
@@ -9,7 +9,7 @@ import { expandWithLabel } from "../src/crypto/kdf.js"
 import { constantTimeEqual } from "../src/util/constantTimeCompare.js"
 
 describe("SecretTree Deletion Schedule", () => {
-  const impl = getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
+  const impl = getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
 
   test("should delete parent nodes when children are derived via consumeRatchet", async () => {
     const cs = await impl

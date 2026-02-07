@@ -4,13 +4,7 @@ import {
   generateKeyPackageWithKey as generateKeyPackageWithKeyBase,
 } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
-import {
-  CiphersuiteId,
-  CiphersuiteImpl,
-  CiphersuiteName,
-  ciphersuites,
-  getCiphersuiteFromName,
-} from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteId, CiphersuiteImpl, CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
 import { ratchetTreeEncoder, RatchetTree, addLeafNode } from "../../src/ratchetTree.js"
@@ -118,7 +112,7 @@ describe("Ratchet Tree Validation", () => {
 })
 
 async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode("alice"),
@@ -165,7 +159,7 @@ async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidParentHash(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -281,7 +275,7 @@ async function resignLeafNode(
 }
 
 async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -367,7 +361,7 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -452,7 +446,7 @@ async function testInvalidLeafNodeSignature(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -508,7 +502,7 @@ async function testInvalidLeafNodeSignatureKeyPackage(cipherSuite: CiphersuiteNa
 }
 
 async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -556,7 +550,7 @@ async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -604,7 +598,7 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -652,7 +646,7 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidCredential(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,
@@ -728,7 +722,7 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
 }
 
 async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const sigKeys = await impl.signature.keygen()
 
@@ -782,7 +776,7 @@ async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
 }
 
 async function testInvalidTreeHash(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,

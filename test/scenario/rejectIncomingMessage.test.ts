@@ -2,7 +2,7 @@ import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
@@ -18,7 +18,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, as
 })
 
 async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMessage: boolean) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,

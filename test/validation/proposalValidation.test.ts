@@ -4,7 +4,7 @@ import type { CreateCommitOptions } from "../../src/createCommit.js"
 import type { ClientState } from "../../src/clientState.js"
 import type { MlsContext } from "../../src/mlsContext.js"
 import { Credential, isDefaultCredential } from "../../src/credential.js"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd, ProposalRemove } from "../../src/proposal.js"
@@ -389,7 +389,7 @@ describe("Proposal Validation", () => {
 })
 
 async function setupThreeMembers(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const aliceCredential: Credential = {
     credentialType: defaultCredentialTypes.basic,

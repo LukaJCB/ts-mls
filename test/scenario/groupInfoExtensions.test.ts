@@ -1,7 +1,7 @@
 import { createGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
-import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Capabilities } from "../../src/capabilities.js"
@@ -15,7 +15,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`GroupInfo Custom Extensions %s`
 })
 
 async function customExtensionTest(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const customExtensionType: number = 71
 

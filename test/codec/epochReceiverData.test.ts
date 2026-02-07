@@ -5,7 +5,6 @@ import {
   createGroup,
   defaultCredentialTypes,
   generateKeyPackage,
-  getCiphersuiteFromName,
   getCiphersuiteImpl,
   unsafeTestingAuthenticationService,
 } from "../../src/index.js"
@@ -24,7 +23,7 @@ describe("EpochReceiverData roundtrip", () => {
   )
 
   test("roundtrips epoch receiver data extracted from client state", async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_256_XWING_AES256GCM_SHA512_Ed25519"))
+    const impl = await getCiphersuiteImpl("MLS_256_XWING_AES256GCM_SHA512_Ed25519")
 
     const aliceCredential = {
       credentialType: defaultCredentialTypes.basic,

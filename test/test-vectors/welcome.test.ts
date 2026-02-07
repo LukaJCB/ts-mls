@@ -1,5 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/welcome.json"
 import { mlsMessageDecoder } from "../../src/message.js"
@@ -9,9 +8,10 @@ import { verifyGroupInfoConfirmationTag, verifyGroupInfoSignature } from "../../
 import { decryptGroupInfo, decryptGroupSecrets } from "../../src/welcome.js"
 import { PrivateKey } from "../../src/crypto/hpke.js"
 import { wireformats } from "../../src/wireformat.js"
+import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`welcome test vectors %i`, async (_index, x) => {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
   await testWelcome(x.init_priv, x.key_package, x.signer_pub, x.welcome, impl)
 })
 

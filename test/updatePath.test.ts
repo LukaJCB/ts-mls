@@ -2,7 +2,7 @@ import { createUpdatePath } from "../src/updatePath.js"
 import { RatchetTree } from "../src/ratchetTree.js"
 import { GroupContext } from "../src/groupContext.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
-import { ciphersuites, getCiphersuiteFromName } from "../src/crypto/ciphersuite.js"
+import { ciphersuites } from "../src/crypto/ciphersuite.js"
 import { toLeafIndex } from "../src/treemath.js"
 import { LeafNodeCommit } from "../src/leafNode.js"
 import { protocolVersions } from "../src/protocolVersion.js"
@@ -12,7 +12,7 @@ import { nodeTypes } from "../src/nodeType.js"
 
 describe("createUpdatePath", () => {
   test("should not modify the original tree", async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
+    const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
 
     const leaf1: LeafNodeCommit = {
       leafNodeSource: leafNodeSources.commit,
@@ -92,7 +92,7 @@ describe("createUpdatePath", () => {
   })
 
   test("should not modify the original tree with multiple nodes", async () => {
-    const impl = await getCiphersuiteImpl(getCiphersuiteFromName("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"))
+    const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
 
     const createLeaf = (identity: string): LeafNodeCommit => ({
       leafNodeSource: leafNodeSources.commit,

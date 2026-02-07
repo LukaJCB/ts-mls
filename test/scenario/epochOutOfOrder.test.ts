@@ -4,7 +4,7 @@ import { createApplicationMessage, createProposal } from "../../src/createMessag
 import { processMessage, processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
@@ -46,7 +46,7 @@ async function setupTestParticipants(
   cipherSuite: CiphersuiteName,
   retainConfig?: KeyRetentionConfig,
 ): Promise<TestParticipants> {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
   const clientConfig: ClientConfig = {
     ...defaultClientConfig,
     keyRetentionConfig: retainConfig ?? defaultKeyRetentionConfig,

@@ -1,7 +1,7 @@
 import { createGroup, joinGroupWithExtensions } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
-import { CiphersuiteName, getCiphersuiteFromName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
@@ -17,7 +17,7 @@ test.concurrent.each(Object.keys(ciphersuites))(`Custom GroupInfoExtensions %s`,
 })
 
 async function customGroupInfoExtensionTest(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
 
   const customExtensionType: number = 92
 

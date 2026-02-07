@@ -1142,7 +1142,7 @@ export async function createGroup(params: CreateGroupParams): Promise<ClientStat
 
   const groupContext: GroupContext = {
     version: protocolVersions.mls10,
-    cipherSuite: cs.name,
+    cipherSuite: cs.id,
     epoch: 0n,
     treeHash: await treeHashRoot(ratchetTree, cs.hash),
     groupId,

@@ -1,8 +1,7 @@
-import { uint64Decoder, uint64Encoder } from "./codec/number.js"
+import { uint16Decoder, uint16Encoder, uint64Decoder, uint64Encoder } from "./codec/number.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, Encoder, encode } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEncoder } from "./codec/variableLength.js"
-import { CiphersuiteId, ciphersuiteEncoder, ciphersuiteDecoder } from "./crypto/ciphersuite.js"
 
 import { expandWithLabel, Kdf } from "./crypto/kdf.js"
 import { extensionEncoder, GroupContextExtension, groupContextExtensionDecoder } from "./extension.js"
@@ -12,7 +11,7 @@ import { protocolVersionDecoder, protocolVersionEncoder, ProtocolVersionValue } 
 /** @public */
 export interface GroupContext {
   version: ProtocolVersionValue
-  cipherSuite: CiphersuiteId
+  cipherSuite: number
   groupId: Uint8Array
   epoch: bigint
   treeHash: Uint8Array
@@ -23,7 +22,7 @@ export interface GroupContext {
 export const groupContextEncoder: Encoder<GroupContext> = contramapBufferEncoders(
   [
     protocolVersionEncoder,
-    ciphersuiteEncoder,
+    uint16Encoder,
     varLenDataEncoder, // groupId
     uint64Encoder, // epoch
     varLenDataEncoder, // treeHash
@@ -37,7 +36,7 @@ export const groupContextEncoder: Encoder<GroupContext> = contramapBufferEncoder
 export const groupContextDecoder: Decoder<GroupContext> = mapDecoders(
   [
     protocolVersionDecoder,
-    ciphersuiteDecoder,
+    uint16Decoder,
     varLenDataDecoder, // groupId
     uint64Decoder, // epoch
     varLenDataDecoder, // treeHash

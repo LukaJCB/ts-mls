@@ -1,19 +1,27 @@
 import json from "../../test_vectors/crypto-basics.json"
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 import { signWithLabel, verifyWithLabel } from "../../src/crypto/signature.js"
 import { refhash } from "../../src/crypto/hash.js"
 import { deriveSecret, deriveTreeSecret, expandWithLabel } from "../../src/crypto/kdf.js"
 import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke.js"
+import { defaultCryptoProvider, nobleCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`crypto-basics test vectors %i`, async (_index, x) => {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+  const nobleImpl = await nobleCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
   await testRefHash(impl, x.ref_hash)
   await testDeriveSecret(impl, x.derive_secret)
   await testDeriveTreeSecret(impl, x.derive_tree_secret)
   await testExpandWithLabel(impl, x.expand_with_label)
   await testEncryptWithLabel(impl, x.encrypt_with_label)
+
+  await testRefHash(nobleImpl, x.ref_hash)
+  await testDeriveSecret(nobleImpl, x.derive_secret)
+  await testDeriveTreeSecret(nobleImpl, x.derive_tree_secret)
+  await testExpandWithLabel(nobleImpl, x.expand_with_label)
+  await testEncryptWithLabel(nobleImpl, x.encrypt_with_label)
+
   await testSignWithLabel(impl, x.sign_with_label)
 })
 

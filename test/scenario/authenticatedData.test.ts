@@ -1,7 +1,7 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage, createProposal } from "../../src/createMessage.js"
-import { CiphersuiteName, ciphersuites, getCiphersuiteFromName } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -21,7 +21,7 @@ test.concurrent.each(Object.keys(ciphersuites))("authenticatedData verified for 
 })
 
 async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuite))
+  const impl = await getCiphersuiteImpl(cipherSuite)
   const encoder = new TextEncoder()
 
   const customProposalType = 8

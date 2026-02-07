@@ -1,8 +1,7 @@
 import json from "../../test_vectors/message-protection.json"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import { GroupContext } from "../../src/groupContext.js"
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { mlsMessageDecoder } from "../../src/message.js"
 import { protect, unprotectPrivateMessage } from "../../src/messageProtection.js"
 import { createContentCommitSignature } from "../../src/framedContent.js"
@@ -29,10 +28,10 @@ import { contentTypes } from "../../src/contentType.js"
 import { senderTypes } from "../../src/sender.js"
 import { wireformats } from "../../src/wireformat.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
-import { defaultCapabilities } from "../../src/index.js"
+import { defaultCapabilities, defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
   await testMessageProtection(x, impl)
 })
 

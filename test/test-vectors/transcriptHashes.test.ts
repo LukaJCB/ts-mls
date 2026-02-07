@@ -1,13 +1,13 @@
-import { CiphersuiteId, CiphersuiteImpl, getCiphersuiteFromId } from "../../src/crypto/ciphersuite.js"
-import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
+import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/transcript-hashes.json"
 import { authenticatedContentDecoder } from "../../src/authenticatedContent.js"
 import { createConfirmedHash, createInterimHash } from "../../src/transcriptHash.js"
 import { contentTypes } from "../../src/contentType.js"
+import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`transcript-hashes test vectors %i`, async (_index, x) => {
-  const impl = await getCiphersuiteImpl(getCiphersuiteFromId(x.cipher_suite as CiphersuiteId))
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
   await testTranscriptHash(
     x.authenticated_content,
     x.confirmation_key,
