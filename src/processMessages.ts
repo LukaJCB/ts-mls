@@ -1,4 +1,3 @@
-import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
   addHistoricalReceiverData,
@@ -14,7 +13,7 @@ import { GroupActiveState } from "./groupActiveState.js"
 import { applyUpdatePathSecret } from "./createCommit.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Kdf, deriveSecret } from "./crypto/kdf.js"
-import { verifyConfirmationTag } from "./framedContent.js"
+import { FramedContentAuthDataCommit, FramedContentCommit, verifyConfirmationTag } from "./framedContent.js"
 import { GroupContext } from "./groupContext.js"
 import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./incomingMessageAction.js"
 import { initializeEpoch } from "./keySchedule.js"
@@ -140,16 +139,19 @@ export async function processPrivateMessage(params: {
       aad: result.content.content.authenticatedData,
     }
   } else if (result.content.content.contentType === contentTypes.commit) {
+    if (result.content.auth.contentType !== result.content.content.contentType)
+      throw new ValidationError("Received content as commit, but not auth")
     const { newState, actionTaken, consumed } = await processCommit(
       updatedState,
-      result.content as AuthenticatedContentCommit,
+      result.content.content,
+      result.content.auth,
       "mls_private_message",
       pskSearch,
       cb,
       auth,
       clientConfig,
       cipherSuite,
-    ) //todo solve with types
+    )
     return {
       kind: "newState",
       newState,
@@ -244,22 +246,26 @@ export async function processPublicMessage(params: {
         aad: content.content.authenticatedData,
       }
   } else {
+    if (content.auth.contentType !== content.content.contentType)
+      throw new ValidationError("Received content as commit, but not auth")
     return processCommit(
       state,
-      content as AuthenticatedContentCommit,
+      content.content,
+      content.auth,
       "mls_public_message",
       pskSearch,
       callback,
       auth,
       clientConfig,
       cipherSuite,
-    ) //todo solve with types
+    )
   }
 }
 
 async function processCommit(
   state: ClientState,
-  content: AuthenticatedContentCommit,
+  content: FramedContentCommit,
+  auth: FramedContentAuthDataCommit,
   wireformat: WireformatName,
   pskSearch: PskIndex,
   callback: IncomingMessageCallback,
@@ -267,14 +273,14 @@ async function processCommit(
   clientConfig: ClientConfig,
   cs: CiphersuiteImpl,
 ): Promise<NewStateWithActionTaken> {
-  if (content.content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
+  if (content.epoch !== state.groupContext.epoch) throw new ValidationError("Could not validate epoch")
 
   const senderLeafIndex =
-    content.content.sender.senderType === senderTypes.member ? toLeafIndex(content.content.sender.leafIndex) : undefined
+    content.sender.senderType === senderTypes.member ? toLeafIndex(content.sender.leafIndex) : undefined
 
   const result = await applyProposals(
     state,
-    content.content.commit.proposals,
+    content.commit.proposals,
     senderLeafIndex,
     pskSearch,
     false,
@@ -286,10 +292,10 @@ async function processCommit(
   const action = callback({ kind: "commit", senderLeafIndex, proposals: result.allProposals })
 
   if (action === "reject") {
-    return { newState: state, actionTaken: action, consumed: [], aad: content.content.authenticatedData }
+    return { newState: state, actionTaken: action, consumed: [], aad: content.authenticatedData }
   }
 
-  if (content.content.commit.path !== undefined) {
+  if (content.commit.path !== undefined) {
     const committerLeafIndex =
       senderLeafIndex ??
       (result.additionalResult.kind === "externalCommit" ? result.additionalResult.newMemberLeafIndex : undefined)
@@ -299,7 +305,7 @@ async function processCommit(
 
     throwIfDefined(
       await validateLeafNodeUpdateOrCommit(
-        content.content.commit.path.leafNode,
+        content.commit.path.leafNode,
         committerLeafIndex,
         state.groupContext,
         authService,
@@ -307,16 +313,11 @@ async function processCommit(
       ),
     )
     throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniqueness(
-        result.tree,
-        content.content.commit.path.leafNode,
-        committerLeafIndex,
-      ),
+      await validateLeafNodeCredentialAndKeyUniqueness(result.tree, content.commit.path.leafNode, committerLeafIndex),
     )
   }
 
-  if (result.needsUpdatePath && content.content.commit.path === undefined)
-    throw new ValidationError("Update path is required")
+  if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
 
   const groupContextWithExtensions =
     result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions.length > 0
@@ -324,8 +325,8 @@ async function processCommit(
       : state.groupContext
 
   const [pkp, commitSecret, tree] = await applyTreeUpdate(
-    content.content.commit.path,
-    content.content.sender,
+    content.commit.path,
+    content.sender,
     result.tree,
     cs,
     state,
@@ -338,13 +339,11 @@ async function processCommit(
 
   const newTreeHash = await treeHashRoot(tree, cs.hash)
 
-  if (content.auth.contentType !== contentTypes.commit)
-    throw new ValidationError("Received content as commit, but not auth") //todo solve this with types?
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
     wireformat,
-    content.content,
-    content.auth.signature,
+    content,
+    auth.signature,
     newTreeHash,
     state.confirmationTag,
     cs.hash,
@@ -359,7 +358,7 @@ async function processCommit(
 
   const confirmationTagValid = await verifyConfirmationTag(
     epochSecrets.keySchedule.confirmationKey,
-    content.auth.confirmationTag,
+    auth.confirmationTag,
     updatedGroupContext.confirmedTranscriptHash,
     cs.hash,
   )
@@ -391,14 +390,14 @@ async function processCommit(
       privatePath: pkp,
       groupContext: updatedGroupContext,
       keySchedule: epochSecrets.keySchedule,
-      confirmationTag: content.auth.confirmationTag,
+      confirmationTag: auth.confirmationTag,
       historicalReceiverData,
       unappliedProposals: {},
       groupActiveState,
     },
     actionTaken: action,
     consumed,
-    aad: content.content.authenticatedData,
+    aad: content.authenticatedData,
   }
 }
 

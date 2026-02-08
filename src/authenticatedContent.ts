@@ -13,6 +13,8 @@ import {
   FramedContentData,
   FramedContentProposalData,
   FramedContentTBS,
+  FramedContentAuthDataCommit,
+  FramedContentCommit,
 } from "./framedContent.js"
 import { wireformatDecoder, wireformatEncoder, WireformatValue } from "./wireformat.js"
 
@@ -23,7 +25,8 @@ export interface AuthenticatedContent {
 }
 
 export type AuthenticatedContentCommit = AuthenticatedContent & {
-  content: FramedContentCommitData & FramedContentData
+  content: FramedContentCommit
+  auth: FramedContentAuthDataCommit
 }
 
 export type AuthenticatedContentProposalOrCommit = AuthenticatedContent & {
