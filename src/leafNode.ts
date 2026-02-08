@@ -8,6 +8,7 @@ import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js
 import { extensionEncoder, leafNodeExtensionDecoder, LeafNodeExtension } from "./extension.js"
 import { leafNodeSources, leafNodeSourceValueDecoder, leafNodeSourceValueEncoder } from "./leafNodeSource.js"
 import { Lifetime, lifetimeEncoder, lifetimeDecoder } from "./lifetime.js"
+import { fastEqual } from "./util/byteArray.js"
 
 /** @public */
 export interface LeafNodeData {
@@ -270,4 +271,8 @@ export function verifyLeafNodeSignature(
 
 export function verifyLeafNodeSignatureKeyPackage(leaf: LeafNodeKeyPackage, sig: Signature): Promise<boolean> {
   return verifyWithLabel(leaf.signaturePublicKey, "LeafNodeTBS", encode(leafNodeTBSEncoder, leaf), leaf.signature, sig)
+}
+
+export function leafNodeEqual(a: LeafNode, b: LeafNode): boolean {
+  return fastEqual(a.signaturePublicKey, b.signaturePublicKey)
 }

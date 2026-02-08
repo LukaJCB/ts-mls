@@ -149,7 +149,7 @@ export const groupContextExtensionDecoder: Decoder<GroupContextExtension> = flat
 export function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boolean {
   if (a.extensionType !== b.extensionType) return false
 
-  if (isDefaultExtension(a) && isDefaultExtension(b)) {
+  if (isDefaultExtension(a)) {
     if (a.extensionType === defaultExtensionTypes.required_capabilities) {
       return a.extensionData === b.extensionData
     } else if (
@@ -158,7 +158,7 @@ export function extensionEqual(a: GroupContextExtension, b: GroupContextExtensio
     ) {
       return constantTimeEqual(
         encode(externalSenderEncoder, a.extensionData),
-        encode(externalSenderEncoder, b.extensionData),
+        encode(externalSenderEncoder, b.extensionData as ExternalSender),
       )
     }
   }
