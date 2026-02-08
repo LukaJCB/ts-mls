@@ -115,7 +115,13 @@ export { decode, type Decoder } from "./codec/tlsDecoder.js"
 
 export { type Brand } from "./util/brand.js"
 
-export { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
+export {
+  bytesToBase64,
+  zeroOutUint8Array,
+  base64ToBytes,
+  toBufferSource,
+  bytesToArrayBuffer,
+} from "./util/byteArray.js"
 
 export { type GroupContext } from "./groupContext.js"
 

@@ -1,3 +1,4 @@
+/** @public */
 export function bytesToArrayBuffer(b: Uint8Array): ArrayBuffer {
   if (b.buffer instanceof ArrayBuffer) {
     if (b.byteOffset === 0 && b.byteLength === b.buffer.byteLength) {
@@ -11,7 +12,7 @@ export function bytesToArrayBuffer(b: Uint8Array): ArrayBuffer {
     return ab
   }
 }
-
+/** @public */
 export function toBufferSource(b: Uint8Array): BufferSource {
   if (b.buffer instanceof ArrayBuffer) return b as Uint8Array<ArrayBuffer>
   const ab = new ArrayBuffer(b.byteLength)
@@ -31,6 +32,7 @@ export function bytesToBase64(bytes: Uint8Array): string {
   }
 }
 
+/** @public */
 export function base64ToBytes(base64: string): Uint8Array {
   if (typeof Buffer !== "undefined") {
     return Uint8Array.from(Buffer.from(base64, "base64"))
