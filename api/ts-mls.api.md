@@ -23,6 +23,9 @@ export interface AuthenticationService {
 }
 
 // @public (undocumented)
+export function base64ToBytes(base64: string): Uint8Array;
+
+// @public (undocumented)
 export function branchGroup(params: {
     context: MlsContext;
     state: ClientState;
@@ -36,6 +39,9 @@ export function branchGroup(params: {
 export type Brand<T, B> = T & {
     [__brand]: B;
 };
+
+// @public (undocumented)
+export function bytesToArrayBuffer(b: Uint8Array): ArrayBuffer;
 
 // @public (undocumented)
 export function bytesToBase64(bytes: Uint8Array): string;
@@ -1594,6 +1600,9 @@ export interface SignatureKeyPair {
     // (undocumented)
     signKey: Uint8Array;
 }
+
+// @public (undocumented)
+export function toBufferSource(b: Uint8Array): BufferSource;
 
 // @public (undocumented)
 export type UnappliedProposals = Record<string, ProposalWithSender>;
