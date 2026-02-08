@@ -66,11 +66,13 @@ export const keyPackageTBSDecoder: Decoder<KeyPackageTBS> = mapDecoders(
 /** @public */
 export type KeyPackage = KeyPackageTBS & { signature: Uint8Array }
 
+/** @public */
 export const keyPackageEncoder: Encoder<KeyPackage> = contramapBufferEncoders(
   [keyPackageTBSEncoder, varLenDataEncoder],
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )
 
+/** @public */
 export const keyPackageDecoder: Decoder<KeyPackage> = mapDecoders(
   [keyPackageTBSDecoder, varLenDataDecoder],
   (keyPackageTBS, signature) => ({
@@ -97,13 +99,24 @@ export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Arra
   return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder, value), h)
 }
 
-//todo we should add encoders/decoders
 /** @public */
 export interface PrivateKeyPackage {
   initPrivateKey: Uint8Array
   hpkePrivateKey: Uint8Array
   signaturePrivateKey: Uint8Array
 }
+
+/** @public */
+export const privateKeyPackageEncoder: Encoder<PrivateKeyPackage> = contramapBufferEncoders(
+  [varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
+  (pkp) => [pkp.initPrivateKey, pkp.hpkePrivateKey, pkp.signaturePrivateKey] as const,
+)
+
+/** @public */
+export const privateKeyPackageDecoder: Decoder<PrivateKeyPackage> = mapDecoders(
+  [varLenDataDecoder, varLenDataDecoder, varLenDataDecoder],
+  (initPrivateKey, hpkePrivateKey, signaturePrivateKey) => ({ initPrivateKey, hpkePrivateKey, signaturePrivateKey }),
+)
 
 /** @public */
 export interface GenerateKeyPackageWithKeyParams {
