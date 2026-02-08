@@ -97,13 +97,22 @@ export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Arra
   return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder, value), h)
 }
 
-//todo we should add encoders/decoders
 /** @public */
 export interface PrivateKeyPackage {
   initPrivateKey: Uint8Array
   hpkePrivateKey: Uint8Array
   signaturePrivateKey: Uint8Array
 }
+
+export const privateKeyPackageEncoder: Encoder<PrivateKeyPackage> = contramapBufferEncoders(
+  [varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
+  (pkp) => [pkp.initPrivateKey, pkp.hpkePrivateKey, pkp.signaturePrivateKey] as const,
+)
+
+export const privateKeyPackageDecoder: Decoder<PrivateKeyPackage> = mapDecoders(
+  [varLenDataDecoder, varLenDataDecoder, varLenDataDecoder],
+  (initPrivateKey, hpkePrivateKey, signaturePrivateKey) => ({ initPrivateKey, hpkePrivateKey, signaturePrivateKey }),
+)
 
 /** @public */
 export interface GenerateKeyPackageWithKeyParams {
