@@ -23,18 +23,18 @@ export const ciphersuites = {
   MLS_256_DHKEMP521_AES256GCM_SHA512_P521: 5,
   MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448: 6,
   MLS_256_DHKEMP384_AES256GCM_SHA384_P384: 7,
-  MLS_128_MLKEM512_AES128GCM_SHA256_Ed25519: 77,
-  MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519: 78,
-  MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519: 79,
-  MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519: 80,
-  MLS_256_MLKEM1024_AES256GCM_SHA512_Ed25519: 81,
-  MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519: 82,
-  MLS_256_XWING_AES256GCM_SHA512_Ed25519: 83,
-  MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519: 84,
-  MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA87: 85,
-  MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA87: 86,
-  MLS_256_XWING_AES256GCM_SHA512_MLDSA87: 87,
-  MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA87: 88,
+  MLS_128_MLKEM512_AES128GCM_SHA256_Ed25519: 0xf007,
+  MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519: 0xf008,
+  MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519: 0xf009,
+  MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519: 0xf00a,
+  MLS_256_MLKEM1024_AES256GCM_SHA512_Ed25519: 0xf00b,
+  MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519: 0xf00c,
+  MLS_256_XWING_AES256GCM_SHA512_Ed25519: 0xf00d,
+  MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519: 0xf00e,
+  MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA87: 0xf00f,
+  MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA87: 0xf010,
+  MLS_256_XWING_AES256GCM_SHA512_MLDSA87: 0xf011,
+  MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA87: 0xf012,
 } as const
 
 /** @public */
@@ -123,7 +123,7 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
     id: 7,
   },
 
-  77: {
+  0xf007: {
     hash: "SHA-256",
     hpke: {
       kem: "ML-KEM-512",
@@ -131,9 +131,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 77,
+    id: 0xf007,
   },
-  78: {
+  0xf008: {
     hash: "SHA-256",
     hpke: {
       kem: "ML-KEM-512",
@@ -141,9 +141,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 78,
+    id: 0xf008,
   },
-  79: {
+  0xf009: {
     hash: "SHA-384",
     hpke: {
       kem: "ML-KEM-768",
@@ -151,9 +151,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 79,
+    id: 0xf009,
   },
-  80: {
+  0xf00a: {
     hash: "SHA-384",
     hpke: {
       kem: "ML-KEM-768",
@@ -161,9 +161,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 80,
+    id: 0xf00a,
   },
-  81: {
+  0xf00b: {
     hash: "SHA-512",
     hpke: {
       kem: "ML-KEM-1024",
@@ -171,9 +171,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 81,
+    id: 0xf00b,
   },
-  82: {
+  0xf00c: {
     hash: "SHA-512",
     hpke: {
       kem: "ML-KEM-1024",
@@ -181,9 +181,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 82,
+    id: 0xf00c,
   },
-  83: {
+  0xf00d: {
     hash: "SHA-512",
     hpke: {
       kem: "X-Wing",
@@ -191,9 +191,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 83,
+    id: 0xf00d,
   },
-  84: {
+  0xf00e: {
     hash: "SHA-512",
     hpke: {
       kem: "X-Wing",
@@ -201,9 +201,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "Ed25519",
-    id: 84,
+    id: 0xf00e,
   },
-  85: {
+  0xf00f: {
     hash: "SHA-512",
     hpke: {
       kem: "ML-KEM-1024",
@@ -211,9 +211,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    id: 85,
+    id: 0xf00f,
   },
-  86: {
+  0xf010: {
     hash: "SHA-512",
     hpke: {
       kem: "ML-KEM-1024",
@@ -221,9 +221,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    id: 86,
+    id: 0xf010,
   },
-  87: {
+  0xf011: {
     hash: "SHA-512",
     hpke: {
       kem: "X-Wing",
@@ -231,9 +231,9 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    id: 87,
+    id: 0xf011,
   },
-  88: {
+  0xf012: {
     hash: "SHA-512",
     hpke: {
       kem: "X-Wing",
@@ -241,7 +241,7 @@ export const ciphersuiteValues: Record<CiphersuiteId, Ciphersuite> = {
       kdf: "HKDF-SHA512",
     },
     signature: "ML-DSA-87",
-    id: 88,
+    id: 0xf012,
   },
 } as const
 
