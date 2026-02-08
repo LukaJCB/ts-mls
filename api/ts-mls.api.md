@@ -870,6 +870,12 @@ export type KeyPackage = KeyPackageTBS & {
 };
 
 // @public (undocumented)
+export const keyPackageDecoder: Decoder<KeyPackage>;
+
+// @public (undocumented)
+export const keyPackageEncoder: Encoder<KeyPackage>;
+
+// @public (undocumented)
 export interface KeyPackageEqualityConfig {
     // (undocumented)
     compareKeyPackages(a: KeyPackage, b: KeyPackage): boolean;
@@ -1175,6 +1181,12 @@ export interface PrivateKeyPackage {
     // (undocumented)
     signaturePrivateKey: Uint8Array;
 }
+
+// @public (undocumented)
+export const privateKeyPackageDecoder: Decoder<PrivateKeyPackage>;
+
+// @public (undocumented)
+export const privateKeyPackageEncoder: Encoder<PrivateKeyPackage>;
 
 // @public (undocumented)
 export interface PrivateKeyPath {

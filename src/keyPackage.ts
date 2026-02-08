@@ -66,11 +66,13 @@ export const keyPackageTBSDecoder: Decoder<KeyPackageTBS> = mapDecoders(
 /** @public */
 export type KeyPackage = KeyPackageTBS & { signature: Uint8Array }
 
+/** @public */
 export const keyPackageEncoder: Encoder<KeyPackage> = contramapBufferEncoders(
   [keyPackageTBSEncoder, varLenDataEncoder],
   (keyPackage) => [keyPackage, keyPackage.signature] as const,
 )
 
+/** @public */
 export const keyPackageDecoder: Decoder<KeyPackage> = mapDecoders(
   [keyPackageTBSDecoder, varLenDataDecoder],
   (keyPackageTBS, signature) => ({
@@ -104,11 +106,13 @@ export interface PrivateKeyPackage {
   signaturePrivateKey: Uint8Array
 }
 
+/** @public */
 export const privateKeyPackageEncoder: Encoder<PrivateKeyPackage> = contramapBufferEncoders(
   [varLenDataEncoder, varLenDataEncoder, varLenDataEncoder],
   (pkp) => [pkp.initPrivateKey, pkp.hpkePrivateKey, pkp.signaturePrivateKey] as const,
 )
 
+/** @public */
 export const privateKeyPackageDecoder: Decoder<PrivateKeyPackage> = mapDecoders(
   [varLenDataDecoder, varLenDataDecoder, varLenDataDecoder],
   (initPrivateKey, hpkePrivateKey, signaturePrivateKey) => ({ initPrivateKey, hpkePrivateKey, signaturePrivateKey }),

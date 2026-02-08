@@ -225,6 +225,10 @@ export {
   type PrivateKeyPackage,
   type GenerateKeyPackageParams,
   type GenerateKeyPackageWithKeyParams,
+  privateKeyPackageEncoder,
+  privateKeyPackageDecoder,
+  keyPackageEncoder,
+  keyPackageDecoder,
   generateKeyPackage,
   generateKeyPackageWithKey,
 } from "./keyPackage.js"
