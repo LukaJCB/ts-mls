@@ -216,7 +216,7 @@ console.log(bobProcessMessageResult.message)
 
 ## Documentation
 
-Please visit the [/docs directory](docs/) for further documentation on different scenarios.
+Please visit the [/docs directory](docs#readme) for further documentation on different scenarios.
 
 ## Contributing
 
