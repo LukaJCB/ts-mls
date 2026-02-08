@@ -1,4 +1,4 @@
-import { Encoder, contramapBufferEncoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
 import { varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
@@ -21,8 +21,7 @@ import {
   toLeafIndex,
   toNodeIndex,
 } from "./treemath.js"
-import { LeafNode, leafNodeEncoder, leafNodeDecoder } from "./leafNode.js"
-import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { LeafNode, leafNodeEncoder, leafNodeDecoder, leafNodeEqual } from "./leafNode.js"
 import { InternalError, ValidationError } from "./mlsError.js"
 
 /** @public */
@@ -328,8 +327,7 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | un
   const foundIndex = tree.findIndex((node, nodeIndex) => {
     if (isLeaf(toNodeIndex(nodeIndex)) && node !== undefined) {
       if (node.nodeType === nodeTypes.parent) throw new InternalError("Found parent node in leaf node position")
-      //todo is there a better (faster) comparison method?
-      return constantTimeEqual(encode(leafNodeEncoder, node.leaf), encode(leafNodeEncoder, leaf))
+      return leafNodeEqual(leaf, node.leaf)
     }
 
     return false
