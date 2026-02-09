@@ -29,7 +29,7 @@ importers:
         version: 0.2.1
       '@microsoft/api-extractor':
         specifier: ^7.52.13
-        version: 7.56.2(@types/node@25.2.2)
+        version: 7.56.3(@types/node@25.2.2)
       '@noble/ciphers':
         specifier: 2.1.1
         version: 2.1.1
@@ -580,8 +580,8 @@ packages:
   '@microsoft/api-extractor-model@7.32.2':
     resolution: {integrity: sha512-Ussc25rAalc+4JJs9HNQE7TuO9y6jpYQX9nWD1DhqUzYPBr3Lr7O9intf+ZY8kD5HnIqeIRJX7ccCT0QyBy2Ww==}
 
-  '@microsoft/api-extractor@7.56.2':
-    resolution: {integrity: sha512-d94f7S+H43jDxY/YIyp5UOE9N12HZmEPP5Ct96us+fw1FVKBoy4itTopdVM1VrcpduuA7fK/t31CgA2jM8AqSA==}
+  '@microsoft/api-extractor@7.56.3':
+    resolution: {integrity: sha512-fRqok4aRNq5GpgGBv2fKlSSKbirPKTJ75vQefthB5x9dwt4Zz+AezUzdc1p/AG4wUBIgmhjcEwn/Rj+N4Wh4Mw==}
     hasBin: true
 
   '@microsoft/tsdoc-config@0.18.0':
@@ -2895,7 +2895,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.56.2(@types/node@25.2.2)':
+  '@microsoft/api-extractor@7.56.3(@types/node@25.2.2)':
     dependencies:
       '@microsoft/api-extractor-model': 7.32.2(@types/node@25.2.2)
       '@microsoft/tsdoc': 0.16.0
