@@ -49,12 +49,18 @@ The following cipher suites are supported:
 | DHKEM-P521-HKDF-SHA512   | AES256GCM        | HKDF-SHA512 | SHA-512 | P521      | MLS_256_DHKEMP521_AES256GCM_SHA512_P521             | 5      | @noble/curves                                           |
 | DHKEM-X448-HKDF-SHA512   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed448     | MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448     | 6      | @hpke/chacha20poly1305, @noble/curves, @hpke/dhkem-x448 |
 | DHKEM-P384-HKDF-SHA384   | AES256GCM        | HKDF-SHA384 | SHA-384 | P384      | MLS_256_DHKEMP384_AES256GCM_SHA384_P384             | 7      | @noble/curves                                           |
-| ML-KEM-512               | AES256GCM        | HKDF-SHA512 | SHA-256 | Ed25519   | MLS_128_MLKEM512_AES256GCM_SHA256_Ed25519           | 0xf007 | @hpke/ml-kem                                            |
-| ML-KEM-512               | CHACHA20POLY1305 | HKDF-SHA512 | SHA-256 | Ed25519   | MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519    | 0xf008 | @hpke/ml-kem, @hpke/chacha20poly1305                    |
-| ML-KEM-768               | AES256GCM        | HKDF-SHA512 | SHA-384 | Ed25519   | MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519           | 0xf009 | @hpke/ml-kem                                            |
-| ML-KEM-768               | CHACHA20POLY1305 | HKDF-SHA512 | SHA-384 | Ed25519   | MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519    | 0xf00a | @hpke/ml-kem, @hpke/chacha20poly1305                    |
+| ML-KEM-512               | AES128GCM        | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_MLKEM512_AES128GCM_SHA256_Ed25519           | 0xf007 | @hpke/ml-kem                                            |
+| ML-KEM-512               | CHACHA20POLY1305 | HKDF-SHA256 | SHA-256 | Ed25519   | MLS_128_MLKEM512_CHACHA20POLY1305_SHA256_Ed25519    | 0xf008 | @hpke/ml-kem, @hpke/chacha20poly1305                    |
+| ML-KEM-768               | AES256GCM        | HKDF-SHA384 | SHA-384 | Ed25519   | MLS_256_MLKEM768_AES256GCM_SHA384_Ed25519           | 0xf009 | @hpke/ml-kem                                            |
+| ML-KEM-768               | CHACHA20POLY1305 | HKDF-SHA384 | SHA-384 | Ed25519   | MLS_256_MLKEM768_CHACHA20POLY1305_SHA384_Ed25519    | 0xf00a | @hpke/ml-kem, @hpke/chacha20poly1305                    |
 | ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_AES256GCM_SHA512_Ed25519          | 0xf00b | @hpke/ml-kem                                            |
 | ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_Ed25519   | 0xf00c | @hpke/ml-kem, @hpke/chacha20poly1305                    |
+| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_AES256GCM_SHA512_Ed25519              | 0xf00d | @hpke/ml-kem, @noble/curves                             |
+| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | Ed25519   | MLS_256_XWING_CHACHA20POLY1305_SHA512_Ed25519       | 0xf00e | @hpke/ml-kem, @hpke/chacha20poly1305, @noble/curves     |
+| ML-KEM-1024              | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_AES256GCM_SHA512_MLDSA87          | 0xf00f | @hpke/ml-kem                                            |
+| ML-KEM-1024              | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_MLKEM1024_CHACHA20POLY1305_SHA512_MLDSA87   | 0xf010 | @hpke/ml-kem, @hpke/chacha20poly1305                    |
+| X-Wing                   | AES256GCM        | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_AES256GCM_SHA512_MLDSA87              | 0xf011 | @hpke/ml-kem, @noble/curves                             |
+| X-Wing                   | CHACHA20POLY1305 | HKDF-SHA512 | SHA-512 | ML-DSA-87 | MLS_256_XWING_CHACHA20POLY1305_SHA512_MLDSA87       | 0xf012 | @hpke/ml-kem, @hpke/chacha20poly1305, @noble/curves     |
 
 ## ⚠️ Security Disclaimer
 
