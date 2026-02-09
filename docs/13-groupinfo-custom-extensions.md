@@ -28,7 +28,7 @@ import {
   getCiphersuiteImpl,
   generateKeyPackage,
   Capabilities,
-  CustomExtension,
+  GroupInfoExtension,
   makeCustomExtension,
   protocolVersions,
   ciphersuites,
@@ -70,7 +70,7 @@ const groupId = new TextEncoder().encode("group1")
 const extensionData = new TextEncoder().encode("custom extension data")
 
 // Create the custom extension
-const customExtension: CustomExtension = makeCustomExtension({
+const customExtension: GroupInfoExtension = makeCustomExtension({
   extensionType: customExtensionType,
   extensionData,
 })
@@ -129,5 +129,5 @@ const foundExtension = bobGroup.groupContext.extensions.find((e) => e.extensionT
 
 - Custom extension types should be chosen from the application-specific range (0xF000-0xFFFF) to avoid conflicts with standard or future standard MLS extensions.
 - Unlike Group Context Extensions, not all members must declare support for the extensions in their capabilities before joining a group that uses them.
-- Extensions are passed to new members through the Welcome message and become part of the group state.
+- Extensions are passed to new members through the Welcome message and new members can introspect them when joining.
 - When creating a group with custom extensions, pass them in the `extensions` parameter of `createGroup`.
