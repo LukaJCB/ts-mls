@@ -120,7 +120,7 @@ After:
 const state = await joinGroup(
   { context: { cipherSuite, authService, externalPsks }, welcome, keyPackage, privateKeys, ratchetTree },
 )
-
+```
 If your welcome comes from a commit result:
 
 <!-- ts-docs-verifier:ignore -->
@@ -128,9 +128,7 @@ If your welcome comes from a commit result:
 const state = await joinGroup(
   { context: { cipherSuite, authService, externalPsks }, welcome: commitResult.welcome!.welcome, keyPackage, privateKeys, ratchetTree },
 )
-````
-
-````
+```
 
 **`joinGroupWithExtensions` (return type change)**
 
@@ -146,7 +144,7 @@ const [state, groupInfoExtensions] = await joinGroupWithExtensions(
   cipherSuite,
   ratchetTree,
 )
-````
+```
 
 After:
 
@@ -362,7 +360,6 @@ Examples of signature changes:
 
 Example:
 
-<!-- ts-docs-verifier:ignore -->
 ```typescript
 import { makeCustomExtension } from "ts-mls"
 

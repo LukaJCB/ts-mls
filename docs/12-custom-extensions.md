@@ -30,7 +30,7 @@ import {
   getCiphersuiteImpl,
   generateKeyPackage,
   Capabilities,
-  CustomExtension,
+  GroupContextExtension,
   makeCustomExtension,
   protocolVersions,
   ciphersuites,
@@ -73,7 +73,7 @@ const groupId = new TextEncoder().encode("group1")
 const extensionData = new TextEncoder().encode("custom extension data")
 
 // Create the custom extension
-const customExtension: CustomExtension = makeCustomExtension({
+const customExtension: GroupContextExtension = makeCustomExtension({
   extensionType: customExtensionType,
   extensionData,
 })
