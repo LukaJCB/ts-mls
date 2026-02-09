@@ -134,7 +134,14 @@ const aliceRejectsProposalResult = await processMessage({
   context,
   state: aliceGroup,
   message: createExtensionsProposalResults.message,
-  callback: () => "reject", // Reject the message
+  callback: (incoming) => {
+    if (incoming.kind === "proposal") {
+      // Inspect the proposal
+      console.log("Received proposal:", incoming.proposal)
+      return "reject"
+    }
+    throw new Error("Should not happen for a proposal message")
+  },
 })
 
 aliceGroup = aliceRejectsProposalResult.newState
@@ -155,7 +162,15 @@ const bobRejectsAliceCommitResult = await processMessage({
   context,
   state: bobGroup,
   message: aliceCommitResult.commit,
-  callback: () => "reject", // Reject the commit
+  callback: (incoming) => {
+    if (incoming.kind === "commit") {
+      // Inspect the proposals and senderLeafIndex
+      console.log("Commit proposals:", incoming.proposals)
+      console.log("Commit senderLeafIndex:", incoming.senderLeafIndex)
+      return "reject"
+    }
+    throw new Error("Should not happen for a commit message")
+  },
 })
 bobRejectsAliceCommitResult.consumed.forEach(zeroOutUint8Array)
 ```
