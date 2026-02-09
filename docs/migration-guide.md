@@ -52,14 +52,16 @@ In v1, `defaultLifetime` was a constant `Lifetime` value. In v2, it is a functio
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const lifetime = defaultLifetime
 await generateKeyPackage(credential, capabilities, lifetime, extensions, cipherSuite)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const lifetime = defaultLifetime()
 await generateKeyPackage({ credential, capabilities, lifetime, extensions, cipherSuite })
 ```
@@ -84,13 +86,15 @@ You can use this for examples and tests. For production code, implement your own
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const state = await createGroup(groupId, keyPackage, privateKeyPackage, extensions, authService, cipherSuite)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const state = await createGroup({
   context: { cipherSuite, authService },
   groupId,
@@ -104,20 +108,23 @@ const state = await createGroup({
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const state = await joinGroup(welcome, keyPackage, privateKeys, pskIndex, cipherSuite, ratchetTree)
 ```
 
 After:
 
-````text
+`<!-- ts-docs-verifier:ignore -->
+```typescript
 const state = await joinGroup(
   { context: { cipherSuite, authService, externalPsks }, welcome, keyPackage, privateKeys, ratchetTree },
 )
 
 If your welcome comes from a commit result:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const state = await joinGroup(
   { context: { cipherSuite, authService, externalPsks }, welcome: commitResult.welcome!.welcome, keyPackage, privateKeys, ratchetTree },
 )
@@ -129,7 +136,8 @@ const state = await joinGroup(
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const [state, groupInfoExtensions] = await joinGroupWithExtensions(
   welcome,
   keyPackage,
@@ -142,7 +150,8 @@ const [state, groupInfoExtensions] = await joinGroupWithExtensions(
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const { state, groupInfoExtensions } = await joinGroupWithExtensions(
   { context: { cipherSuite, authService, externalPsks }, welcome, keyPackage, privateKeys, ratchetTree },
 )
@@ -152,13 +161,15 @@ const { state, groupInfoExtensions } = await joinGroupWithExtensions(
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const { publicMessage, newState } = await joinGroupExternal(groupInfo, keyPackage, privateKeys, resync, cipherSuite)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const { publicMessage, newState } = await joinGroupExternal(
   { context: { cipherSuite, authService }, groupInfo, keyPackage, privateKeys, resync },
 )
@@ -168,7 +179,8 @@ const { publicMessage, newState } = await joinGroupExternal(
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 await processPrivateMessage(state, privateMessage, pskIndex, cipherSuite)
 await processPublicMessage(state, publicMessage, pskIndex, cipherSuite)
 await processMessage(message, state, pskIndex, acceptAll, cipherSuite)
@@ -176,7 +188,8 @@ await processMessage(message, state, pskIndex, acceptAll, cipherSuite)
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 await processPrivateMessage(
   { context: { cipherSuite, authService, externalPsks }, state, privateMessage },
 )
@@ -192,14 +205,16 @@ await processMessage(
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const { newState, privateMessage } = await createApplicationMessage(state, bytes, cipherSuite, authenticatedData)
 const { newState, message } = await createProposal(state, false, proposal, cipherSuite, authenticatedData)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const { newState, message } = await createApplicationMessage(
   { context: { cipherSuite, authService, externalPsks }, state, message: bytes, authenticatedData },
 )
@@ -213,13 +228,15 @@ const { newState, message } = await createProposal(
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const res = await createCommit({ state, cipherSuite, authService }, options)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const res = await createCommit({ context: { cipherSuite, authService }, state, ...options })
 ```
 
@@ -227,14 +244,16 @@ const res = await createCommit({ context: { cipherSuite, authService }, state, .
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 await branchGroup(state, keyPackage, privateKeyPackage, members, newGroupId, cipherSuite)
 await joinGroupFromBranch(oldState, welcome, keyPackage, privateKeyPackage, ratchetTree, cipherSuite)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 await branchGroup({
   context: { cipherSuite, authService },
   state,
@@ -252,7 +271,9 @@ await joinGroupFromBranch(
 
 Before:
 
-```text
+
+<!-- ts-docs-verifier:ignore -->
+```typescript
 await reinitGroup(state, groupId, versionName, ciphersuiteName, extensions, cipherSuite)
 await reinitCreateNewGroup(state, keyPackage, privateKeyPackage, members, groupId, ciphersuiteName, extensions, provider?)
 await joinGroupFromReinit(suspended, welcome, keyPackage, privateKeyPackage, ratchetTree, provider?)
@@ -260,7 +281,8 @@ await joinGroupFromReinit(suspended, welcome, keyPackage, privateKeyPackage, rat
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 await reinitGroup({
   context: { cipherSuite, authService },
   state,
@@ -340,7 +362,8 @@ Examples of signature changes:
 
 Example:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 import { makeCustomExtension } from "ts-mls"
 
 const ext = makeCustomExtension({ extensionType: 0xff00, extensionData: new Uint8Array([1, 2, 3]) })
@@ -367,14 +390,16 @@ And exported codecs such as:
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const bytes = encodeMlsMessage(msg)
 const msg2 = decodeMlsMessage(bytes)
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const bytes = encode(mlsMessageEncoder, msg)
 const msg2 = decode(mlsMessageDecoder, bytes)
 ```
@@ -397,14 +422,16 @@ In v1, `getCiphersuiteImpl` took a `Ciphersuite` object as the first parameter. 
 
 Before:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const cipherSuiteName: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519";
 const impl = await getCiphersuiteImpl(getCiphersuiteFromName(cipherSuiteName));
 ```
 
 After:
 
-```text
+<!-- ts-docs-verifier:ignore -->
+```typescript
 const cipherSuiteName: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519";
 const impl = await getCiphersuiteImpl(cipherSuiteName);
 ```
