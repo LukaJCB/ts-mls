@@ -324,7 +324,7 @@ async function processCommit(
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
 
-  const [pkp, commitSecret, tree] = await applyTreeUpdate(
+  const [pkp, commitSecret, tree, newTreeHash] = await applyTreeUpdate(
     content.commit.path,
     content.sender,
     result.tree,
@@ -336,8 +336,6 @@ async function processCommit(
       : [findBlankLeafNodeIndex(result.tree) ?? toNodeIndex(result.tree.length + 1)],
     cs.kdf,
   )
-
-  const newTreeHash = await treeHashRoot(tree, cs.hash)
 
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
@@ -410,37 +408,41 @@ async function applyTreeUpdate(
   groupContext: GroupContext,
   excludeNodes: NodeIndex[],
   kdf: Kdf,
-): Promise<[PrivateKeyPath, Uint8Array, RatchetTree]> {
-  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree] as const
+): Promise<[PrivateKeyPath, Uint8Array, RatchetTree, Uint8Array]> {
+  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree, await treeHashRoot(tree, cs.hash)] // can we reuse existing hash here?
   if (sender.senderType === senderTypes.member) {
     const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
+
+    const newTreeHash = await treeHashRoot(updatedTree, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       updatedTree,
       state,
       toLeafIndex(sender.leafIndex),
-      { ...groupContext, treeHash: await treeHashRoot(updatedTree, cs.hash), epoch: groupContext.epoch + 1n },
+      { ...groupContext, treeHash: newTreeHash, epoch: groupContext.epoch + 1n },
       path,
       excludeNodes,
       cs,
     )
-    return [pkp, commitSecret, updatedTree] as const
+    return [pkp, commitSecret, updatedTree, newTreeHash] as const
   } else {
     const [treeWithLeafNode, leafNodeIndex] = addLeafNode(tree, path.leafNode)
 
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
     const updatedTree = await applyUpdatePath(treeWithLeafNode, senderLeafIndex, path, cs.hash, true)
 
+    const newTreeHash = await treeHashRoot(updatedTree, cs.hash)
+
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       updatedTree,
       state,
       senderLeafIndex,
-      { ...groupContext, treeHash: await treeHashRoot(updatedTree, cs.hash), epoch: groupContext.epoch + 1n },
+      { ...groupContext, treeHash: newTreeHash, epoch: groupContext.epoch + 1n },
       path,
       excludeNodes,
       cs,
     )
-    return [pkp, commitSecret, updatedTree] as const
+    return [pkp, commitSecret, updatedTree, newTreeHash] as const
   }
 }
 

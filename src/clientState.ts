@@ -321,9 +321,7 @@ const emptyProposals: Proposals = {
 function flattenExtensions(
   groupContextExtensions: { proposal: ProposalGroupContextExtensions }[],
 ): GroupContextExtension[] {
-  return groupContextExtensions.reduce((acc, { proposal }) => {
-    return [...acc, ...proposal.groupContextExtensions.extensions]
-  }, [] as GroupContextExtension[])
+  return groupContextExtensions[0]?.proposal.groupContextExtensions.extensions ?? []
 }
 
 async function validateProposals(
