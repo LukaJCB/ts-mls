@@ -75,7 +75,7 @@ export function getHpkePublicKey(n: Node): Uint8Array {
 /** @public */
 export type RatchetTree = (Node | undefined)[]
 
-export function extendRatchetTree(tree: RatchetTree): RatchetTree {
+function extendRatchetTree(tree: RatchetTree): RatchetTree {
   const lastIndex = tree.length - 1
 
   if (tree[lastIndex] === undefined) {
@@ -86,21 +86,18 @@ export function extendRatchetTree(tree: RatchetTree): RatchetTree {
   const neededSize = nextFullBinaryTreeSize(tree.length)
 
   // Fill with `undefined` until tree has the needed size
-  const copy = tree.slice()
-  while (copy.length < neededSize) {
-    copy.push(undefined)
+  while (tree.length < neededSize) {
+    tree.push(undefined)
   }
 
-  return copy
+  return tree
 }
 
 // Compute the smallest 2^(d + 1) - 1 >= n
 function nextFullBinaryTreeSize(n: number): number {
-  let d = 0
-  while ((1 << (d + 1)) - 1 < n) {
-    d++
-  }
-  return (1 << (d + 1)) - 1
+  const value = n + 1
+  const exponent = 32 - Math.clz32(value - 1)
+  return 2 ** exponent - 1
 }
 
 /**
@@ -109,10 +106,15 @@ function nextFullBinaryTreeSize(n: number): number {
  * The receiver MUST check that the last node in ratchet_tree is non-blank, and then extend the tree to the right until it has a length of the form 2d+1 - 1, adding the minimum number of blank values possible.
  * (Obviously, this may be done "virtually", by synthesizing blank nodes when required, as opposed to actually changing the structure in memory.)
  */
-export function stripBlankNodes(tree: RatchetTree): RatchetTree {
+function stripBlankNodes(tree: RatchetTree): RatchetTree {
   let lastNonBlank = tree.length - 1
+
   while (lastNonBlank >= 0 && tree[lastNonBlank] === undefined) {
     lastNonBlank--
+  }
+
+  if (lastNonBlank === tree.length - 1) {
+    return tree
   }
 
   return tree.slice(0, lastNonBlank + 1)
@@ -233,7 +235,12 @@ export function resolution(tree: (Node | undefined)[], nodeIndex: NodeIndex): No
     const r = right(nodeIndex)
     const leftRes = resolution(tree, l)
     const rightRes = resolution(tree, r)
-    return [...leftRes, ...rightRes]
+
+    if (leftRes.length === 0) return rightRes
+    if (rightRes.length === 0) return leftRes
+
+    leftRes.push(...rightRes)
+    return leftRes
   }
 
   if (isLeaf(nodeIndex)) {
@@ -263,20 +270,26 @@ export function filteredDirectPathAndCopathResolution(
 
   // the filtered direct path of a leaf node L is the node's direct path,
   // with any node removed whose child on the copath of L has an empty resolution
-  return directPath(leafNodeIndex, lWidth).reduce(
-    (acc, cur, n) => {
-      const r = resolution(tree, cp[n]!)
-      if (r.length === 0) return acc
-      else return [...acc, { nodeIndex: cur, resolution: r }]
-    },
-    [] as { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
-  )
+  const result: { resolution: NodeIndex[]; nodeIndex: NodeIndex }[] = []
+  const direct = directPath(leafNodeIndex, lWidth)
+
+  for (let n = 0; n < direct.length; n++) {
+    const cur = direct[n]!
+    const r = resolution(tree, cp[n]!)
+    if (r.length !== 0) {
+      result.push({ nodeIndex: cur, resolution: r })
+    }
+  }
+
+  return result
 }
 
 export function removeLeaves(tree: RatchetTree, leafIndices: LeafIndex[]) {
   const copy = tree.slice()
+  const removedLeaves = new Set(leafIndices)
+
   function shouldBeRemoved(leafIndex: number): boolean {
-    return leafIndices.find((x) => leafIndex === x) !== undefined
+    return removedLeaves.has(toLeafIndex(leafIndex))
   }
   for (const [i, n] of tree.entries()) {
     if (n !== undefined) {
