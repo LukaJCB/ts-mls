@@ -23,8 +23,8 @@ export function lengthEncoder(len: number): [number, (offset: number, buffer: Ar
       1,
       (offset, buffer) => {
         // 1-byte length: 00xxxxxx
-        const view = new DataView(buffer)
-        view.setUint8(offset, len & 0b00111111)
+        const view = new Uint8Array(buffer)
+        view[offset] = len & 0b00111111
       },
     ]
   } else if (len < 16384) {
@@ -32,9 +32,9 @@ export function lengthEncoder(len: number): [number, (offset: number, buffer: Ar
       2,
       (offset, buffer) => {
         // 2-byte length: 01xxxxxx xxxxxxxx
-        const view = new DataView(buffer)
-        view.setUint8(offset, ((len >> 8) & 0b00111111) | 0b01000000)
-        view.setUint8(offset + 1, len & 0xff)
+        const view = new Uint8Array(buffer)
+        view[offset] = ((len >> 8) & 0b00111111) | 0b01000000
+        view[offset + 1] = len & 0xff
       },
     ]
   } else if (len < 0x40000000) {
@@ -42,11 +42,11 @@ export function lengthEncoder(len: number): [number, (offset: number, buffer: Ar
       4,
       (offset, buffer) => {
         // 4-byte length: 10xxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-        const view = new DataView(buffer)
-        view.setUint8(offset, ((len >> 24) & 0b00111111) | 0b10000000)
-        view.setUint8(offset + 1, (len >> 16) & 0xff)
-        view.setUint8(offset + 2, (len >> 8) & 0xff)
-        view.setUint8(offset + 3, len & 0xff)
+        const view = new Uint8Array(buffer)
+        view[offset] = ((len >> 24) & 0b00111111) | 0b10000000
+        view[offset + 1] = (len >> 16) & 0xff
+        view[offset + 2] = (len >> 8) & 0xff
+        view[offset + 3] = len & 0xff
       },
     ]
   } else {
