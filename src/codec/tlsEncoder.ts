@@ -19,19 +19,27 @@ export function contramapBufferEncoders<T extends unknown[], R>(
 ): Encoder<R> {
   return (value: R) => {
     const values = toTuple(value)
+    const lengths = new Array<number>(encoders.length)
+    const writes = new Array<(offset: number, buffer: ArrayBuffer) => void>(encoders.length)
     let totalLength = 0
-    let writeTotal = (_offset: number, _buffer: ArrayBuffer) => {}
+
     for (let i = 0; i < encoders.length; i++) {
       const [len, write] = encoders[i]!(values[i])
-      const oldFunc = writeTotal
-      const currentLen = totalLength
-      writeTotal = (offset: number, buffer: ArrayBuffer) => {
-        oldFunc(offset, buffer)
-        write(offset + currentLen, buffer)
-      }
+      lengths[i] = len
+      writes[i] = write
       totalLength += len
     }
-    return [totalLength, writeTotal]
+
+    return [
+      totalLength,
+      (offset: number, buffer: ArrayBuffer) => {
+        let cursor = offset
+        for (let i = 0; i < writes.length; i++) {
+          writes[i]!(cursor, buffer)
+          cursor += lengths[i]!
+        }
+      },
+    ]
   }
 }
 
