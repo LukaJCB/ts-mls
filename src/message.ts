@@ -1,4 +1,4 @@
-import { Decoder, flatMapDecoder, mapDecoder, mapDecoders } from "./codec/tlsDecoder.js"
+import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, Encoder } from "./codec/tlsEncoder.js"
 import { groupInfoDecoder, groupInfoEncoder, GroupInfo } from "./groupInfo.js"
 import { keyPackageDecoder, keyPackageEncoder, KeyPackage } from "./keyPackage.js"
@@ -9,77 +9,71 @@ import { welcomeDecoder, Welcome, welcomeEncoder } from "./welcome.js"
 import { wireformatDecoder, wireformatEncoder, wireformats } from "./wireformat.js"
 
 /** @public */
-export interface MlsMessageProtocol {
-  version: ProtocolVersionValue
-}
-
-/** @public */
-export interface MlsWelcome {
+export interface MlsWelcomeMessage {
   wireformat: typeof wireformats.mls_welcome
   welcome: Welcome
+  version: ProtocolVersionValue
 }
 
 /** @public */
 export interface MlsPrivateMessage {
   wireformat: typeof wireformats.mls_private_message
   privateMessage: PrivateMessage
+  version: ProtocolVersionValue
 }
 
 /** @public */
 export interface MlsGroupInfo {
   wireformat: typeof wireformats.mls_group_info
   groupInfo: GroupInfo
+  version: ProtocolVersionValue
 }
 
 /** @public */
 export interface MlsKeyPackage {
   wireformat: typeof wireformats.mls_key_package
   keyPackage: KeyPackage
+  version: ProtocolVersionValue
 }
 /** @public */
 export interface MlsPublicMessage {
   wireformat: typeof wireformats.mls_public_message
   publicMessage: PublicMessage
+  version: ProtocolVersionValue
 }
 
 /** @public */
-export type MlsFramedMessage = MlsMessageProtocol & (MlsPrivateMessage | MlsPublicMessage)
+export type MlsFramedMessage = MlsPrivateMessage | MlsPublicMessage
 
 /** @public */
-export type MlsWelcomeMessage = MlsMessageProtocol & MlsWelcome
-
-/** @public */
-export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
-
-/** @public */
-export type MlsMessage = MlsMessageProtocol & MlsMessageContent
+export type MlsMessage = MlsWelcomeMessage | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
 
 export const mlsPublicMessageEncoder: Encoder<MlsPublicMessage> = contramapBufferEncoders(
-  [wireformatEncoder, publicMessageEncoder],
-  (msg) => [msg.wireformat, msg.publicMessage] as const,
+  [protocolVersionEncoder, wireformatEncoder, publicMessageEncoder],
+  (msg) => [msg.version, msg.wireformat, msg.publicMessage] as const,
 )
 
-export const mlsWelcomeEncoder: Encoder<MlsWelcome> = contramapBufferEncoders(
-  [wireformatEncoder, welcomeEncoder],
-  (wm) => [wm.wireformat, wm.welcome] as const,
+export const mlsWelcomeEncoder: Encoder<MlsWelcomeMessage> = contramapBufferEncoders(
+  [protocolVersionEncoder, wireformatEncoder, welcomeEncoder],
+  (wm) => [wm.version, wm.wireformat, wm.welcome] as const,
 )
 
 export const mlsPrivateMessageEncoder: Encoder<MlsPrivateMessage> = contramapBufferEncoders(
-  [wireformatEncoder, privateMessageEncoder],
-  (pm) => [pm.wireformat, pm.privateMessage] as const,
+  [protocolVersionEncoder, wireformatEncoder, privateMessageEncoder],
+  (pm) => [pm.version, pm.wireformat, pm.privateMessage] as const,
 )
 
 export const mlsGroupInfoEncoder: Encoder<MlsGroupInfo> = contramapBufferEncoders(
-  [wireformatEncoder, groupInfoEncoder],
-  (gi) => [gi.wireformat, gi.groupInfo] as const,
+  [protocolVersionEncoder, wireformatEncoder, groupInfoEncoder],
+  (gi) => [gi.version, gi.wireformat, gi.groupInfo] as const,
 )
 
 export const mlsKeyPackageEncoder: Encoder<MlsKeyPackage> = contramapBufferEncoders(
-  [wireformatEncoder, keyPackageEncoder],
-  (kp) => [kp.wireformat, kp.keyPackage] as const,
+  [protocolVersionEncoder, wireformatEncoder, keyPackageEncoder],
+  (kp) => [kp.version, kp.wireformat, kp.keyPackage] as const,
 )
-
-export const mlsMessageContentEncoder: Encoder<MlsMessageContent> = (mc) => {
+/** @public */
+export const mlsMessageEncoder: Encoder<MlsMessage> = (mc) => {
   switch (mc.wireformat) {
     case wireformats.mls_public_message:
       return mlsPublicMessageEncoder(mc)
@@ -93,33 +87,20 @@ export const mlsMessageContentEncoder: Encoder<MlsMessageContent> = (mc) => {
       return mlsKeyPackageEncoder(mc)
   }
 }
-
-export const mlsMessageContentDecoder: Decoder<MlsMessageContent> = flatMapDecoder(
-  wireformatDecoder,
-  (wireformat): Decoder<MlsMessageContent> => {
+/** @public */
+export const mlsMessageDecoder: Decoder<MlsMessage> = flatMapDecoder(protocolVersionDecoder, (version) =>
+  flatMapDecoder(wireformatDecoder, (wireformat): Decoder<MlsMessage> => {
     switch (wireformat) {
       case wireformats.mls_public_message:
-        return mapDecoder(publicMessageDecoder, (publicMessage) => ({ wireformat, publicMessage }))
+        return mapDecoder(publicMessageDecoder, (publicMessage) => ({ version, wireformat, publicMessage }))
       case wireformats.mls_welcome:
-        return mapDecoder(welcomeDecoder, (welcome) => ({ wireformat, welcome }))
+        return mapDecoder(welcomeDecoder, (welcome) => ({ version, wireformat, welcome }))
       case wireformats.mls_private_message:
-        return mapDecoder(privateMessageDecoder, (privateMessage) => ({ wireformat, privateMessage }))
+        return mapDecoder(privateMessageDecoder, (privateMessage) => ({ version, wireformat, privateMessage }))
       case wireformats.mls_group_info:
-        return mapDecoder(groupInfoDecoder, (groupInfo) => ({ wireformat, groupInfo }))
+        return mapDecoder(groupInfoDecoder, (groupInfo) => ({ version, wireformat, groupInfo }))
       case wireformats.mls_key_package:
-        return mapDecoder(keyPackageDecoder, (keyPackage) => ({ wireformat, keyPackage }))
+        return mapDecoder(keyPackageDecoder, (keyPackage) => ({ version, wireformat, keyPackage }))
     }
-  },
-)
-
-/** @public */
-export const mlsMessageEncoder: Encoder<MlsMessage> = contramapBufferEncoders(
-  [protocolVersionEncoder, mlsMessageContentEncoder],
-  (w) => [w.version, w] as const,
-)
-
-/** @public */
-export const mlsMessageDecoder: Decoder<MlsMessage> = mapDecoders(
-  [protocolVersionDecoder, mlsMessageContentDecoder],
-  (version, mc) => ({ ...mc, version }),
+  }),
 )

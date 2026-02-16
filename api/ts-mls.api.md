@@ -1047,12 +1047,14 @@ export class MlsError extends Error {
 export function mlsExporter(exporterSecret: Uint8Array, label: string, context: Uint8Array, length: number, cs: CiphersuiteImpl): Promise<Uint8Array>;
 
 // @public (undocumented)
-export type MlsFramedMessage = MlsMessageProtocol & (MlsPrivateMessage | MlsPublicMessage);
+export type MlsFramedMessage = MlsPrivateMessage | MlsPublicMessage;
 
 // @public (undocumented)
 export interface MlsGroupInfo {
     // (undocumented)
     groupInfo: GroupInfo;
+    // (undocumented)
+    version: ProtocolVersionValue;
     // (undocumented)
     wireformat: typeof wireformats.mls_group_info;
 }
@@ -1062,14 +1064,13 @@ export interface MlsKeyPackage {
     // (undocumented)
     keyPackage: KeyPackage;
     // (undocumented)
+    version: ProtocolVersionValue;
+    // (undocumented)
     wireformat: typeof wireformats.mls_key_package;
 }
 
 // @public (undocumented)
-export type MlsMessage = MlsMessageProtocol & MlsMessageContent;
-
-// @public (undocumented)
-export type MlsMessageContent = MlsWelcome | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage;
+export type MlsMessage = MlsWelcomeMessage | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage;
 
 // @public (undocumented)
 export const mlsMessageDecoder: Decoder<MlsMessage>;
@@ -1078,15 +1079,11 @@ export const mlsMessageDecoder: Decoder<MlsMessage>;
 export const mlsMessageEncoder: Encoder<MlsMessage>;
 
 // @public (undocumented)
-export interface MlsMessageProtocol {
-    // (undocumented)
-    version: ProtocolVersionValue;
-}
-
-// @public (undocumented)
 export interface MlsPrivateMessage {
     // (undocumented)
     privateMessage: PrivateMessage;
+    // (undocumented)
+    version: ProtocolVersionValue;
     // (undocumented)
     wireformat: typeof wireformats.mls_private_message;
 }
@@ -1096,19 +1093,20 @@ export interface MlsPublicMessage {
     // (undocumented)
     publicMessage: PublicMessage;
     // (undocumented)
+    version: ProtocolVersionValue;
+    // (undocumented)
     wireformat: typeof wireformats.mls_public_message;
 }
 
 // @public (undocumented)
-export interface MlsWelcome {
+export interface MlsWelcomeMessage {
+    // (undocumented)
+    version: ProtocolVersionValue;
     // (undocumented)
     welcome: Welcome;
     // (undocumented)
     wireformat: typeof wireformats.mls_welcome;
 }
-
-// @public (undocumented)
-export type MlsWelcomeMessage = MlsMessageProtocol & MlsWelcome;
 
 // @public (undocumented)
 export interface NewStateWithActionTaken {
