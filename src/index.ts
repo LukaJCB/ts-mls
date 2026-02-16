@@ -169,11 +169,8 @@ export {
   type MlsGroupInfo,
   type MlsKeyPackage,
   type MlsMessage,
-  type MlsMessageContent,
-  type MlsMessageProtocol,
   type MlsPrivateMessage,
   type MlsPublicMessage,
-  type MlsWelcome,
   type MlsWelcomeMessage,
 } from "./message.js"
 
