@@ -13,11 +13,6 @@
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "default": "./dist/src/index.js"
-    },
-    "./*.js": {
-      "types": "./dist/src/*.d.ts",
-      "import": "./dist/src/*.js",
-      "default": "./dist/src/*.js"
     }
   },
   "files": [
