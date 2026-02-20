@@ -107,7 +107,11 @@ export async function createCommitInternal(
 
   const allProposals = bundleAllProposals(state, extraProposals)
 
+  const mutableTree = state.ratchetTree.slice()
+
+  //applyProposals -> validateProposals -> applyTreeMutations
   const res = await applyProposals(
+    mutableTree,
     state,
     allProposals,
     toLeafIndex(state.privatePath.leafIndex),
@@ -124,13 +128,13 @@ export async function createCommitInternal(
 
   const [tree, updatePath, pathSecrets, newPrivateKey] = res.needsUpdatePath
     ? await createUpdatePath(
-        res.tree,
+        mutableTree,
         toLeafIndex(state.privatePath.leafIndex),
         state.groupContext,
         state.signaturePrivateKey,
         cipherSuite,
       )
-    : [res.tree, undefined, [] as PathSecret[], undefined]
+    : [mutableTree, undefined, [] as PathSecret[], undefined]
 
   const updatedExtensions =
     res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions.length > 0

@@ -23,13 +23,13 @@ import {
 import { pskIdEncoder, PskId, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
-  addLeafNode,
   ratchetTreeDecoder,
   findBlankLeafNodeIndexOrExtend,
   findLeafIndex,
   ratchetTreeEncoder,
-  removeLeafNode,
-  updateLeafNode,
+  removeLeafNodeMutable,
+  addLeafNodeMutable,
+  updateLeafNodeMutable,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
 import {
@@ -64,7 +64,6 @@ import {
   ProposalRemove,
   ProposalUpdate,
   Reinit,
-  Remove,
 } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
@@ -378,11 +377,11 @@ async function validateProposals(
 
   // checks if there is an Add proposal with a KeyPackage that matches a client already in the group
   // unless there is a Remove proposal in the list removing the matching client from the group.
+  // This is O(n) because we need to traverse the tree to ensure no KeyPackage exists
   const addsContainExistingKeypackage = p[defaultProposalTypes.add].some(({ proposal }) =>
     tree.some(
       (node, nodeIndex) =>
-        node !== undefined &&
-        node.nodeType === nodeTypes.leaf &&
+        node?.nodeType === nodeTypes.leaf &&
         config.compareKeyPackageToLeafNode(proposal.add.keyPackage, node.leaf) &&
         p[defaultProposalTypes.remove].every(
           (r) => r.proposal.remove.removed !== nodeToLeafIndex(toNodeIndex(nodeIndex)),
@@ -393,11 +392,11 @@ async function validateProposals(
   if (addsContainExistingKeypackage)
     return new ValidationError("Commit cannot contain an Add proposal for someone already in the group")
 
-  const everyLeafSupportsGroupExtensions = p[defaultProposalTypes.add].every(({ proposal }) =>
+  const addedLeafSupportsGroupExtensions = p[defaultProposalTypes.add].every(({ proposal }) =>
     extensionsSupportedByCapabilities(groupContext.extensions, proposal.add.keyPackage.leafNode.capabilities),
   )
 
-  if (!everyLeafSupportsGroupExtensions)
+  if (!addedLeafSupportsGroupExtensions)
     return new ValidationError("Added leaf node that doesn't support extension in GroupContext")
 
   const multiplePskWithSamePskId = p[defaultProposalTypes.psk].some((a, indexA) =>
@@ -426,6 +425,7 @@ async function validateProposals(
 
   if (requiredCapabilities !== undefined) {
     const caps = requiredCapabilities.extensionData
+    //This is O(n) because we need to traverse the tree to ensure all capabilities are supported
     const everyLeafSupportsCapabilities = tree
       .filter((n) => n !== undefined && n.nodeType === nodeTypes.leaf)
       .every((l) => capabiltiesAreSupported(caps, l.leaf.capabilities))
@@ -491,9 +491,7 @@ export async function validateRatchetTree(
       if (signatureKeys.has(signatureKey)) return new ValidationError("signature keys not unique")
       else signatureKeys.add(signatureKey)
 
-      {
-        credentialTypes.add(n.leaf.credential.credentialType)
-      }
+      credentialTypes.add(n.leaf.credential.credentialType)
 
       const err =
         n.leaf.leafNodeSource === leafNodeSources.key_package
@@ -548,6 +546,7 @@ export async function validateRatchetTree(
 
   if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
 
+  //This is O(n) since we are recomputing the tree hash here
   if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash)))
     return new ValidationError("Unable to verify tree hash")
 }
@@ -666,6 +665,8 @@ async function validateKeyPackage(
 
   if (kp.version !== groupContext.version) return new ValidationError("Invalid mls version")
 
+  //This is O(n) since we need to traverse the entire tree to ensure uniqueness
+  //TODO we should consider a set of keys that we can use to make this check O(1)
   const leafNodeConsistentWithTree = await validateLeafNodeCredentialAndKeyUniqueness(tree, kp.leafNode)
 
   if (leafNodeConsistentWithTree !== undefined) return leafNodeConsistentWithTree
@@ -714,13 +715,12 @@ function validateExternalInit(grouped: Proposals): ValidationError | undefined {
     return new ValidationError("Invalid proposals")
 }
 
-function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(toLeafIndex(remove.removed))] === undefined)
-    return new ValidationError("Tried to remove empty leaf node")
-}
+// function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined {
+//   if (tree[leafToNodeIndex(toLeafIndex(remove.removed))] === undefined)
+//     return new ValidationError("Tried to remove empty leaf node")
+// }
 
 export interface ApplyProposalsResult {
-  tree: RatchetTree
   pskSecret: Uint8Array
   pskIds: PskId[]
   needsUpdatePath: boolean
@@ -735,6 +735,7 @@ export type ApplyProposalsData =
   | { kind: "reinit"; reinit: Reinit }
 
 export async function applyProposals(
+  mutableTree: RatchetTree,
   state: ClientState,
   proposals: ProposalOrRef[],
   committerLeafIndex: LeafIndex | undefined,
@@ -775,7 +776,6 @@ export async function applyProposals(
       throwIfDefined(validateReinit(allProposals, reinit, state.groupContext))
 
       return {
-        tree: state.ratchetTree,
         pskSecret: zeroes,
         pskIds: [],
         needsUpdatePath: false,
@@ -795,14 +795,14 @@ export async function applyProposals(
         state.groupContext,
         clientConfig.keyPackageEqualityConfig,
         authService,
-        state.ratchetTree,
+        mutableTree,
       ),
     )
 
     const newExtensions = flattenExtensions(grouped[defaultProposalTypes.group_context_extensions])
 
-    const [mutatedTree, addedLeafNodes] = await applyTreeMutations(
-      state.ratchetTree,
+    const addedLeafNodes = await applyTreeMutations(
+      mutableTree,
       grouped,
       state.groupContext,
       sentByClient,
@@ -818,7 +818,7 @@ export async function applyProposals(
       zeroes,
     )
 
-    const selfRemoved = mutatedTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
+    const selfRemoved = mutableTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
 
     const needsUpdatePath =
       allProposals.length === 0 ||
@@ -826,7 +826,6 @@ export async function applyProposals(
       Object.values(grouped[defaultProposalTypes.remove]).length > 1
 
     return {
-      tree: mutatedTree,
       pskSecret: updatedPskSecret,
       additionalResult: {
         kind: "memberCommit" as const,
@@ -841,9 +840,13 @@ export async function applyProposals(
   } else {
     throwIfDefined(validateExternalInit(grouped))
 
-    const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
-      return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
-    }, state.ratchetTree)
+    grouped[defaultProposalTypes.remove].forEach(({proposal}) => {
+      removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed))
+    })
+    
+    // const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
+    //   return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
+    // }, state.ratchetTree)
 
     const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
 
@@ -866,13 +869,12 @@ export async function applyProposals(
 
     return {
       needsUpdatePath: true,
-      tree: treeAfterRemove,
       pskSecret: updatedPskSecret,
       pskIds,
       additionalResult: {
         kind: "externalCommit",
         externalInitSecret,
-        newMemberLeafIndex: nodeToLeafIndex(findBlankLeafNodeIndexOrExtend(treeAfterRemove)),
+        newMemberLeafIndex: nodeToLeafIndex(findBlankLeafNodeIndexOrExtend(mutableTree)),
       },
       selfRemoved: false,
       allProposals,
@@ -1199,43 +1201,58 @@ async function importSecret(privateKey: Uint8Array, kemOutput: Uint8Array, cs: C
 }
 
 async function applyTreeMutations(
-  ratchetTree: RatchetTree,
+  mutableTree: RatchetTree,
   grouped: Proposals,
   gc: GroupContext,
   sentByClient: boolean,
   authService: AuthenticationService,
   lifetimeConfig: LifetimeConfig,
   s: Signature,
-): Promise<[RatchetTree, [LeafIndex, KeyPackage][]]> {
-  const treeAfterUpdate = await grouped[defaultProposalTypes.update].reduce(
-    async (acc, { senderLeafIndex, proposal }) => {
-      if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
+): Promise<[LeafIndex, KeyPackage][]> {
 
-      throwIfDefined(
-        await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s),
-      )
-      throwIfDefined(
-        await validateLeafNodeCredentialAndKeyUniqueness(ratchetTree, proposal.update.leafNode, senderLeafIndex),
-      )
+  for (const {senderLeafIndex, proposal} of grouped[defaultProposalTypes.update]) {
+    if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
 
-      return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
-    },
-    Promise.resolve(ratchetTree),
-  )
+    //does the below apply to this as well?
+    throwIfDefined(
+      await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s),
+    )
+    //This is O(n) because we traverse the entire tree to check uniqueness
+    //Is this necessary? Similar to below
+    throwIfDefined(
+      await validateLeafNodeCredentialAndKeyUniqueness(mutableTree, proposal.update.leafNode, senderLeafIndex),
+    )
 
-  const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
-    throwIfDefined(validateRemove(proposal.remove, ratchetTree))
+    
+    const existingLeafNode = mutableTree[leafToNodeIndex(toLeafIndex(senderLeafIndex))]
 
-    return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
-  }, treeAfterUpdate)
+    if (existingLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Update proposal from non-existing leaf node")
 
-  const [treeAfterAdd, addedLeafNodes] = await grouped[defaultProposalTypes.add].reduce(
-    async (acc, { proposal }) => {
+    existingLeafNode.leaf.credential
+
+    // const validSuccessor = authService.validSuccessor(existingLeafNode.leaf.credential, proposal.update.leafNode.credential, existingLeafNode.leaf.signaturePublicKey, proposal.update.leafNode.signaturePublicKey)
+
+    // if (!validSuccessor) throw new ValidationError("Could not validate new credential as valid successor")
+
+    //TODO we should just update all leafNodes in one go instead of copying the entire tree over?
+    updateLeafNodeMutable(mutableTree, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
+  }
+
+  grouped[defaultProposalTypes.remove].forEach(({ proposal }) => removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed)))
+
+
+  const addedLNs = new Array<[LeafIndex, KeyPackage]>(grouped[defaultProposalTypes.add].length)
+
+  for (const {proposal} of grouped[defaultProposalTypes.add]) {
+
+  
+    //This is O(n) since we need to traverse the entire tree to ensure uniqueness
+      //I don't think we need to do this here because it's already done in validate proposals?
       throwIfDefined(
         await validateKeyPackage(
           proposal.add.keyPackage,
           gc,
-          ratchetTree,
+          mutableTree,
           sentByClient,
           lifetimeConfig,
           authService,
@@ -1243,17 +1260,78 @@ async function applyTreeMutations(
         ),
       )
 
-      const [tree, ws] = await acc
-      const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
-      return [
-        updatedTree,
-        [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [LeafIndex, KeyPackage]],
-      ]
-    },
-    Promise.resolve([treeAfterRemove, []] as [RatchetTree, [LeafIndex, KeyPackage][]]),
-  )
+      //TODO we should just add all the leafNodes in one go
+      const leafNodeIndex = addLeafNodeMutable(mutableTree, proposal.add.keyPackage.leafNode)
+      addedLNs.push([nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage])
+  }
 
-  return [treeAfterAdd, addedLeafNodes]
+  // const treeAfterUpdate = await grouped[defaultProposalTypes.update].reduce(
+  //   async (acc, { senderLeafIndex, proposal }) => {
+  //     if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
+
+  //     //does the below apply to this as well?
+  //     throwIfDefined(
+  //       await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s),
+  //     )
+  //     //This is O(n) because we traverse the entire tree to check uniqueness
+  //     //Is this necessary? Similar to below
+  //     throwIfDefined(
+  //       await validateLeafNodeCredentialAndKeyUniqueness(mutableTree, proposal.update.leafNode, senderLeafIndex),
+  //     )
+
+  //     const existingLeafNode = mutableTree[leafToNodeIndex(toLeafIndex(senderLeafIndex))]
+
+  //     if (existingLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Update proposal from non-existing leaf node")
+
+  //     existingLeafNode.leaf.credential
+
+  //     const validSuccessor = authService.validSuccessor(existingLeafNode.leaf.credential, proposal.update.leafNode.credential, existingLeafNode.leaf.signaturePublicKey, proposal.update.leafNode.signaturePublicKey)
+
+  //     if (!validSuccessor) throw new ValidationError("Could not validate new credential as valid successor")
+
+  //     //TODO we should just update all leafNodes in one go instead of copying the entire tree over?
+  //     return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
+  //   },
+  //   Promise.resolve(mutableTree),
+  // )
+
+  
+  // const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
+  //   throwIfDefined(validateRemove(proposal.remove, mutableTree))
+
+  //   return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
+  // }, treeAfterUpdate)
+
+  
+
+  // const [treeAfterAdd, addedLeafNodes] = await grouped[defaultProposalTypes.add].reduce(
+  //   async (acc, { proposal }) => {
+  //     //This is O(n) since we need to traverse the entire tree to ensure uniqueness
+  //     //I don't think we need to do this here because it's already done in validate proposals?
+  //     throwIfDefined(
+  //       await validateKeyPackage(
+  //         proposal.add.keyPackage,
+  //         gc,
+  //         mutableTree,
+  //         sentByClient,
+  //         lifetimeConfig,
+  //         authService,
+  //         s,
+  //       ),
+  //     )
+
+  //     const [tree, ws] = await acc
+  //     //TODO we should just add all the leafNodes in one go
+  //     const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
+  //     return [
+  //       updatedTree,
+  //       [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [LeafIndex, KeyPackage]],
+  //     ]
+  //   },
+  //   Promise.resolve([treeAfterRemove, []] as [RatchetTree, [LeafIndex, KeyPackage][]]),
+  // )
+
+  return addedLNs
 }
 
 export async function processProposal(
