@@ -244,6 +244,7 @@ export async function applyUpdatePath(
       throw new ValidationError("Public key in the LeafNode is the same as the committer's current leaf node")
   }
 
+  // This is O(N) since we are traversing the entire tree here
   const pathNodePublicKeysExistInTree = path.nodes.some((node) =>
     tree.some((treeNode) => {
       return treeNode?.nodeType === nodeTypes.parent
@@ -262,6 +263,7 @@ export async function applyUpdatePath(
   const reverseFilteredDirectPath = filteredDirectPath(senderLeafIndex, tree).reverse()
 
   // need to call .slice here so as not to mutate the original
+  //todo could we just index this in reverse instead of copying the whole thing?
   const reverseUpdatePath = path.nodes.slice().reverse()
 
   if (reverseUpdatePath.length !== reverseFilteredDirectPath.length) {

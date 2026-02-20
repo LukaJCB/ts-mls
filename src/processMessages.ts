@@ -278,7 +278,10 @@ async function processCommit(
   const senderLeafIndex =
     content.sender.senderType === senderTypes.member ? toLeafIndex(content.sender.leafIndex) : undefined
 
+  const mutableTree = state.ratchetTree.slice()
+
   const result = await applyProposals(
+    mutableTree,
     state,
     content.commit.proposals,
     senderLeafIndex,
@@ -312,8 +315,9 @@ async function processCommit(
         cs.signature,
       ),
     )
+    //another O(n) here
     throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniqueness(result.tree, content.commit.path.leafNode, committerLeafIndex),
+      await validateLeafNodeCredentialAndKeyUniqueness(mutableTree, content.commit.path.leafNode, committerLeafIndex),
     )
   }
 
@@ -327,13 +331,13 @@ async function processCommit(
   const [pkp, commitSecret, tree, newTreeHash] = await applyTreeUpdate(
     content.commit.path,
     content.sender,
-    result.tree,
+    mutableTree,
     cs,
     state,
     groupContextWithExtensions,
     result.additionalResult.kind === "memberCommit"
       ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(toLeafIndex(l[0])))
-      : [findBlankLeafNodeIndex(result.tree) ?? toNodeIndex(result.tree.length + 1)],
+      : [findBlankLeafNodeIndex(mutableTree) ?? toNodeIndex(mutableTree.length + 1)],
     cs.kdf,
   )
 
@@ -402,16 +406,16 @@ async function processCommit(
 async function applyTreeUpdate(
   path: UpdatePath | undefined,
   sender: Sender,
-  tree: RatchetTree,
+  mutableTree: RatchetTree,
   cs: CiphersuiteImpl,
   state: ClientState,
   groupContext: GroupContext,
   excludeNodes: NodeIndex[],
   kdf: Kdf,
 ): Promise<[PrivateKeyPath, Uint8Array, RatchetTree, Uint8Array]> {
-  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree, await treeHashRoot(tree, cs.hash)] // can we reuse existing hash here?
+  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), mutableTree, await treeHashRoot(mutableTree, cs.hash)] // can we reuse existing hash here?
   if (sender.senderType === senderTypes.member) {
-    const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
+    const updatedTree = await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
     const newTreeHash = await treeHashRoot(updatedTree, cs.hash)
 
@@ -426,11 +430,13 @@ async function applyTreeUpdate(
     )
     return [pkp, commitSecret, updatedTree, newTreeHash] as const
   } else {
-    const [treeWithLeafNode, leafNodeIndex] = addLeafNode(tree, path.leafNode)
+    //TODO instead of copying the entire tree here and then copying it again after we could just do it once
+    const [treeWithLeafNode, leafNodeIndex] = addLeafNode(mutableTree, path.leafNode)
 
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
     const updatedTree = await applyUpdatePath(treeWithLeafNode, senderLeafIndex, path, cs.hash, true)
 
+    //TODO instead of recomputing the entire hash here, could we just hash the parts of the tree that have changed?
     const newTreeHash = await treeHashRoot(updatedTree, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(

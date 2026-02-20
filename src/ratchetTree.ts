@@ -117,7 +117,7 @@ function stripBlankNodes(tree: RatchetTree): RatchetTree {
     return tree
   }
 
-  return tree.slice(0, lastNonBlank + 1)
+  return tree.splice(0, lastNonBlank + 1)
 }
 
 export const ratchetTreeEncoder: Encoder<RatchetTree> = contramapBufferEncoder(
@@ -153,6 +153,20 @@ export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree,
   return [newTree, insertedNodeIndex]
 }
 
+export function extendTreeMutable(mutableTree: RatchetTree, leafNode: LeafNode): NodeIndex {
+  const newRoot = undefined
+  const insertedNodeIndex = toNodeIndex(mutableTree.length + 1)
+  const originalLength = mutableTree.length
+  mutableTree.push(newRoot);
+  mutableTree.push({ nodeType: nodeTypes.leaf, leaf: leafNode });
+
+
+  for (let i = 0; i < originalLength - 1; i++) {
+    mutableTree.push(undefined);
+  }
+  return insertedNodeIndex
+}
+
 export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, NodeIndex] {
   const blankLeaf = findBlankLeafNodeIndex(tree)
   if (blankLeaf === undefined) {
@@ -182,6 +196,34 @@ export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree
   return [copy, blankLeaf]
 }
 
+export function addLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode): NodeIndex {
+  const blankLeaf = findBlankLeafNodeIndex(mutableTree)
+  if (blankLeaf === undefined) {
+    return extendTreeMutable(mutableTree, leafNode)
+  }
+
+  const insertedLeafIndex = nodeToLeafIndex(blankLeaf)
+  const dp = directPath(blankLeaf, leafWidth(mutableTree.length))
+
+
+  for (const nodeIndex of dp) {
+    const node = mutableTree[nodeIndex]
+    if (node !== undefined) {
+      const parentNode = node as NodeParent
+
+      const updated: NodeParent = {
+        nodeType: nodeTypes.parent,
+        parent: { ...parentNode.parent, unmergedLeaves: [...parentNode.parent.unmergedLeaves, insertedLeafIndex] },
+      }
+      mutableTree[nodeIndex] = updated
+    }
+  }
+
+  mutableTree[blankLeaf] = { nodeType: nodeTypes.leaf, leaf: leafNode }
+
+  return blankLeaf
+}
+
 export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex: LeafIndex): RatchetTree {
   const leafNodeIndex = leafToNodeIndex(leafIndex)
   const pathToBlank = directPath(leafNodeIndex, leafWidth(tree.length))
@@ -199,6 +241,20 @@ export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex:
   return copy
 }
 
+
+export function updateLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode, leafIndex: LeafIndex): void {
+  const leafNodeIndex = leafToNodeIndex(leafIndex)
+  const pathToBlank = directPath(leafNodeIndex, leafWidth(mutableTree.length))
+
+  for (const nodeIndex of pathToBlank) {
+    const node = mutableTree[nodeIndex]
+    if (node !== undefined) {
+      mutableTree[nodeIndex] = undefined
+    }
+  }
+  mutableTree[leafNodeIndex] = { nodeType: nodeTypes.leaf, leaf: leafNode }
+}
+
 export function removeLeafNode(tree: RatchetTree, removedLeafIndex: LeafIndex) {
   const leafNodeIndex = leafToNodeIndex(removedLeafIndex)
   const pathToBlank = directPath(leafNodeIndex, leafWidth(tree.length))
@@ -214,6 +270,23 @@ export function removeLeafNode(tree: RatchetTree, removedLeafIndex: LeafIndex) {
   copy[leafNodeIndex] = undefined
 
   return condenseRatchetTreeAfterRemove(copy)
+}
+
+
+export function removeLeafNodeMutable(mutableTree: RatchetTree, removedLeafIndex: LeafIndex): void {
+  const leafNodeIndex = leafToNodeIndex(removedLeafIndex)
+  const pathToBlank = directPath(leafNodeIndex, leafWidth(mutableTree.length))
+
+
+  for (const nodeIndex of pathToBlank) {
+    const node = mutableTree[nodeIndex]
+    if (node !== undefined) {
+      mutableTree[nodeIndex] = undefined
+    }
+  }
+  mutableTree[leafNodeIndex] = undefined
+
+  condenseRatchetTreeAfterRemove(mutableTree)
 }
 
 /**
