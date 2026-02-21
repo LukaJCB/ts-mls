@@ -1,11 +1,11 @@
 import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import {
-  addLeafNode,
   ratchetTreeDecoder,
   ratchetTreeEncoder,
   RatchetTree,
-  removeLeafNode,
-  updateLeafNode,
+  addLeafNodeMutable,
+  updateLeafNodeMutable,
+  removeLeafNodeMutable,
 } from "../../src/ratchetTree.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
@@ -54,19 +54,22 @@ async function treeOperationsTest(data: TreeOperationData, impl: CiphersuiteImpl
 function applyProposal(proposal: Proposal, tree: RatchetTree, data: TreeOperationData) {
   if (!isDefaultProposal(proposal)) return tree
 
+  const mutableTree = tree.slice()
+
   switch (proposal.proposalType) {
     case defaultProposalTypes.add:
-      return addLeafNode(tree, proposal.add.keyPackage.leafNode)[0]
+      addLeafNodeMutable(mutableTree, proposal.add.keyPackage.leafNode)
+      return mutableTree
     case defaultProposalTypes.update:
-      return updateLeafNode(tree, proposal.update.leafNode, toLeafIndex(data.proposal_sender))
+      updateLeafNodeMutable(mutableTree, proposal.update.leafNode, toLeafIndex(data.proposal_sender))
+      return mutableTree
     case defaultProposalTypes.remove:
-      return removeLeafNode(tree, toLeafIndex(proposal.remove.removed))
+      removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed))
+      return mutableTree
     case defaultProposalTypes.psk:
     case defaultProposalTypes.reinit:
     case defaultProposalTypes.external_init:
     case defaultProposalTypes.group_context_extensions:
       return tree
   }
-
-  return tree
 }

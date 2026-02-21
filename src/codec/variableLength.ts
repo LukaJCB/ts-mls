@@ -94,6 +94,7 @@ export const varLenDataDecoder: Decoder<Uint8Array> = (buf, offset) => {
     throw new CodecError("Data length exceeds buffer")
   }
 
+  //todo maybe use slice?
   const data = buf.subarray(offset + lengthFieldSize, offset + totalBytes)
   return [data, totalBytes]
 }

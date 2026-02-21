@@ -43,11 +43,11 @@ import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import { nodeTypes } from "./nodeType.js"
 import {
   RatchetTree,
-  addLeafNode,
   ratchetTreeEncoder,
   getCredentialFromLeafIndex,
   getSignaturePublicKeyFromLeafIndex,
-  removeLeafNode,
+  removeLeafNodeMutable,
+  addLeafNodeMutable,
 } from "./ratchetTree.js"
 import { createSecretTree, SecretTree } from "./secretTree.js"
 import { treeHashRoot } from "./treeHash.js"
@@ -106,9 +106,11 @@ export async function createCommitInternal(
   const wireformat = wireAsPublicMessage ? "mls_public_message" : "mls_private_message"
 
   const allProposals = bundleAllProposals(state, extraProposals)
+  const mutableTree = state.ratchetTree.slice()
 
   const res = await applyProposals(
     state,
+    mutableTree,
     allProposals,
     toLeafIndex(state.privatePath.leafIndex),
     pskIndex,
@@ -124,13 +126,14 @@ export async function createCommitInternal(
 
   const [tree, updatePath, pathSecrets, newPrivateKey] = res.needsUpdatePath
     ? await createUpdatePath(
-        res.tree,
+        state.ratchetTree,
+        mutableTree,
         toLeafIndex(state.privatePath.leafIndex),
         state.groupContext,
         state.signaturePrivateKey,
         cipherSuite,
       )
-    : [res.tree, undefined, [] as PathSecret[], undefined]
+    : [mutableTree, undefined, [] as PathSecret[], undefined]
 
   const updatedExtensions =
     res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions.length > 0
@@ -553,9 +556,12 @@ export async function joinGroupExternal(params: {
 
   const { enc, secret: initSecret } = await exportSecret(externalPub.extensionData, cs)
 
-  const ratchetTree = ratchetTreeFromExtension(groupInfo) ?? tree
+  //copy tree if not
+  const ratchetTree = ratchetTreeFromExtension(groupInfo) ?? tree?.slice()
 
   if (ratchetTree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
+
+  const mutableTree = ratchetTree
 
   throwIfDefined(
     await validateRatchetTree(
@@ -593,12 +599,13 @@ export async function joinGroupExternal(params: {
       )
     : undefined
 
-  const updatedTree = formerLeafIndex !== undefined ? removeLeafNode(ratchetTree, formerLeafIndex) : ratchetTree
+  if (formerLeafIndex !== undefined) removeLeafNodeMutable(mutableTree, formerLeafIndex)
 
-  const [treeWithNewLeafNode, newLeafNodeIndex] = addLeafNode(updatedTree, keyPackage.leafNode)
+  const newLeafNodeIndex = addLeafNodeMutable(mutableTree, keyPackage.leafNode)
 
   const [newTree, updatePath, pathSecrets, newPrivateKey] = await createUpdatePath(
-    treeWithNewLeafNode,
+    ratchetTree,
+    mutableTree,
     nodeToLeafIndex(newLeafNodeIndex),
     groupInfo.groupContext,
     privateKeys.signaturePrivateKey,

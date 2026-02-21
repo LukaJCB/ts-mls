@@ -120,6 +120,21 @@ function stripBlankNodes(tree: RatchetTree): RatchetTree {
   return tree.slice(0, lastNonBlank + 1)
 }
 
+function stripBlankNodesMutable(tree: RatchetTree): RatchetTree {
+  let lastNonBlank = tree.length - 1
+
+  while (lastNonBlank >= 0 && tree[lastNonBlank] === undefined) {
+    lastNonBlank--
+  }
+
+  if (lastNonBlank === tree.length - 1) {
+    return tree
+  }
+
+  tree.length = lastNonBlank + 1
+  return tree
+}
+
 export const ratchetTreeEncoder: Encoder<RatchetTree> = contramapBufferEncoder(
   varLenTypeEncoder(optionalEncoder(nodeEncoder)),
   stripBlankNodes,
@@ -141,31 +156,30 @@ export function findBlankLeafNodeIndexOrExtend(tree: RatchetTree): NodeIndex {
   return blankLeaf === undefined ? toNodeIndex(tree.length + 1) : blankLeaf
 }
 
-export function extendTree(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, NodeIndex] {
+export function extendTreeMutable(mutableTree: RatchetTree, leafNode: LeafNode): NodeIndex {
   const newRoot = undefined
-  const insertedNodeIndex = toNodeIndex(tree.length + 1)
-  const newTree: RatchetTree = [
-    ...tree,
-    newRoot,
-    { nodeType: nodeTypes.leaf, leaf: leafNode },
-    ...new Array<Node | undefined>(tree.length - 1),
-  ]
-  return [newTree, insertedNodeIndex]
+  const insertedNodeIndex = toNodeIndex(mutableTree.length + 1)
+  const originalLength = mutableTree.length
+  mutableTree.push(newRoot)
+  mutableTree.push({ nodeType: nodeTypes.leaf, leaf: leafNode })
+
+  for (let i = 0; i < originalLength - 1; i++) {
+    mutableTree.push(undefined)
+  }
+  return insertedNodeIndex
 }
 
-export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree, NodeIndex] {
-  const blankLeaf = findBlankLeafNodeIndex(tree)
+export function addLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode): NodeIndex {
+  const blankLeaf = findBlankLeafNodeIndex(mutableTree)
   if (blankLeaf === undefined) {
-    return extendTree(tree, leafNode)
+    return extendTreeMutable(mutableTree, leafNode)
   }
 
   const insertedLeafIndex = nodeToLeafIndex(blankLeaf)
-  const dp = directPath(blankLeaf, leafWidth(tree.length))
-
-  const copy = tree.slice()
+  const dp = directPath(blankLeaf, leafWidth(mutableTree.length))
 
   for (const nodeIndex of dp) {
-    const node = tree[nodeIndex]
+    const node = mutableTree[nodeIndex]
     if (node !== undefined) {
       const parentNode = node as NodeParent
 
@@ -173,47 +187,41 @@ export function addLeafNode(tree: RatchetTree, leafNode: LeafNode): [RatchetTree
         nodeType: nodeTypes.parent,
         parent: { ...parentNode.parent, unmergedLeaves: [...parentNode.parent.unmergedLeaves, insertedLeafIndex] },
       }
-      copy[nodeIndex] = updated
+      mutableTree[nodeIndex] = updated
     }
   }
 
-  copy[blankLeaf] = { nodeType: nodeTypes.leaf, leaf: leafNode }
+  mutableTree[blankLeaf] = { nodeType: nodeTypes.leaf, leaf: leafNode }
 
-  return [copy, blankLeaf]
+  return blankLeaf
 }
 
-export function updateLeafNode(tree: RatchetTree, leafNode: LeafNode, leafIndex: LeafIndex): RatchetTree {
+export function updateLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode, leafIndex: LeafIndex): void {
   const leafNodeIndex = leafToNodeIndex(leafIndex)
-  const pathToBlank = directPath(leafNodeIndex, leafWidth(tree.length))
-
-  const copy = tree.slice()
+  const pathToBlank = directPath(leafNodeIndex, leafWidth(mutableTree.length))
 
   for (const nodeIndex of pathToBlank) {
-    const node = tree[nodeIndex]
+    const node = mutableTree[nodeIndex]
     if (node !== undefined) {
-      copy[nodeIndex] = undefined
+      mutableTree[nodeIndex] = undefined
     }
   }
-  copy[leafNodeIndex] = { nodeType: nodeTypes.leaf, leaf: leafNode }
-
-  return copy
+  mutableTree[leafNodeIndex] = { nodeType: nodeTypes.leaf, leaf: leafNode }
 }
 
-export function removeLeafNode(tree: RatchetTree, removedLeafIndex: LeafIndex) {
+export function removeLeafNodeMutable(mutableTree: RatchetTree, removedLeafIndex: LeafIndex): void {
   const leafNodeIndex = leafToNodeIndex(removedLeafIndex)
-  const pathToBlank = directPath(leafNodeIndex, leafWidth(tree.length))
-
-  const copy = tree.slice()
+  const pathToBlank = directPath(leafNodeIndex, leafWidth(mutableTree.length))
 
   for (const nodeIndex of pathToBlank) {
-    const node = tree[nodeIndex]
+    const node = mutableTree[nodeIndex]
     if (node !== undefined) {
-      copy[nodeIndex] = undefined
+      mutableTree[nodeIndex] = undefined
     }
   }
-  copy[leafNodeIndex] = undefined
+  mutableTree[leafNodeIndex] = undefined
 
-  return condenseRatchetTreeAfterRemove(copy)
+  condenseRatchetTreeAfterRemoveMutable(mutableTree)
 }
 
 /**
@@ -221,6 +229,13 @@ export function removeLeafNode(tree: RatchetTree, removedLeafIndex: LeafIndex) {
  */
 function condenseRatchetTreeAfterRemove(tree: RatchetTree) {
   return extendRatchetTree(stripBlankNodes(tree))
+}
+
+/**
+ * When the right subtree of the tree no longer has any non-blank nodes, it can be safely removed
+ */
+function condenseRatchetTreeAfterRemoveMutable(tree: RatchetTree) {
+  return extendRatchetTree(stripBlankNodesMutable(tree))
 }
 
 export function resolution(tree: (Node | undefined)[], nodeIndex: NodeIndex): NodeIndex[] {

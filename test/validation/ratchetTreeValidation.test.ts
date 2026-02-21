@@ -7,7 +7,7 @@ import { Credential } from "../../src/credential.js"
 import { CiphersuiteId, CiphersuiteImpl, CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
-import { ratchetTreeEncoder, RatchetTree, addLeafNode } from "../../src/ratchetTree.js"
+import { ratchetTreeEncoder, RatchetTree, addLeafNodeMutable } from "../../src/ratchetTree.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { defaultLifetimeConfig } from "../../src/lifetimeConfig.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
@@ -757,12 +757,12 @@ async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {
   const tree = ratchetTreeFromExtension(groupInfo)!
 
   // manually add bob with same signature key
-  const [newTree] = addLeafNode(tree, bob.publicPackage.leafNode)
+  addLeafNodeMutable(tree, bob.publicPackage.leafNode)
 
   const treeExtension = groupInfo.extensions.find((ex) => ex.extensionType === defaultExtensionTypes.ratchet_tree)
-  treeExtension!.extensionData = encode(ratchetTreeEncoder, newTree)
+  treeExtension!.extensionData = encode(ratchetTreeEncoder, tree)
 
-  groupInfo.groupContext.treeHash = await treeHashRoot(newTree, impl.hash)
+  groupInfo.groupContext.treeHash = await treeHashRoot(tree, impl.hash)
 
   await expect(
     joinGroupExternal({

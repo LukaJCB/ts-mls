@@ -26,7 +26,7 @@ import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privat
 import { PrivateMessage } from "./privateMessage.js"
 import { PskIndex } from "./pskIndex.js"
 import { PublicMessage } from "./publicMessage.js"
-import { findBlankLeafNodeIndex, RatchetTree, addLeafNode } from "./ratchetTree.js"
+import { findBlankLeafNodeIndex, RatchetTree, addLeafNodeMutable } from "./ratchetTree.js"
 import { createSecretTree } from "./secretTree.js"
 import { getSenderLeafNodeIndex, Sender, senderTypes } from "./sender.js"
 import { treeHashRoot } from "./treeHash.js"
@@ -278,8 +278,10 @@ async function processCommit(
   const senderLeafIndex =
     content.sender.senderType === senderTypes.member ? toLeafIndex(content.sender.leafIndex) : undefined
 
+  const mutableTree = state.ratchetTree.slice()
   const result = await applyProposals(
     state,
+    mutableTree,
     content.commit.proposals,
     senderLeafIndex,
     pskSearch,
@@ -313,7 +315,7 @@ async function processCommit(
       ),
     )
     throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniqueness(result.tree, content.commit.path.leafNode, committerLeafIndex),
+      await validateLeafNodeCredentialAndKeyUniqueness(mutableTree, content.commit.path.leafNode, committerLeafIndex),
     )
   }
 
@@ -324,16 +326,16 @@ async function processCommit(
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
 
-  const [pkp, commitSecret, tree, newTreeHash] = await applyTreeUpdate(
+  const [pkp, commitSecret, newTreeHash] = await applyTreeUpdate(
     content.commit.path,
     content.sender,
-    result.tree,
+    mutableTree,
     cs,
     state,
     groupContextWithExtensions,
     result.additionalResult.kind === "memberCommit"
       ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(toLeafIndex(l[0])))
-      : [findBlankLeafNodeIndex(result.tree) ?? toNodeIndex(result.tree.length + 1)],
+      : [findBlankLeafNodeIndex(mutableTree) ?? toNodeIndex(mutableTree.length + 1)],
     cs.kdf,
   )
 
@@ -363,7 +365,7 @@ async function processCommit(
 
   if (!confirmationTagValid) throw new CryptoVerificationError("Could not verify confirmation tag")
 
-  const secretTree = createSecretTree(leafWidth(tree.length), epochSecrets.encryptionSecret)
+  const secretTree = createSecretTree(leafWidth(mutableTree.length), epochSecrets.encryptionSecret)
 
   const suspendedPendingReinit = result.additionalResult.kind === "reinit" ? result.additionalResult.reinit : undefined
 
@@ -384,7 +386,7 @@ async function processCommit(
     newState: {
       ...state,
       secretTree,
-      ratchetTree: tree,
+      ratchetTree: mutableTree,
       privatePath: pkp,
       groupContext: updatedGroupContext,
       keySchedule: epochSecrets.keySchedule,
@@ -402,21 +404,21 @@ async function processCommit(
 async function applyTreeUpdate(
   path: UpdatePath | undefined,
   sender: Sender,
-  tree: RatchetTree,
+  mutableTree: RatchetTree,
   cs: CiphersuiteImpl,
   state: ClientState,
   groupContext: GroupContext,
   excludeNodes: NodeIndex[],
   kdf: Kdf,
-): Promise<[PrivateKeyPath, Uint8Array, RatchetTree, Uint8Array]> {
-  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), tree, await treeHashRoot(tree, cs.hash)] // can we reuse existing hash here?
+): Promise<[PrivateKeyPath, Uint8Array, Uint8Array]> {
+  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), await treeHashRoot(mutableTree, cs.hash)] // can we reuse existing hash here?
   if (sender.senderType === senderTypes.member) {
-    const updatedTree = await applyUpdatePath(tree, toLeafIndex(sender.leafIndex), path, cs.hash)
+    await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
-    const newTreeHash = await treeHashRoot(updatedTree, cs.hash)
+    const newTreeHash = await treeHashRoot(mutableTree, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
-      updatedTree,
+      mutableTree,
       state,
       toLeafIndex(sender.leafIndex),
       { ...groupContext, treeHash: newTreeHash, epoch: groupContext.epoch + 1n },
@@ -424,17 +426,17 @@ async function applyTreeUpdate(
       excludeNodes,
       cs,
     )
-    return [pkp, commitSecret, updatedTree, newTreeHash] as const
+    return [pkp, commitSecret, newTreeHash] as const
   } else {
-    const [treeWithLeafNode, leafNodeIndex] = addLeafNode(tree, path.leafNode)
+    const leafNodeIndex = addLeafNodeMutable(mutableTree, path.leafNode)
 
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
-    const updatedTree = await applyUpdatePath(treeWithLeafNode, senderLeafIndex, path, cs.hash, true)
+    await applyUpdatePath(mutableTree, senderLeafIndex, path, cs.hash, true)
 
-    const newTreeHash = await treeHashRoot(updatedTree, cs.hash)
+    const newTreeHash = await treeHashRoot(mutableTree, cs.hash)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
-      updatedTree,
+      mutableTree,
       state,
       senderLeafIndex,
       { ...groupContext, treeHash: newTreeHash, epoch: groupContext.epoch + 1n },
@@ -442,7 +444,7 @@ async function applyTreeUpdate(
       excludeNodes,
       cs,
     )
-    return [pkp, commitSecret, updatedTree, newTreeHash] as const
+    return [pkp, commitSecret, newTreeHash] as const
   }
 }
 
