@@ -80,9 +80,11 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
 
     if (updatePath === undefined) throw new Error("could not decode updatepath")
 
-    const updatedTree = await applyUpdatePath(tree[0], toLeafIndex(path.sender), updatePath[0], impl.hash)
+    const mutableTree = tree[0].slice()
 
-    const th = await treeHashRoot(updatedTree, impl.hash)
+    await applyUpdatePath(mutableTree, toLeafIndex(path.sender), updatePath[0], impl.hash)
+
+    const th = await treeHashRoot(mutableTree, impl.hash)
 
     expect(th).toStrictEqual(hexToBytes(path.tree_hash_after))
 
@@ -93,7 +95,8 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
       throw new Error("Could not find leaf for sender")
     }
     const [t, newUpdatePath, newSecrets] = await createUpdatePath(
-      updatedTree,
+      tree[0],
+      mutableTree,
       toLeafIndex(path.sender),
       updatedGroupContext,
       hexToBytes(senderLeafState.signature_priv),

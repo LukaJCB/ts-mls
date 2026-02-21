@@ -23,13 +23,13 @@ import {
 import { pskIdEncoder, PskId, pskTypes, resumptionPSKUsages } from "./presharedkey.js"
 
 import {
-  addLeafNode,
   ratchetTreeDecoder,
   findBlankLeafNodeIndexOrExtend,
   findLeafIndex,
   ratchetTreeEncoder,
-  removeLeafNode,
-  updateLeafNode,
+  updateLeafNodeMutable,
+  addLeafNodeMutable,
+  removeLeafNodeMutable,
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
 import {
@@ -86,7 +86,7 @@ import {
 import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
 import { getSenderLeafNodeIndex } from "./sender.js"
 import { addToMap } from "./util/addToMap.js"
-import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
+import { bytesToBase64, fastEqual, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import {
   CryptoVerificationError,
@@ -720,7 +720,6 @@ function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined
 }
 
 export interface ApplyProposalsResult {
-  tree: RatchetTree
   pskSecret: Uint8Array
   pskIds: PskId[]
   needsUpdatePath: boolean
@@ -736,6 +735,7 @@ export type ApplyProposalsData =
 
 export async function applyProposals(
   state: ClientState,
+  mutableTree: RatchetTree,
   proposals: ProposalOrRef[],
   committerLeafIndex: LeafIndex | undefined,
   pskSearch: PskIndex,
@@ -744,6 +744,8 @@ export async function applyProposals(
   authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<ApplyProposalsResult> {
+  const encodedBefore = encode(ratchetTreeEncoder, state.ratchetTree)
+
   const allProposals = proposals.reduce((acc, cur) => {
     if (cur.proposalOrRefType === proposalOrRefTypes.proposal)
       return [...acc, { proposal: cur.proposal, senderLeafIndex: committerLeafIndex }]
@@ -774,8 +776,11 @@ export async function applyProposals(
 
       throwIfDefined(validateReinit(allProposals, reinit, state.groupContext))
 
+      const encodedAfter = encode(ratchetTreeEncoder, state.ratchetTree)
+      if (!fastEqual(encodedBefore, encodedAfter)) {
+        throw new Error("THIS WAS NOT SUPPISED TO HAPPEN")
+      }
       return {
-        tree: state.ratchetTree,
         pskSecret: zeroes,
         pskIds: [],
         needsUpdatePath: false,
@@ -795,14 +800,14 @@ export async function applyProposals(
         state.groupContext,
         clientConfig.keyPackageEqualityConfig,
         authService,
-        state.ratchetTree,
+        mutableTree,
       ),
     )
 
     const newExtensions = flattenExtensions(grouped[defaultProposalTypes.group_context_extensions])
 
-    const [mutatedTree, addedLeafNodes] = await applyTreeMutations(
-      state.ratchetTree,
+    const addedLeafNodes = await applyTreeMutations(
+      mutableTree,
       grouped,
       state.groupContext,
       sentByClient,
@@ -818,15 +823,18 @@ export async function applyProposals(
       zeroes,
     )
 
-    const selfRemoved = mutatedTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
+    const selfRemoved = mutableTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
 
     const needsUpdatePath =
       allProposals.length === 0 ||
       Object.values(grouped[defaultProposalTypes.update]).length > 1 ||
       Object.values(grouped[defaultProposalTypes.remove]).length > 1
 
+    const encodedAfter = encode(ratchetTreeEncoder, state.ratchetTree)
+    if (!fastEqual(encodedBefore, encodedAfter)) {
+      throw new Error("THIS WAS NOT SUPPISED TO HAPPEN")
+    }
     return {
-      tree: mutatedTree,
       pskSecret: updatedPskSecret,
       additionalResult: {
         kind: "memberCommit" as const,
@@ -841,9 +849,9 @@ export async function applyProposals(
   } else {
     throwIfDefined(validateExternalInit(grouped))
 
-    const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
-      return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
-    }, state.ratchetTree)
+    grouped[defaultProposalTypes.remove].forEach(({ proposal }) => {
+      removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed))
+    })
 
     const zeroes: Uint8Array = new Uint8Array(cs.kdf.size)
 
@@ -864,15 +872,18 @@ export async function applyProposals(
       cs,
     )
 
+    const encodedAfter = encode(ratchetTreeEncoder, state.ratchetTree)
+    if (!fastEqual(encodedBefore, encodedAfter)) {
+      throw new Error("THIS WAS NOT SUPPISED TO HAPPEN")
+    }
     return {
       needsUpdatePath: true,
-      tree: treeAfterRemove,
       pskSecret: updatedPskSecret,
       pskIds,
       additionalResult: {
         kind: "externalCommit",
         externalInitSecret,
-        newMemberLeafIndex: nodeToLeafIndex(findBlankLeafNodeIndexOrExtend(treeAfterRemove)),
+        newMemberLeafIndex: nodeToLeafIndex(findBlankLeafNodeIndexOrExtend(mutableTree)),
       },
       selfRemoved: false,
       allProposals,
@@ -1199,61 +1210,43 @@ async function importSecret(privateKey: Uint8Array, kemOutput: Uint8Array, cs: C
 }
 
 async function applyTreeMutations(
-  ratchetTree: RatchetTree,
+  mutableTree: RatchetTree,
   grouped: Proposals,
   gc: GroupContext,
   sentByClient: boolean,
   authService: AuthenticationService,
   lifetimeConfig: LifetimeConfig,
   s: Signature,
-): Promise<[RatchetTree, [LeafIndex, KeyPackage][]]> {
-  const treeAfterUpdate = await grouped[defaultProposalTypes.update].reduce(
-    async (acc, { senderLeafIndex, proposal }) => {
-      if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
+): Promise<[LeafIndex, KeyPackage][]> {
+  for (const { senderLeafIndex, proposal } of grouped[defaultProposalTypes.update]) {
+    if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
 
-      throwIfDefined(
-        await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s),
-      )
-      throwIfDefined(
-        await validateLeafNodeCredentialAndKeyUniqueness(ratchetTree, proposal.update.leafNode, senderLeafIndex),
-      )
+    throwIfDefined(await validateLeafNodeUpdateOrCommit(proposal.update.leafNode, senderLeafIndex, gc, authService, s))
+    throwIfDefined(
+      await validateLeafNodeCredentialAndKeyUniqueness(mutableTree, proposal.update.leafNode, senderLeafIndex),
+    )
 
-      return updateLeafNode(await acc, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
-    },
-    Promise.resolve(ratchetTree),
-  )
+    updateLeafNodeMutable(mutableTree, proposal.update.leafNode, toLeafIndex(senderLeafIndex))
+  }
 
-  const treeAfterRemove = grouped[defaultProposalTypes.remove].reduce((acc, { proposal }) => {
-    throwIfDefined(validateRemove(proposal.remove, ratchetTree))
+  grouped[defaultProposalTypes.remove].forEach(({ proposal }) => {
+    throwIfDefined(validateRemove(proposal.remove, mutableTree))
 
-    return removeLeafNode(acc, toLeafIndex(proposal.remove.removed))
-  }, treeAfterUpdate)
+    removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed))
+  })
 
-  const [treeAfterAdd, addedLeafNodes] = await grouped[defaultProposalTypes.add].reduce(
-    async (acc, { proposal }) => {
-      throwIfDefined(
-        await validateKeyPackage(
-          proposal.add.keyPackage,
-          gc,
-          ratchetTree,
-          sentByClient,
-          lifetimeConfig,
-          authService,
-          s,
-        ),
-      )
+  const addedLNs = new Array<[LeafIndex, KeyPackage]>(grouped[defaultProposalTypes.add].length)
 
-      const [tree, ws] = await acc
-      const [updatedTree, leafNodeIndex] = addLeafNode(tree, proposal.add.keyPackage.leafNode)
-      return [
-        updatedTree,
-        [...ws, [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage] as [LeafIndex, KeyPackage]],
-      ]
-    },
-    Promise.resolve([treeAfterRemove, []] as [RatchetTree, [LeafIndex, KeyPackage][]]),
-  )
+  for (const [index, { proposal }] of grouped[defaultProposalTypes.add].entries()) {
+    throwIfDefined(
+      await validateKeyPackage(proposal.add.keyPackage, gc, mutableTree, sentByClient, lifetimeConfig, authService, s),
+    )
 
-  return [treeAfterAdd, addedLeafNodes]
+    const leafNodeIndex = addLeafNodeMutable(mutableTree, proposal.add.keyPackage.leafNode)
+    addedLNs[index] = [nodeToLeafIndex(leafNodeIndex), proposal.add.keyPackage]
+  }
+
+  return addedLNs
 }
 
 export async function processProposal(

@@ -20,7 +20,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit
+      - run: pnpm audit --prod
       - run: pnpm verify
       - name: Coveralls
         if: matrix.node-version == 24

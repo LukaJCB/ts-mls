@@ -268,7 +268,7 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("committer can't update themselves %s", async (cs) => {
     const { impl, aliceGroup, alice } = await setupThreeMembers(cs as CiphersuiteName)
 
-    const updateLeafNode: LeafNode = {
+    const updatedLeafNode: LeafNode = {
       leafNodeSource: leafNodeSources.update,
       signaturePublicKey: alice.publicPackage.leafNode.signaturePublicKey,
       hpkePublicKey: alice.publicPackage.leafNode.hpkePublicKey,
@@ -280,7 +280,7 @@ describe("Proposal Validation", () => {
 
     const updateProposal: Proposal = {
       proposalType: defaultProposalTypes.update,
-      update: { leafNode: updateLeafNode },
+      update: { leafNode: updatedLeafNode },
     }
 
     await expect(
