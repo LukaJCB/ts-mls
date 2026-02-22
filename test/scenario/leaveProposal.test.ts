@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { createProposal } from "../../src/createMessage.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -8,9 +7,12 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
-
-import { processMessage } from "../../src/processMessages.js"
+import {
+  cannotMessageAnymore,
+  createCommitEnsureNoMutation,
+  processMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -74,7 +76,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
     },
   }
 
-  const addBobAndCharlieCommitResult = await createCommit({
+  const addBobAndCharlieCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -128,7 +130,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   if (createLeaveProposalResult.message.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
-  const bobProcessProposalResult = await processMessage({
+  const bobProcessProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -140,7 +142,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
 
   bobGroup = bobProcessProposalResult.newState
 
-  const charlieProcessProposalResult = await processMessage({
+  const charlieProcessProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -153,7 +155,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   charlieGroup = charlieProcessProposalResult.newState
 
   //bob commits to alice leaving
-  const bobCommitResult = await createCommit({
+  const bobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -168,7 +170,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   if (bobCommitResult.commit.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
-  const aliceProcessCommitResult = await processMessage({
+  const aliceProcessCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -179,7 +181,7 @@ async function leaveProposal(cipherSuite: CiphersuiteName, publicMessage: boolea
   })
   aliceGroup = aliceProcessCommitResult.newState
 
-  const charlieProcessCommitResult = await processMessage({
+  const charlieProcessCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

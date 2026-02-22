@@ -1,19 +1,17 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
-import { Capabilities } from "../../src/capabilities.js"
 import {
-  createApplicationMessage,
-  createProposal,
-  processMessage,
-  processPrivateMessage,
-  unsafeTestingAuthenticationService,
-} from "../../src/index.js"
+  createCommitEnsureNoMutation,
+  processMessageEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
+import { Capabilities } from "../../src/capabilities.js"
+import { createApplicationMessage, createProposal, unsafeTestingAuthenticationService } from "../../src/index.js"
 import { UsageError } from "../../src/mlsError.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -73,7 +71,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -114,7 +112,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
   if (createProposalResult.message.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processProposalResult = await processMessage({
+  const processProposalResult = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: aliceGroup,
     message: createProposalResult.message,
@@ -136,7 +134,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
     }),
   ).rejects.toThrow(UsageError)
 
-  const createCommitResult = await createCommit({
+  const createCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -149,7 +147,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
   if (createCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processCommitResult = await processPrivateMessage({
+  const processCommitResult = await processPrivateMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
     privateMessage: createCommitResult.commit.privateMessage,

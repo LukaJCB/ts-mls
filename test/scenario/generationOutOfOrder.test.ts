@@ -1,14 +1,17 @@
 import { ClientState, createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
-import { processMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteImpl, CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processMessageEnsureNoMutation,
+  shuffledIndices,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultKeyRetentionConfig, KeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 import { ValidationError } from "../../src/mlsError.js"
@@ -81,7 +84,7 @@ async function setupTestParticipants(
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -145,7 +148,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateThirdMessageResult.newState
 
   // bob receives 3rd message first
-  const bobProcessThirdMessageResult = await processMessage({
+  const bobProcessThirdMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -157,7 +160,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
   bobGroup = bobProcessThirdMessageResult.newState
 
   // then bob receives the first message
-  const bobProcessFirstMessageResult = await processMessage({
+  const bobProcessFirstMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -169,7 +172,7 @@ async function generationOutOfOrder(cipherSuite: CiphersuiteName) {
   bobGroup = bobProcessFirstMessageResult.newState
 
   // bob receives 2nd message last
-  const bobProcessSecondMessageResult = await processMessage({
+  const bobProcessSecondMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -210,7 +213,7 @@ async function generationOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMes
   const shuffledMessages = shuffledIndices(messages).map((i) => messages[i]!)
 
   for (const msg of shuffledMessages) {
-    const bobProcessMessageResult = await processMessage({
+    const bobProcessMessageResult = await processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -251,7 +254,7 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
   }
 
   // read the last message first
-  const processResult = await processMessage({
+  const processResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -264,7 +267,7 @@ async function generationOutOfOrderLimitFails(cipherSuite: CiphersuiteName, tota
 
   // should fail reading the first message
   await expect(
-    processMessage({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,

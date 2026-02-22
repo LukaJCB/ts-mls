@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
-import { processPrivateMessage } from "../../src/processMessages.js"
+
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -9,7 +8,11 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -57,7 +60,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult = await createCommit({
+  const commitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -115,7 +118,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   const sharedPsks = { [base64PskId1]: pskSecret1, [base64PskId2]: pskSecret2 }
 
-  const pskCommitResult = await createCommit({
+  const pskCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -129,7 +132,7 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const processPskResult = await processPrivateMessage({
+  const processPskResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

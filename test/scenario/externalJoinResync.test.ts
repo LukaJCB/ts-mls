@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPubAndRatchetTree, joinGroupExternal } from "../../src/createCommit.js"
-import { createCommit } from "../../src/createCommit.js"
 import { processPublicMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
@@ -9,7 +8,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
@@ -71,7 +70,7 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobAndCharlieCommitResult = await createCommit({
+  const addBobAndCharlieCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

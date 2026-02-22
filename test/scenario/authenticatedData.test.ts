@@ -6,7 +6,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CryptoError, CryptoVerificationError } from "../../src/mlsError.js"
-import { processMessage, processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
+import { processPublicMessage } from "../../src/processMessages.js"
 import { Capabilities } from "../../src/capabilities.js"
 
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -15,6 +15,11 @@ import { Proposal } from "../../src/proposal.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import {
+  createCommitEnsureNoMutation,
+  processMessageEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+} from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("authenticatedData verified for app/proposal/commit %s", async (cs) => {
   await authenticatedDataScenario(cs as CiphersuiteName)
@@ -64,7 +69,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     privateKeyPackage: alice.privatePackage,
   })
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -104,7 +109,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     authenticatedData: encoder.encode("aad-app-tampered"),
   }
   await expect(
-    processPrivateMessage({
+    processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -114,7 +119,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     }),
   ).rejects.toThrow(CryptoError)
 
-  const bobAppResult = await processMessage({
+  const bobAppResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -151,7 +156,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     authenticatedData: encoder.encode("aad-proposal-tampered"),
   }
   await expect(
-    processPrivateMessage({
+    processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -164,7 +169,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     }),
   ).rejects.toThrow(CryptoError)
 
-  const aliceProcessProposalResult = await processMessage({
+  const aliceProcessProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -203,7 +208,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     authenticatedData: encoder.encode("aad-commit-tampered"),
   }
   await expect(
-    processPrivateMessage({
+    processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -216,7 +221,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     }),
   ).rejects.toThrow(CryptoError)
 
-  const bobProcessCommitResult = await processPrivateMessage({
+  const bobProcessCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -293,7 +298,7 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
 
   const publicCommitAuthenticatedData = encoder.encode("aad-commit-public")
 
-  const alicePublicCommitResult = await createCommit({
+  const alicePublicCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

@@ -1,14 +1,18 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage, createProposal } from "../../src/createMessage.js"
-import { processMessage, processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processMessageEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  shuffledIndices,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultKeyRetentionConfig } from "../../src/keyRetentionConfig.js"
 import { ClientState } from "../../src/clientState.js"
@@ -88,7 +92,7 @@ async function setupTestParticipants(
   }
 
   // alice adds bob and initiates epoch 1
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -148,7 +152,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateFirstProposalResult.newState
 
   // bob creates an empty commit and goes to epoch 2
-  const emptyCommitResult1 = await createCommit({
+  const emptyCommitResult1 = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -162,7 +166,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   // alice processes the empty commit and goes to epoch 2
-  const aliceProcessFirstCommitResult = await processPrivateMessage({
+  const aliceProcessFirstCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -182,7 +186,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateSecondMessageResult.newState
 
   // bob creates an empty commit and goes to epoch 3
-  const emptyCommitResult2 = await createCommit({
+  const emptyCommitResult2 = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -196,7 +200,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   // alice processes the empty commit and goes to epoch 3
-  const aliceProcessSecondCommitResult = await processPrivateMessage({
+  const aliceProcessSecondCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -216,7 +220,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceCreateThirdMessageResult.newState
 
   // bob creates an empty commit and goes to epoch 4
-  const emptyCommitResult3 = await createCommit({
+  const emptyCommitResult3 = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -230,7 +234,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   // alice processes the empty commit and goes to epoch 4
-  const aliceProcessThirdCommitResult = await processPrivateMessage({
+  const aliceProcessThirdCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -242,7 +246,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   aliceGroup = aliceProcessThirdCommitResult.newState
 
   // bob receives 3rd message first
-  const bobProcessThirdMessageResult = await processMessage({
+  const bobProcessThirdMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -254,7 +258,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   bobGroup = bobProcessThirdMessageResult.newState
 
   // then bob receives the first message
-  const bobProcessFirstMessageResult = await processMessage({
+  const bobProcessFirstMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -266,7 +270,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
   bobGroup = bobProcessFirstMessageResult.newState
 
   // bob receives 2nd message last
-  const bobProcessSecondMessageResult = await processMessage({
+  const bobProcessSecondMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -283,7 +287,7 @@ async function epochOutOfOrder(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   await expect(
-    processMessage({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -321,7 +325,7 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
     aliceGroup = createMessageResult.newState
 
     // bob creates an empty commit and goes to next epoch
-    const emptyCommitResult = await createCommit({
+    const emptyCommitResult = await createCommitEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -335,7 +339,7 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
       throw new Error("Expected private message")
 
     // alice processes the empty commit and goes to next epoch
-    const aliceProcessCommitResult = await processPrivateMessage({
+    const aliceProcessCommitResult = await processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -351,7 +355,7 @@ async function epochOutOfOrderRandom(cipherSuite: CiphersuiteName, totalMessages
   const shuffledMessages = shuffledIndices(messages).map((i) => messages[i]!)
 
   for (const msg of shuffledMessages) {
-    const bobProcessMessageResult = await processMessage({
+    const bobProcessMessageResult = await processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -391,7 +395,7 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
     aliceGroup = createMessageResult.newState
 
     // bob creates an empty commit and goes to next epoch
-    const emptyCommitResult = await createCommit({
+    const emptyCommitResult = await createCommitEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -405,7 +409,7 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
       throw new Error("Expected private message")
 
     // alice processes the empty commit and goes to next epoch
-    const aliceProcessCommitResult = await processPrivateMessage({
+    const aliceProcessCommitResult = await processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -420,7 +424,7 @@ async function epochOutOfOrderLimitFails(cipherSuite: CiphersuiteName, totalMess
 
   //process last message
   await expect(
-    processMessage({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,

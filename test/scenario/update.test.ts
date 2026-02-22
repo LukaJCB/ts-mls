@@ -1,6 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
-import { processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -8,7 +6,11 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -54,7 +56,7 @@ async function update(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -78,7 +80,7 @@ async function update(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const emptyCommitResult = await createCommit({
+  const emptyCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -91,7 +93,7 @@ async function update(cipherSuite: CiphersuiteName) {
 
   aliceGroup = emptyCommitResult.newState
 
-  const bobProcessCommitResult = await processPrivateMessage({
+  const bobProcessCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -102,7 +104,7 @@ async function update(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCommitResult.newState
 
-  const emptyCommitResult3 = await createCommit({
+  const emptyCommitResult3 = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -115,7 +117,7 @@ async function update(cipherSuite: CiphersuiteName) {
 
   bobGroup = emptyCommitResult3.newState
 
-  const aliceProcessCommitResult3 = await processPrivateMessage({
+  const aliceProcessCommitResult3 = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

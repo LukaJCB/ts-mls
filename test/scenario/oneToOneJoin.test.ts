@@ -1,7 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
-import { processMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -16,6 +14,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { protocolVersions } from "../../src/protocolVersion.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { createCommitEnsureNoMutation, processMessageEnsureNoMutation } from "./common.js"
 test.concurrent.each(Object.keys(ciphersuites))(`1:1 join %s`, async (cs) => {
   await oneToOne(cs as CiphersuiteName)
 })
@@ -71,7 +70,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   }
 
   // alice commits
-  const commitResult = await createCommit({
+  const commitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -126,7 +125,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   // bob receives the message
-  const bobProcessMessageResult = await processMessage({
+  const bobProcessMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -158,7 +157,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   if (decodedPrivateMessageBob.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const aliceProcessMessageResult = await processMessage({
+  const aliceProcessMessageResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

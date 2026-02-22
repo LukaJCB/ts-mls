@@ -1,7 +1,6 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
-import { createCommit } from "../../src/createCommit.js"
-import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
+import { processPublicMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -17,6 +16,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { createCommitEnsureNoMutation, processPrivateMessageEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -79,7 +79,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -143,7 +143,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCharlieProposalResult.newState
 
-  const removeBobCommitResult = await createCommit({
+  const removeBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -156,7 +156,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processRemoveBobResult = await processPrivateMessage({
+  const processRemoveBobResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

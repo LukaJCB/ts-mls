@@ -1,13 +1,16 @@
 import { createGroup, joinGroup, ClientState } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
-import { processPrivateMessage } from "../../src/processMessages.js"
 import { CiphersuiteName, ciphersuites, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage, KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
-import { shuffledIndices, testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  shuffledIndices,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -106,7 +109,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
       },
     }
 
-    const commitResult = await createCommit({
+    const commitResult = await createCommitEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -122,7 +125,7 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
     for (let i = 0; i < memberStates.length; i++) {
       if (i === removerIndex) continue
       const m = memberStates[i]!
-      const result = await processPrivateMessage({
+      const result = await processPrivateMessageEnsureNoMutation({
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
@@ -161,7 +164,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
     add: { keyPackage: newKP.publicPackage },
   }
 
-  const commitResult = await createCommit({
+  const commitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -186,7 +189,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
   for (let i = 0; i < memberStates.length; i++) {
     if (i === adderIndex) continue
     const m = memberStates[i]!
-    const result = await processPrivateMessage({
+    const result = await processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
@@ -205,7 +208,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
 async function update(memberStates: MemberState[], updateIndex: number, impl: CiphersuiteImpl) {
   const updater = memberStates[updateIndex]!
 
-  const emptyCommitResult = await createCommit({
+  const emptyCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -222,7 +225,7 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
   for (let i = 0; i < memberStates.length; i++) {
     if (i === updateIndex) continue
     const m = memberStates[i]!
-    const result = await processPrivateMessage({
+    const result = await processPrivateMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,

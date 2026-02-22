@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -7,7 +6,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./common.js"
 
 import { defaultGreaseConfig, greaseExtensions } from "../../src/grease.js"
 import { Capabilities } from "../../src/capabilities.js"
@@ -63,7 +62,7 @@ async function greaseTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

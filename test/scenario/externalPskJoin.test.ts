@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -8,7 +7,7 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { pskTypes } from "../../src/presharedkey.js"
@@ -75,7 +74,7 @@ async function externalPskJoin(cipherSuite: CiphersuiteName) {
 
   const sharedPsks = { [base64PskId]: pskSecret }
 
-  const commitResult = await createCommit({
+  const commitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

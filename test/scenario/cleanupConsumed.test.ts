@@ -1,7 +1,6 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
+
 import { createApplicationMessage } from "../../src/createMessage.js"
-import { processMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -18,6 +17,7 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { createCommitEnsureNoMutation, processMessageEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Cleanup consumed values %s`, async (cs) => {
   await cleanup(cs as CiphersuiteName)
@@ -73,7 +73,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const commitResult1 = await createCommit({
+  const commitResult1 = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -105,7 +105,7 @@ async function cleanup(cipherSuite: CiphersuiteName) {
     })
 
   const receiveMessageFn = async (message: MlsFramedMessage) =>
-    await processMessage({
+    await processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
