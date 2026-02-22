@@ -1,6 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
-import { processPrivateMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -8,7 +6,12 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { cannotMessageAnymore, testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  cannotMessageAnymore,
+  createCommitEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
@@ -71,7 +74,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobAndCharlieCommitResult = await createCommit({
+  const addBobAndCharlieCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -115,7 +118,7 @@ async function remove(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const removeBobCommitResult = await createCommit({
+  const removeBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -129,7 +132,7 @@ async function remove(cipherSuite: CiphersuiteName) {
   if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const bobProcessCommitResult = await processPrivateMessage({
+  const bobProcessCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -141,7 +144,7 @@ async function remove(cipherSuite: CiphersuiteName) {
   // bob is removed here
   bobGroup = bobProcessCommitResult.newState
 
-  const charlieProcessCommitResult = await processPrivateMessage({
+  const charlieProcessCommitResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -156,7 +159,7 @@ async function remove(cipherSuite: CiphersuiteName) {
 
   //creating a message will fail now
   await expect(
-    createCommit({
+    createCommitEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,

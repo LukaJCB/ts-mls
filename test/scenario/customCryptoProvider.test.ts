@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteImpl, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
@@ -10,7 +9,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { CryptoProvider, defaultCryptoProvider, Kdf } from "../../src/index.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./common.js"
 import { extract, expand } from "@noble/hashes/hkdf.js"
 import { sha256 } from "@noble/hashes/sha2.js"
 
@@ -93,7 +92,7 @@ describe("Custom crypto provider", () => {
       },
     }
 
-    const addBobAndCharlieCommitResult = await createCommit({
+    const addBobAndCharlieCommitResult = await createCommitEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,

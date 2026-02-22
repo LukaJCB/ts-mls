@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
@@ -13,6 +12,7 @@ import { protocolVersions } from "../../src/protocolVersion.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { createCommitEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Custom Extensions %s`, async (cs) => {
   await customExtensionTest(cs as CiphersuiteName)
@@ -75,7 +75,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -119,7 +119,7 @@ async function customExtensionTest(cipherSuite: CiphersuiteName) {
   }
 
   await expect(
-    createCommit({
+    createCommitEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,

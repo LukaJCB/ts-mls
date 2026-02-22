@@ -1,7 +1,6 @@
 import {
   CiphersuiteName,
   ciphersuites,
-  createCommit,
   createGroup,
   Credential,
   defaultCredentialTypes,
@@ -15,6 +14,7 @@ import {
   clientStateEncoder,
   clientStateDecoder,
 } from "../../src/index.js"
+import { createCommitEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("ClientState Binary serialization round-trip %s", async (cs) => {
   await clientStateBinarySerializationTest(cs as CiphersuiteName)
@@ -86,7 +86,7 @@ async function clientStateBinarySerializationTest(cipherSuite: CiphersuiteName) 
     },
   }
 
-  const addBobAndCharlieCommitResult = await createCommit({
+  const addBobAndCharlieCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

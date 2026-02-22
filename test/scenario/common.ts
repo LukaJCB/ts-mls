@@ -1,9 +1,13 @@
 import { ClientState } from "../../src/clientState.js"
 import { createApplicationMessage } from "../../src/createMessage.js"
-import { processMessage } from "../../src/processMessages.js"
+import { processMessage, ProcessMessageResult, processPrivateMessage } from "../../src/processMessages.js"
 import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { UsageError } from "../../src/mlsError.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { createCommit, CreateCommitParams, CreateCommitResult } from "../../src/createCommit.js"
+import { ratchetTreeEncoder } from "../../src/ratchetTree.js"
+import { encode, IncomingMessageCallback, MlsContext, MlsFramedMessage, PrivateMessage } from "../../src/index.js"
+import { fastEqual } from "../../src/util/byteArray.js"
 
 export async function testEveryoneCanMessageEveryone(
   clients: ClientState[],
@@ -26,7 +30,7 @@ export async function testEveryoneCanMessageEveryone(
     for (const [receiverIndex, receiverGroup] of updatedGroups.entries()) {
       if (receiverIndex === senderIndex) continue
 
-      const result = await processMessage({
+      const result = await processMessageEnsureNoMutation({
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
@@ -71,4 +75,47 @@ export function shuffledIndices<T>(arr: T[]): number[] {
 export function getRandomElement<T>(arr: T[]): T {
   const index = Math.floor(Math.random() * arr.length)
   return arr[index]!
+}
+
+export async function createCommitEnsureNoMutation(params: CreateCommitParams): Promise<CreateCommitResult> {
+  const encodedBefore = encode(ratchetTreeEncoder, params.state.ratchetTree)
+
+  const res = await createCommit(params)
+
+  if (!fastEqual(encodedBefore, encode(ratchetTreeEncoder, params.state.ratchetTree))) {
+    throw new Error("Ratchet Tree should not change after commit")
+  }
+  return res
+}
+
+export async function processMessageEnsureNoMutation(params: {
+  context: MlsContext
+  state: ClientState
+  message: MlsFramedMessage
+  callback?: IncomingMessageCallback
+}): Promise<ProcessMessageResult> {
+  const encodedBefore = encode(ratchetTreeEncoder, params.state.ratchetTree)
+
+  const res = await processMessage(params)
+
+  if (!fastEqual(encodedBefore, encode(ratchetTreeEncoder, params.state.ratchetTree))) {
+    throw new Error("Ratchet Tree should not change after commit")
+  }
+  return res
+}
+
+export async function processPrivateMessageEnsureNoMutation(params: {
+  context: MlsContext
+  state: ClientState
+  privateMessage: PrivateMessage
+  callback?: IncomingMessageCallback
+}): Promise<ProcessMessageResult> {
+  const encodedBefore = encode(ratchetTreeEncoder, params.state.ratchetTree)
+
+  const res = await processPrivateMessage(params)
+
+  if (!fastEqual(encodedBefore, encode(ratchetTreeEncoder, params.state.ratchetTree))) {
+    throw new Error("Ratchet Tree should not change after commit")
+  }
+  return res
 }

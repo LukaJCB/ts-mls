@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
-import { processPrivateMessage } from "../../src/processMessages.js"
+
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -8,7 +7,11 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processPrivateMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -63,7 +66,7 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -94,7 +97,7 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
     },
   }
 
-  const addCharlieCommitResult = await createCommit({
+  const addCharlieCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -108,7 +111,7 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
   if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processAddCharlieResult = await processPrivateMessage({
+  const processAddCharlieResult = await processPrivateMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

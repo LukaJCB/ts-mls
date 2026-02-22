@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -8,10 +7,10 @@ import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd } from "../../src/proposal.js"
 
 import { createProposal, unsafeTestingAuthenticationService } from "../../src/index.js"
-import { processMessage } from "../../src/processMessages.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { createCommitEnsureNoMutation, processMessageEnsureNoMutation } from "./common.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reject incoming message %s`, async (cs) => {
   await rejectIncomingMessagesTest(cs as CiphersuiteName, true)
   await rejectIncomingMessagesTest(cs as CiphersuiteName, false)
@@ -55,7 +54,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     },
   }
 
-  const addBobCommitResult = await createCommit({
+  const addBobCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -106,7 +105,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     throw new Error(`Expected ${preferredWireformat} message`)
 
   //alice rejects the proposal
-  const aliceRejectsProposalResult = await processMessage({
+  const aliceRejectsProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -121,7 +120,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   expect(aliceGroup.unappliedProposals).toStrictEqual({})
 
   // alice commits without the proposal
-  const aliceCommitResult = await createCommit({
+  const aliceCommitResult = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
@@ -135,7 +134,7 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
   if (aliceCommitResult.commit.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
-  const bobRejectsAliceCommitResult = await processMessage({
+  const bobRejectsAliceCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,

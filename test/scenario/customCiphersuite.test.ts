@@ -1,5 +1,4 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
-import { createCommit } from "../../src/createCommit.js"
 import { Credential } from "../../src/credential.js"
 import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
@@ -12,7 +11,7 @@ import { unsafeTestingAuthenticationService } from "../../src/authenticationServ
 import { Hash } from "../../src/index.js"
 import { blake3 } from "@noble/hashes/blake3.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
-import { testEveryoneCanMessageEveryone } from "./common.js"
+import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./common.js"
 
 describe("Custom ciphersuites", () => {
   test("create simple custom ciphersuite", async () => {
@@ -93,7 +92,7 @@ describe("Custom ciphersuites", () => {
       },
     }
 
-    const addBobAndCharlieCommitResult = await createCommit({
+    const addBobAndCharlieCommitResult = await createCommitEnsureNoMutation({
       context: {
         cipherSuite: customCiphersuiteImpl,
         authService: unsafeTestingAuthenticationService,
