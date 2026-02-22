@@ -44,11 +44,11 @@ export const welcomeDecoder: Decoder<Welcome> = mapDecoders(
   (cipherSuite, secrets, encryptedGroupInfo) => ({ cipherSuite, secrets, encryptedGroupInfo }),
 )
 
-export function welcomeNonce(welcomeSecret: Uint8Array, cs: CiphersuiteImpl) {
+function welcomeNonce(welcomeSecret: Uint8Array, cs: CiphersuiteImpl) {
   return expandWithLabel(welcomeSecret, "nonce", new Uint8Array(), cs.hpke.nonceLength, cs.kdf)
 }
 
-export function welcomeKey(welcomeSecret: Uint8Array, cs: CiphersuiteImpl) {
+function welcomeKey(welcomeSecret: Uint8Array, cs: CiphersuiteImpl) {
   return expandWithLabel(welcomeSecret, "key", new Uint8Array(), cs.hpke.keyLength, cs.kdf)
 }
 

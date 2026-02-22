@@ -603,6 +603,18 @@ export function getOwnLeafNode(state: ClientState): LeafNode;
 export function getOwnSignatureKeyPair(state: ClientState): SignatureKeyPair;
 
 // @public (undocumented)
+export function greaseCapabilities(config: GreaseConfig, capabilities: Capabilities): Capabilities;
+
+// @public (undocumented)
+export interface GreaseConfig {
+    // (undocumented)
+    probabilityPerGreaseValue: number;
+}
+
+// @public (undocumented)
+export function greaseExtensions(greaseConfig: GreaseConfig): CustomExtension[];
+
+// @public (undocumented)
 export type GroupActiveState = {
     kind: "active";
 } | {

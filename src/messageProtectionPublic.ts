@@ -21,7 +21,7 @@ import { senderTypes, SenderNonMember } from "./sender.js"
 import { contentTypes } from "./contentType.js"
 import { wireformats } from "./wireformat.js"
 
-export interface ProtectProposalPublicResult {
+interface ProtectProposalPublicResult {
   publicMessage: PublicMessage
 }
 

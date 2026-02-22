@@ -11,7 +11,7 @@ export interface ClientConfig {
   paddingConfig: PaddingConfig
 }
 
-export const defaultClientConfig = {
+export const defaultClientConfig: ClientConfig = {
   keyRetentionConfig: defaultKeyRetentionConfig,
   lifetimeConfig: defaultLifetimeConfig,
   keyPackageEqualityConfig: defaultKeyPackageEqualityConfig,

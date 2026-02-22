@@ -1,4 +1,4 @@
-import { Encoder, contramapBufferEncoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
+import { Encoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Decoder, flatMapDecoder, mapDecoder } from "./codec/tlsDecoder.js"
 
 import { varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
@@ -33,7 +33,7 @@ export type NodeParent = { nodeType: typeof nodeTypes.parent; parent: ParentNode
 /** @public */
 export type NodeLeaf = { nodeType: typeof nodeTypes.leaf; leaf: LeafNode }
 
-export const nodeEncoder: Encoder<Node> = (node) => {
+const nodeEncoder: Encoder<Node> = (node) => {
   switch (node.nodeType) {
     case nodeTypes.parent:
       return contramapBufferEncoders(
@@ -48,7 +48,7 @@ export const nodeEncoder: Encoder<Node> = (node) => {
   }
 }
 
-export const nodeDecoder: Decoder<Node> = flatMapDecoder(nodeTypeDecoder, (nodeType): Decoder<Node> => {
+const nodeDecoder: Decoder<Node> = flatMapDecoder(nodeTypeDecoder, (nodeType): Decoder<Node> => {
   switch (nodeType) {
     case nodeTypes.parent:
       return mapDecoder(parentNodeDecoder, (parent) => ({
@@ -107,11 +107,7 @@ function nextFullBinaryTreeSize(n: number): number {
  * (Obviously, this may be done "virtually", by synthesizing blank nodes when required, as opposed to actually changing the structure in memory.)
  */
 function stripBlankNodes(tree: RatchetTree): RatchetTree {
-  let lastNonBlank = tree.length - 1
-
-  while (lastNonBlank >= 0 && tree[lastNonBlank] === undefined) {
-    lastNonBlank--
-  }
+  const lastNonBlank = findLastNonBlankNodeIndex(tree)
 
   if (lastNonBlank === tree.length - 1) {
     return tree
@@ -121,11 +117,7 @@ function stripBlankNodes(tree: RatchetTree): RatchetTree {
 }
 
 function stripBlankNodesMutable(tree: RatchetTree): RatchetTree {
-  let lastNonBlank = tree.length - 1
-
-  while (lastNonBlank >= 0 && tree[lastNonBlank] === undefined) {
-    lastNonBlank--
-  }
+  const lastNonBlank = findLastNonBlankNodeIndex(tree)
 
   if (lastNonBlank === tree.length - 1) {
     return tree
@@ -135,10 +127,18 @@ function stripBlankNodesMutable(tree: RatchetTree): RatchetTree {
   return tree
 }
 
-export const ratchetTreeEncoder: Encoder<RatchetTree> = contramapBufferEncoder(
-  varLenTypeEncoder(optionalEncoder(nodeEncoder)),
-  stripBlankNodes,
-)
+function findLastNonBlankNodeIndex(tree: RatchetTree): number {
+  let lastNonBlank = tree.length - 1
+
+  while (lastNonBlank >= 0 && tree[lastNonBlank] === undefined) {
+    lastNonBlank--
+  }
+
+  return lastNonBlank
+}
+
+export const ratchetTreeEncoder: Encoder<RatchetTree> = (tree) =>
+  varLenTypeEncoder(optionalEncoder(nodeEncoder), findLastNonBlankNodeIndex(tree) + 1)(tree)
 
 export const ratchetTreeDecoder: Decoder<RatchetTree> = mapDecoder(
   varLenTypeDecoder(optionalDecoder(nodeDecoder)),
@@ -156,7 +156,7 @@ export function findBlankLeafNodeIndexOrExtend(tree: RatchetTree): NodeIndex {
   return blankLeaf === undefined ? toNodeIndex(tree.length + 1) : blankLeaf
 }
 
-export function extendTreeMutable(mutableTree: RatchetTree, leafNode: LeafNode): NodeIndex {
+function extendTreeMutable(mutableTree: RatchetTree, leafNode: LeafNode): NodeIndex {
   const newRoot = undefined
   const insertedNodeIndex = toNodeIndex(mutableTree.length + 1)
   const originalLength = mutableTree.length
@@ -322,7 +322,7 @@ export function removeLeaves(tree: RatchetTree, leafIndices: LeafIndex[]) {
   return condenseRatchetTreeAfterRemove(copy)
 }
 
-export function traverseToRoot<T>(
+function traverseToRoot<T>(
   tree: RatchetTree,
   leafIndex: LeafIndex,
   f: (nodeIndex: NodeIndex, node: ParentNode) => T | undefined,

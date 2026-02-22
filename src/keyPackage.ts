@@ -24,6 +24,7 @@ import { defaultLifetime, Lifetime } from "./lifetime.js"
 import { Credential } from "./credential.js"
 import { defaultCapabilities } from "./defaultCapabilities.js"
 import { uint16Decoder, uint16Encoder } from "./codec/number.js"
+import { defaultGreaseConfig, greaseExtensions } from "./grease.js"
 
 /** @public */
 export type KeyPackageTBS = {
@@ -81,7 +82,7 @@ export const keyPackageDecoder: Decoder<KeyPackage> = mapDecoders(
   }),
 )
 
-export async function signKeyPackage(tbs: KeyPackageTBS, signKey: Uint8Array, s: Signature): Promise<KeyPackage> {
+async function signKeyPackage(tbs: KeyPackageTBS, signKey: Uint8Array, s: Signature): Promise<KeyPackage> {
   return { ...tbs, signature: await signWithLabel(signKey, "KeyPackageTBS", encode(keyPackageTBSEncoder, tbs), s) }
 }
 
@@ -136,7 +137,7 @@ export async function generateKeyPackageWithKey(
   const { credential, signatureKeyPair, cipherSuite, leafNodeExtensions } = params
   const capabilities = params.capabilities ?? defaultCapabilities()
   const lifetime = params.lifetime ?? defaultLifetime()
-  const extensions = params.extensions ?? []
+  const extensions = params.extensions ?? greaseExtensions(defaultGreaseConfig)
   const cs = cipherSuite
   const initKeys = await cs.hpke.generateKeyPair()
   const hpkeKeys = await cs.hpke.generateKeyPair()
@@ -162,7 +163,7 @@ export async function generateKeyPackageWithKey(
     cipherSuite: cs.id,
     initKey: await cs.hpke.exportPublicKey(initKeys.publicKey),
     leafNode: await signLeafNodeKeyPackage(leafNodeTbs, signatureKeyPair.signKey, cs.signature),
-    extensions: extensions ?? [],
+    extensions: extensions,
   }
 
   return { publicPackage: await signKeyPackage(tbs, signatureKeyPair.signKey, cs.signature), privatePackage }

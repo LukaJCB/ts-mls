@@ -28,7 +28,7 @@ export type PublicMessageInfoMember = { senderType: typeof senderTypes.member; m
 /** @public */
 export type PublicMessageInfoMemberOther = { senderType: Exclude<SenderTypeValue, typeof senderTypes.member> }
 
-export const publicMessageInfoEncoder: Encoder<PublicMessageInfo> = (info) => {
+const publicMessageInfoEncoder: Encoder<PublicMessageInfo> = (info) => {
   switch (info.senderType) {
     case senderTypes.member:
       return varLenDataEncoder(info.membershipTag)
@@ -39,7 +39,7 @@ export const publicMessageInfoEncoder: Encoder<PublicMessageInfo> = (info) => {
   }
 }
 
-export function publicMessageInfoDecoder(senderType: SenderTypeValue): Decoder<PublicMessageInfo> {
+function publicMessageInfoDecoder(senderType: SenderTypeValue): Decoder<PublicMessageInfo> {
   switch (senderType) {
     case senderTypes.member:
       return mapDecoder(varLenDataDecoder, (membershipTag) => ({
@@ -106,10 +106,7 @@ export function findSignaturePublicKey(
   }
 }
 
-export function senderFromExtension(
-  extensions: GroupContextExtension[],
-  senderIndex: number,
-): ExternalSender | undefined {
+function senderFromExtension(extensions: GroupContextExtension[], senderIndex: number): ExternalSender | undefined {
   const externalSenderExtensions = extensions.filter(
     (ex): ex is ExtensionExternalSenders => ex.extensionType === defaultExtensionTypes.external_senders,
   )

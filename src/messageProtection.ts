@@ -30,7 +30,7 @@ import { nodeTypes } from "./nodeType.js"
 import { contentTypes } from "./contentType.js"
 import { wireformats } from "./wireformat.js"
 
-export interface ProtectApplicationDataResult {
+interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
   newSecretTree: SecretTree
   consumed: Uint8Array[]
@@ -86,7 +86,7 @@ export async function protectApplicationData(
   return { newSecretTree: result.tree, privateMessage: result.privateMessage, consumed: result.consumed }
 }
 
-export interface ProtectProposalResult {
+interface ProtectProposalResult {
   privateMessage: PrivateMessage
   newSecretTree: SecretTree
   proposalRef: Uint8Array
@@ -148,7 +148,7 @@ export async function protectProposal(
   return { privateMessage: protectResult.privateMessage, newSecretTree, proposalRef, consumed: protectResult.consumed }
 }
 
-export interface ProtectResult {
+interface ProtectResult {
   privateMessage: PrivateMessage
   tree: SecretTree
   consumed: Uint8Array[]
@@ -213,7 +213,7 @@ export async function protect(
   }
 }
 
-export interface UnprotectResult {
+interface UnprotectResult {
   content: AuthenticatedContent
   tree: SecretTree
   consumed: Uint8Array[]
@@ -277,7 +277,7 @@ export async function unprotectPrivateMessage(
   return { tree: newTree, content, consumed }
 }
 
-export function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
+function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
   if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== nodeTypes.leaf)
     return new ValidationError("SenderData did not point to a non-blank leaf node")
 }

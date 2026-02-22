@@ -22,12 +22,12 @@ export interface GenerationSecret {
   unusedGenerations: Record<number, Uint8Array>
 }
 
-export const generationSecretEncoder: Encoder<GenerationSecret> = contramapBufferEncoders(
+const generationSecretEncoder: Encoder<GenerationSecret> = contramapBufferEncoders(
   [varLenDataEncoder, uint32Encoder, numberRecordEncoder(uint32Encoder, varLenDataEncoder)],
   (gs) => [gs.secret, gs.generation, gs.unusedGenerations] as const,
 )
 
-export const generationSecretDecoder: Decoder<GenerationSecret> = mapDecoders(
+const generationSecretDecoder: Decoder<GenerationSecret> = mapDecoders(
   [varLenDataDecoder, uint32Decoder, numberRecordDecoder(uint32Decoder, varLenDataDecoder)],
   (secret, generation, unusedGenerations) => ({
     secret,
@@ -42,12 +42,12 @@ export interface SecretTreeNode {
   application: GenerationSecret
 }
 
-export const secretTreeNodeEncoder: Encoder<SecretTreeNode> = contramapBufferEncoders(
+const secretTreeNodeEncoder: Encoder<SecretTreeNode> = contramapBufferEncoders(
   [generationSecretEncoder, generationSecretEncoder],
   (node) => [node.handshake, node.application] as const,
 )
 
-export const secretTreeNodeDecoder: Decoder<SecretTreeNode> = mapDecoders(
+const secretTreeNodeDecoder: Decoder<SecretTreeNode> = mapDecoders(
   [generationSecretDecoder, generationSecretDecoder],
   (handshake, application) => ({
     handshake,
@@ -99,7 +99,7 @@ export function allSecretTreeValues(tree: SecretTree): Uint8Array[] {
   return arr
 }
 
-export interface ConsumeRatchetResult {
+interface ConsumeRatchetResult {
   nonce: Uint8Array
   reuseGuard: ReuseGuard
   key: Uint8Array
@@ -176,15 +176,15 @@ export function createSecretTree(leafWidth: number, encryptionSecret: Uint8Array
   }
 }
 
-export async function deriveNonce(secret: Uint8Array, generation: number, cs: CiphersuiteImpl): Promise<Uint8Array> {
+async function deriveNonce(secret: Uint8Array, generation: number, cs: CiphersuiteImpl): Promise<Uint8Array> {
   return await deriveTreeSecret(secret, "nonce", generation, cs.hpke.nonceLength, cs.kdf)
 }
 
-export async function deriveKey(secret: Uint8Array, generation: number, cs: CiphersuiteImpl): Promise<Uint8Array> {
+async function deriveKey(secret: Uint8Array, generation: number, cs: CiphersuiteImpl): Promise<Uint8Array> {
   return await deriveTreeSecret(secret, "key", generation, cs.hpke.keyLength, cs.kdf)
 }
 
-export async function ratchetUntil(
+async function ratchetUntil(
   current: GenerationSecret,
   desiredGen: number,
   config: KeyRetentionConfig,
@@ -253,7 +253,7 @@ function removeOldGenerations(
   return [record, consumed]
 }
 
-export async function derivePrivateMessageNonce(
+async function derivePrivateMessageNonce(
   secret: Uint8Array,
   generation: number,
   reuseGuard: Uint8Array,
@@ -461,7 +461,7 @@ function ratchetForContentType(node: SecretTreeNode, contentType: ContentTypeVal
   }
 }
 
-export async function createRatchetRoot(node: Uint8Array, label: string, kdf: Kdf) {
+async function createRatchetRoot(node: Uint8Array, label: string, kdf: Kdf) {
   const secret = await expandWithLabel(node, label, new Uint8Array(), kdf.size, kdf)
   return { secret: secret, generation: 0, unusedGenerations: {} }
 }

@@ -99,26 +99,31 @@ export const varLenDataDecoder: Decoder<Uint8Array> = (buf, offset) => {
   return [data, totalBytes]
 }
 
-export function varLenTypeEncoder<T>(enc: Encoder<T>): Encoder<T[]> {
+export function varLenTypeEncoder<T>(enc: Encoder<T>, until?: number): Encoder<T[]> {
   return (data) => {
+    const len = until ?? data.length
+    const lengths = new Array<number>(len)
+    const writes = new Array<(offset: number, buffer: ArrayBuffer) => void>(len)
     let totalLength = 0
-    let writeTotal = (_offset: number, _buffer: ArrayBuffer) => {}
-    for (let i = 0; i < data.length; i++) {
-      const [len, write] = enc(data[i]!)
-      const oldFunc = writeTotal
-      const currentLen = totalLength
-      writeTotal = (offset: number, buffer: ArrayBuffer) => {
-        oldFunc(offset, buffer)
-        write(offset + currentLen, buffer)
-      }
-      totalLength += len
+
+    for (let i = 0; i < len; i++) {
+      const [itemLength, write] = enc(data[i]!)
+      lengths[i] = itemLength
+      writes[i] = write
+      totalLength += itemLength
     }
+
     const [headerLength, writeLength] = lengthEncoder(totalLength)
     return [
       headerLength + totalLength,
       (offset, buffer) => {
         writeLength(offset, buffer)
-        writeTotal(offset + headerLength, buffer)
+
+        let cursor = offset + headerLength
+        for (let i = 0; i < len; i++) {
+          writes[i]!(cursor, buffer)
+          cursor += lengths[i]!
+        }
       },
     ]
   }

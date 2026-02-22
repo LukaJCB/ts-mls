@@ -202,6 +202,8 @@ export { type LeafIndex } from "./treemath.js"
 
 export { type Node, type NodeLeaf, type NodeParent, type RatchetTree } from "./ratchetTree.js"
 
+export { type GreaseConfig, greaseCapabilities, greaseExtensions } from "./grease.js"
+
 export {
   type LeafNode,
   type LeafNodeCommit,

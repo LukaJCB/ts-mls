@@ -6,7 +6,7 @@ import { framedContentDecoder, FramedContentCommit, framedContentEncoder } from 
 import { wireformatDecoder, wireformatEncoder, WireformatValue } from "./wireformat.js"
 import { contentTypes } from "./contentType.js"
 
-export interface ConfirmedTranscriptHashInput {
+interface ConfirmedTranscriptHashInput {
   wireformat: WireformatValue
   content: FramedContentCommit
   signature: Uint8Array
