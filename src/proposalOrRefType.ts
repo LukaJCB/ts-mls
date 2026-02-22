@@ -11,8 +11,8 @@ export const proposalOrRefTypes = {
   reference: 2,
 } as const
 
-export type ProposalOrRefTypeName = keyof typeof proposalOrRefTypes
-export type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTypeName]
+type ProposalOrRefTypeName = keyof typeof proposalOrRefTypes
+type ProposalOrRefTypeValue = (typeof proposalOrRefTypes)[ProposalOrRefTypeName]
 
 export const proposalOrRefTypeEncoder: Encoder<ProposalOrRefTypeValue> = uint8Encoder
 
@@ -36,12 +36,12 @@ export interface ProposalOrRefProposalRef {
 /** @public */
 export type ProposalOrRef = ProposalOrRefProposal | ProposalOrRefProposalRef
 
-export const proposalOrRefProposalEncoder: Encoder<ProposalOrRefProposal> = contramapBufferEncoders(
+const proposalOrRefProposalEncoder: Encoder<ProposalOrRefProposal> = contramapBufferEncoders(
   [proposalOrRefTypeEncoder, proposalEncoder],
   (p) => [p.proposalOrRefType, p.proposal] as const,
 )
 
-export const proposalOrRefProposalRefEncoder: Encoder<ProposalOrRefProposalRef> = contramapBufferEncoders(
+const proposalOrRefProposalRefEncoder: Encoder<ProposalOrRefProposalRef> = contramapBufferEncoders(
   [proposalOrRefTypeEncoder, varLenDataEncoder],
   (r) => [r.proposalOrRefType, r.reference] as const,
 )

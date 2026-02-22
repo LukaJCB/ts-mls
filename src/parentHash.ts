@@ -11,7 +11,7 @@ import { leafNodeSources } from "./leafNodeSource.js"
 
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
-export interface ParentHashInput {
+interface ParentHashInput {
   encryptionKey: Uint8Array
   parentHash: Uint8Array
   originalSiblingTreeHash: Uint8Array

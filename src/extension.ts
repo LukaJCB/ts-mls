@@ -146,7 +146,7 @@ export const groupContextExtensionDecoder: Decoder<GroupContextExtension> = flat
   },
 )
 
-export function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boolean {
+function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boolean {
   if (a.extensionType !== b.extensionType) return false
 
   if (isDefaultExtension(a)) {

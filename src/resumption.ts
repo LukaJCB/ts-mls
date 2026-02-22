@@ -99,7 +99,7 @@ export async function reinitCreateNewGroup(params: {
   })
 }
 
-export function makeResumptionPsk(
+function makeResumptionPsk(
   state: ClientState,
   usage: ResumptionPSKUsageValue,
   cs: CiphersuiteImpl,

@@ -11,7 +11,7 @@ import { ParentNode, parentNodeEncoder, parentNodeDecoder } from "./parentNode.j
 import { RatchetTree } from "./ratchetTree.js"
 import { rootFromNodeWidth, isLeaf, nodeToLeafIndex, left, right, NodeIndex } from "./treemath.js"
 
-export type TreeHashInput = LeafNodeHashInput | ParentNodeHashInput
+type TreeHashInput = LeafNodeHashInput | ParentNodeHashInput
 type LeafNodeHashInput = {
   nodeType: typeof nodeTypes.leaf
   leafIndex: number
@@ -24,12 +24,12 @@ type ParentNodeHashInput = {
   rightHash: Uint8Array
 }
 
-export const leafNodeHashInputEncoder: Encoder<LeafNodeHashInput> = contramapBufferEncoders(
+const leafNodeHashInputEncoder: Encoder<LeafNodeHashInput> = contramapBufferEncoders(
   [nodeTypeEncoder, uint32Encoder, optionalEncoder(leafNodeEncoder)],
   (input) => [input.nodeType, input.leafIndex, input.leafNode] as const,
 )
 
-export const leafNodeHashInputDecoder: Decoder<LeafNodeHashInput> = mapDecoders(
+const leafNodeHashInputDecoder: Decoder<LeafNodeHashInput> = mapDecoders(
   [uint32Decoder, optionalDecoder(leafNodeDecoder)],
   (leafIndex, leafNode) => ({
     nodeType: nodeTypes.leaf,
@@ -38,12 +38,12 @@ export const leafNodeHashInputDecoder: Decoder<LeafNodeHashInput> = mapDecoders(
   }),
 )
 
-export const parentNodeHashInputEncoder: Encoder<ParentNodeHashInput> = contramapBufferEncoders(
+const parentNodeHashInputEncoder: Encoder<ParentNodeHashInput> = contramapBufferEncoders(
   [nodeTypeEncoder, optionalEncoder(parentNodeEncoder), varLenDataEncoder, varLenDataEncoder],
   (input) => [input.nodeType, input.parentNode, input.leftHash, input.rightHash] as const,
 )
 
-export const parentNodeHashInputDecoder: Decoder<ParentNodeHashInput> = mapDecoders(
+const parentNodeHashInputDecoder: Decoder<ParentNodeHashInput> = mapDecoders(
   [optionalDecoder(parentNodeDecoder), varLenDataDecoder, varLenDataDecoder],
   (parentNode, leftHash, rightHash) => ({
     nodeType: nodeTypes.parent,

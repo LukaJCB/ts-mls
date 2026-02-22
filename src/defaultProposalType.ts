@@ -15,7 +15,7 @@ export const defaultProposalTypes = {
 
 /** @public */
 export type DefaultProposalTypeName = keyof typeof defaultProposalTypes
-export type DefaultProposalTypeValue = (typeof defaultProposalTypes)[DefaultProposalTypeName]
+type DefaultProposalTypeValue = (typeof defaultProposalTypes)[DefaultProposalTypeName]
 
 const defaultProposalTypeValues = new Set<number>(Object.values(defaultProposalTypes))
 

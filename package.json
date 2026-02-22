@@ -24,8 +24,8 @@
   },
   "peerDependencies": {
     "@hpke/chacha20poly1305": "1.7.1",
-    "@hpke/hybridkem-x-wing": "0.6.1",
     "@hpke/dhkem-x448": "1.6.4",
+    "@hpke/hybridkem-x-wing": "0.6.1",
     "@hpke/ml-kem": "0.2.1",
     "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
@@ -68,6 +68,7 @@
     "@vitest/coverage-v8": "4.0.17",
     "eslint": "9.39.2",
     "eslint-plugin-import": "2.32.0",
+    "knip": "^5.85.0",
     "madge": "8.0.0",
     "playwright": "^1.52.0",
     "prettier": "3.8.1",
@@ -100,7 +101,7 @@
     "api:check": "pnpm build && api-extractor run",
     "verify-docs": "typescript-docs-verifier -p tsconfig.docs.json --input-files README.md docs/*.md",
     "verify-madge": "madge --extensions ts --circular src",
-    "verify": "pnpm build && pnpm api:check && pnpm format:check && pnpm verify-docs && pnpm verify-madge && pnpm lint && pnpm coverage"
+    "verify": "pnpm build && pnpm api:check && pnpm format:check && pnpm knip && pnpm verify-docs && pnpm verify-madge && pnpm lint && pnpm coverage"
   },
   "packageManager": "pnpm@10.17.1",
   "keywords": [

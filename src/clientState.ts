@@ -86,7 +86,7 @@ import {
 import { accumulatePskSecret, PskIndex } from "./pskIndex.js"
 import { getSenderLeafNodeIndex } from "./sender.js"
 import { addToMap } from "./util/addToMap.js"
-import { bytesToBase64, fastEqual, zeroOutUint8Array } from "./util/byteArray.js"
+import { bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import {
   CryptoVerificationError,
@@ -295,7 +295,7 @@ export function checkCanSendHandshakeMessages(state: ClientState): void {
     throw new UsageError("Cannot send messages after being removed from group")
 }
 
-export interface Proposals {
+interface Proposals {
   [defaultProposalTypes.add]: { senderLeafIndex: number | undefined; proposal: ProposalAdd }[]
   [defaultProposalTypes.update]: { senderLeafIndex: number | undefined; proposal: ProposalUpdate }[]
   [defaultProposalTypes.remove]: { senderLeafIndex: number | undefined; proposal: ProposalRemove }[]
@@ -744,8 +744,6 @@ export async function applyProposals(
   authService: AuthenticationService,
   cs: CiphersuiteImpl,
 ): Promise<ApplyProposalsResult> {
-  const encodedBefore = encode(ratchetTreeEncoder, state.ratchetTree)
-
   const allProposals = proposals.reduce((acc, cur) => {
     if (cur.proposalOrRefType === proposalOrRefTypes.proposal)
       return [...acc, { proposal: cur.proposal, senderLeafIndex: committerLeafIndex }]
@@ -776,10 +774,6 @@ export async function applyProposals(
 
       throwIfDefined(validateReinit(allProposals, reinit, state.groupContext))
 
-      const encodedAfter = encode(ratchetTreeEncoder, state.ratchetTree)
-      if (!fastEqual(encodedBefore, encodedAfter)) {
-        throw new Error("THIS WAS NOT SUPPISED TO HAPPEN")
-      }
       return {
         pskSecret: zeroes,
         pskIds: [],
@@ -830,10 +824,6 @@ export async function applyProposals(
       Object.values(grouped[defaultProposalTypes.update]).length > 1 ||
       Object.values(grouped[defaultProposalTypes.remove]).length > 1
 
-    const encodedAfter = encode(ratchetTreeEncoder, state.ratchetTree)
-    if (!fastEqual(encodedBefore, encodedAfter)) {
-      throw new Error("THIS WAS NOT SUPPISED TO HAPPEN")
-    }
     return {
       pskSecret: updatedPskSecret,
       additionalResult: {
@@ -872,10 +862,6 @@ export async function applyProposals(
       cs,
     )
 
-    const encodedAfter = encode(ratchetTreeEncoder, state.ratchetTree)
-    if (!fastEqual(encodedBefore, encodedAfter)) {
-      throw new Error("THIS WAS NOT SUPPISED TO HAPPEN")
-    }
     return {
       needsUpdatePath: true,
       pskSecret: updatedPskSecret,

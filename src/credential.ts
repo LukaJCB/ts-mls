@@ -33,17 +33,17 @@ export function isDefaultCredential(c: Credential): c is DefaultCredential {
   return isDefaultCredentialTypeValue(c.credentialType)
 }
 
-export const credentialBasicEncoder: Encoder<CredentialBasic> = contramapBufferEncoders(
+const credentialBasicEncoder: Encoder<CredentialBasic> = contramapBufferEncoders(
   [uint16Encoder, varLenDataEncoder],
   (c) => [c.credentialType, c.identity] as const,
 )
 
-export const credentialX509Encoder: Encoder<CredentialX509> = contramapBufferEncoders(
+const credentialX509Encoder: Encoder<CredentialX509> = contramapBufferEncoders(
   [uint16Encoder, varLenTypeEncoder(varLenDataEncoder)],
   (c) => [c.credentialType, c.certificates] as const,
 )
 
-export const credentialCustomEncoder: Encoder<CredentialCustom> = contramapBufferEncoders(
+const credentialCustomEncoder: Encoder<CredentialCustom> = contramapBufferEncoders(
   [uint16Encoder, varLenDataEncoder],
   (c) => [c.credentialType, c.data] as const,
 )

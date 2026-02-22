@@ -9,7 +9,7 @@ export const defaultExtensionTypes = {
 
 /** @public */
 export type DefaultExtensionTypeName = keyof typeof defaultExtensionTypes
-export type DefaultExtensionTypeValue = (typeof defaultExtensionTypes)[DefaultExtensionTypeName]
+type DefaultExtensionTypeValue = (typeof defaultExtensionTypes)[DefaultExtensionTypeName]
 
 export function isDefaultExtensionTypeValue(v: number): v is DefaultExtensionTypeValue {
   return Object.values(defaultExtensionTypes).includes(v as DefaultExtensionTypeValue)

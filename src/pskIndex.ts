@@ -6,12 +6,6 @@ export interface PskIndex {
   findPsk(preSharedKeyId: PskId): Uint8Array | undefined
 }
 
-export const emptyPskIndex: PskIndex = {
-  findPsk(_preSharedKeyId) {
-    return undefined
-  },
-}
-
 export async function accumulatePskSecret(
   groupedPsk: PskId[],
   pskSearch: PskIndex,

@@ -48,27 +48,27 @@ export type MlsFramedMessage = MlsPrivateMessage | MlsPublicMessage
 /** @public */
 export type MlsMessage = MlsWelcomeMessage | MlsPrivateMessage | MlsGroupInfo | MlsKeyPackage | MlsPublicMessage
 
-export const mlsPublicMessageEncoder: Encoder<MlsPublicMessage> = contramapBufferEncoders(
+const mlsPublicMessageEncoder: Encoder<MlsPublicMessage> = contramapBufferEncoders(
   [protocolVersionEncoder, wireformatEncoder, publicMessageEncoder],
   (msg) => [msg.version, msg.wireformat, msg.publicMessage] as const,
 )
 
-export const mlsWelcomeEncoder: Encoder<MlsWelcomeMessage> = contramapBufferEncoders(
+const mlsWelcomeEncoder: Encoder<MlsWelcomeMessage> = contramapBufferEncoders(
   [protocolVersionEncoder, wireformatEncoder, welcomeEncoder],
   (wm) => [wm.version, wm.wireformat, wm.welcome] as const,
 )
 
-export const mlsPrivateMessageEncoder: Encoder<MlsPrivateMessage> = contramapBufferEncoders(
+const mlsPrivateMessageEncoder: Encoder<MlsPrivateMessage> = contramapBufferEncoders(
   [protocolVersionEncoder, wireformatEncoder, privateMessageEncoder],
   (pm) => [pm.version, pm.wireformat, pm.privateMessage] as const,
 )
 
-export const mlsGroupInfoEncoder: Encoder<MlsGroupInfo> = contramapBufferEncoders(
+const mlsGroupInfoEncoder: Encoder<MlsGroupInfo> = contramapBufferEncoders(
   [protocolVersionEncoder, wireformatEncoder, groupInfoEncoder],
   (gi) => [gi.version, gi.wireformat, gi.groupInfo] as const,
 )
 
-export const mlsKeyPackageEncoder: Encoder<MlsKeyPackage> = contramapBufferEncoders(
+const mlsKeyPackageEncoder: Encoder<MlsKeyPackage> = contramapBufferEncoders(
   [protocolVersionEncoder, wireformatEncoder, keyPackageEncoder],
   (kp) => [kp.version, kp.wireformat, kp.keyPackage] as const,
 )
