@@ -82,8 +82,8 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
       typescript-docs-verifier:
-        specifier: 3.0.1
-        version: 3.0.1(typescript@5.9.3)
+        specifier: 3.0.2
+        version: 3.0.2(typescript@5.9.3)
       typescript-eslint:
         specifier: 8.56.1
         version: 8.56.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
@@ -2586,8 +2586,8 @@ packages:
     resolution: {integrity: sha512-3KS2b+kL7fsuk/eJZ7EQdnEmQoaho/r6KUef7hxvltNA5DR8NAUM+8wJMbJyZ4G9/7i3v5zPBIMN5aybAh2/Jg==}
     engines: {node: '>= 0.4'}
 
-  typescript-docs-verifier@3.0.1:
-    resolution: {integrity: sha512-ohQsDJ49+tfOsRoJGREUgh6Vk79KVMsk+M3263b2CHqb1eQW8vkeDhBr9euz7nITBwgRk+RujUcxjIhD3kYPpA==}
+  typescript-docs-verifier@3.0.2:
+    resolution: {integrity: sha512-UR40Nk+B8P5JaJlOOZyuLafmQkobjNALGeSNOHLFrSLsa9/n5clJsXtPXrWoLbEc6LS0/JVbZNo0zvNPaEbnZQ==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -5420,7 +5420,7 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
-  typescript-docs-verifier@3.0.1(typescript@5.9.3):
+  typescript-docs-verifier@3.0.2(typescript@5.9.3):
     dependencies:
       chalk: 4.1.2
       ora: 5.4.1
