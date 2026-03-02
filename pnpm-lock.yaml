@@ -19,8 +19,8 @@ importers:
         specifier: 1.7.1
         version: 1.7.1
       '@hpke/dhkem-x448':
-        specifier: 1.6.4
-        version: 1.6.4
+        specifier: 1.7.0
+        version: 1.7.0
       '@hpke/hybridkem-x-wing':
         specifier: 0.6.1
         version: 0.6.1
@@ -500,6 +500,10 @@ packages:
     resolution: {integrity: sha512-PSI4QSxH8XDli0TqAsWycVfrLLCM/bBe+hVlJwtuJJiKIvCaFS3CXX/WtRfJceLJye9NHc2J7GvHVCY9B1BEbA==}
     engines: {node: '>=16.0.0'}
 
+  '@hpke/common@1.9.0':
+    resolution: {integrity: sha512-Sdxj4KqtmBt8FiwRkNLxXF+peqLR3FwVxtnsemiiEzClgslckRpFv3yK8mchoCwvyRwLOMS3Y2Z9ND2bq3sRVg==}
+    engines: {node: '>=16.0.0'}
+
   '@hpke/core@1.7.5':
     resolution: {integrity: sha512-4xfckZuPaIodeu0HpuTRIdtmajhRHXM/6rjS2N62Ns9aOCkGbbeYRwktqR3bUScuhCwyEBsEQqtIh9f0iLP3WQ==}
     engines: {node: '>=16.0.0'}
@@ -508,8 +512,8 @@ packages:
     resolution: {integrity: sha512-TTkZ3hjMDO6TweSTSAN/qL30WubOXJXTe/1eNL4cprlGokcjJq3SldcePI2BbC1eOYq903N1X6zwDjVG5OelfA==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/dhkem-x448@1.6.4':
-    resolution: {integrity: sha512-xyR4SqS4MjDmQIrIQmqPWLNgwM6Ul6G8UWQsFKZw6PLv8pxVk1nYj2WJrdZ+Ecs9+qY/NYQItv8KVMXge3gFKQ==}
+  '@hpke/dhkem-x448@1.7.0':
+    resolution: {integrity: sha512-12Qik0A5srTp5D2RbwYorF4OyJePN2Ccej8pM45VbZampZdM6qFmZ2I3vWjUaOcN4L+CgP8U2uzq1g1dpc5MBw==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/hybridkem-x-wing@0.6.1':
@@ -2819,6 +2823,8 @@ snapshots:
 
   '@hpke/common@1.8.1': {}
 
+  '@hpke/common@1.9.0': {}
+
   '@hpke/core@1.7.5':
     dependencies:
       '@hpke/common': 1.8.1
@@ -2827,9 +2833,9 @@ snapshots:
     dependencies:
       '@hpke/common': 1.8.1
 
-  '@hpke/dhkem-x448@1.6.4':
+  '@hpke/dhkem-x448@1.7.0':
     dependencies:
-      '@hpke/common': 1.8.1
+      '@hpke/common': 1.9.0
 
   '@hpke/hybridkem-x-wing@0.6.1':
     dependencies:
