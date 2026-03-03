@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@hpke/core':
-        specifier: 1.7.5
-        version: 1.7.5
+        specifier: 1.8.0
+        version: 1.8.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.33.0
@@ -504,8 +504,8 @@ packages:
     resolution: {integrity: sha512-Sdxj4KqtmBt8FiwRkNLxXF+peqLR3FwVxtnsemiiEzClgslckRpFv3yK8mchoCwvyRwLOMS3Y2Z9ND2bq3sRVg==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/core@1.7.5':
-    resolution: {integrity: sha512-4xfckZuPaIodeu0HpuTRIdtmajhRHXM/6rjS2N62Ns9aOCkGbbeYRwktqR3bUScuhCwyEBsEQqtIh9f0iLP3WQ==}
+  '@hpke/core@1.8.0':
+    resolution: {integrity: sha512-yHuo+2q4HSPUFuxcg87Kiy7QZRk4IeR+cwBB0qW8fHnr71bnRCArM39Cq1bWHBt75gTyeERGD/v1H14yPB2wyw==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/dhkem-x25519@1.6.4':
@@ -2825,9 +2825,9 @@ snapshots:
 
   '@hpke/common@1.9.0': {}
 
-  '@hpke/core@1.7.5':
+  '@hpke/core@1.8.0':
     dependencies:
-      '@hpke/common': 1.8.1
+      '@hpke/common': 1.9.0
 
   '@hpke/dhkem-x25519@1.6.4':
     dependencies:
