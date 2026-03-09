@@ -25,8 +25,8 @@ importers:
         specifier: 0.6.1
         version: 0.6.1
       '@hpke/ml-kem':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.3.0
+        version: 0.3.0
       '@microsoft/api-extractor':
         specifier: ^7.52.13
         version: 7.57.6(@types/node@25.3.5)
@@ -532,8 +532,8 @@ packages:
     resolution: {integrity: sha512-mNdGapyHPw9gEicUlBYlWGjOpWmQyC49dEqLm5QtGZOSjIVSjSTBX/Bq2VxXNTeNdsRYIpPOalTwYbop/+4Ykw==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/ml-kem@0.2.1':
-    resolution: {integrity: sha512-9Hmf2fO8W45/h2COdD8+RAaszI2dw9/Id0lwrJD7rEwFbNki7lxb1HyEnqUuHz9ipL2D3q0L6egFKZbhBwj/5A==}
+  '@hpke/ml-kem@0.3.0':
+    resolution: {integrity: sha512-+K0I37CCKOvom/MDiNuUQEOIbkij55yTTbw5o/NKOfBjANt/WeYKMmSOtot6essGmt8/9FJASRSFDkjAWu0eiQ==}
     engines: {node: '>=16.0.0'}
 
   '@humanfs/core@0.19.1':
@@ -2075,6 +2075,10 @@ packages:
     resolution: {integrity: sha512-TnSvGBs0EVPukQcdPF0882ZoYXYuD2rb+VgO0kUDbFi/XM1rJOwnQoFW3wGGuc3nG3AT/zp3oWJ86W7ewwKYyA==}
     engines: {node: '>=16.0.0'}
 
+  mlkem@2.7.0:
+    resolution: {integrity: sha512-I2bcB5d6jtkdan6MLGOxObpUbidqv0ej+PhbCGnXUqmcGYZ6X8F0qBpU6HE4mvYc81NSznBrVDp+Uc808Ba2RA==}
+    engines: {node: '>=16.0.0'}
+
   module-definition@6.0.1:
     resolution: {integrity: sha512-FeVc50FTfVVQnolk/WQT8MX+2WVcDnTGiq6Wo+/+lJ2ET1bRVi3HG3YlJUfqagNMc/kUlFSoR96AJkxGpKz13g==}
     engines: {node: '>=18'}
@@ -3065,7 +3069,7 @@ snapshots:
 
   '@hpke/dhkem-x25519@1.6.4':
     dependencies:
-      '@hpke/common': 1.8.1
+      '@hpke/common': 1.10.0
 
   '@hpke/dhkem-x448@1.8.0':
     dependencies:
@@ -3077,10 +3081,10 @@ snapshots:
       '@hpke/dhkem-x25519': 1.6.4
       mlkem: 2.5.0
 
-  '@hpke/ml-kem@0.2.1':
+  '@hpke/ml-kem@0.3.0':
     dependencies:
-      '@hpke/common': 1.8.1
-      mlkem: 2.5.0
+      '@hpke/common': 1.10.0
+      mlkem: 2.7.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -4821,6 +4825,8 @@ snapshots:
   minimist@1.2.8: {}
 
   mlkem@2.5.0: {}
+
+  mlkem@2.7.0: {}
 
   module-definition@6.0.1:
     dependencies:
