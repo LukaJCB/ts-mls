@@ -19,8 +19,8 @@ importers:
         specifier: 1.7.1
         version: 1.7.1
       '@hpke/dhkem-x448':
-        specifier: 1.7.0
-        version: 1.7.0
+        specifier: 1.8.0
+        version: 1.8.0
       '@hpke/hybridkem-x-wing':
         specifier: 0.7.0
         version: 0.7.0
@@ -516,8 +516,8 @@ packages:
     resolution: {integrity: sha512-S1MWWkAfu+TFxySgv5+2P3O4Mx/jk7BsoplzQaA1s3sfUJVJ2UsZsSzSsMc+FXJumLXncoJFlO6mK6mDGspfmA==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/dhkem-x448@1.7.0':
-    resolution: {integrity: sha512-12Qik0A5srTp5D2RbwYorF4OyJePN2Ccej8pM45VbZampZdM6qFmZ2I3vWjUaOcN4L+CgP8U2uzq1g1dpc5MBw==}
+  '@hpke/dhkem-x448@1.8.0':
+    resolution: {integrity: sha512-mFfnZfgp4OKkUIS/FKikfUgdnDKRy25ytCKBQiV+N+HbYy3I4v4ZCPBQ69QL+TYmKmCZJeUEnYeS5K+OBRP+Eg==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/hybridkem-x-wing@0.7.0':
@@ -2843,9 +2843,9 @@ snapshots:
     dependencies:
       '@hpke/common': 1.10.0
 
-  '@hpke/dhkem-x448@1.7.0':
+  '@hpke/dhkem-x448@1.8.0':
     dependencies:
-      '@hpke/common': 1.9.0
+      '@hpke/common': 1.10.0
 
   '@hpke/hybridkem-x-wing@0.7.0':
     dependencies:
