@@ -27,7 +27,7 @@
     "@hpke/core": "1.8.0"
   },
   "peerDependencies": {
-    "@hpke/chacha20poly1305": "1.7.1",
+    "@hpke/chacha20poly1305": "1.8.0",
     "@hpke/hybridkem-x-wing": "0.7.0",
     "@hpke/dhkem-x448": "1.8.0",
     "@hpke/ml-kem": "0.3.0",
@@ -58,7 +58,7 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.52.13",
     "@eslint/js": "^9.33.0",
-    "@hpke/chacha20poly1305": "1.7.1",
+    "@hpke/chacha20poly1305": "1.8.0",
     "@hpke/hybridkem-x-wing": "0.7.0",
     "@hpke/ml-kem": "0.3.0",
     "@hpke/dhkem-x448": "1.8.0",
