@@ -22,8 +22,8 @@ importers:
         specifier: 1.8.0
         version: 1.8.0
       '@hpke/hybridkem-x-wing':
-        specifier: 0.6.1
-        version: 0.6.1
+        specifier: 0.7.0
+        version: 0.7.0
       '@hpke/ml-kem':
         specifier: 0.3.0
         version: 0.3.0
@@ -512,24 +512,20 @@ packages:
     resolution: {integrity: sha512-uVq9pTNERQ1GcFlHZzQx+a0ZMC81wQzkbNzJPEyR/l3AWM7fASd/qYN2Cnq6uL1NPEfwcD4lgOmfjjZfx2k2XA==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/common@1.8.1':
-    resolution: {integrity: sha512-PSI4QSxH8XDli0TqAsWycVfrLLCM/bBe+hVlJwtuJJiKIvCaFS3CXX/WtRfJceLJye9NHc2J7GvHVCY9B1BEbA==}
-    engines: {node: '>=16.0.0'}
-
   '@hpke/core@1.9.0':
     resolution: {integrity: sha512-pFxWl1nNJeQCSUFs7+GAblHvXBCjn9EPN65vdKlYQil2aURaRxfGMO6vBKGqm1YHTKwiAxJQNEI70PbSowMP9Q==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/dhkem-x25519@1.6.4':
-    resolution: {integrity: sha512-TTkZ3hjMDO6TweSTSAN/qL30WubOXJXTe/1eNL4cprlGokcjJq3SldcePI2BbC1eOYq903N1X6zwDjVG5OelfA==}
+  '@hpke/dhkem-x25519@1.8.0':
+    resolution: {integrity: sha512-S1MWWkAfu+TFxySgv5+2P3O4Mx/jk7BsoplzQaA1s3sfUJVJ2UsZsSzSsMc+FXJumLXncoJFlO6mK6mDGspfmA==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/dhkem-x448@1.8.0':
     resolution: {integrity: sha512-mFfnZfgp4OKkUIS/FKikfUgdnDKRy25ytCKBQiV+N+HbYy3I4v4ZCPBQ69QL+TYmKmCZJeUEnYeS5K+OBRP+Eg==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/hybridkem-x-wing@0.6.1':
-    resolution: {integrity: sha512-mNdGapyHPw9gEicUlBYlWGjOpWmQyC49dEqLm5QtGZOSjIVSjSTBX/Bq2VxXNTeNdsRYIpPOalTwYbop/+4Ykw==}
+  '@hpke/hybridkem-x-wing@0.7.0':
+    resolution: {integrity: sha512-95M8gJMperA4iWwHFgsEkmxjKcvAX8M4koheFnT85zXcqLL/vBh4597ucw2wLol6d2dC6gpKp9ZApL4d6hmDzA==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/ml-kem@0.3.0':
@@ -2071,10 +2067,6 @@ packages:
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
-  mlkem@2.5.0:
-    resolution: {integrity: sha512-TnSvGBs0EVPukQcdPF0882ZoYXYuD2rb+VgO0kUDbFi/XM1rJOwnQoFW3wGGuc3nG3AT/zp3oWJ86W7ewwKYyA==}
-    engines: {node: '>=16.0.0'}
-
   mlkem@2.7.0:
     resolution: {integrity: sha512-I2bcB5d6jtkdan6MLGOxObpUbidqv0ej+PhbCGnXUqmcGYZ6X8F0qBpU6HE4mvYc81NSznBrVDp+Uc808Ba2RA==}
     engines: {node: '>=16.0.0'}
@@ -3070,13 +3062,11 @@ snapshots:
 
   '@hpke/common@1.10.0': {}
 
-  '@hpke/common@1.8.1': {}
-
   '@hpke/core@1.9.0':
     dependencies:
       '@hpke/common': 1.10.0
 
-  '@hpke/dhkem-x25519@1.6.4':
+  '@hpke/dhkem-x25519@1.8.0':
     dependencies:
       '@hpke/common': 1.10.0
 
@@ -3084,11 +3074,11 @@ snapshots:
     dependencies:
       '@hpke/common': 1.10.0
 
-  '@hpke/hybridkem-x-wing@0.6.1':
+  '@hpke/hybridkem-x-wing@0.7.0':
     dependencies:
-      '@hpke/common': 1.8.1
-      '@hpke/dhkem-x25519': 1.6.4
-      mlkem: 2.5.0
+      '@hpke/common': 1.10.0
+      '@hpke/dhkem-x25519': 1.8.0
+      mlkem: 2.7.0
 
   '@hpke/ml-kem@0.3.0':
     dependencies:
@@ -4833,8 +4823,6 @@ snapshots:
       brace-expansion: 1.1.12
 
   minimist@1.2.8: {}
-
-  mlkem@2.5.0: {}
 
   mlkem@2.7.0: {}
 
