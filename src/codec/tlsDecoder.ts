@@ -1,8 +1,12 @@
+import { CodecError } from "../mlsError.js"
+
 /** @public */
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined
 
 /** @public */
-export function decode<T>(dec: Decoder<T>, t: Uint8Array): T | undefined {
+export function decode<T>(dec: Decoder<T>, t: Uint8Array, maxInputSize: number = 64000000): T | undefined {
+  if (t.length > maxInputSize)
+    throw new CodecError("Payload larger than max allowed size, increase maxInputSize if you want to decode this")
   return dec(t, 0)?.[0]
 }
 

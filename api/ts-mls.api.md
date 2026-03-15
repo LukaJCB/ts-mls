@@ -302,7 +302,7 @@ export interface CustomExtension {
 }
 
 // @public (undocumented)
-export function decode<T>(dec: Decoder<T>, t: Uint8Array): T | undefined;
+export function decode<T>(dec: Decoder<T>, t: Uint8Array, maxInputSize?: number): T | undefined;
 
 // @public (undocumented)
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined;
