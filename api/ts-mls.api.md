@@ -594,6 +594,9 @@ export interface GenerationSecret {
 export function getCiphersuiteImpl(cs: CiphersuiteName, provider?: CryptoProvider): Promise<CiphersuiteImpl>;
 
 // @public (undocumented)
+export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: LeafIndex): Credential_2;
+
+// @public (undocumented)
 export function getGroupMembers(state: ClientState): LeafNode[];
 
 // @public (undocumented)
@@ -613,6 +616,9 @@ export interface GreaseConfig {
 
 // @public (undocumented)
 export function greaseExtensions(greaseConfig: GreaseConfig): CustomExtension[];
+
+// @public (undocumented)
+export const greaseValues: readonly [2570, 6682, 10794, 14906, 19018, 23130, 27242, 31354, 35466, 39578, 43690, 47802, 51914, 56026, 60138];
 
 // @public (undocumented)
 export type GroupActiveState = {
@@ -1037,6 +1043,9 @@ export function makeCustomExtension(extension: {
     extensionType: number;
     extensionData: Uint8Array;
 }): CustomExtension;
+
+// @public (undocumented)
+export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Array>;
 
 // @public (undocumented)
 export interface MlsContext {

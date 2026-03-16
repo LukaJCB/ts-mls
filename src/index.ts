@@ -200,9 +200,15 @@ export { leafNodeSources, type LeafNodeSourceName, type LeafNodeSourceValue } fr
 
 export { type LeafIndex } from "./treemath.js"
 
-export { type Node, type NodeLeaf, type NodeParent, type RatchetTree } from "./ratchetTree.js"
+export {
+  type Node,
+  type NodeLeaf,
+  type NodeParent,
+  type RatchetTree,
+  getCredentialFromLeafIndex,
+} from "./ratchetTree.js"
 
-export { type GreaseConfig, greaseCapabilities, greaseExtensions } from "./grease.js"
+export { type GreaseConfig, greaseCapabilities, greaseExtensions, greaseValues } from "./grease.js"
 
 export {
   type LeafNode,
@@ -228,6 +234,7 @@ export {
   privateKeyPackageDecoder,
   keyPackageEncoder,
   keyPackageDecoder,
+  makeKeyPackageRef,
   generateKeyPackage,
   generateKeyPackageWithKey,
 } from "./keyPackage.js"
