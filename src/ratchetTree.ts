@@ -364,6 +364,7 @@ export function findLeafIndex(tree: RatchetTree, leaf: LeafNode): LeafIndex | un
   return foundIndex === -1 ? undefined : nodeToLeafIndex(toNodeIndex(foundIndex))
 }
 
+/** @public */
 export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: LeafIndex) {
   const senderLeafNode = ratchetTree[leafToNodeIndex(leafIndex)]
 

@@ -96,6 +96,7 @@ export async function verifyKeyPackage(kp: KeyPackage, s: Signature): Promise<bo
   )
 }
 
+/** @public */
 export function makeKeyPackageRef(value: KeyPackage, h: Hash): Promise<Uint8Array> {
   return refhash("MLS 1.0 KeyPackage Reference", encode(keyPackageEncoder, value), h)
 }
