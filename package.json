@@ -68,7 +68,7 @@
     "@vitest/coverage-v8": "4.0.17",
     "eslint": "9.39.2",
     "eslint-plugin-import": "2.32.0",
-    "knip": "^5.85.0",
+    "knip": "^6.0.0",
     "madge": "8.0.0",
     "playwright": "^1.52.0",
     "prettier": "3.8.1",
