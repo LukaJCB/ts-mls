@@ -62,7 +62,7 @@ importers:
         version: 2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))
       knip:
         specifier: ^6.0.0
-        version: 6.1.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
+        version: 6.1.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
       madge:
         specifier: 8.0.0
         version: 8.0.0(typescript@5.9.3)
@@ -2112,8 +2112,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  knip@6.1.0:
-    resolution: {integrity: sha512-n5eVbJP7HXmwTsiJcELWJe2O1ESxyCTNxJzRTIECDYDTM465qnqk7fL2dv6ae3NUFvFWorZvGlh9mcwxwJ5Xgw==}
+  knip@6.1.1:
+    resolution: {integrity: sha512-BC/kbdxwCgv+p/3YkGbtlLxbOXhQDuR+CeKKFEpJyKb3BFwG1gZa+CMWSqAnPi+kUexz74m327d3zWxyn2fMew==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -4929,7 +4929,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  knip@6.1.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
+  knip@6.1.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       fast-glob: 3.3.3
