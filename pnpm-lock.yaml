@@ -29,7 +29,7 @@ importers:
         version: 0.3.0
       '@microsoft/api-extractor':
         specifier: ^7.52.13
-        version: 7.58.0(@types/node@25.5.2)
+        version: 7.58.1(@types/node@25.5.2)
       '@noble/ciphers':
         specifier: 2.1.1
         version: 2.1.1
@@ -576,8 +576,8 @@ packages:
   '@microsoft/api-extractor-model@7.33.5':
     resolution: {integrity: sha512-Xh4dXuusndVQqVz4nEN9xOp0DyzsKxeD2FFJkSPg4arAjDSKPcy6cAc7CaeBPA7kF2wV1fuDlo2p/bNMpVr8yg==}
 
-  '@microsoft/api-extractor@7.58.0':
-    resolution: {integrity: sha512-XcHlDylX5GblbGbs1eBoexjVyvdJMioTPuBCgCorE2rqijzTYxi6eudXyez3xACRxtH9aDtahoL9fYM4XTvQmg==}
+  '@microsoft/api-extractor@7.58.1':
+    resolution: {integrity: sha512-kF3GFME4lN22O5zbnXk2RP4y/4PDQdps0xKiYTipMYprkwCmmpsWLZt/N2Fkbil540cSLfJX0BW7LkHzgMVUYg==}
     hasBin: true
 
   '@microsoft/tsdoc-config@0.18.1':
@@ -1824,8 +1824,8 @@ packages:
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
-  lodash@4.17.23:
-    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
@@ -2901,7 +2901,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.58.0(@types/node@25.5.2)':
+  '@microsoft/api-extractor@7.58.1(@types/node@25.5.2)':
     dependencies:
       '@microsoft/api-extractor-model': 7.33.5(@types/node@25.5.2)
       '@microsoft/tsdoc': 0.16.0
@@ -2911,7 +2911,7 @@ snapshots:
       '@rushstack/terminal': 0.22.4(@types/node@25.5.2)
       '@rushstack/ts-command-line': 5.3.4(@types/node@25.5.2)
       diff: 8.0.4
-      lodash: 4.17.23
+      lodash: 4.18.1
       minimatch: 10.2.3
       resolve: 1.22.11
       semver: 7.5.4
@@ -4371,7 +4371,7 @@ snapshots:
 
   lodash.merge@4.6.2: {}
 
-  lodash@4.17.23: {}
+  lodash@4.18.1: {}
 
   log-symbols@4.1.0:
     dependencies:
