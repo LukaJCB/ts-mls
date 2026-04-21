@@ -31,52 +31,57 @@ export const parentHashInputDecoder: Decoder<ParentHashInput> = mapDecoders(
   }),
 )
 
-function validateParentHashCoverage(parentIndices: number[], coverage: Record<number, number>): boolean {
-  for (const index of parentIndices) {
-    if ((coverage[index] ?? 0) !== 1) {
-      return false
+export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<boolean> {
+  let hasParent = false
+  for (let i = 0; i < tree.length; i++) {
+    const cur = tree[i]
+    if (cur !== undefined && cur.nodeType === nodeTypes.parent) {
+      hasParent = true
+      break
+    }
+  }
+  if (!hasParent) return true
+
+  const coverage = await parentHashCoverage(tree, h)
+
+  for (let i = 0; i < tree.length; i++) {
+    const cur = tree[i]
+    if (cur !== undefined && cur.nodeType === nodeTypes.parent) {
+      if ((coverage.get(i) ?? 0) !== 1) return false
     }
   }
   return true
 }
 
-export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<boolean> {
-  const parentNodes = tree.reduce((acc, cur, index) => {
-    if (cur !== undefined && cur.nodeType === nodeTypes.parent) {
-      return [...acc, index]
-    } else return acc
-  }, [] as number[])
-
-  if (parentNodes.length === 0) return true
-
-  const coverage = await parentHashCoverage(tree, h)
-
-  return validateParentHashCoverage(parentNodes, coverage)
-}
-
 /**
- * Traverse tree from bottom up, verifying that all non-blank parent nodes are covered by exactly one chain
+ * Traverse tree from bottom up, verifying that all non-blank parent nodes are covered by exactly one chain.
+ * Per-leaf walks run in parallel; calculateParentHash is memoized by nodeIndex since, for a fixed tree,
+ * it is a pure function of nodeIndex.
  */
-function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, number>> {
-  return tree.reduce(
-    async (acc, node, nodeIndex) => {
-      let currentIndex = toNodeIndex(nodeIndex)
-      if (!isLeaf(currentIndex) || node === undefined) return acc
+async function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Map<number, number>> {
+  const rootIndex = root(leafWidth(tree.length))
 
-      let updated = { ...(await acc) }
+  const memo = new Map<NodeIndex, Promise<[Uint8Array, NodeIndex | undefined]>>()
+  const memoedCalculate = (idx: NodeIndex): Promise<[Uint8Array, NodeIndex | undefined]> => {
+    let p = memo.get(idx)
+    if (p === undefined) {
+      p = calculateParentHash(tree, idx, h)
+      memo.set(idx, p)
+    }
+    return p
+  }
 
-      const rootIndex = root(leafWidth(tree.length))
+  const leafCovered = await Promise.all(
+    tree.map(async (node, nodeIndex) => {
+      const startIndex = toNodeIndex(nodeIndex)
+      if (!isLeaf(startIndex) || node === undefined) return undefined
+
+      const covered: NodeIndex[] = []
+      let currentIndex: NodeIndex = startIndex
+      let currentNode: Node | undefined = node
 
       while (currentIndex !== rootIndex) {
-        const currentNode = tree[currentIndex]
-
-        // skip blank nodes
-        if (currentNode === undefined) {
-          continue
-        }
-
-        // parentHashNodeIndex is the node index where the nearest non blank ancestor was
-        const [parentHash, parentHashNodeIndex] = await calculateParentHash(tree, currentIndex, h)
+        const [parentHash, parentHashNodeIndex] = await memoedCalculate(currentIndex)
 
         if (parentHashNodeIndex === undefined) {
           throw new InternalError("Reached root before completing parent hash coeverage")
@@ -85,20 +90,29 @@ function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Record<number, 
         const expectedParentHash = getParentHash(currentNode)
 
         if (expectedParentHash !== undefined && constantTimeEqual(parentHash, expectedParentHash)) {
-          const newCount = (updated[parentHashNodeIndex] ?? 0) + 1
-          updated = { ...updated, [parentHashNodeIndex]: newCount }
+          covered.push(parentHashNodeIndex)
         } else {
-          // skip to next leaf
           break
         }
 
         currentIndex = parentHashNodeIndex
+        const nextNode = tree[currentIndex]
+        if (nextNode === undefined) break
+        currentNode = nextNode
       }
 
-      return updated
-    },
-    Promise.resolve({} as Record<number, number>),
+      return covered
+    }),
   )
+
+  const coverage = new Map<number, number>()
+  for (const covered of leafCovered) {
+    if (covered === undefined) continue
+    for (const idx of covered) {
+      coverage.set(idx, (coverage.get(idx) ?? 0) + 1)
+    }
+  }
+  return coverage
 }
 
 function getParentHash(node: Node): Uint8Array | undefined {
