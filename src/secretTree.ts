@@ -15,6 +15,9 @@ import { InternalError, ValidationError } from "./mlsError.js"
 import { ReuseGuard, SenderData } from "./sender.js"
 import { root, right, left, toLeafIndex, LeafIndex, leafToNodeIndex, NodeIndex, parent } from "./treemath.js"
 
+const _leftBytes = new TextEncoder().encode("left")
+const _rightBytes = new TextEncoder().encode("right")
+
 /** @public */
 export interface GenerationSecret {
   secret: Uint8Array
@@ -149,8 +152,8 @@ async function deriveLeafSecret(
     // we have to derive both children so we can delete the consumed secret
     const currentSecret = updatedIntermediateNodes[current]!
 
-    const leftSecret = await expandWithLabel(currentSecret, "tree", new TextEncoder().encode("left"), kdf.size, kdf)
-    const rightSecret = await expandWithLabel(currentSecret, "tree", new TextEncoder().encode("right"), kdf.size, kdf)
+    const leftSecret = await expandWithLabel(currentSecret, "tree", _leftBytes, kdf.size, kdf)
+    const rightSecret = await expandWithLabel(currentSecret, "tree", _rightBytes, kdf.size, kdf)
 
     updatedIntermediateNodes[l] = leftSecret
     updatedIntermediateNodes[r] = rightSecret

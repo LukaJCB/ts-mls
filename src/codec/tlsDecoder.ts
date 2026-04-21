@@ -38,33 +38,17 @@ export function mapDecoders<T extends unknown[], R>(
   rsDecoder: { [K in keyof T]: Decoder<T[K]> },
   f: (...args: T) => R,
 ): Decoder<R> {
+  const n = rsDecoder.length
   return (b, offset) => {
-    const result = rsDecoder.reduce<
-      | {
-          values: unknown[]
-          offset: number
-          totalLength: number
-        }
-      | undefined
-    >(
-      (acc, decoder) => {
-        if (!acc) return undefined
-
-        const decoded = decoder(b, acc.offset)
-        if (!decoded) return undefined
-
-        const [value, length] = decoded
-        return {
-          values: [...acc.values, value],
-          offset: acc.offset + length,
-          totalLength: acc.totalLength + length,
-        }
-      },
-      { values: [], offset, totalLength: 0 },
-    )
-
-    if (!result) return
-    return [f(...(result.values as T)), result.totalLength]
+    const values = new Array<unknown>(n)
+    let cursor = offset
+    for (let i = 0; i < n; i++) {
+      const decoded = rsDecoder[i]!(b, cursor)
+      if (decoded === undefined) return undefined
+      values[i] = decoded[0]
+      cursor += decoded[1]
+    }
+    return [f(...(values as T)), cursor - offset]
   }
 }
 

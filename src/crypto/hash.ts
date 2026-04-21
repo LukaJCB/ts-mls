@@ -11,12 +11,13 @@ export interface Hash {
   verifyMac(key: Uint8Array, mac: Uint8Array, data: Uint8Array): Promise<boolean>
 }
 
+const _textEncoder = new TextEncoder()
+const _refHashEncoder = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
+
 export function refhash(label: string, value: Uint8Array, h: Hash) {
   return h.digest(encodeRefHash(label, value))
 }
 
 function encodeRefHash(label: string, value: Uint8Array): Uint8Array {
-  const labelBytes = new TextEncoder().encode(label)
-  const enc = composeBufferEncoders([varLenDataEncoder, varLenDataEncoder])
-  return encode(enc, [labelBytes, value])
+  return encode(_refHashEncoder, [_textEncoder.encode(label), value])
 }

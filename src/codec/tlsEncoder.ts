@@ -9,6 +9,20 @@ export function encode<T>(enc: Encoder<T>, t: T): Uint8Array {
   return new Uint8Array(buf)
 }
 
+// Cache the DataView for the most recently used ArrayBuffer so that number
+// encoders don't need to allocate a new DataView on every write. DataView
+// carries no per-call state; the cache is only consulted synchronously inside
+// a write-closure.
+let _cachedBuf: ArrayBuffer | null = null
+let _cachedView: DataView | null = null
+export function viewFor(buffer: ArrayBuffer): DataView {
+  if (_cachedBuf !== buffer) {
+    _cachedBuf = buffer
+    _cachedView = new DataView(buffer)
+  }
+  return _cachedView!
+}
+
 export function contramapBufferEncoder<T, U>(enc: Encoder<T>, f: (u: U) => Readonly<T>): Encoder<U> {
   return (u: U) => enc(f(u))
 }
