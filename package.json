@@ -29,7 +29,7 @@
     "@hpke/ml-kem": "0.3.0",
     "@noble/ciphers": "2.2.0",
     "@noble/curves": "2.2.0",
-    "@noble/post-quantum": "0.6.0"
+    "@noble/post-quantum": "0.6.1"
   },
   "peerDependenciesMeta": {
     "@hpke/chacha20poly1305": {
@@ -61,7 +61,7 @@
     "@noble/ciphers": "2.2.0",
     "@noble/curves": "2.2.0",
     "@noble/hashes": "2.2.0",
-    "@noble/post-quantum": "0.6.0",
+    "@noble/post-quantum": "0.6.1",
     "@types/jest": "30.0.0",
     "@types/node": "^25.0.6",
     "@vitest/browser-playwright": "4.0.17",
