@@ -21,7 +21,7 @@ async function testKeySchedule(
   cipher_suite: CiphersuiteId,
   impl: CiphersuiteImpl,
 ) {
-  await epochs.reduce(
+  await epochs.reduce<Promise<Uint8Array>>(
     async (prevInitSecret, epoch, index) => {
       const initSecret = await prevInitSecret
 
