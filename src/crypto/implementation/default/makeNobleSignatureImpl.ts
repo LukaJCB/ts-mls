@@ -2,6 +2,14 @@ import { DependencyError } from "../../../mlsError.js"
 import { SignatureAlgorithm, Signature } from "../../signature.js"
 import { toBufferSource } from "../../../util/byteArray.js"
 
+function leftPad(key: Uint8Array, length: number): Uint8Array {
+  if (key.length === length) return key
+  if (key.length > length) return key
+  const padded = new Uint8Array(length)
+  padded.set(key, length - key.length)
+  return padded
+}
+
 function rawEd25519ToPKCS8(rawKey: Uint8Array): Uint8Array {
   const oid = new Uint8Array([0x06, 0x03, 0x2b, 0x65, 0x70])
 
@@ -94,7 +102,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
         const { p256 } = await import("@noble/curves/nist.js")
         return {
           async sign(signKey, message) {
-            return p256.sign(message, signKey, { prehash: true, format: "der", lowS: false })
+            return p256.sign(message, leftPad(signKey, 32), { prehash: true, format: "der", lowS: false })
           },
           async verify(publicKey, message, signature) {
             return p256.verify(signature, message, publicKey, { prehash: true, format: "der", lowS: false })
@@ -114,7 +122,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
         const { p384 } = await import("@noble/curves/nist.js")
         return {
           async sign(signKey, message) {
-            return p384.sign(message, signKey, { prehash: true, format: "der", lowS: false })
+            return p384.sign(message, leftPad(signKey, 48), { prehash: true, format: "der", lowS: false })
           },
           async verify(publicKey, message, signature) {
             return p384.verify(signature, message, publicKey, { prehash: true, format: "der", lowS: false })
@@ -134,7 +142,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
         const { p521 } = await import("@noble/curves/nist.js")
         return {
           async sign(signKey, message) {
-            return p521.sign(message, signKey, { prehash: true, format: "der", lowS: false })
+            return p521.sign(message, leftPad(signKey, 66), { prehash: true, format: "der", lowS: false })
           },
           async verify(publicKey, message, signature) {
             return p521.verify(signature, message, publicKey, { prehash: true, format: "der", lowS: false })
