@@ -124,7 +124,7 @@ export async function createCommitInternal(
 
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
-  const [tree, updatePath, pathSecrets, newPrivateKey] = res.needsUpdatePath
+  const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
     ? await createUpdatePath(
         state.ratchetTree,
         mutableTree,
@@ -133,7 +133,7 @@ export async function createCommitInternal(
         state.signaturePrivateKey,
         cipherSuite,
       )
-    : [mutableTree, undefined, [] as PathSecret[], undefined]
+    : [mutableTree, undefined, [] as PathSecret[], undefined, undefined]
 
   const updatedExtensions =
     res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions.length > 0
@@ -166,7 +166,7 @@ export async function createCommitInternal(
     cipherSuite.signature,
   )
 
-  const treeHash = await treeHashRoot(tree, cipherSuite.hash)
+  const treeHash = precomputedTreeHash ?? (await treeHashRoot(tree, cipherSuite.hash))
 
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
@@ -603,7 +603,7 @@ export async function joinGroupExternal(params: {
 
   const newLeafNodeIndex = addLeafNodeMutable(mutableTree, keyPackage.leafNode)
 
-  const [newTree, updatePath, pathSecrets, newPrivateKey] = await createUpdatePath(
+  const [newTree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = await createUpdatePath(
     ratchetTree,
     mutableTree,
     nodeToLeafIndex(newLeafNodeIndex),
@@ -650,7 +650,7 @@ export async function joinGroupExternal(params: {
     cs.signature,
   )
 
-  const treeHash = await treeHashRoot(newTree, cs.hash)
+  const treeHash = precomputedTreeHash
 
   const groupContext = await nextEpochContext(
     groupInfo.groupContext,
