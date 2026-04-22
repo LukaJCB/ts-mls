@@ -74,7 +74,7 @@ export async function createUpdatePath(
   groupContext: GroupContext,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
-): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey]> {
+): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey, Uint8Array]> {
   const originalLeafNode = mutableTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === nodeTypes.parent)
     throw new InternalError("Expected non-blank leaf node")
@@ -129,7 +129,7 @@ export async function createUpdatePath(
 
   const updatePath: UpdatePath = { leafNode: updatedLeafNode, nodes: updatePathNodes }
 
-  return [mutableTree, updatePath, pathSecrets, leafKeypair.privateKey] as const
+  return [mutableTree, updatePath, pathSecrets, leafKeypair.privateKey, updatedTreeHash] as const
 }
 
 function encryptSecretsForPath(
