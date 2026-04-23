@@ -297,6 +297,20 @@ async function processCommit(
     return { newState: state, actionTaken: action, consumed: [], aad: content.authenticatedData }
   }
 
+  if (result.selfRemoved) {
+    return {
+      newState: {
+        ...state,
+        ratchetTree: mutableTree,
+        groupActiveState: { kind: "removedFromGroup" },
+        unappliedProposals: {},
+      },
+      actionTaken: action,
+      consumed: [],
+      aad: content.authenticatedData,
+    }
+  }
+
   if (content.commit.path !== undefined) {
     const committerLeafIndex =
       senderLeafIndex ??
@@ -369,9 +383,8 @@ async function processCommit(
 
   const suspendedPendingReinit = result.additionalResult.kind === "reinit" ? result.additionalResult.reinit : undefined
 
-  const groupActiveState: GroupActiveState = result.selfRemoved
-    ? { kind: "removedFromGroup" }
-    : suspendedPendingReinit !== undefined
+  const groupActiveState: GroupActiveState =
+    suspendedPendingReinit !== undefined
       ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
       : { kind: "active" }
 
