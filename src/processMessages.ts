@@ -29,7 +29,8 @@ import { PublicMessage } from "./publicMessage.js"
 import { findBlankLeafNodeIndex, RatchetTree, addLeafNodeMutable } from "./ratchetTree.js"
 import { createSecretTree } from "./secretTree.js"
 import { getSenderLeafNodeIndex, Sender, senderTypes } from "./sender.js"
-import { treeHashRoot } from "./treeHash.js"
+import { treeHashRoot, TreeHashCache } from "./treeHash.js"
+import { deriveTreeHashCache } from "./createCommit.js"
 import {
   LeafIndex,
   leafToNodeIndex,
@@ -278,6 +279,7 @@ async function processCommit(
   const senderLeafIndex =
     content.sender.senderType === senderTypes.member ? toLeafIndex(content.sender.leafIndex) : undefined
 
+  const oldLen = state.ratchetTree.length
   const mutableTree = state.ratchetTree.slice()
   const result = await applyProposals(
     state,
@@ -326,7 +328,8 @@ async function processCommit(
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
 
-  const [pkp, commitSecret, newTreeHash] = await applyTreeUpdate(
+  const proposalTouchedLeaves: LeafIndex[] = [...result.updatedLeaves, ...result.removedLeaves]
+  const [pkp, commitSecret, newTreeHash, treeHashCache] = await applyTreeUpdate(
     content.commit.path,
     content.sender,
     mutableTree,
@@ -337,6 +340,8 @@ async function processCommit(
       ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(toLeafIndex(l[0])))
       : [findBlankLeafNodeIndex(mutableTree) ?? toNodeIndex(mutableTree.length + 1)],
     cs.kdf,
+    oldLen,
+    proposalTouchedLeaves,
   )
 
   const updatedGroupContext = await nextEpochContext(
@@ -394,6 +399,7 @@ async function processCommit(
       historicalReceiverData,
       unappliedProposals: {},
       groupActiveState,
+      treeHashCache,
     },
     actionTaken: action,
     consumed,
@@ -410,12 +416,20 @@ async function applyTreeUpdate(
   groupContext: GroupContext,
   excludeNodes: NodeIndex[],
   kdf: Kdf,
-): Promise<[PrivateKeyPath, Uint8Array, Uint8Array]> {
-  if (path === undefined) return [state.privatePath, new Uint8Array(kdf.size), await treeHashRoot(mutableTree, cs.hash)] // can we reuse existing hash here?
+  oldLen: number,
+  proposalTouchedLeaves: readonly LeafIndex[],
+): Promise<[PrivateKeyPath, Uint8Array, Uint8Array, TreeHashCache]> {
+  if (path === undefined) {
+    const cache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, proposalTouchedLeaves)
+    const treeHash = await treeHashRoot(mutableTree, cs.hash, cache)
+    return [state.privatePath, new Uint8Array(kdf.size), treeHash, cache]
+  }
   if (sender.senderType === senderTypes.member) {
     await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash)
 
-    const newTreeHash = await treeHashRoot(mutableTree, cs.hash)
+    const touched = [...proposalTouchedLeaves, toLeafIndex(sender.leafIndex)]
+    const cache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, touched)
+    const newTreeHash = await treeHashRoot(mutableTree, cs.hash, cache)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       mutableTree,
@@ -426,14 +440,16 @@ async function applyTreeUpdate(
       excludeNodes,
       cs,
     )
-    return [pkp, commitSecret, newTreeHash] as const
+    return [pkp, commitSecret, newTreeHash, cache] as const
   } else {
     const leafNodeIndex = addLeafNodeMutable(mutableTree, path.leafNode)
 
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
     await applyUpdatePath(mutableTree, senderLeafIndex, path, cs.hash, true)
 
-    const newTreeHash = await treeHashRoot(mutableTree, cs.hash)
+    const touched = [...proposalTouchedLeaves, senderLeafIndex]
+    const cache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, touched)
+    const newTreeHash = await treeHashRoot(mutableTree, cs.hash, cache)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
       mutableTree,
@@ -444,7 +460,7 @@ async function applyTreeUpdate(
       excludeNodes,
       cs,
     )
-    return [pkp, commitSecret, newTreeHash] as const
+    return [pkp, commitSecret, newTreeHash, cache] as const
   }
 }
 

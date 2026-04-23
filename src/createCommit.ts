@@ -50,8 +50,16 @@ import {
   addLeafNodeMutable,
 } from "./ratchetTree.js"
 import { createSecretTree, SecretTree } from "./secretTree.js"
-import { treeHashRoot } from "./treeHash.js"
-import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath.js"
+import { treeHashRoot, TreeHashCache } from "./treeHash.js"
+import {
+  collectInvalidations,
+  LeafIndex,
+  leafWidth,
+  NodeIndex,
+  nodeToLeafIndex,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath.js"
 import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath.js"
 import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
@@ -106,6 +114,7 @@ export async function createCommitInternal(
   const wireformat = wireAsPublicMessage ? "mls_public_message" : "mls_private_message"
 
   const allProposals = bundleAllProposals(state, extraProposals)
+  const oldLen = state.ratchetTree.length
   const mutableTree = state.ratchetTree.slice()
 
   const res = await applyProposals(
@@ -124,6 +133,11 @@ export async function createCommitInternal(
 
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
+  const touchedLeaves: LeafIndex[] = res.needsUpdatePath
+    ? [...res.updatedLeaves, ...res.removedLeaves, toLeafIndex(state.privatePath.leafIndex)]
+    : [...res.updatedLeaves, ...res.removedLeaves]
+  const treeHashCache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, touchedLeaves)
+
   const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
     ? await createUpdatePath(
         state.ratchetTree,
@@ -132,6 +146,7 @@ export async function createCommitInternal(
         state.groupContext,
         state.signaturePrivateKey,
         cipherSuite,
+        treeHashCache,
       )
     : [mutableTree, undefined, [] as PathSecret[], undefined, undefined]
 
@@ -166,7 +181,7 @@ export async function createCommitInternal(
     cipherSuite.signature,
   )
 
-  const treeHash = precomputedTreeHash ?? (await treeHashRoot(tree, cipherSuite.hash))
+  const treeHash = precomputedTreeHash ?? (await treeHashRoot(tree, cipherSuite.hash, treeHashCache))
 
   const updatedGroupContext = await nextEpochContext(
     groupContextWithExtensions,
@@ -240,6 +255,7 @@ export async function createCommitInternal(
     confirmationTag,
     signaturePrivateKey: state.signaturePrivateKey,
     groupActiveState,
+    treeHashCache,
   }
 
   zeroOutUint8Array(commitSecret)
@@ -603,6 +619,7 @@ export async function joinGroupExternal(params: {
 
   const newLeafNodeIndex = addLeafNodeMutable(mutableTree, keyPackage.leafNode)
 
+  const externalTreeHashCache: TreeHashCache = []
   const [newTree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = await createUpdatePath(
     ratchetTree,
     mutableTree,
@@ -610,6 +627,7 @@ export async function joinGroupExternal(params: {
     groupInfo.groupContext,
     privateKeys.signaturePrivateKey,
     cs,
+    externalTreeHashCache,
   )
 
   const privateKeyPath = updateLeafKey(
@@ -681,6 +699,7 @@ export async function joinGroupExternal(params: {
     keySchedule: epochSecrets.keySchedule,
     unappliedProposals: {},
     groupActiveState: { kind: "active" },
+    treeHashCache: externalTreeHashCache,
   }
 
   const authenticatedContent: AuthenticatedContentCommit = {
@@ -700,4 +719,16 @@ export async function joinGroupExternal(params: {
 function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): NodeIndex[] {
   const set = new Set(excludeNodes)
   return resolution.filter((i) => !set.has(i))
+}
+
+export function deriveTreeHashCache(
+  oldLen: number,
+  newLen: number,
+  oldCache: TreeHashCache,
+  touchedLeaves: readonly LeafIndex[],
+): TreeHashCache {
+  if (newLen !== oldLen) return []
+  const cache = oldCache.slice()
+  for (const idx of collectInvalidations(touchedLeaves, newLen)) cache[idx] = undefined
+  return cache
 }
