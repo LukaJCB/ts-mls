@@ -74,11 +74,25 @@ export const treeHashInputDecoder: Decoder<TreeHashInput> = flatMapDecoder(
   },
 )
 
-export async function treeHashRoot(tree: RatchetTree, h: Hash): Promise<Uint8Array> {
-  return treeHash(tree, rootFromNodeWidth(tree.length), h)
+/** @public */
+export type TreeHashCache = (Uint8Array | undefined)[]
+
+export async function treeHashRoot(tree: RatchetTree, h: Hash, cache?: TreeHashCache): Promise<Uint8Array> {
+  return treeHash(tree, rootFromNodeWidth(tree.length), h, cache)
 }
 
-export async function treeHash(tree: RatchetTree, subtreeIndex: NodeIndex, h: Hash): Promise<Uint8Array> {
+export async function treeHash(
+  tree: RatchetTree,
+  subtreeIndex: NodeIndex,
+  h: Hash,
+  cache?: TreeHashCache,
+): Promise<Uint8Array> {
+  if (cache !== undefined) {
+    const cached = cache[subtreeIndex]
+    if (cached !== undefined) return cached
+  }
+
+  let result: Uint8Array
   if (isLeaf(subtreeIndex)) {
     const leafNode = tree[subtreeIndex]
     if (leafNode?.nodeType === nodeTypes.parent) throw new InternalError("Somehow found parent node in leaf position")
@@ -87,12 +101,12 @@ export async function treeHash(tree: RatchetTree, subtreeIndex: NodeIndex, h: Ha
       leafIndex: nodeToLeafIndex(subtreeIndex),
       leafNode: leafNode?.leaf,
     })
-    return await h.digest(input)
+    result = await h.digest(input)
   } else {
     const parentNode = tree[subtreeIndex]
     if (parentNode?.nodeType === nodeTypes.leaf) throw new InternalError("Somehow found leaf node in parent position")
-    const leftHash = await treeHash(tree, left(subtreeIndex), h)
-    const rightHash = await treeHash(tree, right(subtreeIndex), h)
+    const leftHash = await treeHash(tree, left(subtreeIndex), h, cache)
+    const rightHash = await treeHash(tree, right(subtreeIndex), h, cache)
     const input = {
       nodeType: nodeTypes.parent,
       parentNode: parentNode?.parent,
@@ -100,6 +114,9 @@ export async function treeHash(tree: RatchetTree, subtreeIndex: NodeIndex, h: Ha
       rightHash: rightHash,
     } as const
 
-    return await h.digest(encode(parentNodeHashInputEncoder, input))
+    result = await h.digest(encode(parentNodeHashInputEncoder, input))
   }
+
+  if (cache !== undefined) cache[subtreeIndex] = result
+  return result
 }

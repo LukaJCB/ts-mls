@@ -694,6 +694,8 @@ export interface GroupState {
     // (undocumented)
     signaturePrivateKey: Uint8Array;
     // (undocumented)
+    treeHashCache: TreeHashCache;
+    // (undocumented)
     unappliedProposals: UnappliedProposals;
 }
 
@@ -1634,6 +1636,9 @@ export interface SignatureKeyPair {
 
 // @public (undocumented)
 export function toBufferSource(b: Uint8Array): BufferSource;
+
+// @public (undocumented)
+export type TreeHashCache = (Uint8Array | undefined)[];
 
 // @public (undocumented)
 export type UnappliedProposals = Record<string, ProposalWithSender>;

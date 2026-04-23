@@ -49,6 +49,8 @@ export {
   InternalError,
 } from "./mlsError.js"
 
+export { type TreeHashCache } from "./treeHash.js"
+
 export {
   createCommit,
   createGroupInfoWithExternalPub,
