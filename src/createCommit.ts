@@ -12,7 +12,6 @@ import { GroupActiveState } from "./groupActiveState.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { decryptWithLabel } from "./crypto/hpke.js"
-import { deriveSecret } from "./crypto/kdf.js"
 import {
   createContentCommitSignature,
   createConfirmationTag,
@@ -34,7 +33,7 @@ import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
 import { MlsFramedMessage, MlsWelcomeMessage } from "./message.js"
 import { protect } from "./messageProtection.js"
 import { protectPublicMessage } from "./messageProtectionPublic.js"
-import { pathToPathSecrets } from "./pathSecrets.js"
+import { getCommitSecret, pathToPathSecrets } from "./pathSecrets.js"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
 import { Proposal, ProposalExternalInit } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
@@ -154,7 +153,7 @@ export async function createCommitInternal(
   const commitSecret =
     lastPathSecret === undefined
       ? new Uint8Array(cipherSuite.kdf.size)
-      : await deriveSecret(lastPathSecret.secret, "path", cipherSuite.kdf)
+      : await getCommitSecret(tree, toNodeIndex(lastPathSecret.nodeIndex), lastPathSecret.secret, cipherSuite.kdf)
 
   const { signature, framedContent } = await createContentCommitSignature(
     state.groupContext,
@@ -622,7 +621,7 @@ export async function joinGroupExternal(params: {
   const commitSecret =
     lastPathSecret === undefined
       ? new Uint8Array(cs.kdf.size)
-      : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
+      : await getCommitSecret(newTree, toNodeIndex(lastPathSecret.nodeIndex), lastPathSecret.secret, cs.kdf)
 
   const externalInitProposal: ProposalExternalInit = {
     proposalType: defaultProposalTypes.external_init,

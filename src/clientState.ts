@@ -821,8 +821,10 @@ export async function applyProposals(
 
     const needsUpdatePath =
       allProposals.length === 0 ||
-      Object.values(grouped[defaultProposalTypes.update]).length > 1 ||
-      Object.values(grouped[defaultProposalTypes.remove]).length > 1
+      allProposals.some(({ proposal }) => {
+        const t = proposal.proposalType
+        return t !== defaultProposalTypes.add && t !== defaultProposalTypes.psk && t !== defaultProposalTypes.reinit
+      })
 
     return {
       pskSecret: updatedPskSecret,
