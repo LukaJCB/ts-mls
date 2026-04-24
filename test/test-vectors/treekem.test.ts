@@ -82,7 +82,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
 
     const mutableTree = tree[0].slice()
 
-    await applyUpdatePath(mutableTree, toLeafIndex(path.sender), updatePath[0], impl.hash)
+    await applyUpdatePath(mutableTree, toLeafIndex(path.sender), updatePath[0], impl.hash, [])
 
     const th = await treeHashRoot(mutableTree, impl.hash)
 
@@ -101,6 +101,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
       updatedGroupContext,
       hexToBytes(senderLeafState.signature_priv),
       impl,
+      [],
     )
 
     const rootSecret = newSecrets.slice().pop()!

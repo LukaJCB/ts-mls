@@ -51,8 +51,9 @@ import {
 import { createSecretTree, SecretTree } from "./secretTree.js"
 import { treeHashRoot, TreeHashCache } from "./treeHash.js"
 import {
-  collectInvalidations,
+  directPath,
   LeafIndex,
+  leafToNodeIndex,
   leafWidth,
   NodeIndex,
   nodeToLeafIndex,
@@ -113,7 +114,6 @@ export async function createCommitInternal(
   const wireformat = wireAsPublicMessage ? "mls_public_message" : "mls_private_message"
 
   const allProposals = bundleAllProposals(state, extraProposals)
-  const oldLen = state.ratchetTree.length
   const mutableTree = state.ratchetTree.slice()
 
   const res = await applyProposals(
@@ -135,7 +135,7 @@ export async function createCommitInternal(
   const touchedLeaves: LeafIndex[] = res.needsUpdatePath
     ? [...res.updatedLeaves, ...res.removedLeaves, toLeafIndex(state.privatePath.leafIndex)]
     : [...res.updatedLeaves, ...res.removedLeaves]
-  const treeHashCache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, touchedLeaves)
+  const treeHashCache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touchedLeaves)
 
   const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
     ? await createUpdatePath(
@@ -721,13 +721,18 @@ function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): No
 }
 
 export function deriveTreeHashCache(
-  oldLen: number,
   newLen: number,
   oldCache: TreeHashCache,
   touchedLeaves: readonly LeafIndex[],
 ): TreeHashCache {
-  if (newLen !== oldLen) return []
-  const cache = oldCache.slice()
-  for (const idx of collectInvalidations(touchedLeaves, newLen)) cache[idx] = undefined
+  const cache = oldCache.slice(0, newLen)
+  if (cache.length < newLen) cache.length = newLen
+  const newLeafWidth = leafWidth(newLen)
+  for (const leaf of touchedLeaves) {
+    if (leaf >= newLeafWidth) continue
+    const leafNode = leafToNodeIndex(leaf)
+    cache[leafNode] = undefined
+    for (const anc of directPath(leafNode, newLeafWidth)) cache[anc] = undefined
+  }
   return cache
 }
