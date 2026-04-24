@@ -40,7 +40,7 @@ import {
   secretTreeEncoder,
 } from "./secretTree.js"
 import { createConfirmedHash, createInterimHash } from "./transcriptHash.js"
-import { treeHashRoot } from "./treeHash.js"
+import { treeHashRoot, TreeHashCache } from "./treeHash.js"
 import {
   directPath,
   isLeaf,
@@ -120,7 +120,15 @@ import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { arraysEqual } from "./util/array.js"
 import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 
-import { bigintMapEncoder, bigintMapDecoder, varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
+import {
+  bigintMapEncoder,
+  bigintMapDecoder,
+  varLenDataDecoder,
+  varLenDataEncoder,
+  varLenTypeDecoder,
+  varLenTypeEncoder,
+} from "./codec/variableLength.js"
+import { optionalDecoder, optionalEncoder } from "./codec/optional.js"
 import { groupActiveStateDecoder, GroupActiveState, groupActiveStateEncoder } from "./groupActiveState.js"
 import { epochReceiverDataDecoder, EpochReceiverData, epochReceiverDataEncoder } from "./epochReceiverData.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
@@ -146,6 +154,7 @@ export interface GroupState {
   confirmationTag: Uint8Array
   historicalReceiverData: Map<bigint, EpochReceiverData>
   groupActiveState: GroupActiveState
+  treeHashCache: TreeHashCache
 }
 
 /** @public */
@@ -153,6 +162,9 @@ export const publicGroupStateEncoder: Encoder<PublicGroupState> = contramapBuffe
   [groupContextEncoder, ratchetTreeEncoder],
   (state) => [state.groupContext, state.ratchetTree] as const,
 )
+
+const treeHashCacheEncoder: Encoder<TreeHashCache> = varLenTypeEncoder(optionalEncoder(varLenDataEncoder))
+const treeHashCacheDecoder: Decoder<TreeHashCache> = varLenTypeDecoder(optionalDecoder(varLenDataDecoder))
 
 /** @public */
 export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
@@ -165,6 +177,7 @@ export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
     varLenDataEncoder,
     bigintMapEncoder(epochReceiverDataEncoder),
     groupActiveStateEncoder,
+    treeHashCacheEncoder,
   ],
   (state) =>
     [
@@ -176,6 +189,7 @@ export const groupStateEncoder: Encoder<GroupState> = contramapBufferEncoders(
       state.confirmationTag,
       state.historicalReceiverData,
       state.groupActiveState,
+      state.treeHashCache,
     ] as const,
 )
 
@@ -205,6 +219,7 @@ export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
     varLenDataDecoder,
     bigintMapDecoder(epochReceiverDataDecoder),
     groupActiveStateDecoder,
+    treeHashCacheDecoder,
   ],
   (
     keySchedule,
@@ -215,6 +230,7 @@ export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
     confirmationTag,
     historicalReceiverData,
     groupActiveState,
+    treeHashCache,
   ) => ({
     keySchedule,
     secretTree,
@@ -224,6 +240,7 @@ export const groupStateDecoder: Decoder<GroupState> = mapDecoders(
     confirmationTag,
     historicalReceiverData,
     groupActiveState,
+    treeHashCache,
   }),
 )
 
@@ -474,6 +491,7 @@ export async function validateRatchetTree(
   authService: AuthenticationService,
   treeHash: Uint8Array,
   cs: CiphersuiteImpl,
+  treeHashCache?: TreeHashCache,
 ): Promise<MlsError | undefined> {
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
@@ -548,7 +566,7 @@ export async function validateRatchetTree(
 
   if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
 
-  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash)))
+  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash, treeHashCache)))
     return new ValidationError("Unable to verify tree hash")
 }
 
@@ -726,6 +744,8 @@ export interface ApplyProposalsResult {
   additionalResult: ApplyProposalsData
   selfRemoved: boolean
   allProposals: ProposalWithSender[]
+  updatedLeaves: LeafIndex[]
+  removedLeaves: LeafIndex[]
 }
 
 export type ApplyProposalsData =
@@ -784,6 +804,8 @@ export async function applyProposals(
         },
         selfRemoved: false,
         allProposals,
+        updatedLeaves: [],
+        removedLeaves: [],
       }
     }
 
@@ -826,6 +848,14 @@ export async function applyProposals(
         return t !== defaultProposalTypes.add && t !== defaultProposalTypes.psk && t !== defaultProposalTypes.reinit
       })
 
+    const updatedLeaves: LeafIndex[] = [
+      ...grouped[defaultProposalTypes.update].map(({ senderLeafIndex }) => toLeafIndex(senderLeafIndex!)),
+      ...addedLeafNodes.map(([leafIndex]) => leafIndex),
+    ]
+    const removedLeaves: LeafIndex[] = grouped[defaultProposalTypes.remove].map(({ proposal }) =>
+      toLeafIndex(proposal.remove.removed),
+    )
+
     return {
       pskSecret: updatedPskSecret,
       additionalResult: {
@@ -837,6 +867,8 @@ export async function applyProposals(
       needsUpdatePath,
       selfRemoved,
       allProposals,
+      updatedLeaves,
+      removedLeaves,
     }
   } else {
     throwIfDefined(validateExternalInit(grouped))
@@ -864,6 +896,10 @@ export async function applyProposals(
       cs,
     )
 
+    const removedLeaves: LeafIndex[] = grouped[defaultProposalTypes.remove].map(({ proposal }) =>
+      toLeafIndex(proposal.remove.removed),
+    )
+
     return {
       needsUpdatePath: true,
       pskSecret: updatedPskSecret,
@@ -875,6 +911,8 @@ export async function applyProposals(
       },
       selfRemoved: false,
       allProposals,
+      updatedLeaves: [],
+      removedLeaves,
     }
   }
 }
@@ -1036,6 +1074,8 @@ export async function joinGroupInternal(params: {
   if (gi.groupContext.cipherSuite !== keyPackage.cipherSuite)
     throw new ValidationError("cipher suite in the GroupInfo does not match the cipher_suite in the KeyPackage")
 
+  const treeHashCache: TreeHashCache = []
+
   throwIfDefined(
     await validateRatchetTree(
       tree,
@@ -1044,6 +1084,7 @@ export async function joinGroupInternal(params: {
       authService,
       gi.groupContext.treeHash,
       cs,
+      treeHashCache,
     ),
   )
 
@@ -1097,6 +1138,7 @@ export async function joinGroupInternal(params: {
       secretTree,
       historicalReceiverData: new Map(),
       groupActiveState: { kind: "active" },
+      treeHashCache,
     },
     groupInfoExtensions: gi.extensions,
   }
@@ -1172,6 +1214,7 @@ export async function createGroup(params: CreateGroupParams): Promise<ClientStat
     groupContext,
     confirmationTag,
     groupActiveState: { kind: "active" },
+    treeHashCache: [],
   }
 }
 

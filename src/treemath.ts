@@ -114,3 +114,14 @@ export function copath(nodeIndex: NodeIndex, leafWidth: number): NodeIndex[] {
 export function isAncestor(childNodeIndex: NodeIndex, ancestor: NodeIndex, nodeWidth: number): boolean {
   return directPath(childNodeIndex, leafWidth(nodeWidth)).includes(ancestor)
 }
+
+export function collectInvalidations(leaves: readonly LeafIndex[], treeLen: number): Set<NodeIndex> {
+  const lw = leafWidth(treeLen)
+  const set = new Set<NodeIndex>()
+  for (const leaf of leaves) {
+    const leafNode = leafToNodeIndex(leaf)
+    set.add(leafNode)
+    for (const anc of directPath(leafNode, lw)) set.add(anc)
+  }
+  return set
+}

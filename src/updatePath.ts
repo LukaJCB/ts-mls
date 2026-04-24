@@ -23,7 +23,7 @@ import {
   RatchetTree,
 } from "./ratchetTree.js"
 import { nodeTypes } from "./nodeType.js"
-import { treeHashRoot } from "./treeHash.js"
+import { treeHashRoot, TreeHashCache } from "./treeHash.js"
 import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex, toNodeIndex } from "./treemath.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { hpkeCiphertextDecoder, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
@@ -74,6 +74,7 @@ export async function createUpdatePath(
   groupContext: GroupContext,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
+  treeHashCache?: TreeHashCache,
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey, Uint8Array]> {
   const originalLeafNode = mutableTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === nodeTypes.parent)
@@ -111,7 +112,7 @@ export async function createUpdatePath(
     leaf: updatedLeafNode,
   }
 
-  const updatedTreeHash = await treeHashRoot(mutableTree, cs.hash)
+  const updatedTreeHash = await treeHashRoot(mutableTree, cs.hash, treeHashCache)
 
   const updatedGroupContext: GroupContext = {
     ...groupContext,
