@@ -279,7 +279,6 @@ async function processCommit(
   const senderLeafIndex =
     content.sender.senderType === senderTypes.member ? toLeafIndex(content.sender.leafIndex) : undefined
 
-  const oldLen = state.ratchetTree.length
   const mutableTree = state.ratchetTree.slice()
   const result = await applyProposals(
     state,
@@ -354,7 +353,6 @@ async function processCommit(
       ? result.additionalResult.addedLeafNodes.map((l) => leafToNodeIndex(toLeafIndex(l[0])))
       : [findBlankLeafNodeIndex(mutableTree) ?? toNodeIndex(mutableTree.length + 1)],
     cs.kdf,
-    oldLen,
     proposalTouchedLeaves,
   )
 
@@ -429,19 +427,18 @@ async function applyTreeUpdate(
   groupContext: GroupContext,
   excludeNodes: NodeIndex[],
   kdf: Kdf,
-  oldLen: number,
   proposalTouchedLeaves: readonly LeafIndex[],
 ): Promise<[PrivateKeyPath, Uint8Array, Uint8Array, TreeHashCache]> {
   if (path === undefined) {
-    const cache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, proposalTouchedLeaves)
+    const cache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, proposalTouchedLeaves)
     const treeHash = await treeHashRoot(mutableTree, cs.hash, cache)
     return [state.privatePath, new Uint8Array(kdf.size), treeHash, cache]
   }
   if (sender.senderType === senderTypes.member) {
-    await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash)
-
     const touched = [...proposalTouchedLeaves, toLeafIndex(sender.leafIndex)]
-    const cache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, touched)
+    const cache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touched)
+    await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash, cache)
+
     const newTreeHash = await treeHashRoot(mutableTree, cs.hash, cache)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(
@@ -458,10 +455,10 @@ async function applyTreeUpdate(
     const leafNodeIndex = addLeafNodeMutable(mutableTree, path.leafNode)
 
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
-    await applyUpdatePath(mutableTree, senderLeafIndex, path, cs.hash, true)
-
     const touched = [...proposalTouchedLeaves, senderLeafIndex]
-    const cache = deriveTreeHashCache(oldLen, mutableTree.length, state.treeHashCache, touched)
+    const cache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touched)
+    await applyUpdatePath(mutableTree, senderLeafIndex, path, cs.hash, cache, true)
+
     const newTreeHash = await treeHashRoot(mutableTree, cs.hash, cache)
 
     const [pkp, commitSecret] = await updatePrivateKeyPath(

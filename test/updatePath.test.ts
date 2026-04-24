@@ -83,7 +83,15 @@ describe("createUpdatePath", () => {
     const signaturePrivateKey = impl.rng.randomBytes(32)
     const senderLeafIndex = toLeafIndex(0)
 
-    await createUpdatePath(originalTree, originalTree.slice(), senderLeafIndex, groupContext, signaturePrivateKey, impl)
+    await createUpdatePath(
+      originalTree,
+      originalTree.slice(),
+      senderLeafIndex,
+      groupContext,
+      signaturePrivateKey,
+      impl,
+      [],
+    )
 
     expect(originalTree[0].leaf.hpkePublicKey).toStrictEqual(originalLeaf0HpkeKey)
     expect(originalTree[0].leaf.signaturePublicKey).toStrictEqual(originalLeaf0SigKey)
@@ -173,7 +181,15 @@ describe("createUpdatePath", () => {
     const signaturePrivateKey = impl.rng.randomBytes(32)
     const senderLeafIndex = toLeafIndex(1)
 
-    await createUpdatePath(originalTree, originalTree.slice(), senderLeafIndex, groupContext, signaturePrivateKey, impl)
+    await createUpdatePath(
+      originalTree,
+      originalTree.slice(),
+      senderLeafIndex,
+      groupContext,
+      signaturePrivateKey,
+      impl,
+      [],
+    )
 
     expect(originalTree[0].leaf.hpkePublicKey).toStrictEqual(originalLeaf0HpkeKey)
     expect(originalTree[2].leaf.hpkePublicKey).toStrictEqual(originalLeaf2HpkeKey)

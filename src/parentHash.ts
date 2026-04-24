@@ -4,7 +4,7 @@ import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { Hash } from "./crypto/hash.js"
 import { InternalError } from "./mlsError.js"
 import { findFirstNonBlankAncestor, Node, RatchetTree, removeLeaves } from "./ratchetTree.js"
-import { treeHash } from "./treeHash.js"
+import { treeHash, TreeHashCache } from "./treeHash.js"
 import { isLeaf, LeafIndex, leafWidth, left, NodeIndex, right, root, toNodeIndex } from "./treemath.js"
 import { nodeTypes } from "./nodeType.js"
 import { leafNodeSources } from "./leafNodeSource.js"
@@ -127,6 +127,7 @@ export async function calculateParentHash(
   tree: RatchetTree,
   nodeIndex: NodeIndex,
   h: Hash,
+  cache?: TreeHashCache,
 ): Promise<[Uint8Array, NodeIndex | undefined]> {
   const rootIndex = root(leafWidth(tree.length))
   if (nodeIndex === rootIndex) {
@@ -146,9 +147,11 @@ export async function calculateParentHash(
   if (parentNode === undefined || parentNode.nodeType === nodeTypes.leaf)
     throw new InternalError("Expected non-blank parent Node")
 
-  const removedUnmerged = removeLeaves(tree, parentNode.parent.unmergedLeaves as LeafIndex[])
-
-  const originalSiblingTreeHash = await treeHash(removedUnmerged, siblingIndex, h)
+  const unmerged = parentNode.parent.unmergedLeaves
+  const originalSiblingTreeHash =
+    unmerged.length === 0
+      ? await treeHash(tree, siblingIndex, h, cache)
+      : await treeHash(removeLeaves(tree, unmerged as LeafIndex[]), siblingIndex, h)
 
   const input = {
     encryptionKey: parentNode.parent.hpkePublicKey,

@@ -74,7 +74,7 @@ export async function createUpdatePath(
   groupContext: GroupContext,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
-  treeHashCache?: TreeHashCache,
+  treeHashCache: TreeHashCache,
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey, Uint8Array]> {
   const originalLeafNode = mutableTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === nodeTypes.parent)
@@ -89,9 +89,14 @@ export async function createUpdatePath(
 
   const ps: PathSecret[] = await applyInitialTreeUpdate(fdp, pathSecret, senderLeafIndex, mutableTree, cs)
 
-  await insertParentHashes(fdp, mutableTree, cs)
+  await insertParentHashes(fdp, mutableTree, cs, treeHashCache)
 
-  const leafParentHash = await calculateParentHash(mutableTree, leafToNodeIndex(senderLeafIndex), cs.hash)
+  const leafParentHash = await calculateParentHash(
+    mutableTree,
+    leafToNodeIndex(senderLeafIndex),
+    cs.hash,
+    treeHashCache,
+  )
 
   const updatedLeafNodeTbs: LeafNodeTBSCommit = {
     leafNodeSource: leafNodeSources.commit,
@@ -165,10 +170,11 @@ async function insertParentHashes(
   fdp: { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
   mutableTree: RatchetTree,
   cs: CiphersuiteImpl,
+  cache: TreeHashCache,
 ): Promise<void> {
   for (let x = fdp.length - 1; x >= 0; x--) {
     const { nodeIndex } = fdp[x]!
-    const parentHash = await calculateParentHash(mutableTree, nodeIndex, cs.hash)
+    const parentHash = await calculateParentHash(mutableTree, nodeIndex, cs.hash, cache)
     const currentNode = mutableTree[nodeIndex]
     if (currentNode === undefined || currentNode.nodeType === nodeTypes.leaf)
       throw new InternalError("Expected non-blank parent node")
@@ -218,6 +224,7 @@ export async function applyUpdatePath(
   senderLeafIndex: LeafIndex,
   path: UpdatePath,
   h: Hash,
+  cache: TreeHashCache,
   isExternal: boolean = false,
 ): Promise<void> {
   // if this is an external commit, the leaf node did not exist prior
@@ -256,7 +263,7 @@ export async function applyUpdatePath(
   }
 
   for (const [level, nodeIndex] of reverseFilteredDirectPath.entries()) {
-    const parentHash = await calculateParentHash(mutableTree, nodeIndex, h)
+    const parentHash = await calculateParentHash(mutableTree, nodeIndex, h, cache)
 
     mutableTree[nodeIndex] = {
       nodeType: nodeTypes.parent,
@@ -264,7 +271,7 @@ export async function applyUpdatePath(
     }
   }
 
-  const leafParentHash = await calculateParentHash(mutableTree, leafToNodeIndex(senderLeafIndex), h)
+  const leafParentHash = await calculateParentHash(mutableTree, leafToNodeIndex(senderLeafIndex), h, cache)
 
   if (!constantTimeEqual(leafParentHash[0], path.leafNode.parentHash))
     throw new ValidationError("Parent hash did not match the UpdatePath")
