@@ -77,18 +77,22 @@ export const treeHashInputDecoder: Decoder<TreeHashInput> = flatMapDecoder(
 /** @public */
 export type TreeHashCache = (Uint8Array | undefined)[]
 
-export async function treeHashRoot(tree: RatchetTree, h: Hash, cache?: TreeHashCache): Promise<Uint8Array> {
-  return treeHash(tree, rootFromNodeWidth(tree.length), h, cache)
+export async function treeHashRoot(
+  tree: RatchetTree,
+  h: Hash,
+  mutableTreeHashCache?: TreeHashCache,
+): Promise<Uint8Array> {
+  return treeHash(tree, rootFromNodeWidth(tree.length), h, mutableTreeHashCache)
 }
 
 export async function treeHash(
   tree: RatchetTree,
   subtreeIndex: NodeIndex,
   h: Hash,
-  cache?: TreeHashCache,
+  mutableTreeHashCache?: TreeHashCache,
 ): Promise<Uint8Array> {
-  if (cache !== undefined) {
-    const cached = cache[subtreeIndex]
+  if (mutableTreeHashCache !== undefined) {
+    const cached = mutableTreeHashCache[subtreeIndex]
     if (cached !== undefined) return cached
   }
 
@@ -105,8 +109,8 @@ export async function treeHash(
   } else {
     const parentNode = tree[subtreeIndex]
     if (parentNode?.nodeType === nodeTypes.leaf) throw new InternalError("Somehow found leaf node in parent position")
-    const leftHash = await treeHash(tree, left(subtreeIndex), h, cache)
-    const rightHash = await treeHash(tree, right(subtreeIndex), h, cache)
+    const leftHash = await treeHash(tree, left(subtreeIndex), h, mutableTreeHashCache)
+    const rightHash = await treeHash(tree, right(subtreeIndex), h, mutableTreeHashCache)
     const input = {
       nodeType: nodeTypes.parent,
       parentNode: parentNode?.parent,
@@ -117,6 +121,6 @@ export async function treeHash(
     result = await h.digest(encode(parentNodeHashInputEncoder, input))
   }
 
-  if (cache !== undefined) cache[subtreeIndex] = result
+  if (mutableTreeHashCache !== undefined) mutableTreeHashCache[subtreeIndex] = result
   return result
 }
