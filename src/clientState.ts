@@ -491,8 +491,9 @@ export async function validateRatchetTree(
   authService: AuthenticationService,
   treeHash: Uint8Array,
   cs: CiphersuiteImpl,
-  treeHashCache?: TreeHashCache,
+  mutableTreeHashCache?: TreeHashCache,
 ): Promise<MlsError | undefined> {
+  const cache = mutableTreeHashCache ?? []
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
   const credentialTypes = new Set<number>()
@@ -562,11 +563,11 @@ export async function validateRatchetTree(
     }
   }
 
-  const parentHashesVerified = await verifyParentHashes(tree, cs.hash)
+  const parentHashesVerified = await verifyParentHashes(tree, cs.hash, cache)
 
   if (!parentHashesVerified) return new CryptoVerificationError("Unable to verify parent hash")
 
-  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash, treeHashCache)))
+  if (!constantTimeEqual(treeHash, await treeHashRoot(tree, cs.hash, cache)))
     return new ValidationError("Unable to verify tree hash")
 }
 

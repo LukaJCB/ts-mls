@@ -36,7 +36,7 @@ async function treeOperationsTest(data: TreeValidationData, impl: CiphersuiteImp
     expect(reso).toStrictEqual(r)
   }
 
-  expect(await verifyParentHashes(tree[0], impl.hash)).toBe(true)
+  expect(await verifyParentHashes(tree[0], impl.hash, [])).toBe(true)
 
   for (const [i, n] of tree[0].entries()) {
     if (n !== undefined) {

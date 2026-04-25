@@ -31,7 +31,11 @@ export const parentHashInputDecoder: Decoder<ParentHashInput> = mapDecoders(
   }),
 )
 
-export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<boolean> {
+export async function verifyParentHashes(
+  tree: RatchetTree,
+  h: Hash,
+  mutableTreeHashCache: TreeHashCache,
+): Promise<boolean> {
   let hasParent = false
   for (let i = 0; i < tree.length; i++) {
     const cur = tree[i]
@@ -42,7 +46,7 @@ export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<bo
   }
   if (!hasParent) return true
 
-  const coverage = await parentHashCoverage(tree, h)
+  const coverage = await parentHashCoverage(tree, h, mutableTreeHashCache)
 
   for (let i = 0; i < tree.length; i++) {
     const cur = tree[i]
@@ -58,14 +62,18 @@ export async function verifyParentHashes(tree: RatchetTree, h: Hash): Promise<bo
  * Per-leaf walks run in parallel; calculateParentHash is memoized by nodeIndex since, for a fixed tree,
  * it is a pure function of nodeIndex.
  */
-async function parentHashCoverage(tree: RatchetTree, h: Hash): Promise<Map<number, number>> {
+async function parentHashCoverage(
+  tree: RatchetTree,
+  h: Hash,
+  mutableTreeHashCache: TreeHashCache,
+): Promise<Map<number, number>> {
   const rootIndex = root(leafWidth(tree.length))
 
   const memo = new Map<NodeIndex, Promise<[Uint8Array, NodeIndex | undefined]>>()
   const memoedCalculate = (idx: NodeIndex): Promise<[Uint8Array, NodeIndex | undefined]> => {
     let p = memo.get(idx)
     if (p === undefined) {
-      p = calculateParentHash(tree, idx, h)
+      p = calculateParentHash(tree, idx, h, mutableTreeHashCache)
       memo.set(idx, p)
     }
     return p
@@ -127,7 +135,7 @@ export async function calculateParentHash(
   tree: RatchetTree,
   nodeIndex: NodeIndex,
   h: Hash,
-  cache?: TreeHashCache,
+  mutableTreeHashCache: TreeHashCache,
 ): Promise<[Uint8Array, NodeIndex | undefined]> {
   const rootIndex = root(leafWidth(tree.length))
   if (nodeIndex === rootIndex) {
@@ -150,7 +158,7 @@ export async function calculateParentHash(
   const unmerged = parentNode.parent.unmergedLeaves
   const originalSiblingTreeHash =
     unmerged.length === 0
-      ? await treeHash(tree, siblingIndex, h, cache)
+      ? await treeHash(tree, siblingIndex, h, mutableTreeHashCache)
       : await treeHash(removeLeaves(tree, unmerged as LeafIndex[]), siblingIndex, h)
 
   const input = {
