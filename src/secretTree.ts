@@ -83,23 +83,21 @@ export const secretTreeDecoder: Decoder<SecretTree> = mapDecoders(
   (leafWidth, intermediateNodes, leafNodes) => ({ leafWidth, intermediateNodes, leafNodes }),
 )
 
-export function allSecretTreeValues(tree: SecretTree): Uint8Array[] {
-  const arr = new Array<Uint8Array>(tree.leafWidth * 2)
+export function appendSecretTreeValues(tree: SecretTree, out: Uint8Array[]): void {
   for (const node of Object.values(tree.leafNodes)) {
-    arr.push(node.application.secret)
-    arr.push(node.handshake.secret)
+    out.push(node.application.secret)
+    out.push(node.handshake.secret)
     for (const gen of Object.values(node.application.unusedGenerations)) {
-      arr.push(gen)
+      out.push(gen)
     }
     for (const gen of Object.values(node.handshake.unusedGenerations)) {
-      arr.push(gen)
+      out.push(gen)
     }
   }
 
   for (const node of Object.values(tree.intermediateNodes)) {
-    arr.push(node)
+    out.push(node)
   }
-  return arr
 }
 
 interface ConsumeRatchetResult {

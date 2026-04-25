@@ -33,7 +33,7 @@ import {
 } from "./ratchetTree.js"
 import { RatchetTree } from "./ratchetTree.js"
 import {
-  allSecretTreeValues,
+  appendSecretTreeValues,
   createSecretTree,
   SecretTree,
   secretTreeDecoder,
@@ -1328,17 +1328,12 @@ function removeOldHistoricalReceiverData(
 
   const cutoff = sortedEpochs.length - max
 
-  const toBeDeleted = new Array<Uint8Array>()
-
-  const map = new Map<bigint, EpochReceiverData>()
-  for (const [n, epoch] of sortedEpochs.entries()) {
-    const data = historicalReceiverData.get(epoch)!
-    if (n < cutoff) {
-      toBeDeleted.push(...allSecretTreeValues(data.secretTree))
-    } else {
-      map.set(epoch, data)
-    }
+  const toBeDeleted: Uint8Array[] = []
+  for (let n = 0; n < cutoff; n++) {
+    appendSecretTreeValues(historicalReceiverData.get(sortedEpochs[n]!)!.secretTree, toBeDeleted)
   }
 
-  return [new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!])), []]
+  const map = new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!]))
+
+  return [map, toBeDeleted]
 }
