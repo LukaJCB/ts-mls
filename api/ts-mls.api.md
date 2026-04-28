@@ -57,7 +57,7 @@ export interface Capabilities {
     // (undocumented)
     proposals: number[];
     // (undocumented)
-    versions: ProtocolVersionValue[];
+    versions: number[];
 }
 
 // @public (undocumented)
