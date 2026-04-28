@@ -1,4 +1,3 @@
-import { protocolVersionDecoder, protocolVersionEncoder, ProtocolVersionValue } from "./protocolVersion.js"
 import { Encoder, contramapBufferEncoders } from "./codec/tlsEncoder.js"
 import { Decoder, mapDecoders } from "./codec/tlsDecoder.js"
 import { varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
@@ -6,7 +5,7 @@ import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 
 /** @public */
 export interface Capabilities {
-  versions: ProtocolVersionValue[]
+  versions: number[]
   ciphersuites: number[]
   extensions: number[]
   proposals: number[]
@@ -15,7 +14,7 @@ export interface Capabilities {
 
 export const capabilitiesEncoder: Encoder<Capabilities> = contramapBufferEncoders(
   [
-    varLenTypeEncoder(protocolVersionEncoder),
+    varLenTypeEncoder(uint16Encoder),
     varLenTypeEncoder(uint16Encoder),
     varLenTypeEncoder(uint16Encoder),
     varLenTypeEncoder(uint16Encoder),
@@ -26,7 +25,7 @@ export const capabilitiesEncoder: Encoder<Capabilities> = contramapBufferEncoder
 
 export const capabilitiesDecoder: Decoder<Capabilities> = mapDecoders(
   [
-    varLenTypeDecoder(protocolVersionDecoder),
+    varLenTypeDecoder(uint16Decoder),
     varLenTypeDecoder(uint16Decoder),
     varLenTypeDecoder(uint16Decoder),
     varLenTypeDecoder(uint16Decoder),
