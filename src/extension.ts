@@ -90,6 +90,8 @@ export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders([uin
       return [e.extensionType, encode(requiredCapabilitiesEncoder, e.extensionData)]
     } else if (e.extensionType === defaultExtensionTypes.external_senders) {
       return [e.extensionType, encode(externalSenderEncoder, e.extensionData)]
+    } else if (e.extensionType === defaultExtensionTypes.external_pub) {
+      return [e.extensionType, encode(varLenDataEncoder, e.extensionData)]
     }
     return [e.extensionType, e.extensionData] as const
   } else return [e.extensionType, e.extensionData] as const
@@ -116,9 +118,13 @@ export const groupInfoExtensionDecoder: Decoder<GroupInfoExtension> = flatMapDec
   uint16Decoder,
   (extensionType): Decoder<GroupInfoExtension> => {
     if (extensionType === defaultExtensionTypes.external_pub) {
-      return mapDecoder(varLenDataDecoder, (extensionData) => {
-        return { extensionType: defaultExtensionTypes.external_pub, extensionData }
-      })
+      return (b: Uint8Array, offset: number) => {
+        const x = varLenDataDecoder(b, offset)
+        if (!x) return undefined
+        const res = varLenDataDecoder(x[0], 0)
+        if (!res) return undefined
+        return [{ extensionType: defaultExtensionTypes.external_pub, extensionData: res[0] }, x[1]]
+      }
     } else if (extensionType === defaultExtensionTypes.ratchet_tree) {
       return mapDecoder(varLenDataDecoder, (extensionData) => {
         return { extensionType: defaultExtensionTypes.ratchet_tree, extensionData }
