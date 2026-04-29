@@ -534,7 +534,7 @@ export async function processMessage(params: {
     return { ...result, kind: "newState" }
   } else
     return processPrivateMessage({
-      context: { cipherSuite: cs, authService, externalPsks: {}, clientConfig },
+      context: { cipherSuite: cs, authService, externalPsks, clientConfig },
       state,
       privateMessage: message.privateMessage,
       callback: action,
