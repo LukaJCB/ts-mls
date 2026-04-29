@@ -61,7 +61,13 @@ export {
   type CreateCommitResult,
 } from "./createCommit.js"
 
-export { createApplicationMessage, createProposal, type CreateMessageResult } from "./createMessage.js"
+export {
+  createApplicationMessage,
+  createProposal,
+  createUpdateProposal,
+  type CreateMessageResult,
+  type CreateUpdateProposalResult,
+} from "./createMessage.js"
 
 export {
   processMessage,
@@ -241,7 +247,7 @@ export {
   generateKeyPackageWithKey,
 } from "./keyPackage.js"
 
-export { type PrivateKeyPath } from "./privateKeyPath.js"
+export { type PrivateKeyPath, updateLeafKey } from "./privateKeyPath.js"
 
 export { type UpdatePath, type UpdatePathNode } from "./updatePath.js"
 

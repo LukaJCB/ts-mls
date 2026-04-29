@@ -248,6 +248,23 @@ export function createProposal(params: {
 }): Promise<CreateMessageResult>;
 
 // @public (undocumented)
+export function createUpdateProposal(params: {
+    context: MlsContext;
+    state: ClientState;
+    wireAsPublicMessage?: boolean;
+    authenticatedData?: Uint8Array;
+    leafNodeExtensions?: LeafNodeExtension[];
+}): Promise<CreateUpdateProposalResult>;
+
+// @public (undocumented)
+export interface CreateUpdateProposalResult extends CreateMessageResult {
+    newLeafKeypair: {
+        hpkePublicKey: Uint8Array;
+        hpkePrivateKey: Uint8Array;
+    };
+}
+
+// @public (undocumented)
 type Credential_2 = DefaultCredential | CredentialCustom;
 export { Credential_2 as Credential }
 
@@ -1651,6 +1668,9 @@ export interface Update {
     // (undocumented)
     leafNode: LeafNodeUpdate;
 }
+
+// @public (undocumented)
+export function updateLeafKey(path: PrivateKeyPath, newKey: Uint8Array): PrivateKeyPath;
 
 // @public (undocumented)
 export interface UpdatePath {

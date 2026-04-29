@@ -158,6 +158,8 @@ type LeafNodeTBS = LeafNodeData & LeafNodeInfo
 
 export type LeafNodeTBSCommit = LeafNodeData & LeafNodeInfoCommit
 
+export type LeafNodeTBSUpdate = LeafNodeData & LeafNodeInfoUpdate
+
 export type LeafNodeTBSKeyPackage = LeafNodeData & LeafNodeInfoKeyPackage
 
 const leafNodeTBSEncoder: Encoder<LeafNodeTBS> = contramapBufferEncoders(
@@ -230,6 +232,17 @@ export async function signLeafNodeKeyPackage(
   signaturePrivateKey: Uint8Array,
   sig: Signature,
 ): Promise<LeafNodeKeyPackage> {
+  return {
+    ...tbs,
+    signature: await signWithLabel(signaturePrivateKey, "LeafNodeTBS", encode(leafNodeTBSEncoder, tbs), sig),
+  }
+}
+
+export async function signLeafNodeUpdate(
+  tbs: LeafNodeTBSUpdate,
+  signaturePrivateKey: Uint8Array,
+  sig: Signature,
+): Promise<LeafNodeUpdate> {
   return {
     ...tbs,
     signature: await signWithLabel(signaturePrivateKey, "LeafNodeTBS", encode(leafNodeTBSEncoder, tbs), sig),
