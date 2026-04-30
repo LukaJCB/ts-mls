@@ -37,6 +37,8 @@ export const privateKeyPathDecoder: Decoder<PrivateKeyPath> = mapDecoders(
 export function mergePrivateKeyPaths(a: PrivateKeyPath, b: PrivateKeyPath): PrivateKeyPath {
   return { ...a, privateKeys: { ...a.privateKeys, ...b.privateKeys } }
 }
+
+/** @public */
 export function updateLeafKey(path: PrivateKeyPath, newKey: Uint8Array): PrivateKeyPath {
   return { ...path, privateKeys: { ...path.privateKeys, [leafToNodeIndex(toLeafIndex(path.leafIndex))]: newKey } }
 }

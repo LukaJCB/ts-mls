@@ -1,13 +1,18 @@
-import { checkCanSendApplicationMessages, ClientState, processProposal } from "./clientState.js"
+import { checkCanSendApplicationMessages, ClientState, getOwnLeafNode, processProposal } from "./clientState.js"
+import { LeafNodeExtension } from "./extension.js"
+import { LeafNodeTBSUpdate, signLeafNodeUpdate } from "./leafNode.js"
+import { leafNodeSources } from "./leafNodeSource.js"
 import { MlsFramedMessage } from "./message.js"
 import { protectProposal, protectApplicationData } from "./messageProtection.js"
 import { protectProposalPublic } from "./messageProtectionPublic.js"
 import { Proposal } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
 import { addUnappliedProposal } from "./unappliedProposals.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { wireformats } from "./wireformat.js"
 import type { MlsContext } from "./mlsContext.js"
 import { defaultClientConfig } from "./clientConfig.js"
+import { InternalError } from "./mlsError.js"
 
 /** @public */
 export interface CreateMessageResult {
@@ -96,6 +101,62 @@ export async function createProposal(params: {
       consumed: result.consumed,
     }
   }
+}
+
+/** @public */
+export interface CreateUpdateProposalResult extends CreateMessageResult {
+  /**
+   * HPKE keypair for the proposer's new leaf. The proposer MUST install the
+   * private key into `state.privatePath` (via `updateLeafKey`) only when the
+   * commit that applies this proposal is handled, because commits that do not
+   * include the proposal leave the proposer's leaf public key unchanged. The
+   * public key lets the caller detect which of those two outcomes occurred by
+   * comparing it to the post-commit tree's own-leaf public key.
+   */
+  newLeafKeypair: { hpkePublicKey: Uint8Array; hpkePrivateKey: Uint8Array }
+}
+
+/** @public */
+export async function createUpdateProposal(params: {
+  context: MlsContext
+  state: ClientState
+  wireAsPublicMessage?: boolean
+  authenticatedData?: Uint8Array
+  leafNodeExtensions?: LeafNodeExtension[]
+}): Promise<CreateUpdateProposalResult> {
+  const { context, state } = params
+  const cs = context.cipherSuite
+  const ownLeaf = getOwnLeafNode(state)
+  if (ownLeaf === undefined) throw new InternalError("No own leaf node found for update proposal")
+
+  const leafSecret = cs.rng.randomBytes(cs.kdf.size)
+  const leafKeypair = await cs.hpke.deriveKeyPair(leafSecret)
+  const hpkePublicKey = await cs.hpke.exportPublicKey(leafKeypair.publicKey)
+  const hpkePrivateKey = await cs.hpke.exportPrivateKey(leafKeypair.privateKey)
+
+  const tbs: LeafNodeTBSUpdate = {
+    leafNodeSource: leafNodeSources.update,
+    hpkePublicKey,
+    signaturePublicKey: ownLeaf.signaturePublicKey,
+    credential: ownLeaf.credential,
+    capabilities: ownLeaf.capabilities,
+    extensions: params.leafNodeExtensions ?? ownLeaf.extensions,
+    groupId: state.groupContext.groupId,
+    leafIndex: state.privatePath.leafIndex,
+  }
+  const leafNode = await signLeafNodeUpdate(tbs, state.signaturePrivateKey, cs.signature)
+  const proposal: Proposal = {
+    proposalType: defaultProposalTypes.update,
+    update: { leafNode },
+  }
+  const result = await createProposal({
+    context,
+    state,
+    wireAsPublicMessage: params.wireAsPublicMessage,
+    authenticatedData: params.authenticatedData,
+    proposal,
+  })
+  return { ...result, newLeafKeypair: { hpkePublicKey, hpkePrivateKey } }
 }
 
 /** @public */
