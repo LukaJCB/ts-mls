@@ -128,7 +128,7 @@ type LeafNodeInfoUpdate = LeafNodeInfoUpdateOmitted & {
   groupId: Uint8Array
   leafIndex: number
 }
-export type LeafNodeInfoCommit = LeafNodeInfoCommitOmitted & {
+type LeafNodeInfoCommit = LeafNodeInfoCommitOmitted & {
   groupId: Uint8Array
   leafIndex: number
 }

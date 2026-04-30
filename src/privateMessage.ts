@@ -84,13 +84,13 @@ export type PrivateMessageContent =
   | PrivateMessageContentProposal
   | PrivateMessageContentCommit
 
-export type PrivateMessageContentApplication = FramedContentApplicationData & {
+type PrivateMessageContentApplication = FramedContentApplicationData & {
   auth: FramedContentAuthDataApplicationOrProposal
 }
-export type PrivateMessageContentProposal = FramedContentProposalData & {
+type PrivateMessageContentProposal = FramedContentProposalData & {
   auth: FramedContentAuthDataApplicationOrProposal
 }
-export type PrivateMessageContentCommit = FramedContentCommitData & { auth: FramedContentAuthDataCommit }
+type PrivateMessageContentCommit = FramedContentCommitData & { auth: FramedContentAuthDataCommit }
 
 export function privateMessageContentDecoder(contentType: ContentTypeValue): Decoder<PrivateMessageContent> {
   switch (contentType) {
