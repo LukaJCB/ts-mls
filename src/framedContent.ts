@@ -103,8 +103,7 @@ export interface FramedContentData {
 }
 
 export type FramedContentCommit = FramedContentData & FramedContentCommitData
-export type FramedContentApplicationOrProposal = FramedContentData &
-  (FramedContentApplicationData | FramedContentProposalData)
+type FramedContentApplicationOrProposal = FramedContentData & (FramedContentApplicationData | FramedContentProposalData)
 
 export const framedContentEncoder: Encoder<FramedContent> = contramapBufferEncoders(
   [varLenDataEncoder, uint64Encoder, senderEncoder, varLenDataEncoder, framedContentInfoEncoder],

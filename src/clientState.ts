@@ -749,7 +749,7 @@ export interface ApplyProposalsResult {
   removedLeaves: LeafIndex[]
 }
 
-export type ApplyProposalsData =
+type ApplyProposalsData =
   | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: GroupContextExtension[] }
   | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: LeafIndex }
   | { kind: "reinit"; reinit: Reinit }
