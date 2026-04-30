@@ -1,4 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { ratchetTreeDecoder, getHpkePublicKey, RatchetTree } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/treekem.json"
@@ -19,7 +19,7 @@ import { defaultCryptoProvider } from "../../src/index.js"
 test.concurrent.each(json.map((x, index) => [index, x]))(
   `treekem test vectors %i`,
   async (_index, x) => {
-    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
     await treekemTest(x, impl)
   },
   20000,
@@ -63,7 +63,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
 
   const gc: GroupContext = {
     version: protocolVersions.mls10,
-    cipherSuite: data.cipher_suite as CiphersuiteId,
+    cipherSuite: data.cipher_suite,
     groupId: hexToBytes(data.group_id),
     epoch: BigInt(data.epoch),
     treeHash: th,

@@ -1,7 +1,7 @@
 import json from "../../test_vectors/message-protection.json"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import { GroupContext } from "../../src/groupContext.js"
-import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { mlsMessageDecoder } from "../../src/message.js"
 import { protect, unprotectPrivateMessage } from "../../src/messageProtection.js"
 import { createContentCommitSignature } from "../../src/framedContent.js"
@@ -31,7 +31,7 @@ import { encode } from "../../src/codec/tlsEncoder.js"
 import { defaultCapabilities, defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`message-protection test vectors %i`, async (_index, x) => {
-  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
   await testMessageProtection(x, impl)
 })
 
@@ -59,7 +59,7 @@ type MessageProtectionData = {
 async function testMessageProtection(data: MessageProtectionData, impl: CiphersuiteImpl) {
   const gc: GroupContext = {
     version: protocolVersions.mls10,
-    cipherSuite: data.cipher_suite as CiphersuiteId,
+    cipherSuite: data.cipher_suite,
     groupId: hexToBytes(data.group_id),
     epoch: BigInt(data.epoch),
     treeHash: hexToBytes(data.tree_hash),

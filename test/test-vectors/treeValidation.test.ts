@@ -1,4 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { ratchetTreeDecoder, resolution } from "../../src/ratchetTree.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/tree-validation.json"
@@ -10,7 +10,7 @@ import { nodeTypes } from "../../src/nodeType.js"
 import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`tree-validation test vectors %i`, async (_index, x) => {
-  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
   await treeOperationsTest(x, impl)
 })
 

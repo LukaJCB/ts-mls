@@ -1,4 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import json from "../../test_vectors/secret-tree.json"
 import { expandSenderDataKey, expandSenderDataNonce, ReuseGuard } from "../../src/sender.js"
@@ -9,7 +9,7 @@ import { contentTypes } from "../../src/contentType.js"
 import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`secret-tree test vectors %i`, async (_index, x) => {
-  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
   await testSecretTree(
     x.sender_data.sender_data_secret,
     x.sender_data.ciphertext,

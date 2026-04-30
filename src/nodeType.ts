@@ -9,7 +9,7 @@ export const nodeTypes = {
   parent: 2,
 } as const
 
-export type NodeTypeValue = (typeof nodeTypes)[keyof typeof nodeTypes]
+type NodeTypeValue = (typeof nodeTypes)[keyof typeof nodeTypes]
 
 export const nodeTypeEncoder: Encoder<NodeTypeValue> = uint8Encoder
 
