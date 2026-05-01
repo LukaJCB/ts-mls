@@ -1,5 +1,5 @@
 import json from "../../test_vectors/crypto-basics.json"
-import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { bytesToHex, hexToBytes } from "@noble/ciphers/utils.js"
 import { signWithLabel, verifyWithLabel } from "../../src/crypto/signature.js"
 import { refhash } from "../../src/crypto/hash.js"
@@ -8,8 +8,8 @@ import { decryptWithLabel, encryptWithLabel } from "../../src/crypto/hpke.js"
 import { defaultCryptoProvider, nobleCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`crypto-basics test vectors %i`, async (_index, x) => {
-  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
-  const nobleImpl = await nobleCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+  const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
+  const nobleImpl = await nobleCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
   await testRefHash(impl, x.ref_hash)
   await testDeriveSecret(impl, x.derive_secret)
   await testDeriveTreeSecret(impl, x.derive_tree_secret)

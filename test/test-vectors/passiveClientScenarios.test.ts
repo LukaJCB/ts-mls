@@ -1,4 +1,4 @@
-import { CiphersuiteId, CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl } from "../../src/crypto/ciphersuite.js"
 import { KeyPackage, PrivateKeyPackage } from "../../src/keyPackage.js"
 import { hexToBytes } from "@noble/ciphers/utils.js"
 import jsonCommit from "../../test_vectors/passive-client-handling-commit.json"
@@ -18,7 +18,7 @@ import { defaultCryptoProvider } from "../../src/index.js"
 test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,
   async (_index, x) => {
-    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
     await testPassiveClientScenario(x, impl)
   },
 )
@@ -26,7 +26,7 @@ test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
 test.concurrent.each(jsonRandom.map((x, index) => [index, x]))(
   `passive-client-random test vectors %i`,
   async (_index, x) => {
-    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
     await testPassiveClientScenario(x, impl)
   },
   60000,
@@ -35,7 +35,7 @@ test.concurrent.each(jsonRandom.map((x, index) => [index, x]))(
 test.concurrent.each(jsonWelcome.map((x, index) => [index, x]))(
   `passive-client-welcome test vectors %i`,
   async (_index, x) => {
-    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite as CiphersuiteId)
+    const impl = await defaultCryptoProvider.getCiphersuiteImpl(x.cipher_suite)
     await testPassiveClientScenario(x, impl)
   },
 )

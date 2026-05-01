@@ -4,7 +4,7 @@ import {
   generateKeyPackageWithKey as generateKeyPackageWithKeyBase,
 } from "../../src/keyPackage.js"
 import { Credential } from "../../src/credential.js"
-import { CiphersuiteId, CiphersuiteImpl, CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
+import { CiphersuiteImpl, CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
 import { ratchetTreeEncoder, RatchetTree, addLeafNodeMutable } from "../../src/ratchetTree.js"
@@ -574,7 +574,7 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
   const bob = await generateDefaultKeyPackage(bobCredential, impl)
 
   // tamper with the KeyPackage cipherSuite id to mismatch the group's cipher suite
-  bob.publicPackage.cipherSuite = 0xffff as CiphersuiteId
+  bob.publicPackage.cipherSuite = 0xffff
 
   const addBobProposal: Proposal = {
     proposalType: defaultProposalTypes.add,

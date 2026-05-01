@@ -9,5 +9,5 @@ export function createCustomCredential(credentialId: number, data: Uint8Array): 
     credentialType: createCustomCredentialType(credentialId),
     data,
   }
-  return result as unknown as Credential
+  return result
 }
