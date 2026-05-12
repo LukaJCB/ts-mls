@@ -1,7 +1,7 @@
 import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { decode, Decoder, flatMapDecoder, mapDecoder, mapDecoderOption, mapDecoders } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, encode, Encoder } from "./codec/tlsEncoder.js"
-import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
+import { varLenDataDecoder, varLenDataEncoder, varLenTypeDecoder, varLenTypeEncoder } from "./codec/variableLength.js"
 import { defaultExtensionTypes, isDefaultExtensionTypeValue } from "./defaultExtensionType.js"
 import { ExternalSender, externalSenderDecoder, externalSenderEncoder } from "./externalSender.js"
 import { UsageError } from "./mlsError.js"
@@ -48,7 +48,7 @@ export interface ExtensionExternalPub {
 /** @public */
 export interface ExtensionExternalSenders {
   extensionType: typeof defaultExtensionTypes.external_senders
-  extensionData: ExternalSender
+  extensionData: ExternalSender[]
 }
 
 /** @public */
@@ -89,7 +89,7 @@ export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders([uin
     if (e.extensionType === defaultExtensionTypes.required_capabilities) {
       return [e.extensionType, encode(requiredCapabilitiesEncoder, e.extensionData)]
     } else if (e.extensionType === defaultExtensionTypes.external_senders) {
-      return [e.extensionType, encode(externalSenderEncoder, e.extensionData)]
+      return [e.extensionType, encode(varLenTypeEncoder(externalSenderEncoder), e.extensionData)]
     } else if (e.extensionType === defaultExtensionTypes.external_pub) {
       return [e.extensionType, encode(varLenDataEncoder, e.extensionData)]
     }
@@ -139,7 +139,7 @@ export const groupContextExtensionDecoder: Decoder<GroupContextExtension> = flat
   (extensionType): Decoder<GroupContextExtension> => {
     if (extensionType === defaultExtensionTypes.external_senders) {
       return mapDecoderOption(varLenDataDecoder, (extensionData) => {
-        const res = decode(externalSenderDecoder, extensionData)
+        const res = decode(varLenTypeDecoder(externalSenderDecoder), extensionData)
         if (res) return { extensionType: defaultExtensionTypes.external_senders, extensionData: res }
       })
     } else if (extensionType === defaultExtensionTypes.required_capabilities) {
@@ -163,8 +163,8 @@ function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boo
       b.extensionType === defaultExtensionTypes.external_senders
     ) {
       return constantTimeEqual(
-        encode(externalSenderEncoder, a.extensionData),
-        encode(externalSenderEncoder, b.extensionData as ExternalSender),
+        encode(varLenTypeEncoder(externalSenderEncoder), a.extensionData),
+        encode(varLenTypeEncoder(externalSenderEncoder), b.extensionData as ExternalSender[]),
       )
     }
   }

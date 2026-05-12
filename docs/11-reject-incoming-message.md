@@ -110,10 +110,12 @@ const bobProposeExtensions: Proposal = {
     extensions: [
       {
         extensionType: defaultExtensionTypes.external_senders,
-        extensionData: {
-          credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
-          signaturePublicKey: new Uint8Array(),
-        },
+        extensionData: [
+          {
+            credential: { credentialType: defaultCredentialTypes.basic, identity: new Uint8Array() },
+            signaturePublicKey: new Uint8Array(),
+          },
+        ],
       },
     ],
   },
