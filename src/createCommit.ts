@@ -99,7 +99,7 @@ export async function createCommitInternal(
 ): Promise<CreateCommitResult> {
   const { context, state, resumingFromState: pskState, ...options } = params
   const { cipherSuite } = context
-  const pskIndex = makePskIndex(pskState, context.externalPsks ?? {})
+  const pskIndex = makePskIndex(pskState ?? state, context.externalPsks ?? {})
   const clientConfig = context.clientConfig ?? defaultClientConfig
   const {
     wireAsPublicMessage = false,

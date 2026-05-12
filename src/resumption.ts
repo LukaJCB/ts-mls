@@ -55,6 +55,8 @@ export async function reinitCreateNewGroup(params: {
   cipherSuite: CiphersuiteName
   extensions?: GroupContextExtension[]
   provider?: CryptoProvider
+  ratchetTreeExtension?: boolean
+  wireAsPublicMessage?: boolean
 }): Promise<CreateCommitResult> {
   const {
     context,
@@ -66,6 +68,8 @@ export async function reinitCreateNewGroup(params: {
     cipherSuite,
     extensions,
     provider,
+    ratchetTreeExtension,
+    wireAsPublicMessage,
   } = params
   const authService = context.authService
   const cs = await getCiphersuiteImpl(cipherSuite, provider ?? defaultCryptoProvider)
@@ -96,6 +100,8 @@ export async function reinitCreateNewGroup(params: {
     state: newGroup,
     resumingFromState: state,
     extraProposals: [...addProposals, resumptionPsk],
+    ratchetTreeExtension,
+    wireAsPublicMessage,
   })
 }
 
@@ -127,8 +133,19 @@ export async function branchGroup(params: {
   privateKeyPackage: PrivateKeyPackage
   memberKeyPackages: KeyPackage[]
   newGroupId: Uint8Array
+  ratchetTreeExtension?: boolean
+  wireAsPublicMessage?: boolean
 }): Promise<CreateCommitResult> {
-  const { context, state, keyPackage, privateKeyPackage, memberKeyPackages, newGroupId } = params
+  const {
+    context,
+    state,
+    keyPackage,
+    privateKeyPackage,
+    memberKeyPackages,
+    newGroupId,
+    ratchetTreeExtension,
+    wireAsPublicMessage,
+  } = params
   const cs = context.cipherSuite
   const authService = context.authService
   const resumptionPsk = makeResumptionPsk(state, resumptionPSKUsages.branch, cs)
@@ -160,6 +177,8 @@ export async function branchGroup(params: {
     state: newGroup,
     resumingFromState: state,
     extraProposals: [...addMemberProposals, branchPskProposal],
+    ratchetTreeExtension,
+    wireAsPublicMessage,
   })
 }
 
