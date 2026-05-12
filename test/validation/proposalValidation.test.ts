@@ -154,10 +154,12 @@ describe("Proposal Validation", () => {
           extensions: [
             {
               extensionType: defaultExtensionTypes.external_senders,
-              extensionData: {
-                credential: badCredential,
-                signaturePublicKey: new Uint8Array(),
-              },
+              extensionData: [
+                {
+                  credential: badCredential,
+                  signaturePublicKey: new Uint8Array(),
+                },
+              ],
             },
           ],
         },

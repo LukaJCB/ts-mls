@@ -58,13 +58,11 @@ export async function proposeExternal(
   cs: CiphersuiteImpl,
   authenticatedData: Uint8Array = new Uint8Array(),
 ): Promise<MlsMessage> {
-  const externalSenderExtensionIndex = groupInfo.groupContext.extensions.findIndex((ex): boolean => {
-    if (!isDefaultExtension(ex) || ex.extensionType !== defaultExtensionTypes.external_senders) return false
+  const externalSenderExtensionIndex = groupInfo.groupContext.extensions
+    .find((ex) => isDefaultExtension(ex) && ex.extensionType === defaultExtensionTypes.external_senders)
+    ?.extensionData.findIndex((s) => constantTimeEqual(s.signaturePublicKey, signaturePublicKey))
 
-    return constantTimeEqual(ex.extensionData.signaturePublicKey, signaturePublicKey)
-  })
-
-  if (externalSenderExtensionIndex === -1)
+  if (externalSenderExtensionIndex === undefined)
     throw new ValidationError("Could not find external_sender extension in groupContext.extensions")
 
   const result = await protectExternalProposalPublic(

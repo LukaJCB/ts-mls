@@ -61,7 +61,7 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   const extension: GroupContextExtension = {
     extensionType: defaultExtensionTypes.external_senders,
-    extensionData: externalSender,
+    extensionData: [externalSender],
   }
 
   let aliceGroup = await createGroup({

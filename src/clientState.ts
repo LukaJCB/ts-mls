@@ -464,15 +464,17 @@ async function validateExternalSenders(
   extensions: GroupContextExtension[],
   authService: AuthenticationService,
 ): Promise<MlsError | undefined> {
-  const externalSenders = extensions.filter(
+  const externalSenders = extensions.find(
     (e): e is ExtensionExternalSenders => e.extensionType === defaultExtensionTypes.external_senders,
   )
-  for (const externalSender of externalSenders) {
-    const validCredential = await authService.validateCredential(
-      externalSender.extensionData.credential,
-      externalSender.extensionData.signaturePublicKey,
-    )
-    if (!validCredential) return new ValidationError("Could not validate external credential")
+  if (externalSenders) {
+    for (const externalSender of externalSenders.extensionData) {
+      const validCredential = await authService.validateCredential(
+        externalSender.credential,
+        externalSender.signaturePublicKey,
+      )
+      if (!validCredential) return new ValidationError("Could not validate external credential")
+    }
   }
 }
 

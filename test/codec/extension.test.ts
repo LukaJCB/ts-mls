@@ -23,13 +23,15 @@ describe("Extension roundtrip", () => {
     const roundtrip = createRoundtripTest(extensionEncoder, groupContextExtensionDecoder)
     const e: GroupContextExtension = {
       extensionType: defaultExtensionTypes.external_senders,
-      extensionData: {
-        signaturePublicKey: new Uint8Array([]),
-        credential: {
-          credentialType: defaultCredentialTypes.basic,
-          identity: new Uint8Array(),
+      extensionData: [
+        {
+          signaturePublicKey: new Uint8Array([]),
+          credential: {
+            credentialType: defaultCredentialTypes.basic,
+            identity: new Uint8Array(),
+          },
         },
-      },
+      ],
     }
     roundtrip(e)
   })

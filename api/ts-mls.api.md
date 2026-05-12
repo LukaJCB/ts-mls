@@ -447,7 +447,7 @@ export interface ExtensionExternalPub {
 // @public (undocumented)
 export interface ExtensionExternalSenders {
     // (undocumented)
-    extensionData: ExternalSender;
+    extensionData: ExternalSender[];
     // (undocumented)
     extensionType: typeof defaultExtensionTypes.external_senders;
 }
