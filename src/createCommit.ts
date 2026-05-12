@@ -137,24 +137,24 @@ export async function createCommitInternal(
     : [...res.updatedLeaves, ...res.removedLeaves]
   const treeHashCache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touchedLeaves)
 
-  const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
-    ? await createUpdatePath(
-        state.ratchetTree,
-        mutableTree,
-        toLeafIndex(state.privatePath.leafIndex),
-        state.groupContext,
-        state.signaturePrivateKey,
-        cipherSuite,
-        treeHashCache,
-      )
-    : [mutableTree, undefined, [] as PathSecret[], undefined, undefined]
-
   const updatedExtensions =
     res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions.length > 0
       ? res.additionalResult.extensions
       : state.groupContext.extensions
 
   const groupContextWithExtensions = { ...state.groupContext, extensions: updatedExtensions }
+
+  const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
+    ? await createUpdatePath(
+        state.ratchetTree,
+        mutableTree,
+        toLeafIndex(state.privatePath.leafIndex),
+        groupContextWithExtensions,
+        state.signaturePrivateKey,
+        cipherSuite,
+        treeHashCache,
+      )
+    : [mutableTree, undefined, [] as PathSecret[], undefined, undefined]
 
   const privateKeys = mergePrivateKeyPaths(
     newPrivateKey !== undefined
