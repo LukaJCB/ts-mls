@@ -144,6 +144,11 @@ export async function createCommitInternal(
 
   const groupContextWithExtensions = { ...state.groupContext, extensions: updatedExtensions }
 
+  const excludeNodes =
+    res.additionalResult.kind === "memberCommit"
+      ? res.additionalResult.addedLeafNodes.map(([leafIndex]) => leafToNodeIndex(leafIndex))
+      : []
+
   const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
     ? await createUpdatePath(
         state.ratchetTree,
@@ -153,6 +158,7 @@ export async function createCommitInternal(
         state.signaturePrivateKey,
         cipherSuite,
         treeHashCache,
+        excludeNodes,
       )
     : [mutableTree, undefined, [] as PathSecret[], undefined, undefined]
 
