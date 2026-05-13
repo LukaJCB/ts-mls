@@ -1,4 +1,10 @@
-import { extensionsEqual, GroupContextExtension, makeCustomExtension } from "../src/extension.js"
+import { defaultExtensionTypes } from "../src/defaultExtensionType.js"
+import {
+  ExtensionRequiredCapabilities,
+  extensionsEqual,
+  GroupContextExtension,
+  makeCustomExtension,
+} from "../src/extension.js"
 
 describe("extensionsEqual", () => {
   test("should return true for identical extensions", () => {
@@ -47,6 +53,28 @@ describe("extensionsEqual", () => {
     })
 
     expect(extensionsEqual([ext1], [ext1, ext1])).toBe(false)
+  })
+
+  test("should return false for different RequiredCapabilities", () => {
+    const ext1: ExtensionRequiredCapabilities = {
+      extensionType: defaultExtensionTypes.required_capabilities,
+      extensionData: {
+        extensionTypes: [1931],
+        proposalTypes: [],
+        credentialTypes: [1, 2],
+      },
+    }
+
+    const ext2: ExtensionRequiredCapabilities = {
+      extensionType: defaultExtensionTypes.required_capabilities,
+      extensionData: {
+        extensionTypes: [1931],
+        proposalTypes: [],
+        credentialTypes: [1],
+      },
+    }
+
+    expect(extensionsEqual([ext1], [ext2])).toBe(false)
   })
 
   test("should return true for empty arrays", () => {

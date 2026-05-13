@@ -1,4 +1,4 @@
-export function addToMap<K, V>(map: Map<K, V>, k: K, v: V): Map<K, V> {
+export function addToMap<V>(map: Map<bigint, V>, k: bigint, v: V): Map<bigint, V> {
   const copy = new Map(map)
   copy.set(k, v)
   return copy

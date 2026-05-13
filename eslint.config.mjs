@@ -1,12 +1,15 @@
 // @ts-check
 
 import eslint from "@eslint/js"
+import { defineConfig } from "eslint/config"
 import tseslint from "typescript-eslint"
 import pluginImport from "eslint-plugin-import"
+import noObjectComparison from "eslint-plugin-no-object-comparison"
 
-export default tseslint.config(
+export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
+  noObjectComparison.configs.recommended,
 
   {
     languageOptions: {

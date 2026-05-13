@@ -9,6 +9,7 @@ import {
   RequiredCapabilities,
   requiredCapabilitiesDecoder,
   requiredCapabilitiesEncoder,
+  requiredCapabilitiesEqual,
 } from "./requiredCapabilities.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
@@ -157,11 +158,8 @@ function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boo
 
   if (isDefaultExtension(a)) {
     if (a.extensionType === defaultExtensionTypes.required_capabilities) {
-      return a.extensionData === b.extensionData
-    } else if (
-      a.extensionType === defaultExtensionTypes.external_senders &&
-      b.extensionType === defaultExtensionTypes.external_senders
-    ) {
+      return requiredCapabilitiesEqual(a.extensionData, b.extensionData as RequiredCapabilities)
+    } else if (a.extensionType === defaultExtensionTypes.external_senders) {
       return constantTimeEqual(
         encode(varLenTypeEncoder(externalSenderEncoder), a.extensionData),
         encode(varLenTypeEncoder(externalSenderEncoder), b.extensionData as ExternalSender[]),
@@ -170,7 +168,7 @@ function extensionEqual(a: GroupContextExtension, b: GroupContextExtension): boo
   }
 
   //TypeScript isn't smart enough to figure out the extensionTypes are the same
-  return constantTimeEqual(a.extensionData as Uint8Array, b.extensionData as Uint8Array)
+  return constantTimeEqual(a.extensionData, b.extensionData as Uint8Array)
 }
 
 export function extensionsEqual(a: GroupContextExtension[], b: GroupContextExtension[]): boolean {
