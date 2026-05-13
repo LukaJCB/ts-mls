@@ -47,7 +47,7 @@ describe("SecretTree Deletion Schedule", () => {
 
     expect(result0.newTree.intermediateNodes[0]).toBeUndefined()
 
-    expect(result0.consumed.some((b) => b === tree.intermediateNodes[rootIndex]!)).toBe(true)
+    expect(result0.consumed.some((b) => bytesRefEqual(b, tree.intermediateNodes[rootIndex]!))).toBe(true)
 
     // since the secret is removed from the array we need to re-derive it to ensure it's the same in the consumed array
     const secret1 = await expandWithLabel(
@@ -89,7 +89,8 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result3.newTree.intermediateNodes[6]).toBeUndefined()
 
     // 1 & 3 were consumed earlier so they we don't check for them here
-    expect(result3.consumed.some((b) => b === result0.newTree.intermediateNodes[5]!)).toBe(true)
+
+    expect(result3.consumed.some((b) => bytesRefEqual(b, result0.newTree.intermediateNodes[5]!))).toBe(true)
 
     // Derive leaf 2 (node index 4)
     const result2 = await consumeRatchet(result3.newTree, toLeafIndex(2), contentTypes.application, cs)
@@ -121,7 +122,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result2.newTree.intermediateNodes[0]).toBeUndefined()
     expect(result2.newTree.intermediateNodes[6]).toBeUndefined()
 
-    expect(result2.consumed.some((b) => b === result3.newTree.intermediateNodes[4]!)).toBe(true)
+    expect(result2.consumed.some((b) => bytesRefEqual(b, result3.newTree.intermediateNodes[4]!))).toBe(true)
   })
 
   test("should delete parent nodes when children are derived via ratchetToGeneration", async () => {
@@ -163,7 +164,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result0.newTree.intermediateNodes[rootIndex]).toBeUndefined()
     expect(result0.newTree.intermediateNodes[1]).toBeUndefined()
 
-    expect(result0.consumed.some((b) => b === tree.intermediateNodes[rootIndex]!)).toBe(true)
+    expect(result0.consumed.some((b) => bytesRefEqual(b, tree.intermediateNodes[rootIndex]!))).toBe(true)
 
     // since the secret is removed from the array we need to re-derive it to ensure it's the same in the consumed array
     const secret1 = await expandWithLabel(
@@ -213,7 +214,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result3.newTree.intermediateNodes[5]).toBeUndefined()
 
     // 1 & 3 were consumed earlier so they we don't check for them here
-    expect(result3.consumed.some((b) => b === result0.newTree.intermediateNodes[5]!)).toBe(true)
+    expect(result3.consumed.some((b) => bytesRefEqual(b, result0.newTree.intermediateNodes[5]!))).toBe(true)
 
     // Derive leaf 2 (node index 4) at generation 5
     const senderData2 = {
@@ -257,7 +258,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result2.newTree.intermediateNodes[0]).toBeUndefined()
     expect(result2.newTree.intermediateNodes[6]).toBeUndefined()
 
-    expect(result2.consumed.some((b) => b === result3.newTree.intermediateNodes[4]!)).toBe(true)
+    expect(result2.consumed.some((b) => bytesRefEqual(b, result3.newTree.intermediateNodes[4]!))).toBe(true)
 
     // test if it still works if we go back in generations
     // Derive leaf 2 (node index 4) at generation 2
@@ -382,7 +383,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result0.newTree.intermediateNodes[2]).toBeDefined()
     expect(Object.values(result0.newTree.intermediateNodes).length).toBe(4)
 
-    expect(result0.consumed.some((b) => b === tree.intermediateNodes[rootIndex]!)).toBe(true)
+    expect(result0.consumed.some((b) => bytesRefEqual(b, tree.intermediateNodes[rootIndex]!))).toBe(true)
 
     // since the secret is removed from the array we need to re-derive it to ensure it's the same in the consumed array
     const secret7 = await expandWithLabel(
@@ -426,7 +427,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result15.newTree.intermediateNodes[2]).toBeDefined()
     expect(Object.values(result15.newTree.intermediateNodes).length).toBe(6)
 
-    expect(result15.consumed.some((b) => b === result0.newTree.intermediateNodes[23]!)).toBe(true)
+    expect(result15.consumed.some((b) => bytesRefEqual(b, result0.newTree.intermediateNodes[23]!))).toBe(true)
 
     const secret27 = await expandWithLabel(
       result0.newTree.intermediateNodes[23]!,
@@ -471,7 +472,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result7.newTree.intermediateNodes[25]).toBeDefined()
     expect(Object.values(result7.newTree.intermediateNodes).length).toBe(7)
 
-    expect(result7.consumed.some((b) => b === result15.newTree.intermediateNodes[11]!)).toBe(true)
+    expect(result7.consumed.some((b) => bytesRefEqual(b, result15.newTree.intermediateNodes[11]!))).toBe(true)
 
     const secret13 = await expandWithLabel(
       result15.newTree.intermediateNodes[11]!,
@@ -514,7 +515,7 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result4.newTree.intermediateNodes[25]).toBeDefined()
     expect(Object.values(result4.newTree.intermediateNodes).length).toBe(7)
 
-    expect(result4.consumed.some((b) => b === result7.newTree.intermediateNodes[9]!)).toBe(true)
+    expect(result4.consumed.some((b) => bytesRefEqual(b, result7.newTree.intermediateNodes[9]!))).toBe(true)
 
     // Derive leaf 6 (node index 12)
     const result6 = await consumeRatchet(result4.newTree, toLeafIndex(6), contentTypes.application, cs)
@@ -548,6 +549,11 @@ describe("SecretTree Deletion Schedule", () => {
     expect(result6.newTree.intermediateNodes[25]).toBeDefined()
     expect(Object.values(result6.newTree.intermediateNodes).length).toBe(6)
 
-    expect(result6.consumed.some((b) => b === result4.newTree.intermediateNodes[12]!)).toBe(true)
+    expect(result6.consumed.some((b) => bytesRefEqual(b, result4.newTree.intermediateNodes[12]!))).toBe(true)
   })
 })
+
+function bytesRefEqual(a: Uint8Array, b: Uint8Array): boolean {
+  // eslint-disable-next-line no-object-comparison/object-equality
+  return a === b
+}

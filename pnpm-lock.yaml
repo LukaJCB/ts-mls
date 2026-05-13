@@ -60,6 +60,9 @@ importers:
       eslint-plugin-import:
         specifier: 2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.59.3(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.2(jiti@2.7.0))
+      eslint-plugin-no-object-comparison:
+        specifier: ^1.0.0
+        version: 1.0.0(@typescript-eslint/parser@8.59.3(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3)
       knip:
         specifier: ^6.0.0
         version: 6.12.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
@@ -1609,6 +1612,13 @@ packages:
     peerDependenciesMeta:
       '@typescript-eslint/parser':
         optional: true
+
+  eslint-plugin-no-object-comparison@1.0.0:
+    resolution: {integrity: sha512-/eWrf+QeYXjsZ6xu+6s2ML0NwcJdnhsHG320mb6r0Wb8pP8zlG3EoQaU/ds3ARzjTaRaNB1ptqWBkP/0m2vMEw==}
+    peerDependencies:
+      '@typescript-eslint/parser': '>=6.0.0'
+      eslint: '>=8.0.0'
+      typescript: '>=5.0.0'
 
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
@@ -4352,6 +4362,15 @@ snapshots:
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
+      - supports-color
+
+  eslint-plugin-no-object-comparison@1.0.0(@typescript-eslint/parser@8.59.3(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3):
+    dependencies:
+      '@typescript-eslint/parser': 8.59.3(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.59.3(eslint@9.39.2(jiti@2.7.0))(typescript@5.9.3)
+      eslint: 9.39.2(jiti@2.7.0)
+      typescript: 5.9.3
+    transitivePeerDependencies:
       - supports-color
 
   eslint-scope@8.4.0:
