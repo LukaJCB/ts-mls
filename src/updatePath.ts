@@ -76,6 +76,7 @@ export async function createUpdatePath(
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
   mutableTreeHashCache: TreeHashCache,
+  excludeNodes: NodeIndex[] = [],
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey, Uint8Array]> {
   const originalLeafNode = mutableTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === nodeTypes.parent)
@@ -88,7 +89,8 @@ export async function createUpdatePath(
 
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, mutableTree)
 
-  const ps: PathSecret[] = await applyInitialTreeUpdate(fdp, pathSecret, senderLeafIndex, mutableTree, cs)
+  const excludeSet = new Set(excludeNodes)
+  const ps: PathSecret[] = await applyInitialTreeUpdate(fdp, pathSecret, senderLeafIndex, mutableTree, cs, excludeSet)
 
   await insertParentHashes(fdp, mutableTree, cs, mutableTreeHashCache)
 
@@ -202,6 +204,7 @@ async function applyInitialTreeUpdate(
   senderLeafIndex: LeafIndex,
   mutableTree: RatchetTree,
   cs: CiphersuiteImpl,
+  excludeNodes: Set<number> = new Set(),
 ): Promise<PathSecret[]> {
   let lastPathSecret = { secret: pathSecret, nodeIndex: leafToNodeIndex(senderLeafIndex), sendTo: new Array<number>() }
   const pathSecrets = new Array(lastPathSecret)
@@ -219,7 +222,8 @@ async function applyInitialTreeUpdate(
       },
     }
 
-    lastPathSecret = { nodeIndex: toNodeIndex(nodeIndex), secret: nextPathSecret, sendTo: resolution }
+    const sendTo = excludeNodes.size === 0 ? resolution : resolution.filter((i) => !excludeNodes.has(i))
+    lastPathSecret = { nodeIndex: toNodeIndex(nodeIndex), secret: nextPathSecret, sendTo }
     pathSecrets.unshift(lastPathSecret)
   }
   return pathSecrets
