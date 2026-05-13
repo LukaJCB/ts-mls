@@ -607,20 +607,18 @@ export async function joinGroupExternal(params: {
 
   if (!groupInfoSignatureVerified) throw new CryptoVerificationError("Could not verify groupInfo Signature")
 
-  const formerLeafIndex = resync
-    ? nodeToLeafIndex(
-        toNodeIndex(
-          ratchetTree.findIndex((n) => {
-            if (n !== undefined && n.nodeType === nodeTypes.leaf) {
-              return clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf)
-            }
-            return false
-          }),
-        ),
-      )
-    : undefined
-
-  if (formerLeafIndex !== undefined) removeLeafNodeMutable(mutableTree, formerLeafIndex)
+  let formerLeafIndex: LeafIndex | undefined
+  if (resync) {
+    const idx = ratchetTree.findIndex(
+      (n) =>
+        n !== undefined &&
+        n.nodeType === nodeTypes.leaf &&
+        clientConfig.keyPackageEqualityConfig.compareKeyPackageToLeafNode(keyPackage, n.leaf),
+    )
+    if (idx < 0) throw new ValidationError("External join with resync: no prior leaf matching the new KeyPackage")
+    formerLeafIndex = nodeToLeafIndex(toNodeIndex(idx))
+    removeLeafNodeMutable(mutableTree, formerLeafIndex)
+  }
 
   const newLeafNodeIndex = addLeafNodeMutable(mutableTree, keyPackage.leafNode)
 

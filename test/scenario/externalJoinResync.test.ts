@@ -12,10 +12,48 @@ import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { ValidationError } from "../../src/mlsError.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External join Resync %s`, async (cs) => {
   await externalJoinResyncTest(cs as CiphersuiteName)
+  await externalJoinResyncTestThrows(cs as CiphersuiteName)
 })
+
+async function externalJoinResyncTestThrows(cipherSuite: CiphersuiteName) {
+  const impl = await getCiphersuiteImpl(cipherSuite)
+
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
+  const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
+
+  const aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId: new TextEncoder().encode("group1"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+
+  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(aliceGroup, [], impl)
+
+  // Bob has never been a member. Resync must fail fast, not infinite-loop on findIndex(-1).
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
+  const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
+
+  await expect(
+    joinGroupExternal({
+      context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+      groupInfo,
+      keyPackage: bob.publicPackage,
+      privateKeys: bob.privatePackage,
+      resync: true,
+    }),
+  ).rejects.toThrow(new ValidationError("External join with resync: no prior leaf matching the new KeyPackage"))
+}
 
 async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(cipherSuite)
