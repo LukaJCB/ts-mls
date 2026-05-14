@@ -2,6 +2,5 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "tags": ["-lintignore"],
   "ignoreDependencies": [],
-  "entry": ["src/index.ts"],
   "project": ["src/**"]
 }
