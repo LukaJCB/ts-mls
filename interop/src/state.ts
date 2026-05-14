@@ -6,6 +6,7 @@ export interface GroupEntry {
   wireAsPublicMessage: boolean
   pendingNewState?: ClientState
   pendingLeafUpdate?: { hpkePublicKey: Uint8Array; hpkePrivateKey: Uint8Array }
+  ingestedBytes: Set<string>
 }
 
 export interface KeyPackageEntry {
@@ -37,9 +38,9 @@ export class Store {
   readonly psks = new Map<string, Uint8Array>()
   private nextId = 1
 
-  insertGroup(entry: GroupEntry): number {
+  insertGroup(entry: Omit<GroupEntry, "ingestedBytes"> & { ingestedBytes?: Set<string> }): number {
     const id = this.nextId++
-    this.groups.set(id, entry)
+    this.groups.set(id, { ...entry, ingestedBytes: entry.ingestedBytes ?? new Set() })
     return id
   }
 

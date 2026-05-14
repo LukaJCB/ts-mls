@@ -22,10 +22,12 @@ import {
   pskTypes,
   resumptionPSKUsages,
   bytesToBase64,
+  type RatchetTree,
 } from "../../src/index.js"
 import { requiredCapabilitiesDecoder } from "../../src/requiredCapabilities.js"
 import { fastEqual } from "../../src/util/byteArray.js"
 import { externalSenderDecoder } from "../../src/externalSender.js"
+import { varLenTypeDecoder } from "../../src/codec/variableLength.js"
 
 export function ciphersuiteNameFromId(id: number): CiphersuiteName {
   for (const [name, value] of Object.entries(ciphersuites) as [CiphersuiteName, number][]) {
@@ -68,8 +70,12 @@ export function decodeGroupInfo(bytes: Uint8Array): GroupInfo {
 }
 
 export function leafIndexForIdentity(state: ClientState, identity: Uint8Array): number {
-  for (let i = 0; i < state.ratchetTree.length; i++) {
-    const node = state.ratchetTree[i]
+  return leafIndexForIdentityInTree(state.ratchetTree, identity)
+}
+
+export function leafIndexForIdentityInTree(tree: RatchetTree, identity: Uint8Array): number {
+  for (let i = 0; i < tree.length; i++) {
+    const node = tree[i]
     if (!node || node.nodeType !== nodeTypes.leaf) continue
     const cred = node.leaf.credential
     if (!isDefaultCredential(cred)) continue
@@ -86,9 +92,9 @@ export function toGroupContextExtension(ext: {
   extension_data: Uint8Array
 }): GroupContextExtension {
   if (ext.extension_type === defaultExtensionTypes.external_senders) {
-    const sender = decode(externalSenderDecoder, ext.extension_data)
-    if (!sender) throw new Error("Failed to decode ExternalSender from extension_data")
-    return { extensionType: defaultExtensionTypes.external_senders, extensionData: sender }
+    const senders = decode(varLenTypeDecoder(externalSenderDecoder), ext.extension_data)
+    if (!senders) throw new Error("Failed to decode ExternalSender from extension_data")
+    return { extensionType: defaultExtensionTypes.external_senders, extensionData: senders }
   }
   if (ext.extension_type === defaultExtensionTypes.required_capabilities) {
     const rc = decode(requiredCapabilitiesDecoder, ext.extension_data)

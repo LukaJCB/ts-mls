@@ -16,9 +16,11 @@ import {
   defaultExtensionTypes,
   getOwnLeafNode,
   isDefaultCredential,
+  isDefaultExtension,
   unsafeTestingAuthenticationService,
   encode,
   decode,
+  bytesToBase64,
   mlsMessageEncoder,
   createGroupInfoWithExternalPub,
   createGroupInfoWithExternalPubAndRatchetTree,
@@ -41,11 +43,14 @@ import {
   type Credential,
   type MlsContext,
   type MlsMessage,
+  type MlsFramedMessage,
   type ClientState,
   type ExternalSender,
+  senderTypes,
 } from "../../src/index.js"
 import { ratchetTreeEncoder, ratchetTreeDecoder } from "../../src/ratchetTree.js"
 import { externalSenderEncoder, externalSenderDecoder } from "../../src/externalSender.js"
+import { decryptSenderData } from "../../src/privateMessage.js"
 import type * as grpc from "@grpc/grpc-js"
 import { status as grpcStatus } from "@grpc/grpc-js"
 import { Store, type GroupEntry } from "./state.js"
@@ -56,12 +61,15 @@ import {
   decodeWelcomeMessage,
   decodeGroupInfo,
   leafIndexForIdentity,
+  leafIndexForIdentityInTree,
   toGroupContextExtension,
   externalPskId,
   resumptionPskId,
   pskStoreKey,
   type ProtoExtension,
 } from "./conversions.js"
+import { ratchetTreeFromExtension } from "../../src/groupInfo.js"
+import type { RatchetTree } from "../../src/ratchetTree.js"
 
 const OPENMLS_CIPHERSUITES = [
   ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
@@ -105,18 +113,41 @@ function wrap<Req, Res>(fn: (req: Req) => Promise<Res>): grpc.handleUnaryCall<Re
 }
 
 async function tryIngest(store: Store, entry: GroupEntry, bytes: Uint8Array): Promise<GroupEntry> {
+  const key = bytesToBase64(bytes)
+  if (entry.ingestedBytes.has(key)) return entry
   try {
     const framed = decodeFramedMessage(bytes)
+    if (await isOwnMemberMessage(framed, entry)) {
+      entry.ingestedBytes.add(key)
+      return entry
+    }
     const result = await processMessage({ context: mlsContext(store, entry), state: entry.state, message: framed })
+    entry.ingestedBytes.add(key)
     if (result.kind === "newState") return { ...entry, state: result.newState }
     return entry
-  } catch {
+  } catch (e) {
+    const err = e as Error
+    console.error(`[tryIngest] FAILED: ${err.message}\n${err.stack ?? ""}`)
     return entry
   }
 }
 
+async function isOwnMemberMessage(framed: MlsFramedMessage, entry: GroupEntry): Promise<boolean> {
+  const ownLeaf = entry.state.privatePath.leafIndex
+  if (framed.wireformat === wireformats.mls_public_message) {
+    const sender = framed.publicMessage.content.sender
+    return sender.senderType === senderTypes.member && sender.leafIndex === ownLeaf
+  }
+  const senderData = await decryptSenderData(
+    framed.privateMessage,
+    entry.state.keySchedule.senderDataSecret,
+    entry.cipherSuite,
+  )
+  return senderData !== undefined && senderData.leafIndex === ownLeaf
+}
+
 export function makeService(store: Store): grpc.UntypedServiceImplementation {
-  return {
+  const handlers: grpc.UntypedServiceImplementation = {
     Name: wrap(async () => ({ name: "ts-mls" })),
     SupportedCiphersuites: wrap(async () => ({ ciphersuites: OPENMLS_CIPHERSUITES })),
 
@@ -318,7 +349,7 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       let entry = store.getGroup(req.state_id)
       for (const p of req.proposal ?? []) entry = await tryIngest(store, entry, toBytes(p))
       const commit = decodeFramedMessage(toBytes(req.commit))
-      const result = await processMessage({ context: mlsContext(store, entry), state: entry.state, message: commit })
+      const result = await processCommitWithPendingLeaf(entry, commit, mlsContext(store, entry))
       if (result.kind !== "newState") throw new Error(`Expected state transition, got ${result.kind}`)
       const settled = applyPendingLeafUpdate(entry, result.newState)
       store.updateGroup(req.state_id, {
@@ -427,6 +458,8 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
           privateKeyPackage: keyPkg.privatePackage,
           memberKeyPackages,
           newGroupId: toBytes(req.group_id),
+          ratchetTreeExtension: !req.external_tree,
+          wireAsPublicMessage: entry.wireAsPublicMessage,
         })
         const newStateId = store.insertGroup({
           state: result.newState,
@@ -525,7 +558,7 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       const suspended = entry.pendingNewState
       if (suspended.groupActiveState.kind !== "suspendedPendingReinit")
         throw new Error(`Expected suspendedPendingReinit, got ${suspended.groupActiveState.kind}`)
-      return finishReInit(store, entry, suspended)
+      return finishReInit(store, req.state_id, entry, suspended)
     }),
 
     HandleReInitCommit: wrap(async (req: { state_id: number; proposal: unknown[]; commit: unknown }) => {
@@ -536,7 +569,7 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       if (result.kind !== "newState") throw new Error(`Expected newState, got ${result.kind}`)
       if (result.newState.groupActiveState.kind !== "suspendedPendingReinit")
         throw new Error("commit did not yield suspendedPendingReinit state")
-      return finishReInit(store, entry, result.newState)
+      return finishReInit(store, req.state_id, entry, result.newState)
     }),
 
     ReInitWelcome: wrap(
@@ -560,6 +593,9 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
           memberKeyPackages,
           groupId: reinit.suspendedState.groupActiveState.reinit.groupId,
           cipherSuite: newCsName,
+          extensions: reinit.suspendedState.groupActiveState.reinit.extensions,
+          ratchetTreeExtension: !req.external_tree,
+          wireAsPublicMessage: reinit.wireAsPublicMessage,
         })
         const newStateId = store.insertGroup({
           state: result.newState,
@@ -647,23 +683,24 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       const entry = store.getGroup(req.state_id)
       const sender = decode(externalSenderDecoder, toBytes(req.external_sender))
       if (!sender) throw new Error("Failed to decode ExternalSender")
-      const existing = entry.state.groupContext.extensions.filter(
+      const existingPrev = entry.state.groupContext.extensions.find(
+        (e): e is Extract<GroupContextExtension, { extensionType: typeof defaultExtensionTypes.external_senders }> =>
+          isDefaultExtension(e) && e.extensionType === defaultExtensionTypes.external_senders,
+      )
+      const others = entry.state.groupContext.extensions.filter(
         (e) => e.extensionType !== defaultExtensionTypes.external_senders,
       )
-      // ts-mls currently stores a single ExternalSender per external_senders
-      // extension; the harness typically ships one at a time and the Go test
-      // runner treats signer_index positionally so we report the index after
-      // insertion (always 0 here, since we replace rather than append).
+      const senders = [...(existingPrev?.extensionData ?? []), sender]
       const newExt: GroupContextExtension = {
         extensionType: defaultExtensionTypes.external_senders,
-        extensionData: sender,
+        extensionData: senders,
       }
       const proposal: ProposalGroupContextExtensions = {
         proposalType: defaultProposalTypes.group_context_extensions,
-        groupContextExtensions: { extensions: [...existing, newExt] },
+        groupContextExtensions: { extensions: [...others, newExt] },
       }
       const resp = await makeProposal(store, req.state_id, entry, proposal)
-      return { proposal: resp.proposal, signer_index: 0 }
+      return { proposal: resp.proposal, signer_index: senders.length - 1 }
     }),
 
     ExternalSignerProposal: wrap(
@@ -685,8 +722,10 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       }) => {
         const signer = store.getExternalSigner(req.signer_id)
         const groupInfo = decodeGroupInfo(toBytes(req.group_info))
+        const rtBytes = toBytes(req.ratchet_tree)
+        const tree = rtBytes.length > 0 ? decodeRatchetTree(rtBytes) : ratchetTreeFromExtension(groupInfo)
         const typeStr = toStr(req.description.proposal_type)
-        const proposal = buildExternalProposal(typeStr, req.description, signer.cipherSuite, groupInfo)
+        const proposal = buildExternalProposal(typeStr, req.description, signer.cipherSuite, groupInfo, tree)
         const msg = await proposeExternal(
           groupInfo,
           proposal,
@@ -698,6 +737,33 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       },
     ),
   }
+  return handlers
+}
+
+// When a pending UpdateProposal from this client is applied by the incoming
+// commit, the committer encrypts path secrets to our NEW leaf pubkey, so we
+// must decrypt with the new private key. When the commit does NOT apply the
+// pending update, secrets are still encrypted to the old key. We don't know
+// which case it is until processing, so try the new key first and fall back
+// to the original on failure.
+async function processCommitWithPendingLeaf(
+  entry: GroupEntry,
+  commit: ReturnType<typeof decodeFramedMessage>,
+  context: MlsContext,
+) {
+  const pending = entry.pendingLeafUpdate
+  if (pending !== undefined) {
+    const stateWithNewKey: ClientState = {
+      ...entry.state,
+      privatePath: updateLeafKey(entry.state.privatePath, pending.hpkePrivateKey),
+    }
+    try {
+      return await processMessage({ context, state: stateWithNewKey, message: commit })
+    } catch {
+      // commit didn't apply the pending update — fall through to original key
+    }
+  }
+  return await processMessage({ context, state: entry.state, message: commit })
 }
 
 function applyPendingLeafUpdate(
@@ -801,6 +867,7 @@ function buildExternalProposal(
   },
   cs: { kdf: { size: number }; rng: { randomBytes: (n: number) => Uint8Array } },
   groupInfo: { groupContext: { groupId: Uint8Array; epoch: bigint } },
+  tree: RatchetTree | undefined,
 ): Proposal {
   switch (typeStr) {
     case "add": {
@@ -808,8 +875,9 @@ function buildExternalProposal(
       return { proposalType: defaultProposalTypes.add, add: { keyPackage } }
     }
     case "remove": {
-      const bytes = toBytes(d.removed_id)
-      const leafIndex = bytes.length === 4 ? new DataView(bytes.buffer, bytes.byteOffset, 4).getUint32(0, false) : 0
+      if (tree === undefined)
+        throw new Error("ExternalSignerProposal remove: no ratchet_tree available for identity lookup")
+      const leafIndex = leafIndexForIdentityInTree(tree, toBytes(d.removed_id))
       return { proposalType: defaultProposalTypes.remove, remove: { removed: leafIndex } }
     }
     case "externalPSK": {
@@ -853,6 +921,7 @@ function buildExternalProposal(
 
 async function finishReInit(
   store: Store,
+  stateId: number,
   oldEntry: GroupEntry,
   suspendedState: ClientState,
 ): Promise<{ reinit_id: number; key_package: Uint8Array; epoch_authenticator: Uint8Array }> {
@@ -869,7 +938,7 @@ async function finishReInit(
     newKey: { publicPackage: newKey.publicPackage, privatePackage: newKey.privatePackage },
   })
 
-  store.updateGroup(findStateIdForEntry(store, oldEntry), { state: suspendedState, pendingNewState: undefined })
+  store.updateGroup(stateId, { state: suspendedState, pendingNewState: undefined })
   return {
     reinit_id,
     key_package: encode(mlsMessageEncoder, {
@@ -879,12 +948,6 @@ async function finishReInit(
     }),
     epoch_authenticator: suspendedState.keySchedule.epochAuthenticator,
   }
-}
-
-function findStateIdForEntry(store: Store, entry: GroupEntry): number {
-  const internal = store as unknown as { groups: Map<number, GroupEntry> }
-  for (const [id, e] of internal.groups) if (e === entry || e.state === entry.state) return id
-  throw new Error("state_id not found for entry")
 }
 
 function getOwnIdentity(state: ClientState): Uint8Array | undefined {
