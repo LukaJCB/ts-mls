@@ -77,6 +77,29 @@ describe("extensionsEqual", () => {
     expect(extensionsEqual([ext1], [ext2])).toBe(false)
   })
 
+  test("should return true for content-equal RequiredCapabilities with distinct object refs", () => {
+    const ext1: ExtensionRequiredCapabilities = {
+      extensionType: defaultExtensionTypes.required_capabilities,
+      extensionData: {
+        extensionTypes: [1931, 4],
+        proposalTypes: [],
+        credentialTypes: [1, 2],
+      },
+    }
+
+    const ext2: ExtensionRequiredCapabilities = {
+      extensionType: defaultExtensionTypes.required_capabilities,
+      extensionData: {
+        extensionTypes: [1931, 4],
+        proposalTypes: [],
+        credentialTypes: [1, 2],
+      },
+    }
+
+    expect(ext1.extensionData).not.toBe(ext2.extensionData)
+    expect(extensionsEqual([ext1], [ext2])).toBe(true)
+  })
+
   test("should return true for empty arrays", () => {
     expect(extensionsEqual([], [])).toBe(true)
   })
