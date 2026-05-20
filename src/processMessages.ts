@@ -337,7 +337,7 @@ async function processCommit(
   if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
 
   const groupContextWithExtensions =
-    result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions.length > 0
+    result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
 

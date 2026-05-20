@@ -20,6 +20,13 @@ test.concurrent.each(Object.keys(ciphersuites))(`Commit with GroupContextExtensi
   await groupContextExtensionsCommitTest(cs as CiphersuiteName)
 })
 
+test.concurrent.each(Object.keys(ciphersuites))(
+  `Commit with empty GroupContextExtensions proposal clears extensions %s`,
+  async (cs) => {
+    await emptyGroupContextExtensionsCommitTest(cs as CiphersuiteName)
+  },
+)
+
 async function groupContextExtensionsCommitTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(cipherSuite)
 
@@ -135,4 +142,113 @@ async function groupContextExtensionsCommitTest(cipherSuite: CiphersuiteName) {
   await checkHpkeKeysMatch(bobGroup, impl)
   await checkHpkeKeysMatch(charlieGroup, impl)
   await testEveryoneCanMessageEveryone([aliceGroup, bobGroup, charlieGroup], impl)
+}
+
+async function emptyGroupContextExtensionsCommitTest(cipherSuite: CiphersuiteName) {
+  const impl = await getCiphersuiteImpl(cipherSuite)
+
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
+  const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
+
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
+  const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
+
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId: new TextEncoder().encode("group1"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+
+  const addBob: ProposalAdd = {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: bob.publicPackage },
+  }
+
+  const addBobCommit = await createCommitEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    extraProposals: [addBob],
+    ratchetTreeExtension: true,
+  })
+  aliceGroup = addBobCommit.newState
+
+  let bobGroup = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: addBobCommit.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+  })
+
+  const addExtensions: Proposal = {
+    proposalType: defaultProposalTypes.group_context_extensions,
+    groupContextExtensions: {
+      extensions: [
+        {
+          extensionType: defaultExtensionTypes.external_senders,
+          extensionData: [
+            {
+              credential: { credentialType: defaultCredentialTypes.basic, identity: new TextEncoder().encode("ext1") },
+              signaturePublicKey: new Uint8Array(),
+            },
+          ],
+        },
+      ],
+    },
+  }
+
+  const addExtensionsCommit = await createCommitEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    extraProposals: [addExtensions],
+  })
+  aliceGroup = addExtensionsCommit.newState
+
+  if (addExtensionsCommit.commit.wireformat !== wireformats.mls_private_message)
+    throw new Error("Expected private message")
+
+  const bobAddProcess = await processPrivateMessageEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: bobGroup,
+    privateMessage: addExtensionsCommit.commit.privateMessage,
+  })
+  bobGroup = bobAddProcess.newState
+
+  expect(aliceGroup.groupContext.extensions).toHaveLength(1)
+  expect(bobGroup.groupContext.extensions).toHaveLength(1)
+
+  const clearExtensions: Proposal = {
+    proposalType: defaultProposalTypes.group_context_extensions,
+    groupContextExtensions: { extensions: [] },
+  }
+
+  const clearCommit = await createCommitEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    extraProposals: [clearExtensions],
+  })
+  aliceGroup = clearCommit.newState
+
+  if (clearCommit.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
+
+  const bobClearProcess = await processPrivateMessageEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: bobGroup,
+    privateMessage: clearCommit.commit.privateMessage,
+  })
+  bobGroup = bobClearProcess.newState
+
+  expect(aliceGroup.groupContext.extensions).toStrictEqual([])
+  expect(bobGroup.groupContext.extensions).toStrictEqual([])
+  expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
+
+  await checkHpkeKeysMatch(aliceGroup, impl)
+  await checkHpkeKeysMatch(bobGroup, impl)
+  await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
 }
