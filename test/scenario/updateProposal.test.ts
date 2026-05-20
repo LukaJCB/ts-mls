@@ -99,6 +99,8 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
   aliceGroup = aliceCommit.newState
   if (aliceCommit.commit.wireformat !== preferredWireformat) throw new Error(`Expected ${preferredWireformat} message`)
 
+  bobGroup = { ...bobGroup, privatePath: updateLeafKey(bobGroup.privatePath, bobUpdate.newLeafKeypair.hpkePrivateKey) }
+
   const bobProcessCommit = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
@@ -109,8 +111,6 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
 
   const bobLeafAfter = getOwnLeafNode(bobGroup)
   expect(fastEqual(bobLeafAfter.hpkePublicKey, bobUpdate.newLeafKeypair.hpkePublicKey)).toBe(true)
-
-  bobGroup = { ...bobGroup, privatePath: updateLeafKey(bobGroup.privatePath, bobUpdate.newLeafKeypair.hpkePrivateKey) }
 
   const aliceCommit2 = await createCommitEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
