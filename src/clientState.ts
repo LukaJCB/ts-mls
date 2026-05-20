@@ -336,8 +336,8 @@ const emptyProposals: Proposals = {
 
 function flattenExtensions(
   groupContextExtensions: { proposal: ProposalGroupContextExtensions }[],
-): GroupContextExtension[] {
-  return groupContextExtensions[0]?.proposal.groupContextExtensions.extensions ?? []
+): GroupContextExtension[] | undefined {
+  return groupContextExtensions[0]?.proposal.groupContextExtensions.extensions
 }
 
 async function validateProposals(
@@ -434,7 +434,7 @@ async function validateProposals(
   if (multipleGroupContextExtensions)
     return new ValidationError("Commit cannot contain multiple GroupContextExtensions proposals")
 
-  const allExtensions = flattenExtensions(p[defaultProposalTypes.group_context_extensions])
+  const allExtensions = flattenExtensions(p[defaultProposalTypes.group_context_extensions]) ?? []
 
   const requiredCapabilities = allExtensions.find(
     (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
@@ -752,7 +752,7 @@ export interface ApplyProposalsResult {
 }
 
 type ApplyProposalsData =
-  | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: GroupContextExtension[] }
+  | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: GroupContextExtension[] | undefined }
   | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: LeafIndex }
   | { kind: "reinit"; reinit: Reinit }
 

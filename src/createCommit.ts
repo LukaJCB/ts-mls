@@ -138,7 +138,7 @@ export async function createCommitInternal(
   const treeHashCache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touchedLeaves)
 
   const updatedExtensions =
-    res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions.length > 0
+    res.additionalResult.kind === "memberCommit" && res.additionalResult.extensions !== undefined
       ? res.additionalResult.extensions
       : state.groupContext.extensions
 
