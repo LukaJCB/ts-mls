@@ -24,7 +24,7 @@ import {
 } from "./ratchetTree.js"
 import { nodeTypes } from "./nodeType.js"
 import { treeHashRoot, TreeHashCache } from "./treeHash.js"
-import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex, toNodeIndex } from "./treemath.js"
+import { directPath, isAncestor, LeafIndex, leafToNodeIndex, leafWidth, NodeIndex, toNodeIndex } from "./treemath.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { bytesToBase64 } from "./util/byteArray.js"
 import { hpkeCiphertextDecoder, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
@@ -69,7 +69,6 @@ export interface PathSecret {
 }
 
 export async function createUpdatePath(
-  originalTree: RatchetTree,
   mutableTree: RatchetTree,
   senderLeafIndex: LeafIndex,
   groupContext: GroupContext,
@@ -88,6 +87,8 @@ export async function createUpdatePath(
   const leafKeypair = await cs.hpke.deriveKeyPair(leafNodeSecret)
 
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, mutableTree)
+
+  blankStructuralDirectPath(mutableTree, senderLeafIndex)
 
   const excludeSet = new Set(excludeNodes)
   const ps: PathSecret[] = await applyInitialTreeUpdate(fdp, pathSecret, senderLeafIndex, mutableTree, cs, excludeSet)
@@ -131,8 +132,7 @@ export async function createUpdatePath(
   // we have to remove the leaf secret since we don't send it to anyone
   const pathSecrets = ps.slice(0, ps.length - 1).reverse()
 
-  // we have to pass the old tree here since the receiver won't have the updated public keys yet.
-  const encrypt = encryptSecretsForPath(originalTree, mutableTree, updatedGroupContext, cs)
+  const encrypt = encryptSecretsForPath(mutableTree, updatedGroupContext, cs)
   const updatePathNodes: UpdatePathNode[] = await Promise.all(pathSecrets.map(encrypt))
 
   const updatePath: UpdatePath = { leafNode: updatedLeafNode, nodes: updatePathNodes }
@@ -143,7 +143,6 @@ export async function createUpdatePath(
 const HPKE_ENCRYPT_BATCH_SIZE = 512
 
 function encryptSecretsForPath(
-  originalTree: RatchetTree,
   updatedTree: RatchetTree,
   updatedGroupContext: GroupContext,
   cs: CiphersuiteImpl,
@@ -158,7 +157,7 @@ function encryptSecretsForPath(
       const batch = await Promise.all(
         pathSecret.sendTo.slice(start, end).map(async (nodeIndex) => {
           const { ct, enc } = await encryptWithLabel(
-            await cs.hpke.importPublicKey(getHpkePublicKey(originalTree[nodeIndex]!)),
+            await cs.hpke.importPublicKey(getHpkePublicKey(updatedTree[nodeIndex]!)),
             "UpdatePathNode",
             encodedContext,
             pathSecret.secret,
@@ -171,6 +170,13 @@ function encryptSecretsForPath(
     }
 
     return { hpkePublicKey: key, encryptedPathSecret }
+  }
+}
+
+function blankStructuralDirectPath(mutableTree: RatchetTree, senderLeafIndex: LeafIndex): void {
+  const dp = directPath(leafToNodeIndex(senderLeafIndex), leafWidth(mutableTree.length))
+  for (const nodeIndex of dp) {
+    mutableTree[nodeIndex] = undefined
   }
 }
 
@@ -262,6 +268,8 @@ export async function applyUpdatePath(
     throw new ValidationError("Public keys in the UpdatePath may not appear in a node of the new ratchet tree")
 
   const reverseFilteredDirectPath = filteredDirectPath(senderLeafIndex, mutableTree).reverse()
+
+  blankStructuralDirectPath(mutableTree, senderLeafIndex)
 
   mutableTree[leafToNodeIndex(senderLeafIndex)] = { nodeType: nodeTypes.leaf, leaf: path.leafNode }
 

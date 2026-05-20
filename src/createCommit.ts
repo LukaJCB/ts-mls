@@ -151,7 +151,6 @@ export async function createCommitInternal(
 
   const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
     ? await createUpdatePath(
-        state.ratchetTree,
         mutableTree,
         toLeafIndex(state.privatePath.leafIndex),
         groupContextWithExtensions,
@@ -624,7 +623,6 @@ export async function joinGroupExternal(params: {
 
   const externalTreeHashCache: TreeHashCache = []
   const [newTree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = await createUpdatePath(
-    ratchetTree,
     mutableTree,
     nodeToLeafIndex(newLeafNodeIndex),
     groupInfo.groupContext,

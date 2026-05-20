@@ -95,7 +95,6 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
       throw new Error("Could not find leaf for sender")
     }
     const [t, newUpdatePath, newSecrets] = await createUpdatePath(
-      tree[0],
       mutableTree,
       toLeafIndex(path.sender),
       updatedGroupContext,
