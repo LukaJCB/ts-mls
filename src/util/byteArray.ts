@@ -55,10 +55,8 @@ export function concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
 
 /** @public */
 export function zeroOutUint8Array(buf: Uint8Array): void {
-  crypto.getRandomValues(buf)
-  for (let i = 0; i < buf.length; i++) {
-    buf[i]! ^= buf[i]!
-  }
+  buf.fill(0xff)
+  buf.fill(0x00)
 }
 
 export function fastEqual(a: Uint8Array, b: Uint8Array): boolean {
