@@ -64,7 +64,7 @@
     "@noble/post-quantum": "0.6.1",
     "@types/jest": "30.0.0",
     "@types/node": "^25.0.6",
-    "@vitest/browser-playwright": "4.1.6",
+    "@vitest/browser-playwright": "4.1.7",
     "@vitest/coverage-v8": "4.1.6",
     "eslint": "10.4.0",
     "eslint-plugin-import": "2.32.0",
