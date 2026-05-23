@@ -131,8 +131,6 @@ async function rejectIncomingMessagesTest(cipherSuite: CiphersuiteName, publicMe
     wireAsPublicMessage: publicMessage,
   })
 
-  aliceGroup = aliceCommitResult.newState
-
   if (aliceCommitResult.commit.wireformat !== preferredWireformat)
     throw new Error(`Expected ${preferredWireformat} message`)
 
