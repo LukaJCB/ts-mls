@@ -71,10 +71,13 @@ import {
 import { ratchetTreeFromExtension } from "../../src/groupInfo.js"
 import type { RatchetTree } from "../../src/ratchetTree.js"
 
-const OPENMLS_CIPHERSUITES = [
+const INTEROP_CIPHERSUITES = [
   ciphersuites.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
   ciphersuites.MLS_128_DHKEMP256_AES128GCM_SHA256_P256,
   ciphersuites.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519,
+  ciphersuites.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
+  ciphersuites.MLS_256_DHKEMP521_AES256GCM_SHA512_P521,
+  ciphersuites.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448,
   ciphersuites.MLS_256_DHKEMP384_AES256GCM_SHA384_P384,
 ]
 
@@ -149,7 +152,7 @@ async function isOwnMemberMessage(framed: MlsFramedMessage, entry: GroupEntry): 
 export function makeService(store: Store): grpc.UntypedServiceImplementation {
   const handlers: grpc.UntypedServiceImplementation = {
     Name: wrap(async () => ({ name: "ts-mls" })),
-    SupportedCiphersuites: wrap(async () => ({ ciphersuites: OPENMLS_CIPHERSUITES })),
+    SupportedCiphersuites: wrap(async () => ({ ciphersuites: INTEROP_CIPHERSUITES })),
 
     CreateGroup: wrap(
       async (req: { group_id: unknown; cipher_suite: number; encrypt_handshake: boolean; identity: unknown }) => {
