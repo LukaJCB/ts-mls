@@ -11,10 +11,10 @@ COPY interop ./interop
 
 # Install peer/dev deps at root (crypto providers, noble/hpke) so that the
 # interop server can import from ../src without missing peer packages.
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 WORKDIR /app/interop
-RUN pnpm install
+RUN pnpm install --ignore-scripts
 
 EXPOSE 50053
 
