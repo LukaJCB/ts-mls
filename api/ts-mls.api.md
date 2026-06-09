@@ -16,6 +16,37 @@ export interface Add {
 // @public (undocumented)
 export type AeadAlgorithm = "AES128GCM" | "CHACHA20POLY1305" | "AES256GCM";
 
+// @public
+export type AppDataDictionary = ComponentData[];
+
+// @public
+export const appDataDictionaryExtensionType = 6;
+
+// @public
+export type AppDataUpdate = {
+    componentId: number;
+    operation: "update";
+    update: Uint8Array;
+} | {
+    componentId: number;
+    operation: "remove";
+};
+
+// @public
+export type AppDataUpdateCallback = (componentId: number, currentData: Uint8Array | undefined, updates: Uint8Array[]) => Uint8Array | undefined;
+
+// @public (undocumented)
+export type AppDataUpdateOperationName = keyof typeof appDataUpdateOperations;
+
+// @public
+export const appDataUpdateOperations: {
+    readonly update: 1;
+    readonly remove: 2;
+};
+
+// @public
+export const appDataUpdateProposalType = 8;
+
 // @public (undocumented)
 export interface AuthenticationService {
     // (undocumented)
@@ -118,6 +149,8 @@ export const ciphersuites: {
 // @public (undocumented)
 export interface ClientConfig {
     // (undocumented)
+    appDataUpdateCallback: AppDataUpdateCallback;
+    // (undocumented)
     keyPackageEqualityConfig: KeyPackageEqualityConfig;
     // (undocumented)
     keyRetentionConfig: KeyRetentionConfig;
@@ -147,6 +180,14 @@ export interface Commit {
     path: UpdatePath | undefined;
     // (undocumented)
     proposals: ProposalOrRef[];
+}
+
+// @public
+export interface ComponentData {
+    // (undocumented)
+    componentId: number;
+    // (undocumented)
+    data: Uint8Array;
 }
 
 // @public (undocumented)
@@ -325,6 +366,9 @@ export function decode<T>(dec: Decoder<T>, t: Uint8Array, maxInputSize?: number)
 
 // @public (undocumented)
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined;
+
+// @public
+export const defaultAppDataUpdateCallback: AppDataUpdateCallback;
 
 // @public (undocumented)
 export function defaultCapabilities(): Capabilities;
@@ -609,6 +653,9 @@ export interface GenerationSecret {
     unusedGenerations: Record<number, Uint8Array>;
 }
 
+// @public
+export function getAppDataDictionary(extensions: GroupContextExtension[]): AppDataDictionary | undefined;
+
 // @public (undocumented)
 export function getCiphersuiteImpl(cs: CiphersuiteName, provider?: CryptoProvider): Promise<CiphersuiteImpl>;
 
@@ -816,6 +863,12 @@ export type IncomingMessageCallback = (incoming: {
 export class InternalError extends MlsError {
     constructor(message: string);
 }
+
+// @public (undocumented)
+export function isAppDataUpdateProposal(p: Proposal): p is ProposalAppDataUpdate;
+
+// @public (undocumented)
+export function isCustomProposal(p: Proposal): p is ProposalCustom;
 
 // @public (undocumented)
 export function isDefaultCredential(c: Credential_2): c is DefaultCredential;
@@ -1059,6 +1112,9 @@ export interface LifetimeConfig {
     validateLifetimeOnReceive: boolean;
 }
 
+// @public
+export function makeAppDataDictionaryExtension(dictionary: AppDataDictionary): CustomExtension;
+
 // @public (undocumented)
 export function makeCustomExtension(extension: {
     extensionType: number;
@@ -1292,7 +1348,7 @@ export function processPublicMessage(params: {
 }): Promise<NewStateWithActionTaken>;
 
 // @public (undocumented)
-export type Proposal = DefaultProposal | ProposalCustom;
+export type Proposal = DefaultProposal | ProposalAppDataUpdate | ProposalCustom;
 
 // @public (undocumented)
 export interface ProposalAdd {
@@ -1300,6 +1356,14 @@ export interface ProposalAdd {
     add: Add;
     // (undocumented)
     proposalType: typeof defaultProposalTypes.add;
+}
+
+// @public
+export interface ProposalAppDataUpdate {
+    // (undocumented)
+    appDataUpdate: AppDataUpdate;
+    // (undocumented)
+    proposalType: typeof appDataUpdateProposalType;
 }
 
 // @public (undocumented)

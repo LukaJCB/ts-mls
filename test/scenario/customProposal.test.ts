@@ -25,7 +25,9 @@ test.concurrent.each(Object.keys(ciphersuites))(`Custom Proposals %s`, async (cs
 async function customProposalTest(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(cipherSuite)
 
-  const customProposalType: number = 8
+  // 8 is assigned to app_data_update by draft-ietf-mls-extensions-09, so use a
+  // value without assigned semantics here
+  const customProposalType: number = 0xf123
 
   const capabilities: Capabilities = {
     extensions: [],
@@ -96,7 +98,7 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
   const proposalData = new TextEncoder().encode("custom proposal data")
 
   const customProposal: Proposal = {
-    proposalType: 8,
+    proposalType: customProposalType,
     proposalData: proposalData,
   }
 

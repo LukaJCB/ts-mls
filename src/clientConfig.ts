@@ -1,3 +1,4 @@
+import { AppDataUpdateCallback, defaultAppDataUpdateCallback } from "./appDataUpdate.js"
 import { defaultKeyPackageEqualityConfig, KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { defaultKeyRetentionConfig, KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { defaultLifetimeConfig, LifetimeConfig } from "./lifetimeConfig.js"
@@ -9,6 +10,7 @@ export interface ClientConfig {
   lifetimeConfig: LifetimeConfig
   keyPackageEqualityConfig: KeyPackageEqualityConfig
   paddingConfig: PaddingConfig
+  appDataUpdateCallback: AppDataUpdateCallback
 }
 
 export const defaultClientConfig: ClientConfig = {
@@ -16,4 +18,5 @@ export const defaultClientConfig: ClientConfig = {
   lifetimeConfig: defaultLifetimeConfig,
   keyPackageEqualityConfig: defaultKeyPackageEqualityConfig,
   paddingConfig: defaultPaddingConfig,
+  appDataUpdateCallback: defaultAppDataUpdateCallback,
 }

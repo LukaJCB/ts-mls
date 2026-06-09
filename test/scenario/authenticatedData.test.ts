@@ -29,7 +29,9 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(cipherSuite)
   const encoder = new TextEncoder()
 
-  const customProposalType = 8
+  // 8 is assigned to app_data_update by draft-ietf-mls-extensions-09, so use a
+  // value without assigned semantics here
+  const customProposalType = 0xf123
 
   const base = defaultCapabilities()
   const capabilities: Capabilities = {

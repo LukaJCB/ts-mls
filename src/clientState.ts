@@ -54,6 +54,7 @@ import {
 import { WireformatName, wireformats } from "./wireformat.js"
 import { ProposalOrRef, proposalOrRefTypes } from "./proposalOrRefType.js"
 import {
+  isAppDataUpdateProposal,
   isDefaultProposal,
   Proposal,
   ProposalAdd,
@@ -66,6 +67,8 @@ import {
   Reinit,
   Remove,
 } from "./proposal.js"
+import { AppDataUpdate, applyAppDataUpdates, appDataUpdateProposalType } from "./appDataUpdate.js"
+import { appDataDictionaryExtensionType } from "./appDataDictionary.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { pathToRoot } from "./pathSecrets.js"
@@ -740,6 +743,56 @@ function validateRemove(remove: Remove, tree: RatchetTree): MlsError | undefined
     return new ValidationError("Tried to remove empty leaf node")
 }
 
+function extractAppDataUpdates(allProposals: ProposalWithSender[]): AppDataUpdate[] {
+  return allProposals.flatMap(({ proposal }) => (isAppDataUpdateProposal(proposal) ? [proposal.appDataUpdate] : []))
+}
+
+function validateAppDataUpdateProposals(
+  allProposals: ProposalWithSender[],
+  gceExtensions: GroupContextExtension[] | undefined,
+  currentExtensions: GroupContextExtension[],
+): ValidationError | undefined {
+  const proposalTypes = allProposals.map(({ proposal }) => proposal.proposalType)
+  const firstAppDataUpdate = proposalTypes.indexOf(appDataUpdateProposalType)
+
+  // AppDataUpdate proposals are processed after all other proposals, so they must
+  // appear after a GroupContextExtensions proposal in the proposal list
+  if (firstAppDataUpdate !== -1) {
+    const lastGroupContextExtensions = proposalTypes.lastIndexOf(defaultProposalTypes.group_context_extensions)
+    if (lastGroupContextExtensions > firstAppDataUpdate)
+      return new ValidationError("AppDataUpdate proposals must appear after a GroupContextExtensions proposal")
+  }
+
+  // When required_capabilities includes the AppDataUpdate proposal type, a
+  // GroupContextExtensions proposal must not add, remove, or modify the
+  // app_data_dictionary extension
+  if (gceExtensions !== undefined) {
+    const requiredCapabilities = gceExtensions.find(
+      (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
+    )
+
+    if (requiredCapabilities?.extensionData.proposalTypes.includes(appDataUpdateProposalType)) {
+      const currentDictionary = currentExtensions.find(
+        (e) => e.extensionType === appDataDictionaryExtensionType,
+      )?.extensionData
+      const proposedDictionary = gceExtensions.find(
+        (e) => e.extensionType === appDataDictionaryExtensionType,
+      )?.extensionData
+
+      const dictionaryUnchanged =
+        currentDictionary === undefined
+          ? proposedDictionary === undefined
+          : proposedDictionary !== undefined &&
+            constantTimeEqual(currentDictionary as Uint8Array, proposedDictionary as Uint8Array)
+
+      if (!dictionaryUnchanged)
+        return new ValidationError(
+          "GroupContextExtensions proposal cannot modify the app_data_dictionary extension when required capabilities include the AppDataUpdate proposal type",
+        )
+    }
+  }
+}
+
 export interface ApplyProposalsResult {
   pskSecret: Uint8Array
   pskIds: PskId[]
@@ -753,7 +806,12 @@ export interface ApplyProposalsResult {
 
 type ApplyProposalsData =
   | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: GroupContextExtension[] | undefined }
-  | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: LeafIndex }
+  | {
+      kind: "externalCommit"
+      externalInitSecret: Uint8Array
+      newMemberLeafIndex: LeafIndex
+      extensions: GroupContextExtension[] | undefined
+    }
   | { kind: "reinit"; reinit: Reinit }
 
 export async function applyProposals(
@@ -825,6 +883,19 @@ export async function applyProposals(
 
     const newExtensions = flattenExtensions(grouped[defaultProposalTypes.group_context_extensions])
 
+    throwIfDefined(validateAppDataUpdateProposals(allProposals, newExtensions, state.groupContext.extensions))
+
+    const appDataUpdates = extractAppDataUpdates(allProposals)
+
+    const updatedExtensions =
+      appDataUpdates.length > 0
+        ? applyAppDataUpdates(
+            newExtensions ?? state.groupContext.extensions,
+            appDataUpdates,
+            clientConfig.appDataUpdateCallback,
+          )
+        : newExtensions
+
     const addedLeafNodes = await applyTreeMutations(
       mutableTree,
       grouped,
@@ -848,7 +919,12 @@ export async function applyProposals(
       allProposals.length === 0 ||
       allProposals.some(({ proposal }) => {
         const t = proposal.proposalType
-        return t !== defaultProposalTypes.add && t !== defaultProposalTypes.psk && t !== defaultProposalTypes.reinit
+        return (
+          t !== defaultProposalTypes.add &&
+          t !== defaultProposalTypes.psk &&
+          t !== defaultProposalTypes.reinit &&
+          t !== appDataUpdateProposalType
+        )
       })
 
     const updatedLeaves: LeafIndex[] = [
@@ -864,7 +940,7 @@ export async function applyProposals(
       additionalResult: {
         kind: "memberCommit" as const,
         addedLeafNodes,
-        extensions: newExtensions,
+        extensions: updatedExtensions,
       },
       pskIds,
       needsUpdatePath,
@@ -875,6 +951,15 @@ export async function applyProposals(
     }
   } else {
     throwIfDefined(validateExternalInit(grouped))
+
+    throwIfDefined(validateAppDataUpdateProposals(allProposals, undefined, state.groupContext.extensions))
+
+    const appDataUpdates = extractAppDataUpdates(allProposals)
+
+    const updatedExtensions =
+      appDataUpdates.length > 0
+        ? applyAppDataUpdates(state.groupContext.extensions, appDataUpdates, clientConfig.appDataUpdateCallback)
+        : undefined
 
     grouped[defaultProposalTypes.remove].forEach(({ proposal }) => {
       removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed))
@@ -911,6 +996,7 @@ export async function applyProposals(
         kind: "externalCommit",
         externalInitSecret,
         newMemberLeafIndex: nodeToLeafIndex(findBlankLeafNodeIndexOrExtend(mutableTree)),
+        extensions: updatedExtensions,
       },
       selfRemoved: false,
       allProposals,

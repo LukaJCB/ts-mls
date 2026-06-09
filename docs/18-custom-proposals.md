@@ -29,7 +29,7 @@ import {
   createProposal,
   createApplicationMessage,
   processMessage,
-  isDefaultProposal,
+  isCustomProposal,
   processPrivateMessage,
   Credential,
   defaultCredentialTypes,
@@ -144,7 +144,7 @@ const processProposalResult = await processMessage({
   state: aliceGroup,
   message: createProposalResult.message,
   callback: (p) => {
-    if (p.kind !== "proposal" || isDefaultProposal(p.proposal.proposal)) throw new Error("Expected custom proposal")
+    if (p.kind !== "proposal" || !isCustomProposal(p.proposal.proposal)) throw new Error("Expected custom proposal")
 
     // Inspect the custom proposal
     if (p.proposal.proposal.proposalData) {
@@ -180,7 +180,7 @@ const processCommitResult = await processMessage({
     // Bob can see the custom proposal in the commit
     const proposals = p.proposals.map((p) => p.proposal)
 
-    if (proposals[0] && !isDefaultProposal(proposals[0]) && proposals[0].proposalData) {
+    if (proposals[0] && isCustomProposal(proposals[0]) && proposals[0].proposalData) {
       const data = new TextDecoder().decode(proposals[0].proposalData)
     }
 
