@@ -20,3 +20,11 @@ export const defaultClientConfig: ClientConfig = {
   paddingConfig: defaultPaddingConfig,
   appDataUpdateCallback: defaultAppDataUpdateCallback,
 }
+
+/**
+ * Fills in defaults for any missing ClientConfig fields, so callers that
+ * constructed a config before a field existed keep working at runtime.
+ */
+export function resolveClientConfig(clientConfig: ClientConfig | undefined): ClientConfig {
+  return clientConfig === undefined ? defaultClientConfig : { ...defaultClientConfig, ...clientConfig }
+}

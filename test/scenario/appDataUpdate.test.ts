@@ -385,6 +385,72 @@ test("AppDataUpdate proposals cannot appear before a GroupContextExtensions prop
   ).rejects.toThrow(ValidationError)
 })
 
+test("GroupContextExtensions cannot drop the AppDataUpdate required capability while modifying the dictionary", async () => {
+  const impl = await getCiphersuiteImpl(defaultSuite)
+
+  const initialDictionary: AppDataDictionary = [{ componentId, data: new Uint8Array([0]) }]
+  const requiredCapabilities: GroupContextExtension = {
+    extensionType: defaultExtensionTypes.required_capabilities,
+    extensionData: {
+      extensionTypes: [appDataDictionaryExtensionType],
+      proposalTypes: [appDataUpdateProposalType],
+      credentialTypes: [],
+    },
+  }
+
+  const { aliceGroup } = await setup(defaultSuite, impl, [
+    requiredCapabilities,
+    makeAppDataDictionaryExtension(initialDictionary),
+  ])
+
+  // the proposed extensions no longer require the AppDataUpdate proposal type and
+  // at the same time replace the dictionary; the current group context still
+  // requires it, so the dictionary must remain protected
+  const gceProposal: Proposal = {
+    proposalType: defaultProposalTypes.group_context_extensions,
+    groupContextExtensions: {
+      extensions: [makeAppDataDictionaryExtension([{ componentId, data: new Uint8Array([0xff]) }])],
+    },
+  }
+
+  await expect(
+    createCommitEnsureNoMutation({
+      context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+      state: aliceGroup,
+      extraProposals: [gceProposal],
+    }),
+  ).rejects.toThrow(ValidationError)
+})
+
+test("A partial ClientConfig without appDataUpdateCallback falls back to the default", async () => {
+  const impl = await getCiphersuiteImpl(defaultSuite)
+
+  // simulates a JS caller that constructed its config before appDataUpdateCallback existed
+  const partialClientConfig = {} as ClientConfig
+
+  const initialDictionary: AppDataDictionary = [{ componentId, data: new Uint8Array([0]) }]
+
+  let { aliceGroup, bobGroup } = await setup(
+    defaultSuite,
+    impl,
+    [makeAppDataDictionaryExtension(initialDictionary)],
+    partialClientConfig,
+  )
+
+  const newData = new Uint8Array([1, 2, 3])
+  ;({ aliceGroup, bobGroup } = await commitAndProcess(
+    impl,
+    aliceGroup,
+    bobGroup,
+    [updateProposal(componentId, newData)],
+    partialClientConfig,
+  ))
+
+  const expected: AppDataDictionary = [{ componentId, data: newData }]
+  expect(dictionaryOf(aliceGroup)).toStrictEqual(expected)
+  expect(dictionaryOf(bobGroup)).toStrictEqual(expected)
+})
+
 test("GroupContextExtensions cannot modify the dictionary when required capabilities include AppDataUpdate", async () => {
   const impl = await getCiphersuiteImpl(defaultSuite)
 

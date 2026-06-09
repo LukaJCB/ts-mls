@@ -119,7 +119,7 @@ import { decryptGroupInfo, decryptGroupSecrets, Welcome } from "./welcome.js"
 import { AuthenticationService } from "./authenticationService.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
 import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
-import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { ClientConfig, resolveClientConfig } from "./clientConfig.js"
 import { Encoder, contramapBufferEncoders, encode } from "./codec/tlsEncoder.js"
 
 import {
@@ -765,13 +765,19 @@ function validateAppDataUpdateProposals(
 
   // When required_capabilities includes the AppDataUpdate proposal type, a
   // GroupContextExtensions proposal must not add, remove, or modify the
-  // app_data_dictionary extension
+  // app_data_dictionary extension. The dictionary is protected when either the
+  // current group context or the proposed extensions require the AppDataUpdate
+  // proposal type, so the protection cannot be bypassed by simultaneously
+  // dropping the capability and modifying the dictionary
   if (gceExtensions !== undefined) {
-    const requiredCapabilities = gceExtensions.find(
-      (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-    )
+    const requiresAppDataUpdate = (extensions: GroupContextExtension[]) =>
+      extensions
+        .find(
+          (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
+        )
+        ?.extensionData.proposalTypes.includes(appDataUpdateProposalType) === true
 
-    if (requiredCapabilities?.extensionData.proposalTypes.includes(appDataUpdateProposalType)) {
+    if (requiresAppDataUpdate(currentExtensions) || requiresAppDataUpdate(gceExtensions)) {
       const currentDictionary = currentExtensions.find(
         (e) => e.extensionType === appDataDictionaryExtensionType,
       )?.extensionData
@@ -1081,7 +1087,7 @@ export async function joinGroupInternal(params: {
   const pskSearch = makePskIndex(params.resumingFromState, context.externalPsks ?? {})
   const authService = context.authService
   const cs = context.cipherSuite
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const ratchetTree = params.ratchetTree
   const resumingFromState = params.resumingFromState

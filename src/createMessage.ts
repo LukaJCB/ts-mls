@@ -11,7 +11,7 @@ import { addUnappliedProposal } from "./unappliedProposals.js"
 import { protocolVersions } from "./protocolVersion.js"
 import { wireformats } from "./wireformat.js"
 import type { MlsContext } from "./mlsContext.js"
-import { defaultClientConfig } from "./clientConfig.js"
+import { resolveClientConfig } from "./clientConfig.js"
 import { InternalError } from "./mlsError.js"
 
 /** @public */
@@ -33,7 +33,7 @@ export async function createProposal(params: {
   const state = params.state
   const cs = context.cipherSuite
   const ad = params.authenticatedData ?? new Uint8Array()
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const publicMessage = params.wireAsPublicMessage ?? false
   const proposal = params.proposal
@@ -170,7 +170,7 @@ export async function createApplicationMessage(params: {
   const state = params.state
   const cs = context.cipherSuite
   const ad = params.authenticatedData ?? new Uint8Array()
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const message = params.message
 

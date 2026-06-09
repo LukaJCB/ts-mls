@@ -48,7 +48,7 @@ import { zeroOutUint8Array } from "./util/byteArray.js"
 import { contentTypes } from "./contentType.js"
 import { AuthenticationService } from "./authenticationService.js"
 import type { MlsContext } from "./mlsContext.js"
-import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { ClientConfig, resolveClientConfig } from "./clientConfig.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -78,7 +78,7 @@ export async function processPrivateMessage(params: {
   const pskSearch = makePskIndex(state, context.externalPsks ?? {})
   const auth = context.authService
   const cb = params.callback ?? acceptAll
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const pm = params.privateMessage
 
@@ -212,7 +212,7 @@ export async function processPublicMessage(params: {
   const cipherSuite = context.cipherSuite
   const pskSearch = makePskIndex(state, context.externalPsks ?? {})
   const auth = context.authService
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const pm = params.publicMessage
   const callback = params.callback ?? acceptAll
@@ -518,7 +518,7 @@ export async function processMessage(params: {
   const authService = context.authService
   const cs = context.cipherSuite
   const externalPsks = context.externalPsks ?? {}
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const message = params.message
   const action = params.callback ?? acceptAll
