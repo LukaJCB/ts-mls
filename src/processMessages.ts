@@ -59,7 +59,14 @@ export type ProcessMessageResult =
       consumed: Uint8Array[]
       aad: Uint8Array
     }
-  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState; consumed: Uint8Array[]; aad: Uint8Array }
+  | {
+      kind: "applicationMessage"
+      message: Uint8Array
+      newState: ClientState
+      consumed: Uint8Array[]
+      aad: Uint8Array
+      senderLeafIndex: number | undefined
+    }
 
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
@@ -110,6 +117,7 @@ export async function processPrivateMessage(params: {
           newState,
           consumed: result.consumed,
           aad: result.content.content.authenticatedData,
+          senderLeafIndex: getSenderLeafNodeIndex(result.content.content.sender),
         }
       } else {
         throw new ValidationError("Cannot process commit or proposal from former epoch")
@@ -138,6 +146,7 @@ export async function processPrivateMessage(params: {
       newState: updatedState,
       consumed: result.consumed,
       aad: result.content.content.authenticatedData,
+      senderLeafIndex: getSenderLeafNodeIndex(result.content.content.sender),
     }
   } else if (result.content.content.contentType === contentTypes.commit) {
     if (result.content.auth.contentType !== result.content.content.contentType)
