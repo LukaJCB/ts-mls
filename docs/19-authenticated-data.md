@@ -27,8 +27,6 @@ import {
   createApplicationMessage,
   createProposal,
   processMessage,
-  processPrivateMessage,
-  processPublicMessage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
@@ -162,7 +160,7 @@ bobProcessPublicCommitResult.consumed.forEach(zeroOutUint8Array)
 ## Notes
 
 - **Not Encrypted**: AAD is visible to anyone who can see the message (it's not encrypted), but it cannot be modified without detection.
-- **Reading AAD**: When processing a message, the AAD is available in the result object's `aad` field (for both `processMessage`, `processPrivateMessage`, and `processPublicMessage`).
+- **Reading AAD**: When processing a message, the AAD is available in the result object's `aad` field (for `processMessage`, `processPrivateMessage`, and `processPublicMessage`).
 - **Private vs Public Messages**:
   - For private messages, AAD is included in the AEAD encryption operation
   - For public messages, AAD is included in the signature

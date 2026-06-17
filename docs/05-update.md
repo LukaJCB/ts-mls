@@ -29,14 +29,16 @@ import {
   Credential,
   defaultCredentialTypes,
   createGroup,
+  createUpdateProposal,
   joinGroup,
-  processPrivateMessage,
+  processMessage,
   defaultProposalTypes,
   getCiphersuiteImpl,
   generateKeyPackage,
   Proposal,
   leafNodeSources,
   unsafeTestingAuthenticationService,
+  updateLeafKey,
   wireformats,
   zeroOutUint8Array,
 } from "ts-mls"
@@ -91,15 +93,14 @@ const emptyCommitResult = await createCommit({
   context,
   state: aliceGroup,
 })
-if (emptyCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 aliceGroup = emptyCommitResult.newState
 emptyCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob processes Alice's update and transitions to epoch 2
-const bobProcessCommitResult = await processPrivateMessage({
+const bobProcessCommitResult = await processMessage({
   context,
   state: bobGroup,
-  privateMessage: emptyCommitResult.commit.privateMessage,
+  message: emptyCommitResult.commit,
 })
 bobGroup = bobProcessCommitResult.newState
 bobProcessCommitResult.consumed.forEach(zeroOutUint8Array)
@@ -109,45 +110,50 @@ const emptyCommitResult3 = await createCommit({
   context,
   state: aliceGroup,
 })
-if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
-  throw new Error("Expected private message")
 bobGroup = emptyCommitResult3.newState
 emptyCommitResult3.consumed.forEach(zeroOutUint8Array)
 
 // Alice processes Bob's update and transitions to epoch 3
-const aliceProcessCommitResult3 = await processPrivateMessage({
+const aliceProcessCommitResult3 = await processMessage({
   context,
   state: aliceGroup,
-  privateMessage: emptyCommitResult3.commit.privateMessage,
+  message: emptyCommitResult3.commit,
 })
 aliceGroup = aliceProcessCommitResult3.newState
 aliceProcessCommitResult3.consumed.forEach(zeroOutUint8Array)
 
-// Bob creates a new KeyPackage
-const alice2 = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
+// Alice creates a new KeyPackage and proposes to update her keys
+const createProposalResult = await createUpdateProposal({
+  context,
+  state: aliceGroup,
+})
+aliceGroup = createProposalResult.newState
+createProposalResult.consumed.forEach(zeroOutUint8Array)
 
-// Alice proposes to update her keys
-const updateAliceProposal: Proposal = {
-  proposalType: defaultProposalTypes.update,
-  update: { leafNode: { ...alice2.publicPackage.leafNode, leafNodeSource: leafNodeSources.update } },
-}
+// Bob receives and accepts Alice's proposal
+const acceptProposalResult = await processMessage({ context, state: bobGroup, message: createProposalResult.message })
+bobGroup = acceptProposalResult.newState
+acceptProposalResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob commits to Alice's proposal and transitions to epoch 4
 const updateBobCommitResult = await createCommit({
   context,
   state: bobGroup,
-  extraProposals: [updateAliceProposal],
 })
-if (updateBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
-  throw new Error("Expected private message")
 bobGroup = updateBobCommitResult.newState
 updateBobCommitResult.consumed.forEach(zeroOutUint8Array)
 
+// Alice updates her keys to the ones in the proposal
+aliceGroup = {
+  ...aliceGroup,
+  privatePath: updateLeafKey(aliceGroup.privatePath, createProposalResult.newLeafKeypair.hpkePrivateKey),
+}
+
 // Alice processes Bob's commit and transitions to epoch 4
-const aliceProcessCommitResult4 = await processPrivateMessage({
+const aliceProcessCommitResult4 = await processMessage({
   context,
   state: aliceGroup,
-  privateMessage: updateBobCommitResult.commit.privateMessage,
+  message: updateBobCommitResult.commit,
 })
 aliceGroup = aliceProcessCommitResult4.newState
 aliceProcessCommitResult4.consumed.forEach(zeroOutUint8Array)

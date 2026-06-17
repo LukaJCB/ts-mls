@@ -30,7 +30,6 @@ import {
   createCommit,
   Proposal,
   joinGroup,
-  processPrivateMessage,
   joinGroupFromBranch,
   branchGroup,
   unsafeTestingAuthenticationService,

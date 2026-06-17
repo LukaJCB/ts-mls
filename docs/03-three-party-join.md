@@ -31,7 +31,7 @@ import {
   createCommit,
   Proposal,
   joinGroup,
-  processPrivateMessage,
+  processMessage,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
@@ -104,14 +104,12 @@ const addCharlieCommitResult = await createCommit({
 })
 aliceGroup = addCharlieCommitResult.newState
 addCharlieCommitResult.consumed.forEach(zeroOutUint8Array)
-if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
-  throw new Error("Expected private message")
 
 // Bob processes the commit and transitions to epoch 2 as well
-const processAddCharlieResult = await processPrivateMessage({
+const processAddCharlieResult = await processMessage({
   context,
   state: bobGroup,
-  privateMessage: addCharlieCommitResult.commit.privateMessage,
+  message: addCharlieCommitResult.commit,
 })
 bobGroup = processAddCharlieResult.newState
 processAddCharlieResult.consumed.forEach(zeroOutUint8Array)

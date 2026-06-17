@@ -30,7 +30,6 @@ import {
   createApplicationMessage,
   processMessage,
   isDefaultProposal,
-  processPrivateMessage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
