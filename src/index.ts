@@ -6,6 +6,7 @@ export {
   type DefaultProposal,
   type Proposal,
   type ProposalAdd,
+  type ProposalAppDataUpdate,
   type ProposalCustom,
   type ProposalExternalInit,
   type ProposalGroupContextExtensions,
@@ -17,7 +18,26 @@ export {
   type Remove,
   type Update,
   isDefaultProposal,
+  isAppDataUpdateProposal,
+  isCustomProposal,
 } from "./proposal.js"
+
+export {
+  appDataDictionaryExtensionType,
+  makeAppDataDictionaryExtension,
+  getAppDataDictionary,
+  type AppDataDictionary,
+  type ComponentData,
+} from "./appDataDictionary.js"
+
+export {
+  appDataUpdateProposalType,
+  appDataUpdateOperations,
+  defaultAppDataUpdateCallback,
+  type AppDataUpdate,
+  type AppDataUpdateCallback,
+  type AppDataUpdateOperationName,
+} from "./appDataUpdate.js"
 
 export {
   createGroup,

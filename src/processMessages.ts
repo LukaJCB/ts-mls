@@ -48,7 +48,7 @@ import { zeroOutUint8Array } from "./util/byteArray.js"
 import { contentTypes } from "./contentType.js"
 import { AuthenticationService } from "./authenticationService.js"
 import type { MlsContext } from "./mlsContext.js"
-import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { ClientConfig, resolveClientConfig } from "./clientConfig.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -59,7 +59,14 @@ export type ProcessMessageResult =
       consumed: Uint8Array[]
       aad: Uint8Array
     }
-  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState; consumed: Uint8Array[]; aad: Uint8Array }
+  | {
+      kind: "applicationMessage"
+      message: Uint8Array
+      newState: ClientState
+      consumed: Uint8Array[]
+      aad: Uint8Array
+      senderLeafIndex: number | undefined
+    }
 
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
@@ -78,7 +85,7 @@ export async function processPrivateMessage(params: {
   const pskSearch = makePskIndex(state, context.externalPsks ?? {})
   const auth = context.authService
   const cb = params.callback ?? acceptAll
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const pm = params.privateMessage
 
@@ -110,6 +117,7 @@ export async function processPrivateMessage(params: {
           newState,
           consumed: result.consumed,
           aad: result.content.content.authenticatedData,
+          senderLeafIndex: getSenderLeafNodeIndex(result.content.content.sender),
         }
       } else {
         throw new ValidationError("Cannot process commit or proposal from former epoch")
@@ -138,6 +146,7 @@ export async function processPrivateMessage(params: {
       newState: updatedState,
       consumed: result.consumed,
       aad: result.content.content.authenticatedData,
+      senderLeafIndex: getSenderLeafNodeIndex(result.content.content.sender),
     }
   } else if (result.content.content.contentType === contentTypes.commit) {
     if (result.content.auth.contentType !== result.content.content.contentType)
@@ -212,7 +221,7 @@ export async function processPublicMessage(params: {
   const cipherSuite = context.cipherSuite
   const pskSearch = makePskIndex(state, context.externalPsks ?? {})
   const auth = context.authService
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const pm = params.publicMessage
   const callback = params.callback ?? acceptAll
@@ -336,10 +345,10 @@ async function processCommit(
 
   if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
 
+  const updatedExtensions = result.additionalResult.kind === "reinit" ? undefined : result.additionalResult.extensions
+
   const groupContextWithExtensions =
-    result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
-      ? { ...state.groupContext, extensions: result.additionalResult.extensions }
-      : state.groupContext
+    updatedExtensions !== undefined ? { ...state.groupContext, extensions: updatedExtensions } : state.groupContext
 
   const proposalTouchedLeaves: LeafIndex[] = [...result.updatedLeaves, ...result.removedLeaves]
   const [pkp, commitSecret, newTreeHash, treeHashCache] = await applyTreeUpdate(
@@ -518,7 +527,7 @@ export async function processMessage(params: {
   const authService = context.authService
   const cs = context.cipherSuite
   const externalPsks = context.externalPsks ?? {}
-  const clientConfig = context.clientConfig ?? defaultClientConfig
+  const clientConfig = resolveClientConfig(context.clientConfig)
 
   const message = params.message
   const action = params.callback ?? acceptAll
