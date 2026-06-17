@@ -29,7 +29,7 @@ import {
   createCommit,
   Proposal,
   joinGroup,
-  processPrivateMessage,
+  processMessage,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
@@ -92,14 +92,12 @@ const removeBobCommitResult = await createCommit({
 })
 aliceGroup = removeBobCommitResult.newState
 removeBobCommitResult.consumed.forEach(zeroOutUint8Array)
-if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
-  throw new Error("Expected private message")
 
 // Bob processes the removal and is removed from the group (epoch 2)
-const bobProcessRemoveResult = await processPrivateMessage({
+const bobProcessRemoveResult = await processMessage({
   context,
   state: bobGroup,
-  privateMessage: removeBobCommitResult.commit.privateMessage,
+  message: removeBobCommitResult.commit,
 })
 bobGroup = bobProcessRemoveResult.newState
 bobProcessRemoveResult.consumed.forEach(zeroOutUint8Array)

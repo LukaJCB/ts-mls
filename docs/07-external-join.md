@@ -31,7 +31,6 @@ import {
   Proposal,
   joinGroup,
   joinGroupExternal,
-  processPrivateMessage,
   processPublicMessage,
   createGroupInfoWithExternalPubAndRatchetTree,
   unsafeTestingAuthenticationService,

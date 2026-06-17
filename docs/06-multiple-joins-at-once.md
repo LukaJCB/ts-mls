@@ -26,7 +26,6 @@ import {
   createCommit,
   Proposal,
   joinGroup,
-  processPrivateMessage,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,

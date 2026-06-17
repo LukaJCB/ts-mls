@@ -30,7 +30,7 @@ import {
   defaultProposalTypes,
   joinGroup,
   joinGroupFromReinit,
-  processPrivateMessage,
+  processMessage,
   reinitCreateNewGroup,
   reinitGroup,
   Proposal,
@@ -99,14 +99,11 @@ const reinitCommitResult = await reinitGroup({
 aliceGroup = reinitCommitResult.newState
 reinitCommitResult.consumed.forEach(zeroOutUint8Array)
 
-if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
-  throw new Error("Expected private message")
-
 // Bob processes the reinit commit and prepares to join the new group
-const processReinitResult = await processPrivateMessage({
+const processReinitResult = await processMessage({
   context,
   state: bobGroup,
-  privateMessage: reinitCommitResult.commit.privateMessage,
+  message: reinitCommitResult.commit,
 })
 bobGroup = processReinitResult.newState
 processReinitResult.consumed.forEach(zeroOutUint8Array)

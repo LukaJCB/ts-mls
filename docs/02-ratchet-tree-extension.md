@@ -25,7 +25,6 @@ import {
   defaultProposalTypes,
   getCiphersuiteImpl,
   joinGroup,
-  processPrivateMessage,
   createCommit,
   Proposal,
   unsafeTestingAuthenticationService,

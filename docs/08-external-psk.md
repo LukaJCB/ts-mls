@@ -30,7 +30,7 @@ import {
   createCommit,
   Proposal,
   joinGroup,
-  processPrivateMessage,
+  processMessage,
   bytesToBase64,
   pskTypes,
   unsafeTestingAuthenticationService,
@@ -112,13 +112,11 @@ const pskCommitResult = await createCommit({
 aliceGroup = pskCommitResult.newState
 pskCommitResult.consumed.forEach(zeroOutUint8Array)
 
-if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
-
 // Bob processes the commit using the PSK
-const processPskResult = await processPrivateMessage({
+const processPskResult = await processMessage({
   context,
   state: bobGroup,
-  privateMessage: pskCommitResult.commit.privateMessage,
+  message: pskCommitResult.commit,
 })
 bobGroup = processPskResult.newState
 processPskResult.consumed.forEach(zeroOutUint8Array)
@@ -164,7 +162,6 @@ import {
   createCommit,
   Proposal,
   joinGroup,
-  processPrivateMessage,
   bytesToBase64,
   pskTypes,
   unsafeTestingAuthenticationService,
