@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
-import { processPublicMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -10,7 +9,7 @@ import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -98,24 +97,24 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
 
   if (addCharlieProposal.wireformat !== wireformats.mls_public_message) throw new Error("Expected public message")
 
-  const aliceProcessCharlieProposalResult = await processPublicMessage({
+  const aliceProcessCharlieProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: aliceGroup,
-    publicMessage: addCharlieProposal.publicMessage,
+    message: addCharlieProposal,
   })
 
   aliceGroup = aliceProcessCharlieProposalResult.newState
 
-  const bobProcessCharlieProposalResult = await processPublicMessage({
+  const bobProcessCharlieProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    publicMessage: addCharlieProposal.publicMessage,
+    message: addCharlieProposal,
   })
 
   bobGroup = bobProcessCharlieProposalResult.newState
@@ -133,13 +132,13 @@ async function externalAddProposalTest(cipherSuite: CiphersuiteName) {
   if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processAddCharlieResult = await processPrivateMessageEnsureNoMutation({
+  const processAddCharlieResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: addCharlieCommitResult.commit.privateMessage,
+    message: addCharlieCommitResult.commit,
   })
 
   bobGroup = processAddCharlieResult.newState

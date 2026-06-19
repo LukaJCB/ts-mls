@@ -7,7 +7,6 @@ import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import {
   createCommitEnsureNoMutation,
   processMessageEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 import { Capabilities } from "../../src/capabilities.js"
@@ -147,10 +146,10 @@ async function customProposalTest(cipherSuite: CiphersuiteName) {
   if (createCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processCommitResult = await processPrivateMessageEnsureNoMutation({
+  const processCommitResult = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    privateMessage: createCommitResult.commit.privateMessage,
+    message: createCommitResult.commit,
     callback: (p) => {
       if (p.kind !== "commit") throw new Error("Expected commit")
       expect(p.proposals.map((p) => p.proposal)).toStrictEqual([customProposal])

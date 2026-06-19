@@ -12,7 +12,7 @@ import { wireformats } from "../../src/wireformat.js"
 import { pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -124,10 +124,10 @@ async function selfResumptionPskTest(cipherSuite: CiphersuiteName) {
 
   if (commit.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const bobAfter = await processPrivateMessageEnsureNoMutation({
+  const bobAfter = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    privateMessage: commit.commit.privateMessage,
+    message: commit.commit,
   })
 
   expect(bobAfter.newState.keySchedule.epochAuthenticator).toStrictEqual(commit.newState.keySchedule.epochAuthenticator)

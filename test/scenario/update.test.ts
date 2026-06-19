@@ -8,7 +8,7 @@ import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -93,13 +93,13 @@ async function update(cipherSuite: CiphersuiteName) {
 
   aliceGroup = emptyCommitResult.newState
 
-  const bobProcessCommitResult = await processPrivateMessageEnsureNoMutation({
+  const bobProcessCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: emptyCommitResult.commit.privateMessage,
+    message: emptyCommitResult.commit,
   })
 
   bobGroup = bobProcessCommitResult.newState
@@ -117,13 +117,13 @@ async function update(cipherSuite: CiphersuiteName) {
 
   bobGroup = emptyCommitResult3.newState
 
-  const aliceProcessCommitResult3 = await processPrivateMessageEnsureNoMutation({
+  const aliceProcessCommitResult3 = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: aliceGroup,
-    privateMessage: emptyCommitResult3.commit.privateMessage,
+    message: emptyCommitResult3.commit,
   })
 
   aliceGroup = aliceProcessCommitResult3.newState

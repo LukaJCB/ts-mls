@@ -42,7 +42,6 @@ import {
   type GroupContextExtension,
   type Credential,
   type MlsContext,
-  type MlsMessage,
   type MlsFramedMessage,
   type ClientState,
   type ExternalSender,
@@ -426,14 +425,9 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
           cipherSuite,
           wireAsPublicMessage: !req.encrypt_handshake,
         })
-        const commitMsg: MlsMessage = {
-          version: protocolVersions.mls10,
-          wireformat: wireformats.mls_public_message,
-          publicMessage: result.publicMessage,
-        }
         return {
           state_id,
-          commit: encode(mlsMessageEncoder, commitMsg),
+          commit: encode(mlsMessageEncoder, result.commit),
           epoch_authenticator: result.newState.keySchedule.epochAuthenticator,
         }
       },

@@ -7,7 +7,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   shuffledIndices,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
@@ -125,13 +125,13 @@ async function largeGroupFullLifecycle(cipherSuite: CiphersuiteName, initialSize
     for (let i = 0; i < memberStates.length; i++) {
       if (i === removerIndex) continue
       const m = memberStates[i]!
-      const result = await processPrivateMessageEnsureNoMutation({
+      const result = await processMessageEnsureNoMutation({
         context: {
           cipherSuite: impl,
           authService: unsafeTestingAuthenticationService,
         },
         state: m.state,
-        privateMessage: commitResult.commit.privateMessage,
+        message: commitResult.commit,
       })
       m.state = result.newState
     }
@@ -189,13 +189,13 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
   for (let i = 0; i < memberStates.length; i++) {
     if (i === adderIndex) continue
     const m = memberStates[i]!
-    const result = await processPrivateMessageEnsureNoMutation({
+    const result = await processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: m.state,
-      privateMessage: commitResult.commit.privateMessage,
+      message: commitResult.commit,
     })
 
     m.state = result.newState
@@ -225,13 +225,13 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
   for (let i = 0; i < memberStates.length; i++) {
     if (i === updateIndex) continue
     const m = memberStates[i]!
-    const result = await processPrivateMessageEnsureNoMutation({
+    const result = await processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: m.state,
-      privateMessage: emptyCommitResult.commit.privateMessage,
+      message: emptyCommitResult.commit,
     })
 
     m.state = result.newState

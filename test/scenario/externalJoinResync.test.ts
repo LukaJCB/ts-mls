@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPubAndRatchetTree, joinGroupExternal } from "../../src/createCommit.js"
-import { processPublicMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -8,7 +7,11 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
-import { createCommitEnsureNoMutation, testEveryoneCanMessageEveryone } from "./common.js"
+import {
+  createCommitEnsureNoMutation,
+  processMessageEnsureNoMutation,
+  testEveryoneCanMessageEveryone,
+} from "./common.js"
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
@@ -159,24 +162,24 @@ async function externalJoinResyncTest(cipherSuite: CiphersuiteName) {
 
   charlieGroup = charlieResyncCommitResult.newState
 
-  const aliceProcessCharlieResyncResult = await processPublicMessage({
+  const aliceProcessCharlieResyncResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: aliceGroup,
-    publicMessage: charlieResyncCommitResult.publicMessage,
+    message: charlieResyncCommitResult.commit,
   })
 
   aliceGroup = aliceProcessCharlieResyncResult.newState
 
-  const bobProcessCharlieResyncResult = await processPublicMessage({
+  const bobProcessCharlieResyncResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    publicMessage: charlieResyncCommitResult.publicMessage,
+    message: charlieResyncCommitResult.commit,
   })
 
   bobGroup = bobProcessCharlieResyncResult.newState

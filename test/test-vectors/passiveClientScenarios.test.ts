@@ -9,11 +9,12 @@ import { mlsMessageDecoder } from "../../src/message.js"
 import { ratchetTreeDecoder } from "../../src/ratchetTree.js"
 
 import { joinGroup } from "../../src/clientState.js"
-import { processPrivateMessage, processPublicMessage } from "../../src/processMessages.js"
+
 import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { defaultCryptoProvider } from "../../src/index.js"
+import { processMessageEnsureNoMutation } from "../scenario/common.js"
 
 test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,
@@ -88,31 +89,17 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
       )
         throw new Error("Could not decode proposal message")
 
-      if (mlsProposal[0].wireformat === wireformats.mls_private_message) {
-        const res = await processPrivateMessage({
-          context: {
-            cipherSuite: impl,
-            authService: unsafeTestingAuthenticationService,
-            externalPsks: psks,
-          },
-          state,
-          privateMessage: mlsProposal[0].privateMessage,
-        })
+      const res = await processMessageEnsureNoMutation({
+        context: {
+          cipherSuite: impl,
+          authService: unsafeTestingAuthenticationService,
+          externalPsks: psks,
+        },
+        state,
+        message: mlsProposal[0],
+      })
 
-        state = res.newState
-      } else {
-        const res = await processPublicMessage({
-          context: {
-            cipherSuite: impl,
-            authService: unsafeTestingAuthenticationService,
-            externalPsks: psks,
-          },
-          state,
-          publicMessage: mlsProposal[0].publicMessage,
-        })
-
-        state = res.newState
-      }
+      state = res.newState
     }
 
     const mlsCommit = mlsMessageDecoder(hexToBytes(epoch.commit), 0)
@@ -123,30 +110,17 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
     )
       throw new Error("Could not decode commit message")
 
-    if (mlsCommit[0].wireformat === wireformats.mls_private_message) {
-      const res = await processPrivateMessage({
-        context: {
-          cipherSuite: impl,
-          authService: unsafeTestingAuthenticationService,
-          externalPsks: psks,
-        },
-        state,
-        privateMessage: mlsCommit[0].privateMessage,
-      })
+    const res = await processMessageEnsureNoMutation({
+      context: {
+        cipherSuite: impl,
+        authService: unsafeTestingAuthenticationService,
+        externalPsks: psks,
+      },
+      state,
+      message: mlsCommit[0],
+    })
 
-      state = res.newState
-    } else {
-      const res = await processPublicMessage({
-        context: {
-          cipherSuite: impl,
-          authService: unsafeTestingAuthenticationService,
-          externalPsks: psks,
-        },
-        state,
-        publicMessage: mlsCommit[0].publicMessage,
-      })
-      state = res.newState
-    }
+    state = res.newState
 
     expect(state.keySchedule.epochAuthenticator).toStrictEqual(hexToBytes(epoch.epoch_authenticator))
   }

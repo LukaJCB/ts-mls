@@ -31,7 +31,7 @@ import {
   Proposal,
   joinGroup,
   joinGroupExternal,
-  processPublicMessage,
+  processMessage,
   createGroupInfoWithExternalPubAndRatchetTree,
   unsafeTestingAuthenticationService,
   zeroOutUint8Array,
@@ -101,19 +101,19 @@ const charlieJoinGroupCommitResult = await joinGroupExternal({
 let charlieGroup = charlieJoinGroupCommitResult.newState
 
 // All members process the external join commit to update their state (epoch 2)
-const aliceProcessCharlieJoinResult = await processPublicMessage({
+const aliceProcessCharlieJoinResult = await processMessage({
   context,
   state: aliceGroup,
-  publicMessage: charlieJoinGroupCommitResult.publicMessage,
+  message: charlieJoinGroupCommitResult.commit,
 })
 
 aliceGroup = aliceProcessCharlieJoinResult.newState
 aliceProcessCharlieJoinResult.consumed.forEach(zeroOutUint8Array)
 
-const bobProcessCharlieJoinResult = await processPublicMessage({
+const bobProcessCharlieJoinResult = await processMessage({
   context,
   state: bobGroup,
-  publicMessage: charlieJoinGroupCommitResult.publicMessage,
+  message: charlieJoinGroupCommitResult.commit,
 })
 
 bobGroup = bobProcessCharlieJoinResult.newState
