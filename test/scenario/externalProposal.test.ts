@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
-import { processPublicMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -16,7 +15,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
-import { createCommitEnsureNoMutation, processPrivateMessageEnsureNoMutation } from "./common.js"
+import { createCommitEnsureNoMutation, processMessageEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External Proposal %s`, async (cs) => {
   await externalProposalTest(cs as CiphersuiteName)
@@ -121,24 +120,24 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
 
   if (addCharlieProposal.wireformat !== wireformats.mls_public_message) throw new Error("Expected public message")
 
-  const aliceProcessCharlieProposalResult = await processPublicMessage({
+  const aliceProcessCharlieProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: aliceGroup,
-    publicMessage: addCharlieProposal.publicMessage,
+    message: addCharlieProposal,
   })
 
   aliceGroup = aliceProcessCharlieProposalResult.newState
 
-  const bobProcessCharlieProposalResult = await processPublicMessage({
+  const bobProcessCharlieProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    publicMessage: addCharlieProposal.publicMessage,
+    message: addCharlieProposal,
   })
 
   bobGroup = bobProcessCharlieProposalResult.newState
@@ -156,13 +155,13 @@ async function externalProposalTest(cipherSuite: CiphersuiteName) {
   if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processRemoveBobResult = await processPrivateMessageEnsureNoMutation({
+  const processRemoveBobResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: removeBobCommitResult.commit.privateMessage,
+    message: removeBobCommitResult.commit,
   })
 
   bobGroup = processRemoveBobResult.newState

@@ -10,7 +10,7 @@ import { bytesToBase64 } from "../../src/util/byteArray.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -132,14 +132,14 @@ async function externalPsk(cipherSuite: CiphersuiteName) {
 
   if (pskCommitResult.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const processPskResult = await processPrivateMessageEnsureNoMutation({
+  const processPskResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
       externalPsks: sharedPsks,
     },
     state: bobGroup,
-    privateMessage: pskCommitResult.commit.privateMessage,
+    message: pskCommitResult.commit,
   })
 
   bobGroup = processPskResult.newState

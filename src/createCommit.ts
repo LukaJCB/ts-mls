@@ -30,7 +30,7 @@ import {
 } from "./groupInfo.js"
 import { KeyPackage, makeKeyPackageRef, PrivateKeyPackage } from "./keyPackage.js"
 import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
-import { MlsFramedMessage, MlsWelcomeMessage } from "./message.js"
+import { MlsFramedMessage, MlsPublicMessage, MlsWelcomeMessage } from "./message.js"
 import { protect } from "./messageProtection.js"
 import { protectPublicMessage } from "./messageProtectionPublic.js"
 import { getCommitSecret, pathToPathSecrets } from "./pathSecrets.js"
@@ -67,7 +67,6 @@ import { CryptoVerificationError, InternalError, UsageError, ValidationError } f
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
 import { ExtensionExternalPub, extensionsSupportedByCapabilities, GroupInfoExtension } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
-import { PublicMessage } from "./publicMessage.js"
 import { wireformats } from "./wireformat.js"
 import { MlsContext } from "./mlsContext.js"
 
@@ -548,7 +547,7 @@ export async function joinGroupExternal(params: {
   resync: boolean
   tree?: RatchetTree
   authenticatedData?: Uint8Array
-}): Promise<{ publicMessage: PublicMessage; newState: ClientState }> {
+}): Promise<{ commit: MlsPublicMessage; newState: ClientState }> {
   const context = params.context
   const groupInfo = params.groupInfo
   const keyPackage = params.keyPackage
@@ -715,7 +714,10 @@ export async function joinGroupExternal(params: {
   zeroOutUint8Array(initSecret)
   zeroOutUint8Array(epochSecrets.joinerSecret)
 
-  return { publicMessage: msg, newState: state }
+  return {
+    commit: { publicMessage: msg, wireformat: wireformats.mls_public_message, version: protocolVersions.mls10 },
+    newState: state,
+  }
 }
 function filterNewLeaves(resolution: NodeIndex[], excludeNodes: NodeIndex[]): NodeIndex[] {
   const set = new Set(excludeNodes)

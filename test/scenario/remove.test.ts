@@ -9,7 +9,7 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import {
   cannotMessageAnymore,
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -132,25 +132,25 @@ async function remove(cipherSuite: CiphersuiteName) {
   if (removeBobCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const bobProcessCommitResult = await processPrivateMessageEnsureNoMutation({
+  const bobProcessCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: removeBobCommitResult.commit.privateMessage,
+    message: removeBobCommitResult.commit,
   })
 
   // bob is removed here
   bobGroup = bobProcessCommitResult.newState
 
-  const charlieProcessCommitResult = await processPrivateMessageEnsureNoMutation({
+  const charlieProcessCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: charlieGroup,
-    privateMessage: removeBobCommitResult.commit.privateMessage,
+    message: removeBobCommitResult.commit,
   })
 
   charlieGroup = charlieProcessCommitResult.newState

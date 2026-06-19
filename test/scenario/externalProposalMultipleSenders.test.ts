@@ -1,6 +1,5 @@
 import { createGroup, joinGroup } from "../../src/clientState.js"
 import { createGroupInfoWithExternalPub } from "../../src/createCommit.js"
-import { processPublicMessage } from "../../src/processMessages.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
@@ -14,7 +13,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
-import { createCommitEnsureNoMutation } from "./common.js"
+import { createCommitEnsureNoMutation, processMessageEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`External proposal with multiple senders %s`, async (cs) => {
   await externalProposalMultipleSendersTest(cs as CiphersuiteName)
@@ -104,17 +103,17 @@ async function externalProposalMultipleSendersTest(cipherSuite: CiphersuiteName)
 
   // Both members must validate the signature, which requires senderFromExtension
   // to look up index 1 inside extensionData.
-  const aliceProcess = await processPublicMessage({
+  const aliceProcess = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: aliceGroup,
-    publicMessage: externalProposalMsg.publicMessage,
+    message: externalProposalMsg,
   })
   aliceGroup = aliceProcess.newState
 
-  const bobProcess = await processPublicMessage({
+  const bobProcess = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    publicMessage: externalProposalMsg.publicMessage,
+    message: externalProposalMsg,
   })
   bobGroup = bobProcess.newState
 

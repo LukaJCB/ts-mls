@@ -9,7 +9,7 @@ import { ProposalAdd } from "../../src/proposal.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -111,13 +111,13 @@ async function threePartyJoin(cipherSuite: CiphersuiteName) {
   if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processAddCharlieResult = await processPrivateMessageEnsureNoMutation({
+  const processAddCharlieResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: addCharlieCommitResult.commit.privateMessage,
+    message: addCharlieCommitResult.commit,
   })
 
   bobGroup = processAddCharlieResult.newState

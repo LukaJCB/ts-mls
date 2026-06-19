@@ -11,7 +11,7 @@ import { unsafeTestingAuthenticationService } from "../../src/authenticationServ
 import { wireformats } from "../../src/wireformat.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
@@ -107,10 +107,10 @@ async function addPlusPathCommitTest(cipherSuite: CiphersuiteName) {
 
   if (bigCommit.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const bobAfter = await processPrivateMessageEnsureNoMutation({
+  const bobAfter = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    privateMessage: bigCommit.commit.privateMessage,
+    message: bigCommit.commit,
   })
   bobGroup = bobAfter.newState
 

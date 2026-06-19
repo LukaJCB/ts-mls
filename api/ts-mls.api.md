@@ -845,7 +845,7 @@ export function joinGroupExternal(params: {
     tree?: RatchetTree;
     authenticatedData?: Uint8Array;
 }): Promise<{
-    publicMessage: PublicMessage;
+    commit: MlsPublicMessage;
     newState: ClientState;
 }>;
 

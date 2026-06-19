@@ -10,7 +10,7 @@ import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import {
   createCommitEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 import { wireformats } from "../../src/wireformat.js"
@@ -111,17 +111,17 @@ async function groupContextExtensionsCommitTest(cipherSuite: CiphersuiteName) {
 
   if (gceCommit.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const bobProcess = await processPrivateMessageEnsureNoMutation({
+  const bobProcess = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    privateMessage: gceCommit.commit.privateMessage,
+    message: gceCommit.commit,
   })
   bobGroup = bobProcess.newState
 
-  const charlieProcess = await processPrivateMessageEnsureNoMutation({
+  const charlieProcess = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: charlieGroup,
-    privateMessage: gceCommit.commit.privateMessage,
+    message: gceCommit.commit,
   })
   charlieGroup = charlieProcess.newState
 
@@ -213,10 +213,10 @@ async function emptyGroupContextExtensionsCommitTest(cipherSuite: CiphersuiteNam
   if (addExtensionsCommit.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const bobAddProcess = await processPrivateMessageEnsureNoMutation({
+  const bobAddProcess = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    privateMessage: addExtensionsCommit.commit.privateMessage,
+    message: addExtensionsCommit.commit,
   })
   bobGroup = bobAddProcess.newState
 
@@ -237,10 +237,10 @@ async function emptyGroupContextExtensionsCommitTest(cipherSuite: CiphersuiteNam
 
   if (clearCommit.commit.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
-  const bobClearProcess = await processPrivateMessageEnsureNoMutation({
+  const bobClearProcess = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
     state: bobGroup,
-    privateMessage: clearCommit.commit.privateMessage,
+    message: clearCommit.commit,
   })
   bobGroup = bobClearProcess.newState
 

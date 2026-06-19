@@ -12,12 +12,12 @@ import { Credential, isDefaultCredential } from "../src/credential.js"
 import { getCiphersuiteImpl } from "../src/crypto/getCiphersuiteImpl.js"
 import { CiphersuiteName } from "../src/crypto/ciphersuite.js"
 import { createCommit } from "../src/createCommit.js"
-import { processPrivateMessage } from "../src/processMessages.js"
 import { defaultProposalTypes } from "../src/defaultProposalType.js"
 import { defaultCredentialTypes } from "../src/defaultCredentialType.js"
 import { LeafNode } from "../src/leafNode.js"
 import { wireformats } from "../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../src/authenticationService.js"
+import { processMessageEnsureNoMutation } from "./scenario/common.js"
 
 const SUITE: CiphersuiteName = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519"
 
@@ -89,13 +89,13 @@ async function buildThreeMemberGroup() {
   aliceGroup = addCharlieCommitResult.newState
   if (addCharlieCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
-  const processAddCharlieResult = await processPrivateMessage({
+  const processAddCharlieResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: addCharlieCommitResult.commit.privateMessage,
+    message: addCharlieCommitResult.commit,
   })
   bobGroup = processAddCharlieResult.newState
   const charlieGroup = await joinGroup({

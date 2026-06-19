@@ -10,7 +10,7 @@ import { checkHpkeKeysMatch } from "../crypto/keyMatch.js"
 import {
   createCommitEnsureNoMutation,
   getRandomElement,
-  processPrivateMessageEnsureNoMutation,
+  processMessageEnsureNoMutation,
   testEveryoneCanMessageEveryone,
 } from "./common.js"
 
@@ -98,13 +98,13 @@ async function reinit(cipherSuite: CiphersuiteName) {
   if (reinitCommitResult.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  const processReinitResult = await processPrivateMessageEnsureNoMutation({
+  const processReinitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: reinitCommitResult.commit.privateMessage,
+    message: reinitCommitResult.commit,
   })
 
   bobGroup = processReinitResult.newState

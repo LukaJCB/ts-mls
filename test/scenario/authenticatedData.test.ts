@@ -6,7 +6,6 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { Credential } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CryptoError, CryptoVerificationError } from "../../src/mlsError.js"
-import { processPublicMessage } from "../../src/processMessages.js"
 import { Capabilities } from "../../src/capabilities.js"
 
 import { protocolVersions } from "../../src/protocolVersion.js"
@@ -15,11 +14,7 @@ import { Proposal } from "../../src/proposal.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
-import {
-  createCommitEnsureNoMutation,
-  processMessageEnsureNoMutation,
-  processPrivateMessageEnsureNoMutation,
-} from "./common.js"
+import { createCommitEnsureNoMutation, processMessageEnsureNoMutation } from "./common.js"
 
 test.concurrent.each(Object.keys(ciphersuites))("authenticatedData verified for app/proposal/commit %s", async (cs) => {
   await authenticatedDataScenario(cs as CiphersuiteName)
@@ -105,17 +100,17 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
   if (aliceAppResult.message.wireformat !== wireformats.mls_private_message) throw new Error("Expected private message")
 
   const tamperedApp = {
-    ...aliceAppResult.message.privateMessage,
-    authenticatedData: encoder.encode("aad-app-tampered"),
+    ...aliceAppResult.message,
+    privateMessage: { ...aliceAppResult.message.privateMessage, authenticatedData: encoder.encode("aad-app-tampered") },
   }
   await expect(
-    processPrivateMessageEnsureNoMutation({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: bobGroup,
-      privateMessage: tamperedApp,
+      message: tamperedApp,
     }),
   ).rejects.toThrow(CryptoError)
 
@@ -152,17 +147,20 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   const tamperedProposal = {
-    ...bobProposalResult.message.privateMessage,
-    authenticatedData: encoder.encode("aad-proposal-tampered"),
+    ...bobProposalResult.message,
+    privateMessage: {
+      ...bobProposalResult.message.privateMessage,
+      authenticatedData: encoder.encode("aad-proposal-tampered"),
+    },
   }
   await expect(
-    processPrivateMessageEnsureNoMutation({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: aliceGroup,
-      privateMessage: tamperedProposal,
+      message: tamperedProposal,
       callback: () => {
         throw new Error("Callback should not run for tampered authenticatedData")
       },
@@ -204,30 +202,34 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     throw new Error("Expected private message")
 
   const tamperedCommit = {
-    ...aliceCommitResult.commit.privateMessage,
-    authenticatedData: encoder.encode("aad-commit-tampered"),
+    ...aliceCommitResult.commit,
+    privateMessage: {
+      ...aliceCommitResult.commit.privateMessage,
+
+      authenticatedData: encoder.encode("aad-commit-tampered"),
+    },
   }
   await expect(
-    processPrivateMessageEnsureNoMutation({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: bobGroup,
-      privateMessage: tamperedCommit,
+      message: tamperedCommit,
       callback: () => {
         throw new Error("Callback should not run for tampered authenticatedData")
       },
     }),
   ).rejects.toThrow(CryptoError)
 
-  const bobProcessCommitResult = await processPrivateMessageEnsureNoMutation({
+  const bobProcessCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    privateMessage: aliceCommitResult.commit.privateMessage,
+    message: aliceCommitResult.commit,
     callback: (incoming) => {
       if (incoming.kind !== "commit") throw new Error("Expected commit")
       expect(incoming.proposals.map((p) => p.proposal)).toStrictEqual([customProposal])
@@ -260,31 +262,34 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     throw new Error("Expected public message")
 
   const tamperedPublicProposal = {
-    ...bobProposalPublicResult.message.publicMessage,
-    content: {
-      ...bobProposalPublicResult.message.publicMessage.content,
-      authenticatedData: encoder.encode("aad-proposal-public-tampered"),
+    ...bobProposalPublicResult.message,
+    publicMessage: {
+      ...bobProposalPublicResult.message.publicMessage,
+      content: {
+        ...bobProposalPublicResult.message.publicMessage.content,
+        authenticatedData: encoder.encode("aad-proposal-public-tampered"),
+      },
     },
   }
 
   await expect(
-    processPublicMessage({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: aliceGroup,
-      publicMessage: tamperedPublicProposal,
+      message: tamperedPublicProposal,
     }),
   ).rejects.toThrow(CryptoVerificationError)
 
-  const aliceProcessPublicProposalResult = await processPublicMessage({
+  const aliceProcessPublicProposalResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: aliceGroup,
-    publicMessage: bobProposalPublicResult.message.publicMessage,
+    message: bobProposalPublicResult.message,
     callback: (incoming) => {
       if (incoming.kind !== "proposal") throw new Error("Expected proposal")
       expect(incoming.proposal.proposal).toStrictEqual(customProposalPublic)
@@ -314,31 +319,34 @@ async function authenticatedDataScenario(cipherSuite: CiphersuiteName) {
     throw new Error("Expected public message")
 
   const tamperedPublicCommit = {
-    ...alicePublicCommitResult.commit.publicMessage,
-    content: {
-      ...alicePublicCommitResult.commit.publicMessage.content,
-      authenticatedData: encoder.encode("aad-commit-public-tampered"),
+    ...alicePublicCommitResult.commit,
+    publicMessage: {
+      ...alicePublicCommitResult.commit.publicMessage,
+      content: {
+        ...alicePublicCommitResult.commit.publicMessage.content,
+        authenticatedData: encoder.encode("aad-commit-public-tampered"),
+      },
     },
   }
 
   await expect(
-    processPublicMessage({
+    processMessageEnsureNoMutation({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: bobGroup,
-      publicMessage: tamperedPublicCommit,
+      message: tamperedPublicCommit,
     }),
   ).rejects.toThrow(CryptoVerificationError)
 
-  const bobProcessPublicCommitResult = await processPublicMessage({
+  const bobProcessPublicCommitResult = await processMessageEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
-    publicMessage: alicePublicCommitResult.commit.publicMessage,
+    message: alicePublicCommitResult.commit,
     callback: (incoming) => {
       if (incoming.kind !== "commit") throw new Error("Expected commit")
       expect(incoming.proposals.map((p) => p.proposal)).toStrictEqual([customProposalPublic])
