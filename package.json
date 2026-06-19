@@ -67,7 +67,7 @@
     "@noble/hashes": "2.0.1",
     "@noble/post-quantum": "0.6.1",
     "@types/jest": "30.0.0",
-    "@types/node": "^25.0.6",
+    "@types/node": "^26.0.0",
     "@vitest/browser-playwright": "4.0.17",
     "@vitest/coverage-v8": "4.0.17",
     "eslint": "9.39.2",
