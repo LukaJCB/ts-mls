@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",
-    "@grpc/proto-loader": "^0.7.13"
+    "@grpc/proto-loader": "^0.8.1"
   },
   "devDependencies": {
     "@types/node": "^25.0.6",
