@@ -619,6 +619,9 @@ export function getCredentialFromLeafIndex(ratchetTree: RatchetTree, leafIndex: 
 export function getGroupMembers(state: ClientState): LeafNode[];
 
 // @public (undocumented)
+export function getLeafNodeAt(state: ClientState, leafIndex: number): LeafNode;
+
+// @public (undocumented)
 export function getOwnLeafNode(state: ClientState): LeafNode;
 
 // @public (undocumented)
@@ -1160,6 +1163,8 @@ export interface NewStateWithActionTaken {
     consumed: Uint8Array[];
     // (undocumented)
     newState: ClientState;
+    // (undocumented)
+    sender: Sender;
 }
 
 // @public (undocumented)
@@ -1267,12 +1272,14 @@ export type ProcessMessageResult = {
     actionTaken: IncomingMessageAction;
     consumed: Uint8Array[];
     aad: Uint8Array;
+    senderLeafIndex: number | undefined;
 } | {
     kind: "applicationMessage";
     message: Uint8Array;
     newState: ClientState;
     consumed: Uint8Array[];
     aad: Uint8Array;
+    senderLeafIndex: number;
 };
 
 // @public

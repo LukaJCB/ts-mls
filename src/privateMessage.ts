@@ -95,7 +95,7 @@ type PrivateMessageContentCommit = FramedContentCommitData & { auth: FramedConte
 export function privateMessageContentDecoder(contentType: ContentTypeValue): Decoder<PrivateMessageContent> {
   switch (contentType) {
     case contentTypes.application:
-      return rWithPaddingDecoder(
+      return decoderWithPadding(
         mapDecoders([varLenDataDecoder, varLenDataDecoder], (applicationData, signature) => ({
           contentType,
           applicationData,
@@ -103,7 +103,7 @@ export function privateMessageContentDecoder(contentType: ContentTypeValue): Dec
         })),
       )
     case contentTypes.proposal:
-      return rWithPaddingDecoder(
+      return decoderWithPadding(
         mapDecoders([proposalDecoder, varLenDataDecoder], (proposal, signature) => ({
           contentType,
           proposal,
@@ -111,7 +111,7 @@ export function privateMessageContentDecoder(contentType: ContentTypeValue): Dec
         })),
       )
     case contentTypes.commit:
-      return rWithPaddingDecoder(
+      return decoderWithPadding(
         mapDecoders(
           [commitDecoder, varLenDataDecoder, framedContentAuthDataCommitDecoder],
           (commit, signature, auth) => ({
@@ -222,7 +222,7 @@ function encoderWithPadding<T>(encoder: Encoder<T>, config: PaddingConfig): Enco
   }
 }
 
-function rWithPaddingDecoder<T>(decoder: Decoder<T>): Decoder<T> {
+function decoderWithPadding<T>(decoder: Decoder<T>): Decoder<T> {
   return (bytes, offset) => {
     const result = decoder(bytes, offset)
     if (result === undefined) return undefined

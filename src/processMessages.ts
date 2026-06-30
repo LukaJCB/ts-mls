@@ -58,8 +58,16 @@ export type ProcessMessageResult =
       actionTaken: IncomingMessageAction
       consumed: Uint8Array[]
       aad: Uint8Array
+      senderLeafIndex: number | undefined
     }
-  | { kind: "applicationMessage"; message: Uint8Array; newState: ClientState; consumed: Uint8Array[]; aad: Uint8Array }
+  | {
+      kind: "applicationMessage"
+      message: Uint8Array
+      newState: ClientState
+      consumed: Uint8Array[]
+      aad: Uint8Array
+      senderLeafIndex: number
+    }
 
 /**
  * Process private message and apply proposal or commit and return the updated ClientState or return an application message
@@ -110,6 +118,7 @@ export async function processPrivateMessage(params: {
           newState,
           consumed: result.consumed,
           aad: result.content.content.authenticatedData,
+          senderLeafIndex: result.senderLeafIndex,
         }
       } else {
         throw new ValidationError("Cannot process commit or proposal from former epoch")
@@ -138,6 +147,7 @@ export async function processPrivateMessage(params: {
       newState: updatedState,
       consumed: result.consumed,
       aad: result.content.content.authenticatedData,
+      senderLeafIndex: result.senderLeafIndex,
     }
   } else if (result.content.content.contentType === contentTypes.commit) {
     if (result.content.auth.contentType !== result.content.content.contentType)
@@ -159,6 +169,7 @@ export async function processPrivateMessage(params: {
       actionTaken,
       consumed: [...result.consumed, ...consumed],
       aad: result.content.content.authenticatedData,
+      senderLeafIndex: result.senderLeafIndex,
     }
   } else {
     const action = cb({
@@ -175,6 +186,7 @@ export async function processPrivateMessage(params: {
         actionTaken: action,
         consumed: result.consumed,
         aad: result.content.content.authenticatedData,
+        senderLeafIndex: result.senderLeafIndex,
       }
     else
       return {
@@ -188,6 +200,7 @@ export async function processPrivateMessage(params: {
         actionTaken: action,
         consumed: result.consumed,
         aad: result.content.content.authenticatedData,
+        senderLeafIndex: result.senderLeafIndex,
       }
   }
 }
@@ -198,6 +211,7 @@ export interface NewStateWithActionTaken {
   actionTaken: IncomingMessageAction
   consumed: Uint8Array[]
   aad: Uint8Array
+  sender: Sender
 }
 
 /** @public */
@@ -238,6 +252,7 @@ export async function processPublicMessage(params: {
         actionTaken: action,
         consumed: [],
         aad: content.content.authenticatedData,
+        sender: content.content.sender,
       }
     else
       return {
@@ -245,6 +260,7 @@ export async function processPublicMessage(params: {
         actionTaken: action,
         consumed: [],
         aad: content.content.authenticatedData,
+        sender: content.content.sender,
       }
   } else {
     if (content.auth.contentType !== content.content.contentType)
@@ -295,7 +311,13 @@ async function processCommit(
   const action = callback({ kind: "commit", senderLeafIndex, proposals: result.allProposals })
 
   if (action === "reject") {
-    return { newState: state, actionTaken: action, consumed: [], aad: content.authenticatedData }
+    return {
+      newState: state,
+      actionTaken: action,
+      consumed: [],
+      aad: content.authenticatedData,
+      sender: content.sender,
+    }
   }
 
   if (result.selfRemoved) {
@@ -309,6 +331,7 @@ async function processCommit(
       actionTaken: action,
       consumed: [],
       aad: content.authenticatedData,
+      sender: content.sender,
     }
   }
 
@@ -415,6 +438,7 @@ async function processCommit(
     actionTaken: action,
     consumed,
     aad: content.authenticatedData,
+    sender: content.sender,
   }
 }
 
@@ -531,7 +555,7 @@ export async function processMessage(params: {
       callback: action,
     })
 
-    return { ...result, kind: "newState" }
+    return { ...result, kind: "newState", senderLeafIndex: getSenderLeafNodeIndex(result.sender) }
   } else
     return processPrivateMessage({
       context: { cipherSuite: cs, authService, externalPsks, clientConfig },

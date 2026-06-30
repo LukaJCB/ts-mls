@@ -108,6 +108,14 @@ bobGroup = bobProcessMessageResult.newState
 
 // Bob deletes the keys used to decrypt the application message
 bobProcessMessageResult.consumed.forEach(zeroOutUint8Array)
+
+if (bobProcessMessageResult.kind !== "applicationMessage") throw new Error("Expected application message")
+
+//Bob can now read the message
+const receivedMessage = bobProcessMessageResult.message
+
+//Bob can also access the sender's leaf index
+const senderLeafIndex = bobProcessMessageResult.senderLeafIndex
 ```
 
 ---

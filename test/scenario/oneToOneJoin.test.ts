@@ -139,6 +139,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   if (bobProcessMessageResult.kind === "newState") throw new Error("Expected application message")
 
   expect(bobProcessMessageResult.message).toStrictEqual(messageToBob)
+  expect(bobProcessMessageResult.senderLeafIndex).toStrictEqual(0)
 
   const messageToAlice = new TextEncoder().encode("Hello alice!")
 
@@ -171,6 +172,7 @@ async function oneToOne(cipherSuite: CiphersuiteName) {
   if (aliceProcessMessageResult.kind === "newState") throw new Error("Expected application message")
 
   expect(aliceProcessMessageResult.message).toStrictEqual(messageToAlice)
+  expect(aliceProcessMessageResult.senderLeafIndex).toStrictEqual(1)
 
   await checkHpkeKeysMatch(aliceGroup, impl)
   await checkHpkeKeysMatch(bobGroup, impl)

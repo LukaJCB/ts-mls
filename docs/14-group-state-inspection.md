@@ -10,7 +10,8 @@ This scenario demonstrates how to inspect the group state to retrieve informatio
 4. **Inspect Group Members**: Use `getGroupMembers` to retrieve all members in the group.
 5. **Access Own Leaf Node**: Use `getOwnLeafNode` to access your own leaf node information.
 6. **Extract Signature Keys**: Use `getOwnSignatureKeyPair` to extract signature keys for reuse.
-7. **Generate Key Package with Existing Keys**: Use `generateKeyPackageWithKey` to create a new key package with existing signature keys.
+7. **Access Leaf Node by Leafindex**: Use `getLeafNodeAt` to access your leaf node information indexed by leaf index.
+8. **Generate Key Package with Existing Keys**: Use `generateKeyPackageWithKey` to create a new key package with existing signature keys.
 
 ## Key Concepts
 
@@ -27,6 +28,7 @@ import {
   createGroup,
   joinGroup,
   createCommit,
+  createApplicationMessage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
@@ -37,8 +39,10 @@ import {
   getOwnSignatureKeyPair,
   defaultProposalTypes,
   unsafeTestingAuthenticationService,
+  processMessage,
   LeafNode,
   zeroOutUint8Array,
+  getLeafNodeAt,
 } from "ts-mls"
 
 // Setup ciphersuite
@@ -106,7 +110,7 @@ const members = getGroupMembers(aliceGroup)
 // Expected output: alice, bob
 
 // Access own leaf node
-const aliceLeaf = getOwnLeafNode(aliceGroup)
+const bobLeaf = getOwnLeafNode(bobGroup)
 
 // Extract signature key pairs
 const bobKeys = getOwnSignatureKeyPair(bobGroup)
@@ -118,7 +122,27 @@ const bobNewKeyPackage = await generateKeyPackageWithKey({
   cipherSuite: impl,
 })
 
-// Bob can now use this new key package to join another group with the same identity
+// Alice sends Bob a message
+const messageToBob = new TextEncoder().encode("Hello bob!")
+const aliceCreateMessageResult = await createApplicationMessage({
+  context,
+  state: aliceGroup,
+  message: messageToBob,
+})
+aliceGroup = aliceCreateMessageResult.newState
+aliceCreateMessageResult.consumed.forEach(zeroOutUint8Array)
+
+// Bob receives the message
+const bobProcessMessageResult = await processMessage({
+  context,
+  state: bobGroup,
+  message: aliceCreateMessageResult.message,
+})
+bobGroup = bobProcessMessageResult.newState
+bobProcessMessageResult.consumed.forEach(zeroOutUint8Array)
+
+// Bob retrieves the LeafNode from the sender of the message, Alice
+const aliceLeaf = getLeafNodeAt(bobGroup, bobProcessMessageResult.senderLeafIndex!)
 ```
 
 ## Notes

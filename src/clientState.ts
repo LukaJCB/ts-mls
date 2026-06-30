@@ -261,6 +261,15 @@ export function getOwnLeafNode(state: ClientState): LeafNode {
 }
 
 /** @public */
+export function getLeafNodeAt(state: ClientState, leafIndex: number): LeafNode {
+  const idx = leafToNodeIndex(toLeafIndex(leafIndex))
+  const leaf = state.ratchetTree[idx]
+  if (!leaf) throw new UsageError("No leaf at given leafIndex")
+  if (leaf.nodeType !== nodeTypes.leaf) throw new InternalError("Expected leaf node")
+  return leaf.leaf
+}
+
+/** @public */
 export interface SignatureKeyPair {
   signKey: Uint8Array
   publicKey: Uint8Array
