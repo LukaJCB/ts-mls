@@ -197,6 +197,7 @@ async function addMember(memberStates: MemberState[], index: number, impl: Ciphe
       state: m.state,
       message: commitResult.commit,
     })
+    expect(result.senderLeafIndex).toStrictEqual(adderIndex)
 
     m.state = result.newState
   }
@@ -233,6 +234,7 @@ async function update(memberStates: MemberState[], updateIndex: number, impl: Ci
       state: m.state,
       message: emptyCommitResult.commit,
     })
+    expect(result.senderLeafIndex).toStrictEqual(updateIndex)
 
     m.state = result.newState
   }

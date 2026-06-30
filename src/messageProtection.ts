@@ -217,6 +217,7 @@ interface UnprotectResult {
   content: AuthenticatedContent
   tree: SecretTree
   consumed: Uint8Array[]
+  senderLeafIndex: number
 }
 
 export async function unprotectPrivateMessage(
@@ -274,7 +275,7 @@ export async function unprotectPrivateMessage(
 
   if (!signatureValid) throw new CryptoVerificationError("Signature invalid")
 
-  return { tree: newTree, content, consumed }
+  return { tree: newTree, content, consumed, senderLeafIndex: senderData.leafIndex }
 }
 
 function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {

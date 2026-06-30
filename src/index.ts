@@ -30,6 +30,7 @@ export {
   getOwnSignatureKeyPair,
   getOwnLeafNode,
   getGroupMembers,
+  getLeafNodeAt,
   type ClientState,
   type SignatureKeyPair,
   type CreateGroupParams,

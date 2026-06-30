@@ -16,6 +16,10 @@ export async function testEveryoneCanMessageEveryone(
   const encoder = new TextEncoder()
   const updatedGroups = [...clients]
 
+  const leafIndices = new Set(clients.map((c) => c.privatePath.leafIndex))
+
+  if (leafIndices.size !== clients.length) throw new Error("Client with same leafnode index detected")
+
   for (const [senderIndex, senderState] of updatedGroups.entries()) {
     const messageText = `Hello from member ${senderIndex}`
     const encodedMessage = encoder.encode(messageText)
@@ -44,6 +48,7 @@ export async function testEveryoneCanMessageEveryone(
       }
 
       expect(result.message).toStrictEqual(encodedMessage)
+      expect(result.senderLeafIndex).toStrictEqual(senderState.privatePath.leafIndex)
 
       updatedGroups[receiverIndex] = result.newState
     }
