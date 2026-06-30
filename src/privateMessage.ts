@@ -80,9 +80,7 @@ export const privateContentAADDecoder: Decoder<PrivateContentAAD> = mapDecoders(
 )
 
 export type PrivateMessageContent =
-  | PrivateMessageContentApplication
-  | PrivateMessageContentProposal
-  | PrivateMessageContentCommit
+  PrivateMessageContentApplication | PrivateMessageContentProposal | PrivateMessageContentCommit
 
 type PrivateMessageContentApplication = FramedContentApplicationData & {
   auth: FramedContentAuthDataApplicationOrProposal

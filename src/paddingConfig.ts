@@ -1,7 +1,6 @@
 /** @public */
 export type PaddingConfig =
-  | { kind: "padUntilLength"; padUntilLength: number }
-  | { kind: "alwaysPad"; paddingLength: number }
+  { kind: "padUntilLength"; padUntilLength: number } | { kind: "alwaysPad"; paddingLength: number }
 
 /** @public */
 export const defaultPaddingConfig: PaddingConfig = { kind: "padUntilLength", padUntilLength: 256 }
