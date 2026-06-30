@@ -5,9 +5,7 @@ import { Reinit, reinitEncoder, reinitDecoder } from "./proposal.js"
 
 /** @public */
 export type GroupActiveState =
-  | { kind: "active" }
-  | { kind: "suspendedPendingReinit"; reinit: Reinit }
-  | { kind: "removedFromGroup" }
+  { kind: "active" } | { kind: "suspendedPendingReinit"; reinit: Reinit } | { kind: "removedFromGroup" }
 const activeEncoder: Encoder<GroupActiveState> = contramapBufferEncoder(stringEncoder, () => "active")
 const suspendedPendingReinitEncoder: Encoder<{ kind: "suspendedPendingReinit"; reinit: Reinit }> =
   contramapBufferEncoders([stringEncoder, reinitEncoder], (s) => ["suspendedPendingReinit", s.reinit] as const)

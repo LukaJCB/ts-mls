@@ -161,8 +161,7 @@ export type FramedContentAuthDataApplicationOrProposal = {
   signature: Uint8Array
 } & FramedContentAuthDataContentApplicationOrProposal
 type FramedContentAuthDataContent =
-  | FramedContentAuthDataContentCommit
-  | FramedContentAuthDataContentApplicationOrProposal
+  FramedContentAuthDataContentCommit | FramedContentAuthDataContentApplicationOrProposal
 /** @public */
 export type FramedContentAuthDataContentCommit = {
   contentType: typeof contentTypes.commit
