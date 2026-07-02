@@ -4,12 +4,16 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 2
     target-branch: "main"
 
   - package-ecosystem: "npm"
     directory: "interop/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 2
     target-branch: "main"
 
   - package-ecosystem: "github-actions"
@@ -22,6 +26,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 2
     target-branch: "1.x"
 
   - package-ecosystem: "github-actions"
