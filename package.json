@@ -78,7 +78,7 @@
     "typescript": "6.0.3",
     "typescript-docs-verifier": "3.0.2",
     "typescript-eslint": "8.62.1",
-    "vitest": "4.1.9"
+    "vitest": "4.1.10"
   },
   "repository": {
     "type": "git",
