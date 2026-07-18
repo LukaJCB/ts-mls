@@ -49,6 +49,7 @@ const credentialCustomEncoder: Encoder<CredentialCustom> = contramapBufferEncode
   (c) => [c.credentialType, c.data] as const,
 )
 
+/** @public */
 export const credentialEncoder: Encoder<Credential> = (c) => {
   if (!isDefaultCredential(c)) return credentialCustomEncoder(c)
 
@@ -74,6 +75,7 @@ function credentialCustomDecoder(credentialType: number): Decoder<CredentialCust
   return mapDecoder(varLenDataDecoder, (data) => ({ credentialType, data }))
 }
 
+/** @public */
 export const credentialDecoder: Decoder<Credential> = flatMapDecoder(
   uint16Decoder,
   (credentialType): Decoder<Credential> => {
