@@ -101,6 +101,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
       hexToBytes(senderLeafState.signature_priv),
       impl,
       [],
+      [],
     )
 
     const rootSecret = newSecrets.slice().pop()!

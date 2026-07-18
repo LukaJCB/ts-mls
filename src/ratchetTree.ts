@@ -196,8 +196,7 @@ export function addLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode)
   return blankLeaf
 }
 
-export function updateLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode, leafIndex: LeafIndex): void {
-  const leafNodeIndex = leafToNodeIndex(leafIndex)
+export function updateLeafNodeMutable(mutableTree: RatchetTree, leafNode: LeafNode, leafNodeIndex: NodeIndex): void {
   const pathToBlank = directPath(leafNodeIndex, leafWidth(mutableTree.length))
 
   for (const nodeIndex of pathToBlank) {

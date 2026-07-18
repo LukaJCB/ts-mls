@@ -1,5 +1,4 @@
-import { checkCanSendApplicationMessages, ClientState, getOwnLeafNode, processProposal } from "./clientState.js"
-import { LeafNodeExtension } from "./extension.js"
+import { checkCanSendApplicationMessages, ClientState, getOwnLeafNode, saveProposal } from "./clientState.js"
 import { LeafNodeTBSUpdate, signLeafNodeUpdate } from "./leafNode.js"
 import { leafNodeSources } from "./leafNodeSource.js"
 import { MlsFramedMessage } from "./message.js"
@@ -13,6 +12,7 @@ import { wireformats } from "./wireformat.js"
 import type { MlsContext } from "./mlsContext.js"
 import { defaultClientConfig } from "./clientConfig.js"
 import { InternalError } from "./mlsError.js"
+import { LeafNodePatch } from "./leafNodePatch.js"
 
 /** @public */
 export interface CreateMessageResult {
@@ -48,7 +48,7 @@ export async function createProposal(params: {
       state.privatePath.leafIndex,
       cs,
     )
-    const newState = await processProposal(
+    const newState = await saveProposal(
       state,
       {
         content: result.publicMessage.content,
@@ -122,7 +122,7 @@ export async function createUpdateProposal(params: {
   state: ClientState
   wireAsPublicMessage?: boolean
   authenticatedData?: Uint8Array
-  leafNodeExtensions?: LeafNodeExtension[]
+  leafNodePatch?: LeafNodePatch
 }): Promise<CreateUpdateProposalResult> {
   const { context, state } = params
   const cs = context.cipherSuite
@@ -137,14 +137,18 @@ export async function createUpdateProposal(params: {
   const tbs: LeafNodeTBSUpdate = {
     leafNodeSource: leafNodeSources.update,
     hpkePublicKey,
-    signaturePublicKey: ownLeaf.signaturePublicKey,
-    credential: ownLeaf.credential,
-    capabilities: ownLeaf.capabilities,
-    extensions: params.leafNodeExtensions ?? ownLeaf.extensions,
+    signaturePublicKey: params.leafNodePatch?.signatureKeyPair?.publicKey ?? ownLeaf.signaturePublicKey,
+    credential: params.leafNodePatch?.credential ?? ownLeaf.credential,
+    capabilities: params.leafNodePatch?.capabilities ?? ownLeaf.capabilities,
+    extensions: params.leafNodePatch?.extensions ?? ownLeaf.extensions,
     groupId: state.groupContext.groupId,
     leafIndex: state.privatePath.leafIndex,
   }
-  const leafNode = await signLeafNodeUpdate(tbs, state.signaturePrivateKey, cs.signature)
+  const leafNode = await signLeafNodeUpdate(
+    tbs,
+    params.leafNodePatch?.signatureKeyPair?.signKey ?? state.signaturePrivateKey,
+    cs.signature,
+  )
   const proposal: Proposal = {
     proposalType: defaultProposalTypes.update,
     update: { leafNode },

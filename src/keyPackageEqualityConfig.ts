@@ -1,5 +1,4 @@
-import { encode } from "./codec/tlsEncoder.js"
-import { credentialEncoder } from "./credential.js"
+import { credentialEquals } from "./credential.js"
 import { KeyPackage } from "./keyPackage.js"
 import { LeafNode } from "./leafNode.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
@@ -17,6 +16,6 @@ export const defaultKeyPackageEqualityConfig: KeyPackageEqualityConfig = {
   },
   compareKeyPackageToLeafNode(a, b) {
     if (constantTimeEqual(a.leafNode.signaturePublicKey, b.signaturePublicKey)) return true
-    return constantTimeEqual(encode(credentialEncoder, a.leafNode.credential), encode(credentialEncoder, b.credential))
+    return credentialEquals(a.leafNode.credential, b.credential)
   },
 }

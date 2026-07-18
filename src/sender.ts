@@ -12,6 +12,7 @@ import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
 import { ContentTypeValue, contentTypeEncoder, contentTypeDecoder } from "./contentType.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { expandWithLabel } from "./crypto/kdf.js"
+import { LeafIndex, toLeafIndex } from "./treemath.js"
 import { numberToEnum } from "./util/enumHelpers.js"
 
 /** @public */
@@ -106,8 +107,8 @@ export const senderDecoder: Decoder<Sender> = flatMapDecoder(senderTypeDecoder, 
   }
 })
 
-export function getSenderLeafNodeIndex(sender: Sender): number | undefined {
-  return sender.senderType === senderTypes.member ? sender.leafIndex : undefined
+export function getSenderLeafNodeIndex(sender: Sender): LeafIndex | undefined {
+  return sender.senderType === senderTypes.member ? toLeafIndex(sender.leafIndex) : undefined
 }
 
 export interface SenderData {

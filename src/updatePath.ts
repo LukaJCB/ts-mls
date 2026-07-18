@@ -29,6 +29,7 @@ import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { bytesToBase64 } from "./util/byteArray.js"
 import { hpkeCiphertextDecoder, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
 import { InternalError, ValidationError } from "./mlsError.js"
+import { LeafNodePatch } from "./leafNodePatch.js"
 
 /** @public */
 export interface UpdatePathNode {
@@ -75,7 +76,8 @@ export async function createUpdatePath(
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
   mutableTreeHashCache: TreeHashCache,
-  excludeNodes: NodeIndex[] = [],
+  excludeNodes: NodeIndex[],
+  patch?: LeafNodePatch,
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey, Uint8Array]> {
   const originalLeafNode = mutableTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === nodeTypes.parent)
@@ -105,17 +107,20 @@ export async function createUpdatePath(
   const updatedLeafNodeTbs: LeafNodeTBSCommit = {
     leafNodeSource: leafNodeSources.commit,
     hpkePublicKey: await cs.hpke.exportPublicKey(leafKeypair.publicKey),
-    extensions: originalLeafNode.leaf.extensions,
-    capabilities: originalLeafNode.leaf.capabilities,
-    credential: originalLeafNode.leaf.credential,
-    signaturePublicKey: originalLeafNode.leaf.signaturePublicKey,
+    extensions: patch?.extensions ?? originalLeafNode.leaf.extensions,
+    capabilities: patch?.capabilities ?? originalLeafNode.leaf.capabilities,
+    credential: patch?.credential ?? originalLeafNode.leaf.credential,
+    signaturePublicKey: patch?.signatureKeyPair?.publicKey ?? originalLeafNode.leaf.signaturePublicKey,
     parentHash: leafParentHash[0],
     groupId: groupContext.groupId,
     leafIndex: senderLeafIndex,
   }
 
-  const updatedLeafNode = await signLeafNodeCommit(updatedLeafNodeTbs, signaturePrivateKey, cs.signature)
+  const signKey = patch?.signatureKeyPair?.signKey ?? signaturePrivateKey
 
+  const updatedLeafNode = await signLeafNodeCommit(updatedLeafNodeTbs, signKey, cs.signature)
+
+  //when creating an updatepath we can't blank the nodes until after we have encrypted the new path secrets, otherwise the old values will be GC'd
   mutableTree[leafToNodeIndex(senderLeafIndex)] = {
     nodeType: nodeTypes.leaf,
     leaf: updatedLeafNode,

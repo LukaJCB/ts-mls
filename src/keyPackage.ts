@@ -25,6 +25,7 @@ import { Credential } from "./credential.js"
 import { defaultCapabilities } from "./defaultCapabilities.js"
 import { uint16Decoder, uint16Encoder } from "./codec/number.js"
 import { defaultGreaseConfig, greaseExtensions } from "./grease.js"
+import { SignatureKeyPair } from "./signatureKeyPair.js"
 
 /** @public */
 export type KeyPackageTBS = {
@@ -126,7 +127,7 @@ export interface GenerateKeyPackageWithKeyParams {
   capabilities?: Capabilities
   lifetime?: Lifetime
   extensions?: CustomExtension[]
-  signatureKeyPair: { signKey: Uint8Array; publicKey: Uint8Array }
+  signatureKeyPair: SignatureKeyPair
   cipherSuite: CiphersuiteImpl
   leafNodeExtensions?: LeafNodeExtension[]
 }

@@ -12,10 +12,9 @@ export type ProtocolVersionName = keyof typeof protocolVersions
 /** @public */
 export type ProtocolVersionValue = (typeof protocolVersions)[ProtocolVersionName]
 
-const protocolVersionValues = new Set<number>(Object.values(protocolVersions))
-
 export const protocolVersionEncoder: Encoder<ProtocolVersionValue> = uint16Encoder
 
-export const protocolVersionDecoder: Decoder<ProtocolVersionValue> = mapDecoderOption(uint16Decoder, (v) =>
-  protocolVersionValues.has(v) ? (v as ProtocolVersionValue) : undefined,
+export const protocolVersionDecoder: Decoder<ProtocolVersionValue> = mapDecoderOption(
+  uint16Decoder,
+  (v) => v as ProtocolVersionValue,
 )

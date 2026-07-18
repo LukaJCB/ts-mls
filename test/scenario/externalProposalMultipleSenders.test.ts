@@ -86,9 +86,15 @@ async function externalProposalMultipleSendersTest(cipherSuite: CiphersuiteName)
 
   const groupInfo = await createGroupInfoWithExternalPub(aliceGroup, [], impl)
 
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
+  const charlie = await generateKeyPackage({ credential: charlieCredential, cipherSuite: impl })
+
   const proposal: Proposal = {
     proposalType: defaultProposalTypes.add,
-    add: { keyPackage: bob.publicPackage },
+    add: { keyPackage: charlie.publicPackage },
   }
 
   // Author the external proposal as the *second* external signer.

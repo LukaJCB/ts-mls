@@ -5,10 +5,14 @@ import {
   makePskIndex,
   nextEpochContext,
   processProposal,
-  throwIfDefined,
-  validateLeafNodeCredentialAndKeyUniqueness,
-  validateLeafNodeUpdateOrCommit,
 } from "./clientState.js"
+import {
+  NewLeafNodeWithSender,
+  throwIfDefined,
+  validateKeyPackage,
+  validateLeafNodeCredentialAndKeyUniquenesss,
+  validateLeafNodeUpdateOrCommit,
+} from "./validation.js"
 import { GroupActiveState } from "./groupActiveState.js"
 import { applyUpdatePathSecret } from "./createCommit.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
@@ -49,6 +53,14 @@ import { contentTypes } from "./contentType.js"
 import { AuthenticationService } from "./authenticationService.js"
 import type { MlsContext } from "./mlsContext.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
+import { defaultLifetimeConfig } from "./lifetimeConfig.js"
+import { KeyPackage } from "./keyPackage.js"
+import { ProposalAdd } from "./proposal.js"
+import { defaultProposalTypes } from "./defaultProposalType.js"
+import { defaultKeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
+import { nodeTypes } from "./nodeType.js"
+import { ExtensionRequiredCapabilities } from "./extension.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -195,7 +207,11 @@ export async function processPrivateMessage(params: {
           updatedState,
           result.content,
           result.content.content.proposal,
-          cipherSuite.hash,
+          toLeafIndex(result.senderLeafIndex),
+          context.clientConfig?.lifetimeConfig ?? defaultLifetimeConfig,
+          context.clientConfig?.keyPackageEqualityConfig ?? defaultKeyPackageEqualityConfig,
+          context.authService,
+          cipherSuite,
         ),
         actionTaken: action,
         consumed: result.consumed,
@@ -256,7 +272,16 @@ export async function processPublicMessage(params: {
       }
     else
       return {
-        newState: await processProposal(state, content, content.content.proposal, cipherSuite.hash),
+        newState: await processProposal(
+          state,
+          content,
+          content.content.proposal,
+          getSenderLeafNodeIndex(content.content.sender),
+          context.clientConfig?.lifetimeConfig ?? defaultLifetimeConfig,
+          context.clientConfig?.keyPackageEqualityConfig ?? defaultKeyPackageEqualityConfig,
+          context.authService,
+          cipherSuite,
+        ),
         actionTaken: action,
         consumed: [],
         aad: content.content.authenticatedData,
@@ -343,17 +368,45 @@ async function processCommit(
     if (committerLeafIndex === undefined)
       throw new ValidationError("Cannot verify commit leaf node because no commiter leaf index found")
 
+    const oldLeafNode =
+      result.additionalResult.kind !== "externalCommit"
+        ? (() => {
+            const leafNodeIndex = leafToNodeIndex(committerLeafIndex)
+            const oldLeafNode = state.ratchetTree[leafNodeIndex]
+            if (oldLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Tried to update a non-leaf node")
+            return oldLeafNode.leaf
+          })()
+        : undefined
+
     throwIfDefined(
       await validateLeafNodeUpdateOrCommit(
         content.commit.path.leafNode,
         committerLeafIndex,
+        oldLeafNode,
         state.groupContext,
         authService,
         cs.signature,
       ),
     )
+
+    const withSender: NewLeafNodeWithSender = {
+      kind: "update",
+      leafNode: content.commit.path.leafNode,
+      senderLeafIndex: committerLeafIndex,
+    }
+    //TODO should these be checked with existing groupContext.extensions or after the group_context_extensions proposal is applied?
+    const requiredCapabilities = state.groupContext.extensions.find(
+      (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
+    )
+
+    //TODO perhaps here we need to check this: Verify that none of the public keys in the UpdatePath appear in any node of the new ratchet tree.
     throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniqueness(mutableTree, content.commit.path.leafNode, committerLeafIndex),
+      await validateLeafNodeCredentialAndKeyUniquenesss(
+        mutableTree,
+        [withSender],
+        clientConfig.keyPackageEqualityConfig,
+        requiredCapabilities,
+      ),
     )
   }
 
@@ -563,4 +616,25 @@ export async function processMessage(params: {
       privateMessage: message.privateMessage,
       callback: action,
     })
+}
+
+export async function processKeyPackage(params: {
+  context: MlsContext
+  state: ClientState
+  keyPackage: KeyPackage
+}): Promise<ProposalAdd> {
+  throwIfDefined(
+    await validateKeyPackage(
+      params.keyPackage,
+      params.state.groupContext,
+      false,
+      params.context.clientConfig?.lifetimeConfig ?? defaultLifetimeConfig,
+      params.context.authService,
+      params.context.cipherSuite.signature,
+    ),
+  )
+  return {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: params.keyPackage },
+  }
 }

@@ -1,5 +1,5 @@
-import { createGroup, joinGroup } from "../../src/clientState.js"
-import { Credential } from "../../src/credential.js"
+import { createGroup, getOwnLeafNode, joinGroup } from "../../src/clientState.js"
+import { Credential, credentialEquals } from "../../src/credential.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { CiphersuiteName, ciphersuites } from "../../src/crypto/ciphersuite.js"
 import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
@@ -15,6 +15,14 @@ import {
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { generateSignatureKeyPair } from "../../src/signatureKeyPair.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
+import { defaultCapabilities } from "../../src/defaultCapabilities.js"
+import { fastEqual } from "../../src/util/byteArray.js"
+import { encode, ValidationError } from "../../src/index.js"
+import { capabilitiesEncoder } from "../../src/capabilities.js"
+import { varLenTypeEncoder } from "../../src/codec/variableLength.js"
+import { extensionEncoder } from "../../src/extension.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Update %s`, async (cs) => {
   await update(cs as CiphersuiteName)
 })
@@ -104,18 +112,93 @@ async function update(cipherSuite: CiphersuiteName) {
 
   bobGroup = bobProcessCommitResult.newState
 
-  const emptyCommitResult3 = await createCommitEnsureNoMutation({
+  const bobNewSignatureKeys = await generateSignatureKeyPair(impl)
+
+  const bobOldLeafNode = getOwnLeafNode(bobGroup)
+
+  //bob creates a leafNode patch to update his signature key extensions, credential and capabilities
+  const bobLeafNodePatch = {
+    signatureKeyPair: bobNewSignatureKeys,
+    extensions: [
+      {
+        extensionType: defaultExtensionTypes.application_id,
+        extensionData: new Uint8Array(42),
+      },
+    ],
+    credential: {
+      credentialType: defaultCredentialTypes.basic,
+      identity: new TextEncoder().encode("bobby"),
+    },
+    capabilities: { ...defaultCapabilities(), extensions: [0xf000] },
+  }
+
+  const emptyCommitResult2 = await createCommitEnsureNoMutation({
     context: {
       cipherSuite: impl,
       authService: unsafeTestingAuthenticationService,
     },
     state: bobGroup,
+    leafNodePatch: bobLeafNodePatch,
   })
 
-  if (emptyCommitResult3.commit.wireformat !== wireformats.mls_private_message)
+  bobGroup = emptyCommitResult2.newState
+
+  if (emptyCommitResult2.commit.wireformat !== wireformats.mls_private_message)
     throw new Error("Expected private message")
 
-  bobGroup = emptyCommitResult3.newState
+  const bobNewLeafNode = getOwnLeafNode(bobGroup)
+
+  expect(fastEqual(bobNewLeafNode.hpkePublicKey, bobOldLeafNode.hpkePublicKey)).toBe(false)
+  expect(fastEqual(bobNewLeafNode.signaturePublicKey, bobOldLeafNode.signaturePublicKey)).toBe(false)
+  expect(fastEqual(bobNewLeafNode.signaturePublicKey, bobNewSignatureKeys.publicKey)).toBe(true)
+  expect(fastEqual(bobGroup.signaturePrivateKey, bobNewSignatureKeys.signKey)).toBe(true)
+  expect(credentialEquals(bobOldLeafNode.credential, bobNewLeafNode.credential)).toBe(false)
+  expect(credentialEquals(bobNewLeafNode.credential, bobLeafNodePatch.credential)).toBe(true)
+  expect(
+    fastEqual(
+      encode(capabilitiesEncoder, bobOldLeafNode.capabilities),
+      encode(capabilitiesEncoder, bobNewLeafNode.capabilities),
+    ),
+  ).toBe(false)
+  expect(
+    fastEqual(
+      encode(capabilitiesEncoder, bobNewLeafNode.capabilities),
+      encode(capabilitiesEncoder, bobLeafNodePatch.capabilities),
+    ),
+  ).toBe(true)
+  expect(
+    fastEqual(
+      encode(varLenTypeEncoder(extensionEncoder), bobOldLeafNode.extensions),
+      encode(varLenTypeEncoder(extensionEncoder), bobNewLeafNode.extensions),
+    ),
+  ).toBe(false)
+  expect(
+    fastEqual(
+      encode(varLenTypeEncoder(extensionEncoder), bobNewLeafNode.extensions),
+      encode(varLenTypeEncoder(extensionEncoder), bobLeafNodePatch.extensions),
+    ),
+  ).toBe(true)
+
+  //if alice doesn't deem bobby a valid successor to bob, the commit is invalid
+  const badAuthService = {
+    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<boolean> {
+      return true
+    },
+    async validateSuccessorCredential(_oldCredential: Credential, _newCredential: Credential): Promise<boolean> {
+      return false
+    },
+  }
+
+  await expect(async () =>
+    processMessageEnsureNoMutation({
+      context: {
+        cipherSuite: impl,
+        authService: badAuthService,
+      },
+      state: aliceGroup,
+      message: emptyCommitResult2.commit,
+    }),
+  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one"))
 
   const aliceProcessCommitResult3 = await processMessageEnsureNoMutation({
     context: {
@@ -123,7 +206,7 @@ async function update(cipherSuite: CiphersuiteName) {
       authService: unsafeTestingAuthenticationService,
     },
     state: aliceGroup,
-    message: emptyCommitResult3.commit,
+    message: emptyCommitResult2.commit,
   })
 
   aliceGroup = aliceProcessCommitResult3.newState
