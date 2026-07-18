@@ -291,6 +291,12 @@ export interface CredentialCustom {
 }
 
 // @public (undocumented)
+export const credentialDecoder: Decoder<Credential_2>;
+
+// @public (undocumented)
+export const credentialEncoder: Encoder<Credential_2>;
+
+// @public (undocumented)
 export interface CredentialX509 {
     // (undocumented)
     certificates: Uint8Array[];

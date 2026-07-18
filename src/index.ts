@@ -327,6 +327,8 @@ export {
   type CredentialCustom,
   type CredentialX509,
   type DefaultCredential,
+  credentialEncoder,
+  credentialDecoder,
   isDefaultCredential,
 } from "./credential.js"
 
