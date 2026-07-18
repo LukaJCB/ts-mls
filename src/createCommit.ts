@@ -1,4 +1,5 @@
-import { addHistoricalReceiverData, makePskIndex, throwIfDefined, validateRatchetTree } from "./clientState.js"
+import { addHistoricalReceiverData, makePskIndex } from "./clientState.js"
+import { throwIfDefined, validateRatchetTree } from "./validation.js"
 import { AuthenticatedContentCommit } from "./authenticatedContent.js"
 import {
   ClientState,
@@ -69,6 +70,7 @@ import { ExtensionExternalPub, extensionsSupportedByCapabilities, GroupInfoExten
 import { encode } from "./codec/tlsEncoder.js"
 import { wireformats } from "./wireformat.js"
 import { MlsContext } from "./mlsContext.js"
+import { LeafNodePatch } from "./leafNodePatch.js"
 
 /** @public */
 export interface CreateCommitResult {
@@ -85,6 +87,7 @@ export interface CreateCommitOptions {
   ratchetTreeExtension?: boolean
   groupInfoExtensions?: GroupInfoExtension[]
   authenticatedData?: Uint8Array
+  leafNodePatch?: LeafNodePatch
 }
 
 /** @public */
@@ -129,9 +132,11 @@ export async function createCommitInternal(
 
   if (res.additionalResult.kind === "externalCommit") throw new UsageError("Cannot create externalCommit as a member")
 
+  const needsUpdatePath = res.needsUpdatePath || options.leafNodePatch !== undefined
+
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
-  const touchedLeaves: LeafIndex[] = res.needsUpdatePath
+  const touchedLeaves: LeafIndex[] = needsUpdatePath
     ? [...res.updatedLeaves, ...res.removedLeaves, toLeafIndex(state.privatePath.leafIndex)]
     : [...res.updatedLeaves, ...res.removedLeaves]
   const treeHashCache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touchedLeaves)
@@ -148,15 +153,18 @@ export async function createCommitInternal(
       ? res.additionalResult.addedLeafNodes.map(([leafIndex]) => leafToNodeIndex(leafIndex))
       : []
 
-  const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = res.needsUpdatePath
+  const signKey = params.leafNodePatch?.signatureKeyPair?.signKey ?? state.signaturePrivateKey
+
+  const [tree, updatePath, pathSecrets, newPrivateKey, precomputedTreeHash] = needsUpdatePath
     ? await createUpdatePath(
         mutableTree,
         toLeafIndex(state.privatePath.leafIndex),
         groupContextWithExtensions,
-        state.signaturePrivateKey,
+        signKey,
         cipherSuite,
         treeHashCache,
         excludeNodes,
+        options.leafNodePatch,
       )
     : [mutableTree, undefined, [] as PathSecret[], undefined, undefined]
 
@@ -256,7 +264,7 @@ export async function createCommitInternal(
     unappliedProposals: {},
     historicalReceiverData,
     confirmationTag,
-    signaturePrivateKey: state.signaturePrivateKey,
+    signaturePrivateKey: signKey,
     groupActiveState,
     treeHashCache,
   }
@@ -628,6 +636,7 @@ export async function joinGroupExternal(params: {
     privateKeys.signaturePrivateKey,
     cs,
     externalTreeHashCache,
+    [],
   )
 
   const privateKeyPath = updateLeafKey(

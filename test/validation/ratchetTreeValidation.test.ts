@@ -1,4 +1,5 @@
-import { createGroup, validateRatchetTree } from "../../src/clientState.js"
+import { createGroup, joinGroup } from "../../src/clientState.js"
+import { validateRatchetTree } from "../../src/validation.js"
 import {
   generateKeyPackage as generateKeyPackageBase,
   generateKeyPackageWithKey as generateKeyPackageWithKeyBase,
@@ -10,7 +11,7 @@ import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
 import { ratchetTreeEncoder, RatchetTree, addLeafNodeMutable } from "../../src/ratchetTree.js"
 import { GroupContext } from "../../src/groupContext.js"
 import { defaultLifetimeConfig } from "../../src/lifetimeConfig.js"
-import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import { AuthenticationService, unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 
 import { Proposal } from "../../src/proposal.js"
 import {
@@ -32,6 +33,7 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { nodeTypes } from "../../src/nodeType.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+import { processKeyPackage, processMessage } from "../../src/processMessages.js"
 
 type CommitContext = MlsContext & { state: ClientState }
 
@@ -528,24 +530,15 @@ async function testInvalidKeyPackageSignature(cipherSuite: CiphersuiteName) {
   // create an add proposal with a tampered keypackage signature
   bob.publicPackage.signature[0] = (bob.publicPackage.signature[0]! + 1) & 0xff
 
-  const addBobProposal: Proposal = {
-    proposalType: defaultProposalTypes.add,
-    add: {
-      keyPackage: bob.publicPackage,
-    },
-  }
-
   await expect(
-    createCommit(
-      {
-        state: aliceGroup,
+    processKeyPackage({
+      context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
-      {
-        extraProposals: [addBobProposal],
-      },
-    ),
+      state: aliceGroup,
+      keyPackage: bob.publicPackage,
+    }),
   ).rejects.toThrow(new CryptoVerificationError("Invalid keypackage signature"))
 }
 
@@ -560,8 +553,10 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
 
   const groupId = new TextEncoder().encode("group1")
 
-  const aliceGroup = await createGroup({
-    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
+
+  let aliceGroup = await createGroup({
+    context,
     groupId,
     keyPackage: alice.publicPackage,
     privateKeyPackage: alice.privatePackage,
@@ -573,9 +568,6 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
   }
   const bob = await generateDefaultKeyPackage(bobCredential, impl)
 
-  // tamper with the KeyPackage cipherSuite id to mismatch the group's cipher suite
-  bob.publicPackage.cipherSuite = 0xffff
-
   const addBobProposal: Proposal = {
     proposalType: defaultProposalTypes.add,
     add: {
@@ -583,18 +575,57 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
     },
   }
 
-  await expect(
-    createCommit(
-      {
-        state: aliceGroup,
-        cipherSuite: impl,
-        authService: unsafeTestingAuthenticationService,
-      },
-      {
-        extraProposals: [addBobProposal],
-      },
-    ),
-  ).rejects.toThrow(new ValidationError("Invalid CipherSuite"))
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
+
+  aliceGroup = addBobCommitResult.newState
+
+  const bobGroup = await joinGroup({
+    context,
+    welcome: addBobCommitResult.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
+
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
+  const charlie = await generateDefaultKeyPackage(charlieCredential, impl)
+
+  const addCharlieProposal: Proposal = {
+    proposalType: defaultProposalTypes.add,
+    add: {
+      keyPackage: charlie.publicPackage,
+    },
+  }
+
+  // tamper with the KeyPackage cipherSuite id to mismatch the group's cipher suite
+  charlie.publicPackage.cipherSuite = 0xffff
+
+  const createInvalidCommit = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    {
+      extraProposals: [addCharlieProposal],
+    },
+  )
+
+  await expect(processMessage({ context, state: bobGroup, message: createInvalidCommit.commit })).rejects.toThrow(
+    new ValidationError("Invalid CipherSuite"),
+  )
 }
 
 async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
@@ -607,9 +638,10 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
   const alice = await generateDefaultKeyPackage(aliceCredential, impl)
 
   const groupId = new TextEncoder().encode("group1")
+  const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 
-  const aliceGroup = await createGroup({
-    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+  let aliceGroup = await createGroup({
+    context,
     groupId,
     keyPackage: alice.publicPackage,
     privateKeyPackage: alice.privatePackage,
@@ -621,9 +653,6 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
   }
   const bob = await generateDefaultKeyPackage(bobCredential, impl)
 
-  // tamper with the KeyPackage version id to mismatch the group's version
-  bob.publicPackage.version = 0xffff as ProtocolVersionValue
-
   const addBobProposal: Proposal = {
     proposalType: defaultProposalTypes.add,
     add: {
@@ -631,18 +660,57 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
     },
   }
 
-  await expect(
-    createCommit(
-      {
-        state: aliceGroup,
-        cipherSuite: impl,
-        authService: unsafeTestingAuthenticationService,
-      },
-      {
-        extraProposals: [addBobProposal],
-      },
-    ),
-  ).rejects.toThrow(new ValidationError("Invalid mls version"))
+  const addBobCommitResult = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    {
+      extraProposals: [addBobProposal],
+    },
+  )
+
+  aliceGroup = addBobCommitResult.newState
+
+  const bobGroup = await joinGroup({
+    context,
+    welcome: addBobCommitResult.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
+
+  const charlieCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("charlie"),
+  }
+  const charlie = await generateDefaultKeyPackage(charlieCredential, impl)
+
+  const addCharlieProposal: Proposal = {
+    proposalType: defaultProposalTypes.add,
+    add: {
+      keyPackage: charlie.publicPackage,
+    },
+  }
+
+  // tamper with the KeyPackage version id to mismatch the group's version
+  charlie.publicPackage.version = 2 as ProtocolVersionValue
+
+  const createInvalidCommit = await createCommit(
+    {
+      state: aliceGroup,
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+    },
+    {
+      extraProposals: [addCharlieProposal],
+    },
+  )
+
+  await expect(processMessage({ context, state: bobGroup, message: createInvalidCommit.commit })).rejects.toThrow(
+    new ValidationError("Invalid mls version"),
+  )
 }
 
 async function testInvalidCredential(cipherSuite: CiphersuiteName) {
@@ -702,8 +770,11 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
   const tree = ratchetTreeFromExtension(groupInfo)!
 
   // create an auth service that rejects all credentials
-  const badAuthService = {
-    async validateCredential(_c: Credential, _k: Uint8Array) {
+  const badAuthService: AuthenticationService = {
+    async validateCredential(_c, _k) {
+      return false
+    },
+    async validateSuccessorCredential(_oldCredential, _newCredential) {
       return false
     },
   }

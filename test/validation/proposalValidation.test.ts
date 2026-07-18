@@ -22,6 +22,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { pskTypes } from "../../src/presharedkey.js"
+import { processKeyPackage } from "../../src/processMessages.js"
 
 type CommitContext = MlsContext & { state: ClientState }
 
@@ -135,7 +136,7 @@ describe("Proposal Validation", () => {
           { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
           { extraProposals: [addDiana, proposalRequiredCapabilitiesX509] },
         ),
-      ).rejects.toThrow(new ValidationError("Commit contains add proposals of member without required capabilities"))
+      ).rejects.toThrow(new ValidationError("Commit contains proposals of member without required capabilities"))
     },
   )
 
@@ -175,6 +176,9 @@ describe("Proposal Validation", () => {
             return false
           return true
         },
+        async validateSuccessorCredential(_oldCredential, _newCredential) {
+          return false
+        },
       }
 
       await expect(
@@ -199,7 +203,6 @@ describe("Proposal Validation", () => {
 
       cipherSuite: impl,
     })
-    const addEdward: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: edward.publicPackage } }
 
     const authServiceEdward: AuthenticationService = {
       async validateCredential(c, _pk) {
@@ -211,13 +214,20 @@ describe("Proposal Validation", () => {
           return false
         return true
       },
+      async validateSuccessorCredential(_oldCredential, _newCredential) {
+        return false
+      },
     }
 
     await expect(
-      createCommit(
-        { state: aliceGroup, cipherSuite: impl, authService: authServiceEdward },
-        { extraProposals: [addEdward] },
-      ),
+      processKeyPackage({
+        context: {
+          cipherSuite: impl,
+          authService: authServiceEdward,
+        },
+        state: aliceGroup,
+        keyPackage: edward.publicPackage,
+      }),
     ).rejects.toThrow(new ValidationError("Could not validate credential"))
   })
 
@@ -257,13 +267,16 @@ describe("Proposal Validation", () => {
       cipherSuite: impl,
       leafNodeExtensions: [georgeExtension],
     })
-    const addGeorge: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: george.publicPackage } }
 
     await expect(
-      createCommit(
-        { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-        { extraProposals: [addGeorge] },
-      ),
+      processKeyPackage({
+        context: {
+          cipherSuite: impl,
+          authService: unsafeTestingAuthenticationService,
+        },
+        state: aliceGroup,
+        keyPackage: george.publicPackage,
+      }),
     ).rejects.toThrow(new ValidationError("LeafNode contains extension not listed in capabilities"))
   })
 

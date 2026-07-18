@@ -15,6 +15,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { createCommitEnsureNoMutation } from "./common.js"
+import { processKeyPackage } from "../../src/processMessages.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Required Capabilities extension %s`, async (cs) => {
   await requiredCapatabilitiesTest(cs as CiphersuiteName)
@@ -121,21 +122,14 @@ async function requiredCapatabilitiesTest(cipherSuite: CiphersuiteName) {
 
   expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
 
-  const addCharlieProposal: ProposalAdd = {
-    proposalType: defaultProposalTypes.add,
-    add: {
-      keyPackage: charlie.publicPackage,
-    },
-  }
-
   await expect(
-    createCommitEnsureNoMutation({
+    processKeyPackage({
       context: {
         cipherSuite: impl,
         authService: unsafeTestingAuthenticationService,
       },
       state: aliceGroup,
-      extraProposals: [addCharlieProposal],
+      keyPackage: charlie.publicPackage,
     }),
   ).rejects.toThrow(ValidationError)
 }

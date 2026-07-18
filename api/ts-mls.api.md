@@ -20,6 +20,8 @@ export type AeadAlgorithm = "AES128GCM" | "CHACHA20POLY1305" | "AES256GCM";
 export interface AuthenticationService {
     // (undocumented)
     validateCredential(credential: Credential_2, signaturePublicKey: Uint8Array): Promise<boolean>;
+    // (undocumented)
+    validateSuccessorCredential(oldCredential: Credential_2, newCredential: Credential_2): Promise<boolean>;
 }
 
 // @public (undocumented)
@@ -182,6 +184,8 @@ export interface CreateCommitOptions {
     // (undocumented)
     groupInfoExtensions?: GroupInfoExtension[];
     // (undocumented)
+    leafNodePatch?: LeafNodePatch;
+    // (undocumented)
     ratchetTreeExtension?: boolean;
     // (undocumented)
     wireAsPublicMessage?: boolean;
@@ -255,7 +259,7 @@ export function createUpdateProposal(params: {
     state: ClientState;
     wireAsPublicMessage?: boolean;
     authenticatedData?: Uint8Array;
-    leafNodeExtensions?: LeafNodeExtension[];
+    leafNodePatch?: LeafNodePatch;
 }): Promise<CreateUpdateProposalResult>;
 
 // @public (undocumented)
@@ -593,11 +597,11 @@ export interface GenerateKeyPackageWithKeyParams {
     // (undocumented)
     lifetime?: Lifetime;
     // (undocumented)
-    signatureKeyPair: {
-        signKey: Uint8Array;
-        publicKey: Uint8Array;
-    };
+    signatureKeyPair: SignatureKeyPair;
 }
+
+// @public (undocumented)
+export function generateSignatureKeyPair(cipherSuite: CiphersuiteImpl): Promise<SignatureKeyPair>;
 
 // @public (undocumented)
 export interface GenerationSecret {
@@ -1027,6 +1031,18 @@ export interface LeafNodeInfoUpdateOmitted {
 export type LeafNodeKeyPackage = LeafNode & {
     leafNodeSource: typeof leafNodeSources.key_package;
 };
+
+// @public (undocumented)
+export interface LeafNodePatch {
+    // (undocumented)
+    capabilities?: Capabilities;
+    // (undocumented)
+    credential?: Credential_2;
+    // (undocumented)
+    extensions?: LeafNodeExtension[];
+    // (undocumented)
+    signatureKeyPair?: SignatureKeyPair;
+}
 
 // @public (undocumented)
 export type LeafNodeSourceName = keyof typeof leafNodeSources;

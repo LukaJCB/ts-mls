@@ -13,7 +13,7 @@ import json from "../../test_vectors/tree-operations.json"
 import { proposalDecoder, isDefaultProposal, Proposal } from "../../src/proposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { treeHashRoot } from "../../src/treeHash.js"
-import { toLeafIndex } from "../../src/treemath.js"
+import { leafToNodeIndex, toLeafIndex } from "../../src/treemath.js"
 import { defaultCryptoProvider } from "../../src/index.js"
 
 test.concurrent.each(json.map((x, index) => [index, x]))(`tree-operations test vectors %i`, async (_index, x) => {
@@ -61,7 +61,7 @@ function applyProposal(proposal: Proposal, tree: RatchetTree, data: TreeOperatio
       addLeafNodeMutable(mutableTree, proposal.add.keyPackage.leafNode)
       return mutableTree
     case defaultProposalTypes.update:
-      updateLeafNodeMutable(mutableTree, proposal.update.leafNode, toLeafIndex(data.proposal_sender))
+      updateLeafNodeMutable(mutableTree, proposal.update.leafNode, leafToNodeIndex(toLeafIndex(data.proposal_sender)))
       return mutableTree
     case defaultProposalTypes.remove:
       removeLeafNodeMutable(mutableTree, toLeafIndex(proposal.remove.removed))

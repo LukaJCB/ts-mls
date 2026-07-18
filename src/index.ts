@@ -32,12 +32,15 @@ export {
   getGroupMembers,
   getLeafNodeAt,
   type ClientState,
-  type SignatureKeyPair,
   type CreateGroupParams,
   type GroupState,
   type JoinGroupResult,
   type PublicGroupState,
 } from "./clientState.js"
+
+export { type SignatureKeyPair, generateSignatureKeyPair } from "./signatureKeyPair.js"
+
+export { type LeafNodePatch } from "./leafNodePatch.js"
 
 export {
   ValidationError,
