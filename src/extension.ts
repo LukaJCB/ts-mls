@@ -184,3 +184,9 @@ export function extensionsSupportedByCapabilities(
     .filter((ex) => !isDefaultExtensionTypeValue(ex.extensionType))
     .every((ex) => capabilities.extensions.includes(ex.extensionType))
 }
+
+export function findRequiredCapabilities(extensions: GroupContextExtension[]): RequiredCapabilities | undefined {
+  return extensions.find(
+    (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
+  )?.extensionData
+}
