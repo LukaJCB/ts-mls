@@ -25,13 +25,13 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultProposalTypes,
   getCiphersuiteImpl,
   createCommit,
   Proposal,
   joinGroup,
   joinGroupExternal,
   processMessage,
+  processKeyPackage,
   createGroupInfoWithExternalPubAndRatchetTree,
   unsafeTestingAuthenticationService,
   zeroOutUint8Array,
@@ -66,10 +66,7 @@ const charlieCredential: Credential = {
 const charlie = await generateKeyPackage({ credential: charlieCredential, cipherSuite: impl })
 
 // Alice adds Bob and commits, this is epoch 1
-const addBobProposal: Proposal = {
-  proposalType: defaultProposalTypes.add,
-  add: { keyPackage: bob.publicPackage },
-}
+const addBobProposal: Proposal = await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })
 const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,

@@ -73,10 +73,10 @@ import {
   createApplicationMessage,
   createCommit,
   createGroup,
-  defaultProposalTypes,
   defaultCredentialTypes,
   joinGroup,
   processMessage,
+  processKeyPackage,
   getCiphersuiteImpl,
   Credential,
   defaultCapabilities,
@@ -138,12 +138,11 @@ const decodedKeyPackage = decode(mlsMessageDecoder, keyPackageMessage)!
 if (decodedKeyPackage.wireformat !== wireformats.mls_key_package) throw new Error("Expected key package")
 
 // alice creates proposal to add bob
-const addBobProposal: Proposal = {
-  proposalType: defaultProposalTypes.add,
-  add: {
-    keyPackage: decodedKeyPackage.keyPackage,
-  },
-}
+const addBobProposal: Proposal = await processKeyPackage({
+  context,
+  state: aliceGroup,
+  keyPackage: decodedKeyPackage.keyPackage,
+})
 
 // alice commits
 const commitResult = await createCommit({

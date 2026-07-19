@@ -1280,6 +1280,13 @@ export interface PrivateMessage {
 }
 
 // @public (undocumented)
+export function processKeyPackage(params: {
+    context: MlsContext;
+    state: ClientState;
+    keyPackage: KeyPackage;
+}): Promise<ProposalAdd>;
+
+// @public (undocumented)
 export function processMessage(params: {
     context: MlsContext;
     state: ClientState;

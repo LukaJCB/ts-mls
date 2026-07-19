@@ -28,6 +28,7 @@ import {
   createGroup,
   joinGroup,
   createCommit,
+  processKeyPackage,
   createApplicationMessage,
   Credential,
   defaultCredentialTypes,
@@ -37,7 +38,6 @@ import {
   getGroupMembers,
   getOwnLeafNode,
   getOwnSignatureKeyPair,
-  defaultProposalTypes,
   unsafeTestingAuthenticationService,
   processMessage,
   LeafNode,
@@ -83,14 +83,7 @@ const bob = await generateKeyPackage({
 const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,
-  extraProposals: [
-    {
-      proposalType: defaultProposalTypes.add,
-      add: {
-        keyPackage: bob.publicPackage,
-      },
-    },
-  ],
+  extraProposals: [await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })],
 })
 
 aliceGroup = addBobCommitResult.newState

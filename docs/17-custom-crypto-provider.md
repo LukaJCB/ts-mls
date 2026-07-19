@@ -29,7 +29,6 @@ import {
   defaultCredentialTypes,
   getCiphersuiteImpl,
   generateKeyPackage,
-  defaultProposalTypes,
   unsafeTestingAuthenticationService,
   CryptoProvider,
   defaultCryptoProvider,

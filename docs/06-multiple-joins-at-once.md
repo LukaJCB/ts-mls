@@ -21,11 +21,11 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultProposalTypes,
   getCiphersuiteImpl,
   createCommit,
   Proposal,
   joinGroup,
+  processKeyPackage,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
@@ -61,14 +61,12 @@ const charlieCredential: Credential = {
 const charlie = await generateKeyPackage({ credential: charlieCredential, cipherSuite: impl })
 
 // Alice adds Bob and Charlie in the same commit, transitioning to epoch 1
-const addBobProposal: Proposal = {
-  proposalType: defaultProposalTypes.add,
-  add: { keyPackage: bob.publicPackage },
-}
-const addCharlieProposal: Proposal = {
-  proposalType: defaultProposalTypes.add,
-  add: { keyPackage: charlie.publicPackage },
-}
+const addBobProposal: Proposal = await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })
+const addCharlieProposal: Proposal = await processKeyPackage({
+  context,
+  state: aliceGroup,
+  keyPackage: charlie.publicPackage,
+})
 const addCommitResult = await createCommit({
   context,
   state: aliceGroup,

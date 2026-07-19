@@ -28,7 +28,6 @@ import {
   defaultCredentialTypes,
   getCiphersuiteImpl,
   generateKeyPackage,
-  defaultProposalTypes,
   unsafeTestingAuthenticationService,
   CiphersuiteImpl,
   Hash,

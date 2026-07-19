@@ -617,6 +617,7 @@ export async function processMessage(params: {
     })
 }
 
+/** @public */
 export async function processKeyPackage(params: {
   context: MlsContext
   state: ClientState
