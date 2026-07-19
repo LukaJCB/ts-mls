@@ -303,7 +303,7 @@ describe("Proposal Validation", () => {
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [updateProposal] },
       ),
-    ).rejects.toThrow(new ValidationError("Commit cannot contain an update proposal sent by committer"))
+    ).rejects.toThrow(new ValidationError("Update Proposal requires a sender"))
   })
 
   test.concurrent.each(suites)("committer can't remove themselves %s", async (cs) => {

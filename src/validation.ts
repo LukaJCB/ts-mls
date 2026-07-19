@@ -8,9 +8,9 @@ import { defaultExtensionTypes } from "./defaultExtensionType.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import {
   extensionsSupportedByCapabilities,
-  ExtensionRequiredCapabilities,
   GroupContextExtension,
   ExtensionExternalSenders,
+  findRequiredCapabilities,
 } from "./extension.js"
 import { GroupContext } from "./groupContext.js"
 import { KeyPackage, verifyKeyPackage } from "./keyPackage.js"
@@ -125,10 +125,12 @@ export async function validateProposals(
 
   const allExtensions = flattenExtensions(p[defaultProposalTypes.group_context_extensions]) ?? []
 
-  //TODO what if the required capabilities haven't changed and there already existed required_caps extension, we would still want to check that
-  const requiredCapabilities = allExtensions.find(
-    (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-  )
+  //From the spec:
+  // A GroupContextExtensions proposal is invalid if it includes a required_capabilities extension and some members of the group do not support some of the required capabilities
+  // (including those added in the same Commit, and excluding those removed).
+  // if a GroupContextExtensions proposal adds a required_capabilities extension, then any Add proposals need to indicate support for those capabilities.
+  const requiredCapabilities =
+    findRequiredCapabilities(allExtensions) ?? findRequiredCapabilities(groupContext.extensions)
 
   const validateRemoveError = findMap(p[defaultProposalTypes.remove], (n) => validateRemove(n.proposal.remove, tree))
   if (validateRemoveError) return validateRemoveError
@@ -141,6 +143,7 @@ export async function validateProposals(
         const validateKeyPackageError = await validateKeyPackage(
           ap.keyPackage,
           groupContext,
+          requiredCapabilities,
           false,
           lifetimeConfig,
           authService,
@@ -157,6 +160,7 @@ export async function validateProposals(
         const validateLeafNodeError = await validateLeafNodeUpdateOrCommit(
           ap.leafNode,
           senderLeafIndex,
+          requiredCapabilities,
           oldLeafNode.leaf,
           groupContext,
           authService,
@@ -168,7 +172,7 @@ export async function validateProposals(
     }
   }
 
-  const leafNodeCredentialInvalidOrKeyNotUnique = await validateLeafNodeCredentialAndKeyUniquenesss(
+  const leafNodeCredentialInvalidOrKeyNotUnique = await validateLeafNodeCredentialAndKeyUniqueness(
     tree,
     allNewLeafNodes,
     config,
@@ -265,6 +269,9 @@ export async function validateRatchetTree(
   const hpkeKeys = new Set<string>()
   const signatureKeys = new Set<string>()
   const credentialTypes = new Set<number>()
+
+  const requiredCapabilities = findRequiredCapabilities(groupContext.extensions)
+
   for (const [i, n] of tree.entries()) {
     const nodeIndex = toNodeIndex(i)
     if (n?.nodeType === nodeTypes.leaf) {
@@ -283,10 +290,11 @@ export async function validateRatchetTree(
       //TODO this will validate all leafNodes sequentially, consider parallelizing with configurable parallelism or allow authenticating in batches
       const err =
         n.leaf.leafNodeSource === leafNodeSources.key_package
-          ? await validateLeafNodeKeyPackage(n.leaf, groupContext, false, config, authService, cs.signature)
+          ? await validateLeafNodeKeyPackage(n.leaf, requiredCapabilities, false, config, authService, cs.signature)
           : await validateLeafNodeUpdateOrCommit(
               n.leaf,
               nodeToLeafIndex(nodeIndex),
+              requiredCapabilities,
               undefined,
               groupContext,
               authService,
@@ -354,6 +362,7 @@ export async function validateRatchetTree(
 export async function validateLeafNodeUpdateOrCommit(
   leafNode: LeafNodeCommit | LeafNodeUpdate,
   leafIndex: number,
+  requiredCapabilities: RequiredCapabilities | undefined,
   oldLeafNode: LeafNode | undefined,
   groupContext: GroupContext,
   authService: AuthenticationService,
@@ -363,7 +372,7 @@ export async function validateLeafNodeUpdateOrCommit(
 
   if (!signatureValid) return new CryptoVerificationError("Could not verify leaf node signature")
 
-  const commonError = await validateLeafNodeCommon(leafNode, groupContext, authService)
+  const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService)
 
   if (commonError !== undefined) return commonError
 
@@ -379,21 +388,15 @@ export function throwIfDefined(err: MlsError | undefined): void {
 
 async function validateLeafNodeCommon(
   leafNode: LeafNode,
-  groupContext: GroupContext,
+  requiredCapabilities: RequiredCapabilities | undefined,
   authService: AuthenticationService,
 ) {
   const credentialValid = await authService.validateCredential(leafNode.credential, leafNode.signaturePublicKey)
 
   if (!credentialValid) return new ValidationError("Could not validate credential")
 
-  const requiredCapabilities = groupContext.extensions.find(
-    (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-  )
-
   if (requiredCapabilities !== undefined) {
-    const caps = requiredCapabilities.extensionData
-
-    const leafSupportsCapabilities = capabiltiesAreSupported(caps, leafNode.capabilities)
+    const leafSupportsCapabilities = capabiltiesAreSupported(requiredCapabilities, leafNode.capabilities)
 
     if (!leafSupportsCapabilities) return new ValidationError("LeafNode does not support required capabilities")
   }
@@ -416,7 +419,7 @@ async function validateLeafNodeCommon(
  */
 async function validateLeafNodeKeyPackage(
   leafNode: LeafNodeKeyPackage,
-  groupContext: GroupContext,
+  requiredCapabilities: RequiredCapabilities | undefined,
   sentByClient: boolean,
   config: LifetimeConfig,
   authService: AuthenticationService,
@@ -434,7 +437,7 @@ async function validateLeafNodeKeyPackage(
     }
   }
 
-  const commonError = await validateLeafNodeCommon(leafNode, groupContext, authService)
+  const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService)
 
   if (commonError !== undefined) return commonError
 }
@@ -458,11 +461,11 @@ function extractLeafNode(p: NewLeafNodeWithSender): LeafNode {
   return p.leafNode
 }
 
-export async function validateLeafNodeCredentialAndKeyUniquenesss(
+export async function validateLeafNodeCredentialAndKeyUniqueness(
   tree: RatchetTree,
   proposalsWithSenders: NewLeafNodeWithSender[],
   config: KeyPackageEqualityConfig,
-  requiredCaps: ExtensionRequiredCapabilities | undefined,
+  requiredCaps: RequiredCapabilities | undefined,
 ): Promise<ValidationError | undefined> {
   const credentialTypes = new Set<number>()
   const hpkeKeys = new Set<string>()
@@ -480,7 +483,7 @@ export async function validateLeafNodeCredentialAndKeyUniquenesss(
     }
 
     if (requiredCaps) {
-      if (!capabiltiesAreSupported(requiredCaps.extensionData, ln.capabilities)) {
+      if (!capabiltiesAreSupported(requiredCaps, ln.capabilities)) {
         return new ValidationError("Commit contains proposals of member without required capabilities")
       }
     }
@@ -513,7 +516,7 @@ export async function validateLeafNodeCredentialAndKeyUniquenesss(
       }
 
       if (requiredCaps) {
-        if (!capabiltiesAreSupported(requiredCaps.extensionData, node.leaf.capabilities)) {
+        if (!capabiltiesAreSupported(requiredCaps, node.leaf.capabilities)) {
           return new ValidationError("Not all members support required capabilities")
         }
       }
@@ -550,6 +553,7 @@ function isSubset(a: ReadonlySet<number>, b: readonly number[]): boolean {
 export async function validateKeyPackage(
   kp: KeyPackage,
   groupContext: GroupContext,
+  requiredCapabilities: RequiredCapabilities | undefined,
   sentByClient: boolean,
   config: LifetimeConfig,
   authService: AuthenticationService,
@@ -561,7 +565,7 @@ export async function validateKeyPackage(
 
   const leafNodeError = await validateLeafNodeKeyPackage(
     kp.leafNode,
-    groupContext,
+    requiredCapabilities,
     sentByClient,
     config,
     authService,

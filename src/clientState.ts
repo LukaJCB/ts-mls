@@ -2,9 +2,9 @@ import { AuthenticatedContent, makeProposalRef } from "./authenticatedContent.js
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { Hash } from "./crypto/hash.js"
 import {
-  ExtensionRequiredCapabilities,
   extensionsEqual,
   extensionsSupportedByCapabilities,
+  findRequiredCapabilities,
   GroupContextExtension,
   GroupInfoExtension,
 } from "./extension.js"
@@ -99,14 +99,14 @@ import {
   validateRatchetTree,
   validateExternalSenders,
   validateKeyPackage,
-  validateLeafNodeCredentialAndKeyUniquenesss,
+  validateLeafNodeCredentialAndKeyUniqueness,
   validateLeafNodeUpdateOrCommit,
   NewLeafNodeWithSender,
 } from "./validation.js"
 import { emptyProposals, flattenExtensions, GroupedProposals } from "./groupedProposals.js"
 import { SignatureKeyPair } from "./signatureKeyPair.js"
 import { KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
-import { defaultExtensionTypes } from "./defaultExtensionType.js"
+import { RequiredCapabilities } from "./requiredCapabilities.js"
 
 /** @public */
 export type ClientState = GroupState & PublicGroupState
@@ -455,17 +455,40 @@ export async function applyProposals(
 }
 
 function groupProposals(allProposals: ProposalWithSender[]): GroupedProposals {
-  return allProposals.reduce((acc, cur) => {
-    //this skips any custom proposals
+  const res = emptyProposals()
+
+  for (const cur of allProposals) {
     if (isDefaultProposal(cur.proposal)) {
-      const proposalType = cur.proposal.proposalType
-      const proposals = acc[proposalType] ?? []
-      //todo shouldn't this return an error?
-      return { ...acc, [cur.proposal.proposalType]: [...proposals, cur] }
-    } else {
-      return acc
+      switch (cur.proposal.proposalType) {
+        case defaultProposalTypes.add:
+          res[defaultProposalTypes.add].push({ proposal: cur.proposal })
+          break
+        case defaultProposalTypes.update: {
+          if (!cur.senderLeafIndex) throw new ValidationError("Update Proposal requires a sender")
+          const senderLeafIndex = toLeafIndex(cur.senderLeafIndex)
+          res[defaultProposalTypes.update].push({ proposal: cur.proposal, senderLeafIndex })
+          break
+        }
+        case defaultProposalTypes.remove:
+          res[defaultProposalTypes.remove].push({ proposal: cur.proposal })
+          break
+        case defaultProposalTypes.psk:
+          res[defaultProposalTypes.psk].push({ proposal: cur.proposal })
+          break
+        case defaultProposalTypes.reinit:
+          res[defaultProposalTypes.reinit].push({ proposal: cur.proposal })
+          break
+        case defaultProposalTypes.external_init:
+          res[defaultProposalTypes.external_init].push({ proposal: cur.proposal })
+          break
+        case defaultProposalTypes.group_context_extensions:
+          res[defaultProposalTypes.group_context_extensions].push({ proposal: cur.proposal })
+          break
+      }
     }
-  }, emptyProposals)
+  }
+
+  return res
 }
 
 /** @public */
@@ -796,8 +819,6 @@ async function applyTreeMutations(
   grouped: GroupedProposals,
 ): Promise<[LeafIndex, KeyPackage][]> {
   for (const { senderLeafIndex, proposal } of grouped[defaultProposalTypes.update]) {
-    if (senderLeafIndex === undefined) throw new InternalError("No sender index found for update proposal")
-
     const leafIndex = toLeafIndex(senderLeafIndex)
     updateLeafNodeMutable(mutableTree, proposal.update.leafNode, leafToNodeIndex(leafIndex))
   }
@@ -828,16 +849,28 @@ export async function processProposal(
 ): Promise<ClientState> {
   //Whenever a new credential is introduced in the group, it MUST be validated with the AS. In particular, at the following events in the protocol:
   //When a member receives an Add proposal adding a member to the group
+
+  const requiredCapabilities = findRequiredCapabilities(state.groupContext.extensions)
+
   if (isDefaultProposal(proposal)) {
     switch (proposal.proposalType) {
       case defaultProposalTypes.add:
-        await validateAddProposal(proposal, state, lifetimeConfig, equalityConfig, authService, impl)
+        await validateAddProposal(
+          proposal,
+          state,
+          requiredCapabilities,
+          lifetimeConfig,
+          equalityConfig,
+          authService,
+          impl,
+        )
         break
       case defaultProposalTypes.update:
         if (!senderLeafIndex) throw new ValidationError("Received an Update proposal from a non-member")
         await validateUpdateProposal(
           proposal,
           senderLeafIndex,
+          requiredCapabilities,
           equalityConfig,
           state.groupContext,
           state.ratchetTree,
@@ -855,6 +888,7 @@ export async function processProposal(
 async function validateAddProposal(
   proposal: ProposalAdd,
   state: ClientState,
+  requiredCapabilities: RequiredCapabilities | undefined,
   lifetimeConfig: LifetimeConfig,
   keyPackageEqualityConfig: KeyPackageEqualityConfig,
   authService: AuthenticationService,
@@ -864,6 +898,7 @@ async function validateAddProposal(
     await validateKeyPackage(
       proposal.add.keyPackage,
       state.groupContext,
+      requiredCapabilities,
       false,
       lifetimeConfig,
       authService,
@@ -872,12 +907,9 @@ async function validateAddProposal(
   )
 
   const withSender: NewLeafNodeWithSender = { kind: "add", keyPackage: proposal.add.keyPackage }
-  const requiredCapabilities = state.groupContext.extensions.find(
-    (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-  )
 
   throwIfDefined(
-    await validateLeafNodeCredentialAndKeyUniquenesss(
+    await validateLeafNodeCredentialAndKeyUniqueness(
       state.ratchetTree,
       [withSender],
       keyPackageEqualityConfig,
@@ -892,6 +924,7 @@ async function validateAddProposal(
 async function validateUpdateProposal(
   proposal: ProposalUpdate,
   senderLeafIndex: LeafIndex,
+  requiredCapabilities: RequiredCapabilities | undefined,
   config: KeyPackageEqualityConfig,
   groupContext: GroupContext,
   tree: RatchetTree,
@@ -906,6 +939,7 @@ async function validateUpdateProposal(
     await validateLeafNodeUpdateOrCommit(
       proposal.update.leafNode,
       senderLeafIndex,
+      requiredCapabilities,
       oldLeafNode.leaf,
       groupContext,
       authService,
@@ -914,11 +948,8 @@ async function validateUpdateProposal(
   )
 
   const withSender: NewLeafNodeWithSender = { kind: "update", leafNode: proposal.update.leafNode, senderLeafIndex }
-  const requiredCapabilities = groupContext.extensions.find(
-    (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-  )
 
-  throwIfDefined(await validateLeafNodeCredentialAndKeyUniquenesss(tree, [withSender], config, requiredCapabilities))
+  throwIfDefined(await validateLeafNodeCredentialAndKeyUniqueness(tree, [withSender], config, requiredCapabilities))
 }
 
 export async function saveProposal(

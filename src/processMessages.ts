@@ -10,7 +10,7 @@ import {
   NewLeafNodeWithSender,
   throwIfDefined,
   validateKeyPackage,
-  validateLeafNodeCredentialAndKeyUniquenesss,
+  validateLeafNodeCredentialAndKeyUniqueness,
   validateLeafNodeUpdateOrCommit,
 } from "./validation.js"
 import { GroupActiveState } from "./groupActiveState.js"
@@ -59,8 +59,8 @@ import { ProposalAdd } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
 import { defaultKeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 import { nodeTypes } from "./nodeType.js"
-import { ExtensionRequiredCapabilities } from "./extension.js"
-import { defaultExtensionTypes } from "./defaultExtensionType.js"
+import { findRequiredCapabilities } from "./extension.js"
+import { LeafNode } from "./leafNode.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -360,6 +360,11 @@ async function processCommit(
     }
   }
 
+  const groupContextWithExtensions =
+    result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
+      ? { ...state.groupContext, extensions: result.additionalResult.extensions }
+      : state.groupContext
+
   if (content.commit.path !== undefined) {
     const committerLeafIndex =
       senderLeafIndex ??
@@ -369,19 +374,15 @@ async function processCommit(
       throw new ValidationError("Cannot verify commit leaf node because no commiter leaf index found")
 
     const oldLeafNode =
-      result.additionalResult.kind !== "externalCommit"
-        ? (() => {
-            const leafNodeIndex = leafToNodeIndex(committerLeafIndex)
-            const oldLeafNode = state.ratchetTree[leafNodeIndex]
-            if (oldLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Tried to update a non-leaf node")
-            return oldLeafNode.leaf
-          })()
-        : undefined
+      result.additionalResult.kind !== "externalCommit" ? getLeafNodeAt(committerLeafIndex, state) : undefined
+
+    const requiredCapabilities = findRequiredCapabilities(groupContextWithExtensions.extensions)
 
     throwIfDefined(
       await validateLeafNodeUpdateOrCommit(
         content.commit.path.leafNode,
         committerLeafIndex,
+        requiredCapabilities,
         oldLeafNode,
         state.groupContext,
         authService,
@@ -394,14 +395,10 @@ async function processCommit(
       leafNode: content.commit.path.leafNode,
       senderLeafIndex: committerLeafIndex,
     }
-    //TODO should these be checked with existing groupContext.extensions or after the group_context_extensions proposal is applied?
-    const requiredCapabilities = state.groupContext.extensions.find(
-      (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-    )
 
     //TODO perhaps here we need to check this: Verify that none of the public keys in the UpdatePath appear in any node of the new ratchet tree.
     throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniquenesss(
+      await validateLeafNodeCredentialAndKeyUniqueness(
         mutableTree,
         [withSender],
         clientConfig.keyPackageEqualityConfig,
@@ -411,11 +408,6 @@ async function processCommit(
   }
 
   if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
-
-  const groupContextWithExtensions =
-    result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
-      ? { ...state.groupContext, extensions: result.additionalResult.extensions }
-      : state.groupContext
 
   const proposalTouchedLeaves: LeafIndex[] = [...result.updatedLeaves, ...result.removedLeaves]
   const [pkp, commitSecret, newTreeHash, treeHashCache] = await applyTreeUpdate(
@@ -493,6 +485,13 @@ async function processCommit(
     aad: content.authenticatedData,
     sender: content.sender,
   }
+}
+
+function getLeafNodeAt(committerLeafIndex: LeafIndex, state: ClientState): LeafNode {
+  const leafNodeIndex = leafToNodeIndex(committerLeafIndex)
+  const oldLeafNode = state.ratchetTree[leafNodeIndex]
+  if (oldLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Tried to update a non-leaf node")
+  return oldLeafNode.leaf
 }
 
 async function applyTreeUpdate(
@@ -623,10 +622,13 @@ export async function processKeyPackage(params: {
   state: ClientState
   keyPackage: KeyPackage
 }): Promise<ProposalAdd> {
+  const requiredCapabilities = findRequiredCapabilities(params.state.groupContext.extensions)
+
   throwIfDefined(
     await validateKeyPackage(
       params.keyPackage,
       params.state.groupContext,
+      requiredCapabilities,
       false,
       params.context.clientConfig?.lifetimeConfig ?? defaultLifetimeConfig,
       params.context.authService,
