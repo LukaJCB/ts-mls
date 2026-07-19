@@ -25,6 +25,7 @@ import {
   createGroup,
   joinGroup,
   createCommit,
+  processKeyPackage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
@@ -34,7 +35,6 @@ import {
   makeCustomExtension,
   protocolVersions,
   ciphersuites,
-  defaultProposalTypes,
   unsafeTestingAuthenticationService,
   ValidationError,
   zeroOutUint8Array,
@@ -102,14 +102,7 @@ const bob = await generateKeyPackage({
 const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,
-  extraProposals: [
-    {
-      proposalType: defaultProposalTypes.add,
-      add: {
-        keyPackage: bob.publicPackage,
-      },
-    },
-  ],
+  extraProposals: [await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })],
 })
 
 aliceGroup = addBobCommitResult.newState
@@ -140,17 +133,15 @@ const charlie = await generateKeyPackage({
 
 // Attempting to add Charlie should fail validation
 try {
+  const addCharlieProposal = await processKeyPackage({
+    context,
+    state: aliceGroup,
+    keyPackage: charlie.publicPackage,
+  })
   await createCommit({
     context,
     state: aliceGroup,
-    extraProposals: [
-      {
-        proposalType: defaultProposalTypes.add,
-        add: {
-          keyPackage: charlie.publicPackage,
-        },
-      },
-    ],
+    extraProposals: [addCharlieProposal],
   })
 } catch (error) {
   // Should throw ValidationError when adding member without required capabilities"

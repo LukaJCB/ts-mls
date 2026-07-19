@@ -27,12 +27,12 @@ import {
   Credential,
   defaultCredentialTypes,
   createGroup,
-  defaultProposalTypes,
   joinGroup,
   joinGroupFromReinit,
   processMessage,
   reinitCreateNewGroup,
   reinitGroup,
+  processKeyPackage,
   Proposal,
   getCiphersuiteImpl,
   generateKeyPackage,
@@ -65,10 +65,7 @@ const bobCredential: Credential = {
 const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
 // Alice adds Bob (epoch 1)
-const addBobProposal: Proposal = {
-  proposalType: defaultProposalTypes.add,
-  add: { keyPackage: bob.publicPackage },
-}
+const addBobProposal: Proposal = await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })
 const commitResult = await createCommit({
   context,
   state: aliceGroup,

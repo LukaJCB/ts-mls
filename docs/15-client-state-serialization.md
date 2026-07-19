@@ -21,13 +21,13 @@ This scenario demonstrates how to serialize and deserialize client state to bina
 import {
   createGroup,
   createCommit,
+  processKeyPackage,
   createApplicationMessage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
   generateKeyPackage,
   Proposal,
-  defaultProposalTypes,
   encode,
   decode,
   clientStateEncoder,
@@ -87,14 +87,7 @@ const bob = await generateKeyPackage({
 const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,
-  extraProposals: [
-    {
-      proposalType: defaultProposalTypes.add,
-      add: {
-        keyPackage: bob.publicPackage,
-      },
-    },
-  ],
+  extraProposals: [await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })],
 })
 
 aliceGroup = addBobCommitResult.newState

@@ -27,12 +27,12 @@ import {
   createApplicationMessage,
   createProposal,
   processMessage,
+  processKeyPackage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
   generateKeyPackage,
   Proposal,
-  defaultProposalTypes,
   Capabilities,
   defaultCapabilities,
   protocolVersions,
@@ -87,7 +87,7 @@ let aliceGroup = await createGroup({
 const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,
-  extraProposals: [{ proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }],
+  extraProposals: [await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })],
 })
 
 aliceGroup = addBobCommitResult.newState

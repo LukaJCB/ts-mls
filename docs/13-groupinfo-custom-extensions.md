@@ -23,6 +23,7 @@ import {
   createGroup,
   joinGroup,
   createCommit,
+  processKeyPackage,
   Credential,
   defaultCredentialTypes,
   getCiphersuiteImpl,
@@ -32,7 +33,6 @@ import {
   makeCustomExtension,
   protocolVersions,
   ciphersuites,
-  defaultProposalTypes,
   unsafeTestingAuthenticationService,
   zeroOutUint8Array,
 } from "ts-mls"
@@ -99,14 +99,7 @@ const bob = await generateKeyPackage({
 const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,
-  extraProposals: [
-    {
-      proposalType: defaultProposalTypes.add,
-      add: {
-        keyPackage: bob.publicPackage,
-      },
-    },
-  ],
+  extraProposals: [await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })],
 })
 
 aliceGroup = addBobCommitResult.newState

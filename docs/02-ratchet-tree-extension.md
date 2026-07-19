@@ -22,10 +22,10 @@ import {
   Credential,
   defaultCredentialTypes,
   generateKeyPackage,
-  defaultProposalTypes,
   getCiphersuiteImpl,
   joinGroup,
   createCommit,
+  processKeyPackage,
   Proposal,
   unsafeTestingAuthenticationService,
   zeroOutUint8Array,
@@ -55,10 +55,7 @@ const bobCredential: Credential = {
 }
 const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
 
-const addBobProposal: Proposal = {
-  proposalType: defaultProposalTypes.add,
-  add: { keyPackage: bob.publicPackage },
-}
+const addBobProposal: Proposal = await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })
 
 // Alice adds Bob with the ratchetTreeExtension = true
 const commitResult = await createCommit({

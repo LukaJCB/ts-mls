@@ -77,6 +77,7 @@ export {
   processMessage,
   processPrivateMessage,
   processPublicMessage,
+  processKeyPackage,
   type NewStateWithActionTaken,
   type ProcessMessageResult,
 } from "./processMessages.js"

@@ -37,6 +37,7 @@ import {
   defaultExtensionTypes,
   createProposal,
   processMessage,
+  processKeyPackage,
   unsafeTestingAuthenticationService,
   wireformats,
   zeroOutUint8Array,
@@ -81,14 +82,7 @@ const addBobCommitResult = await createCommit({
   context,
   state: aliceGroup,
   wireAsPublicMessage: true,
-  extraProposals: [
-    {
-      proposalType: defaultProposalTypes.add,
-      add: {
-        keyPackage: bob.publicPackage,
-      },
-    },
-  ],
+  extraProposals: [await processKeyPackage({ context, state: aliceGroup, keyPackage: bob.publicPackage })],
 })
 
 aliceGroup = addBobCommitResult.newState
