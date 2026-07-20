@@ -34,6 +34,10 @@ import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { nodeTypes } from "../../src/nodeType.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
 import { processKeyPackage, processMessage } from "../../src/processMessages.js"
+import { wireformats } from "../../src/wireformat.js"
+import { createContentCommitSignature } from "../../src/framedContent.js"
+import { protectPublicMessage } from "../../src/messageProtectionPublic.js"
+import { contentTypes } from "../../src/contentType.js"
 
 type CommitContext = MlsContext & { state: ClientState }
 
@@ -82,6 +86,10 @@ describe("Ratchet Tree Validation", () => {
 
   test.concurrent.each(suites)("hpke public keys not unique %s", async (cs) => {
     await testHpkePublicKeysNotUnique(cs as CiphersuiteName)
+  })
+
+  test.concurrent.each(suites)("UpdatePath HPKE public keys cannot duplicate tree keys %s", async (cs) => {
+    await testUpdatePathHpkePublicKeyNotUnique(cs as CiphersuiteName)
   })
 
   test.concurrent.each(suites)("signature key not unique %s", async (cs) => {
@@ -358,6 +366,84 @@ async function testHpkePublicKeysNotUnique(cipherSuite: CiphersuiteName) {
       keyPackage: charlie.publicPackage,
       privateKeys: charlie.privatePackage,
       resync: false,
+    }),
+  ).rejects.toThrow(new ValidationError("hpke keys not unique"))
+}
+
+async function testUpdatePathHpkePublicKeyNotUnique(cipherSuite: CiphersuiteName) {
+  const impl = await getCiphersuiteImpl(cipherSuite)
+  const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
+
+  const alice = await generateDefaultKeyPackage(
+    { credentialType: defaultCredentialTypes.basic, identity: new TextEncoder().encode("alice") },
+    impl,
+  )
+  const bob = await generateDefaultKeyPackage(
+    { credentialType: defaultCredentialTypes.basic, identity: new TextEncoder().encode("bob") },
+    impl,
+  )
+
+  let aliceGroup = await createGroup({
+    context,
+    groupId: new TextEncoder().encode("group1"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+
+  const addBobCommit = await createCommit(
+    { ...context, state: aliceGroup },
+    { extraProposals: [{ proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }] },
+  )
+  aliceGroup = addBobCommit.newState
+
+  const bobGroup = await joinGroup({
+    context,
+    welcome: addBobCommit.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
+
+  const updateCommit = await createCommit(
+    { ...context, state: aliceGroup },
+    { leafNodePatch: {}, wireAsPublicMessage: true },
+  )
+
+  if (updateCommit.commit.wireformat !== wireformats.mls_public_message) throw new Error("expected a public commit")
+
+  const content = updateCommit.commit.publicMessage.content
+  if (content.contentType !== contentTypes.commit) throw new Error("expected commit content")
+
+  const updatePath = content.commit.path
+  if (updatePath === undefined || updatePath.nodes.length === 0) throw new Error("expected an UpdatePath")
+
+  updatePath.nodes[0]!.hpkePublicKey = bob.publicPackage.leafNode.hpkePublicKey
+
+  const { framedContent, signature } = await createContentCommitSignature(
+    aliceGroup.groupContext,
+    "mls_public_message",
+    content.commit,
+    content.sender,
+    content.authenticatedData,
+    aliceGroup.signaturePrivateKey,
+    impl.signature,
+  )
+  const publicMessage = await protectPublicMessage(
+    aliceGroup.keySchedule.membershipKey,
+    aliceGroup.groupContext,
+    {
+      wireformat: wireformats.mls_public_message,
+      content: framedContent,
+      auth: { ...updateCommit.commit.publicMessage.auth, signature },
+    },
+    impl,
+  )
+
+  await expect(
+    processMessage({
+      context,
+      state: bobGroup,
+      message: { ...updateCommit.commit, publicMessage },
     }),
   ).rejects.toThrow(new ValidationError("hpke keys not unique"))
 }

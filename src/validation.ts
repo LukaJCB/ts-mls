@@ -47,6 +47,7 @@ import { ProposalWithSender } from "./unappliedProposals.js"
 import { bytesToBase64 } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { credentialEquals } from "./credential.js"
+import { UpdatePathNode } from "./updatePath.js"
 
 /*
  * For Leaf Node Validation purposes we define the following two sub-validations:
@@ -216,6 +217,7 @@ function collectProposalLeafNodes(p: GroupedProposals): NewLeafNodeWithSender[] 
       kind: "update",
       leafNode: update.proposal.update.leafNode,
       senderLeafIndex: update.senderLeafIndex,
+      updatePath: undefined,
     })
   }
   return allNewLeafNodes
@@ -447,6 +449,7 @@ export type NewLeafNodeWithSender =
       kind: "update"
       leafNode: LeafNodeUpdate | LeafNodeCommit
       senderLeafIndex: LeafIndex
+      updatePath: UpdatePathNode[] | undefined
     }
   | {
       kind: "add"
@@ -460,6 +463,15 @@ function extractLeafNode(p: NewLeafNodeWithSender): LeafNode {
 
   return p.leafNode
 }
+
+// interface NewNode {
+//   hpkeKey: Uint8Array,
+//   signatureKeyAndLeafIndex?: [Uint8Array, LeafIndex | null],
+//   capabilities?: Capabilities
+//   credentialType?: number
+//   senderLeafIndex?: LeafIndex
+//   keyPackage?: KeyPackage
+// }
 
 export async function validateLeafNodeCredentialAndKeyUniqueness(
   tree: RatchetTree,
@@ -480,6 +492,10 @@ export async function validateLeafNodeCredentialAndKeyUniqueness(
 
     if (nln.kind === "add") {
       keyPackages.push(nln.keyPackage)
+    } else if (nln.updatePath) {
+      for (const pathNode of nln.updatePath) {
+        hpkeKeys.add(bytesToBase64(pathNode.hpkePublicKey))
+      }
     }
 
     if (requiredCaps) {

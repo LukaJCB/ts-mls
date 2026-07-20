@@ -32,7 +32,7 @@ const createCommit = (context: CommitContext, options?: CreateCommitOptions) => 
 }
 
 describe("Proposal Validation", () => {
-  const suites = Object.keys(ciphersuites).slice(0, 1)
+  const suites = Object.keys(ciphersuites)
 
   test.concurrent.each(suites)("can't remove same leaf node twice %s", async (cs) => {
     const { impl, aliceGroup, bobGroup } = await setupThreeMembers(cs as CiphersuiteName)
