@@ -394,6 +394,7 @@ async function processCommit(
       kind: "update",
       leafNode: content.commit.path.leafNode,
       senderLeafIndex: committerLeafIndex,
+      updatePath: content.commit.path.nodes,
     }
 
     //TODO perhaps here we need to check this: Verify that none of the public keys in the UpdatePath appear in any node of the new ratchet tree.

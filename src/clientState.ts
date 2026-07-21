@@ -947,7 +947,12 @@ async function validateUpdateProposal(
     ),
   )
 
-  const withSender: NewLeafNodeWithSender = { kind: "update", leafNode: proposal.update.leafNode, senderLeafIndex }
+  const withSender: NewLeafNodeWithSender = {
+    kind: "update",
+    leafNode: proposal.update.leafNode,
+    senderLeafIndex,
+    updatePath: undefined,
+  }
 
   throwIfDefined(await validateLeafNodeCredentialAndKeyUniqueness(tree, [withSender], config, requiredCapabilities))
 }
