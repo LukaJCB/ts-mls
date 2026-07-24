@@ -57,7 +57,7 @@
     "@hpke/dhkem-x448": "1.8.0",
     "@hpke/hybridkem-x-wing": "0.7.0",
     "@hpke/ml-kem": "0.3.0",
-    "@microsoft/api-extractor": "7.58.11",
+    "@microsoft/api-extractor": "7.58.12",
     "@noble/ciphers": "2.2.0",
     "@noble/curves": "2.2.0",
     "@noble/hashes": "2.2.0",
