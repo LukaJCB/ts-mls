@@ -108,7 +108,12 @@ export { defaultCapabilities } from "./defaultCapabilities.js"
 
 export { type Capabilities } from "./capabilities.js"
 
-export { type AuthenticationService, unsafeTestingAuthenticationService } from "./authenticationService.js"
+export {
+  type AuthenticationResult,
+  type AuthenticationService,
+  type CredentialBatch,
+  unsafeTestingAuthenticationService,
+} from "./authenticationService.js"
 
 export { type ClientConfig } from "./clientConfig.js"
 

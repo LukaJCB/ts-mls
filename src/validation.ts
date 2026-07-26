@@ -1,4 +1,4 @@
-import { AuthenticationService } from "./authenticationService.js"
+import { AuthenticationService, CredentialBatch } from "./authenticationService.js"
 import { Capabilities } from "./capabilities.js"
 import { GroupedProposals, flattenExtensions } from "./groupedProposals.js"
 import { encode } from "./codec/tlsEncoder.js"
@@ -25,7 +25,7 @@ import {
 } from "./leafNode.js"
 import { leafNodeSources } from "./leafNodeSource.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
-import { MlsError, ValidationError, InternalError, CryptoVerificationError } from "./mlsError.js"
+import { MlsError, ValidationError, InternalError, CryptoVerificationError, UsageError } from "./mlsError.js"
 import { nodeTypes } from "./nodeType.js"
 import { verifyParentHashes } from "./parentHash.js"
 import { pskIdEncoder } from "./presharedkey.js"
@@ -48,6 +48,7 @@ import { bytesToBase64 } from "./util/byteArray.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { credentialEquals } from "./credential.js"
 import { UpdatePathNode } from "./updatePath.js"
+import { mapConcurrent } from "./util/array.js"
 
 /*
  * For Leaf Node Validation purposes we define the following two sub-validations:
@@ -141,6 +142,7 @@ export async function validateProposals(
   if (!sentByClient) {
     for (const ap of allNewLeafNodes) {
       if (ap.kind === "add") {
+        //TODO we could batch/parallelize the validation of this
         const validateKeyPackageError = await validateKeyPackage(
           ap.keyPackage,
           groupContext,
@@ -165,6 +167,7 @@ export async function validateProposals(
           oldLeafNode.leaf,
           groupContext,
           authService,
+          true,
           cs.signature,
         )
 
@@ -236,7 +239,8 @@ export async function validateExternalSenders(
         externalSender.credential,
         externalSender.signaturePublicKey,
       )
-      if (!validCredential) return new ValidationError("Could not validate external credential")
+      if (validCredential.kind === "error")
+        return new ValidationError(`Could not validate external credential: ${validCredential.error}`)
     }
   }
 }
@@ -274,6 +278,16 @@ export async function validateRatchetTree(
 
   const requiredCapabilities = findRequiredCapabilities(groupContext.extensions)
 
+  if (authService.maxConcurrency < 1) {
+    return new UsageError("maxParallelism should not be less than 1")
+  }
+
+  //only authenticate with individual calls if maxParallelism is 1, otherwise authenticate in parallel
+  const shouldAuthenticateIndividually = authService.maxConcurrency == 1
+
+  let currentBatch = new Array<CredentialBatch>()
+  const batches = new Array<CredentialBatch[]>()
+
   for (const [i, n] of tree.entries()) {
     const nodeIndex = toNodeIndex(i)
     if (n?.nodeType === nodeTypes.leaf) {
@@ -289,10 +303,17 @@ export async function validateRatchetTree(
 
       credentialTypes.add(n.leaf.credential.credentialType)
 
-      //TODO this will validate all leafNodes sequentially, consider parallelizing with configurable parallelism or allow authenticating in batches
       const err =
         n.leaf.leafNodeSource === leafNodeSources.key_package
-          ? await validateLeafNodeKeyPackage(n.leaf, requiredCapabilities, false, config, authService, cs.signature)
+          ? await validateLeafNodeKeyPackage(
+              n.leaf,
+              requiredCapabilities,
+              false,
+              config,
+              authService,
+              shouldAuthenticateIndividually,
+              cs.signature,
+            )
           : await validateLeafNodeUpdateOrCommit(
               n.leaf,
               nodeToLeafIndex(nodeIndex),
@@ -300,10 +321,20 @@ export async function validateRatchetTree(
               undefined,
               groupContext,
               authService,
+              shouldAuthenticateIndividually,
               cs.signature,
             )
 
       if (err !== undefined) return err
+
+      if (!shouldAuthenticateIndividually) {
+        currentBatch.push({ credential: n.leaf.credential, signaturePublicKey: n.leaf.signaturePublicKey })
+
+        if (currentBatch.length == authService.batchSize) {
+          batches.push(currentBatch)
+          currentBatch = new Array<CredentialBatch>()
+        }
+      }
     } else if (n?.nodeType === nodeTypes.parent) {
       if (isLeaf(nodeIndex)) return new ValidationError("Received Ratchet Tree is not structurally sound")
 
@@ -330,6 +361,22 @@ export async function validateRatchetTree(
           }
         }
       }
+    }
+  }
+
+  if (!shouldAuthenticateIndividually) {
+    if (currentBatch.length > 0) {
+      batches.push(currentBatch)
+    }
+
+    const authResult = await mapConcurrent(batches, authService.maxConcurrency, (batch) =>
+      authService.validateCredentialBatch(batch),
+    )
+
+    const error = authResult.find((r) => r.kind === "error")?.error
+
+    if (error !== undefined) {
+      return new ValidationError(`Could not validate credentials: ${error}`)
     }
   }
 
@@ -368,19 +415,22 @@ export async function validateLeafNodeUpdateOrCommit(
   oldLeafNode: LeafNode | undefined,
   groupContext: GroupContext,
   authService: AuthenticationService,
+  shouldAuthenticate: boolean,
   s: Signature,
 ): Promise<MlsError | undefined> {
   const signatureValid = await verifyLeafNodeSignature(leafNode, groupContext.groupId, leafIndex, s)
 
   if (!signatureValid) return new CryptoVerificationError("Could not verify leaf node signature")
 
-  const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService)
+  //TODO this calls authService, but then it might also be called below
+  const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService, shouldAuthenticate)
 
   if (commonError !== undefined) return commonError
 
   if (oldLeafNode && !credentialEquals(oldLeafNode.credential, leafNode.credential)) {
     const validSuccessor = await authService.validateSuccessorCredential(oldLeafNode.credential, leafNode.credential)
-    if (!validSuccessor) return new ValidationError("Could not validate credential as successor to existing one")
+    if (validSuccessor.kind === "error")
+      return new ValidationError(`Could not validate credential as successor to existing one: ${validSuccessor.error}`)
   }
 }
 
@@ -392,10 +442,14 @@ async function validateLeafNodeCommon(
   leafNode: LeafNode,
   requiredCapabilities: RequiredCapabilities | undefined,
   authService: AuthenticationService,
+  shouldAuthenticate: boolean,
 ) {
-  const credentialValid = await authService.validateCredential(leafNode.credential, leafNode.signaturePublicKey)
+  if (shouldAuthenticate) {
+    const credentialValid = await authService.validateCredential(leafNode.credential, leafNode.signaturePublicKey)
 
-  if (!credentialValid) return new ValidationError("Could not validate credential")
+    if (credentialValid.kind === "error")
+      return new ValidationError(`Could not validate credential: ${credentialValid.error}`)
+  }
 
   if (requiredCapabilities !== undefined) {
     const leafSupportsCapabilities = capabiltiesAreSupported(requiredCapabilities, leafNode.capabilities)
@@ -425,6 +479,7 @@ async function validateLeafNodeKeyPackage(
   sentByClient: boolean,
   config: LifetimeConfig,
   authService: AuthenticationService,
+  shouldAuthenticate: boolean,
   s: Signature,
 ): Promise<MlsError | undefined> {
   const signatureValid = await verifyLeafNodeSignatureKeyPackage(leafNode, s)
@@ -439,7 +494,7 @@ async function validateLeafNodeKeyPackage(
     }
   }
 
-  const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService)
+  const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService, shouldAuthenticate)
 
   if (commonError !== undefined) return commonError
 }
@@ -463,15 +518,6 @@ function extractLeafNode(p: NewLeafNodeWithSender): LeafNode {
 
   return p.leafNode
 }
-
-// interface NewNode {
-//   hpkeKey: Uint8Array,
-//   signatureKeyAndLeafIndex?: [Uint8Array, LeafIndex | null],
-//   capabilities?: Capabilities
-//   credentialType?: number
-//   senderLeafIndex?: LeafIndex
-//   keyPackage?: KeyPackage
-// }
 
 export async function validateLeafNodeCredentialAndKeyUniqueness(
   tree: RatchetTree,
@@ -585,6 +631,7 @@ export async function validateKeyPackage(
     sentByClient,
     config,
     authService,
+    true,
     s,
   )
   if (leafNodeError !== undefined) return leafNodeError

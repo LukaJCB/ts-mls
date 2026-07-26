@@ -378,6 +378,7 @@ async function processCommit(
 
     const requiredCapabilities = findRequiredCapabilities(groupContextWithExtensions.extensions)
 
+    //TODO we could authenticate this along with any additions
     throwIfDefined(
       await validateLeafNodeUpdateOrCommit(
         content.commit.path.leafNode,
@@ -386,6 +387,7 @@ async function processCommit(
         oldLeafNode,
         state.groupContext,
         authService,
+        true,
         cs.signature,
       ),
     )
@@ -397,7 +399,6 @@ async function processCommit(
       updatePath: content.commit.path.nodes,
     }
 
-    //TODO perhaps here we need to check this: Verify that none of the public keys in the UpdatePath appear in any node of the new ratchet tree.
     throwIfDefined(
       await validateLeafNodeCredentialAndKeyUniqueness(
         mutableTree,

@@ -15,7 +15,11 @@ import {
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
-import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import {
+  AuthenticationResult,
+  AuthenticationService,
+  unsafeTestingAuthenticationService,
+} from "../../src/authenticationService.js"
 import { ValidationError } from "@hpke/core"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Add Proposal %s`, async (cs) => {
@@ -92,13 +96,21 @@ async function addProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessage:
 
   bobGroup = createProposalResult.newState
 
-  const badAuthService = {
-    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<boolean> {
-      return false
+  const badAuthService: AuthenticationService = {
+    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
+      return { kind: "error", error: "error" }
     },
-    async validateSuccessorCredential(_oldCredential: Credential, _newCredential: Credential): Promise<boolean> {
-      return false
+    async validateSuccessorCredential(
+      _oldCredential: Credential,
+      _newCredential: Credential,
+    ): Promise<AuthenticationResult> {
+      return { kind: "error", error: "error" }
     },
+    async validateCredentialBatch(_batch) {
+      return { kind: "error", error: "error" }
+    },
+    batchSize: 32,
+    maxConcurrency: 4,
   }
 
   await expect(
@@ -107,7 +119,7 @@ async function addProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessage:
       state: aliceGroup,
       message: createProposalResult.message,
     }),
-  ).rejects.toThrow(new ValidationError("Could not validate credential"))
+  ).rejects.toThrow(new ValidationError("Could not validate credential: error"))
 
   const processProposalResult = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
