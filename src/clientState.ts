@@ -464,7 +464,7 @@ function groupProposals(allProposals: ProposalWithSender[]): GroupedProposals {
           res[defaultProposalTypes.add].push({ proposal: cur.proposal })
           break
         case defaultProposalTypes.update: {
-          if (!cur.senderLeafIndex) throw new ValidationError("Update Proposal requires a sender")
+          if (cur.senderLeafIndex === undefined) throw new ValidationError("Update Proposal requires a sender")
           const senderLeafIndex = toLeafIndex(cur.senderLeafIndex)
           res[defaultProposalTypes.update].push({ proposal: cur.proposal, senderLeafIndex })
           break
@@ -635,7 +635,8 @@ export async function joinGroupInternal(params: {
     signerNode.leaf.signaturePublicKey,
   )
 
-  if (!credentialVerified) throw new ValidationError("Could not validate credential")
+  if (credentialVerified.kind === "error")
+    throw new ValidationError(`Could not validate credential: ${credentialVerified.error}`)
 
   const groupInfoSignatureVerified = await verifyGroupInfoSignature(
     gi,
@@ -943,6 +944,7 @@ async function validateUpdateProposal(
       oldLeafNode.leaf,
       groupContext,
       authService,
+      true,
       impl.signature,
     ),
   )

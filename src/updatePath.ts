@@ -147,6 +147,7 @@ export async function createUpdatePath(
 
 const HPKE_ENCRYPT_BATCH_SIZE = 512
 
+//TODO should we add configurable parallelism?
 function encryptSecretsForPath(
   updatedTree: RatchetTree,
   updatedGroupContext: GroupContext,

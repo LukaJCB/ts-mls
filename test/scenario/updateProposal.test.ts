@@ -18,7 +18,11 @@ import {
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
-import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import {
+  AuthenticationService,
+  AuthenticationResult,
+  unsafeTestingAuthenticationService,
+} from "../../src/authenticationService.js"
 import { generateSignatureKeyPair } from "../../src/signatureKeyPair.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
@@ -131,13 +135,21 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
     }),
   ).rejects.toThrow("OpenError")
 
-  const badAuthService = {
-    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<boolean> {
-      return true
+  const badAuthService: AuthenticationService = {
+    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
+      return { kind: "ok" }
     },
-    async validateSuccessorCredential(_oldCredential: Credential, _newCredential: Credential): Promise<boolean> {
-      return false
+    async validateSuccessorCredential(
+      _oldCredential: Credential,
+      _newCredential: Credential,
+    ): Promise<AuthenticationResult> {
+      return { kind: "error", error: "error" }
     },
+    async validateCredentialBatch(_batch) {
+      return { kind: "ok" }
+    },
+    batchSize: 32,
+    maxConcurrency: 4,
   }
 
   //if alice doesn't deem bobby a valid successor to bob, the proposal is invalid
@@ -150,7 +162,7 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
       state: aliceGroup,
       message: bobUpdate.message,
     }),
-  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one"))
+  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one: error"))
 
   const aliceProcessProposal = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },

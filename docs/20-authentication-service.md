@@ -2,12 +2,14 @@
 
 In order for your application to be secure you will need to define an Authentication Service.
 The exact construction is out of scope for this library, but ts-mls provides an easy interface so that you can ensure every credential is properly authenticated.
-For more information on the requirements of the Authentication Service, please check (RFC 9750)[https://www.ietf.org/rfc/rfc9750.html].
+For more information on the requirements of the Authentication Service, please check [RFC 9750](https://www.ietf.org/rfc/rfc9750.html).
 The RFC defines a number of steps at which credentials need to be authenticated, however you do not need to be concerned with when to authenticate the credentials, because the library takes care for of that for you.
 All you need to define is how to interact with the Authentication Service and then pass it along to the various ts-mls functions.
-The Authentication Service interface defines two functions: `validateCredential` and `validateSuccessorCredential`.
+The Authentication Service interface defines three validation functions: `validateCredential`, `validateSuccessorCredential`, and `validateCredentialBatch`. Each returns an `AuthenticationResult`: return `{ kind: "ok" }` when validation succeeds, or `{ kind: "error", error: "..." }` when it fails.
+
 The `validateCredential` function is called whenever a new credential is introduced and must ensure that the credential matches the given public key.
 The `validateSuccessorCredential` function is called whenever a credential is replaced (e.g. in an Update proposal) and it must ensure that the new credential is a valid continuation of the old credential.
+The `validateCredentialBatch` function validates several credential/public-key pairs at once. It is used while validating ratchet trees when `maxConcurrency` is greater than 1. `batchSize` controls the maximum number of pairs in each call, and `maxConcurrency` controls how many batch calls may run simultaneously. Both values must be at least 1; set `maxConcurrency` to `1` to use `validateCredential` for each credential instead.
 
 Below is an example of how one might construct an Authentication Service client that makes HTTP calls for authenticating credentials:
 
@@ -20,7 +22,9 @@ import {
   createApplicationMessage,
   createProposal,
   processMessage,
+  AuthenticationResult,
   Credential,
+  CredentialBatch,
   defaultCredentialTypes,
   getCiphersuiteImpl,
   generateKeyPackageWithKey,
@@ -31,10 +35,13 @@ import {
 } from "ts-mls"
 
 export class AuthenticationServiceClient implements AuthenticationService {
+  readonly batchSize = 32
+  readonly maxConcurrency = 4
+
   constructor(private readonly baseUrl: string = "https://api.example.com/auth") {}
 
   async registerCredential(credential: Credential, signaturePublicKey: Uint8Array): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/credentials`, {
+    await fetch(`${this.baseUrl}/credentials`, {
       method: "POST",
       body: JSON.stringify({
         credential: encode(credentialEncoder, credential),
@@ -43,7 +50,7 @@ export class AuthenticationServiceClient implements AuthenticationService {
     })
   }
 
-  async validateCredential(credential: Credential, signaturePublicKey: Uint8Array): Promise<boolean> {
+  async validateCredential(credential: Credential, signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
     const response = await fetch(`${this.baseUrl}/credentials/validate`, {
       method: "POST",
       body: JSON.stringify({
@@ -52,14 +59,18 @@ export class AuthenticationServiceClient implements AuthenticationService {
       }),
     })
 
-    const { valid } = (await response.json()) as {
+    const { valid, error } = (await response.json()) as {
       valid: boolean
+      error?: string
     }
 
-    return valid
+    return valid ? { kind: "ok" } : { kind: "error", error: error ?? "Credential was rejected" }
   }
 
-  async validateSuccessorCredential(oldCredential: Credential, newCredential: Credential): Promise<boolean> {
+  async validateSuccessorCredential(
+    oldCredential: Credential,
+    newCredential: Credential,
+  ): Promise<AuthenticationResult> {
     const response = await fetch(`${this.baseUrl}/credentials/validate`, {
       method: "POST",
       body: JSON.stringify({
@@ -68,11 +79,31 @@ export class AuthenticationServiceClient implements AuthenticationService {
       }),
     })
 
-    const { valid } = (await response.json()) as {
+    const { valid, error } = (await response.json()) as {
       valid: boolean
+      error?: string
     }
 
-    return valid
+    return valid ? { kind: "ok" } : { kind: "error", error: error ?? "Credential successor was rejected" }
+  }
+
+  async validateCredentialBatch(batch: CredentialBatch[]): Promise<AuthenticationResult> {
+    const response = await fetch(`${this.baseUrl}/credentials/validate-batch`, {
+      method: "POST",
+      body: JSON.stringify({
+        credentials: batch.map(({ credential, signaturePublicKey }) => ({
+          credential: encode(credentialEncoder, credential),
+          signaturePublicKey: bytesToBase64(signaturePublicKey),
+        })),
+      }),
+    })
+
+    const { valid, error } = (await response.json()) as {
+      valid: boolean
+      error?: string
+    }
+
+    return valid ? { kind: "ok" } : { kind: "error", error: error ?? "Credentials were rejected" }
   }
 }
 

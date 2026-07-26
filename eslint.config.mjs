@@ -24,6 +24,7 @@ export default defineConfig(
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/strict-boolean-expressions": "error",
       "import/extensions": [
         "error",
         "ignorePackages",

@@ -17,11 +17,25 @@ export interface Add {
 export type AeadAlgorithm = "AES128GCM" | "CHACHA20POLY1305" | "AES256GCM";
 
 // @public (undocumented)
+export type AuthenticationResult = {
+    kind: "ok";
+} | {
+    kind: "error";
+    error: string;
+};
+
+// @public (undocumented)
 export interface AuthenticationService {
     // (undocumented)
-    validateCredential(credential: Credential_2, signaturePublicKey: Uint8Array): Promise<boolean>;
+    batchSize: number;
     // (undocumented)
-    validateSuccessorCredential(oldCredential: Credential_2, newCredential: Credential_2): Promise<boolean>;
+    maxConcurrency: number;
+    // (undocumented)
+    validateCredential(credential: Credential_2, signaturePublicKey: Uint8Array): Promise<AuthenticationResult>;
+    // (undocumented)
+    validateCredentialBatch(batch: CredentialBatch[]): Promise<AuthenticationResult>;
+    // (undocumented)
+    validateSuccessorCredential(oldCredential: Credential_2, newCredential: Credential_2): Promise<AuthenticationResult>;
 }
 
 // @public (undocumented)
@@ -280,6 +294,14 @@ export interface CredentialBasic {
     credentialType: typeof defaultCredentialTypes.basic;
     // (undocumented)
     identity: Uint8Array;
+}
+
+// @public (undocumented)
+export interface CredentialBatch {
+    // (undocumented)
+    credential: Credential_2;
+    // (undocumented)
+    signaturePublicKey: Uint8Array;
 }
 
 // @public (undocumented)

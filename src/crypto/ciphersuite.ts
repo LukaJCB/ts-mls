@@ -43,7 +43,7 @@ export type CiphersuiteName = keyof typeof ciphersuites
 export type CiphersuiteId = (typeof ciphersuites)[CiphersuiteName]
 
 export function isDefaultCiphersuiteId(id: number): id is CiphersuiteId {
-  return ciphersuiteValues[id as CiphersuiteId] ? true : false
+  return ciphersuiteValues[id as CiphersuiteId] !== undefined
 }
 
 /** @public */

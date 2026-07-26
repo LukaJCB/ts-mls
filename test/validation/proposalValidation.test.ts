@@ -173,12 +173,17 @@ describe("Proposal Validation", () => {
             isDefaultCredential(c) &&
             constantTimeEqual(c.identity, badCredential.identity)
           )
-            return false
-          return true
+            return { kind: "error", error: "error" }
+          return { kind: "ok" }
         },
         async validateSuccessorCredential(_oldCredential, _newCredential) {
-          return false
+          return { kind: "error", error: "error" }
         },
+        async validateCredentialBatch(_batch) {
+          return { kind: "error", error: "error" }
+        },
+        batchSize: 32,
+        maxConcurrency: 1,
       }
 
       await expect(
@@ -186,7 +191,7 @@ describe("Proposal Validation", () => {
           { state: aliceGroup, cipherSuite: impl, authService },
           { extraProposals: [proposalUnauthenticatedExternalSenders] },
         ),
-      ).rejects.toThrow(new ValidationError("Could not validate external credential"))
+      ).rejects.toThrow(new ValidationError("Could not validate external credential: error"))
     },
   )
 
@@ -211,12 +216,17 @@ describe("Proposal Validation", () => {
           isDefaultCredential(c) &&
           constantTimeEqual(c.identity, edwardCredential.identity)
         )
-          return false
-        return true
+          return { kind: "error", error: "error" }
+        return { kind: "ok" }
       },
       async validateSuccessorCredential(_oldCredential, _newCredential) {
-        return false
+        return { kind: "error", error: "error" }
       },
+      async validateCredentialBatch(_batch) {
+        return { kind: "error", error: "error" }
+      },
+      batchSize: 32,
+      maxConcurrency: 1,
     }
 
     await expect(
@@ -228,7 +238,7 @@ describe("Proposal Validation", () => {
         state: aliceGroup,
         keyPackage: edward.publicPackage,
       }),
-    ).rejects.toThrow(new ValidationError("Could not validate credential"))
+    ).rejects.toThrow(new ValidationError("Could not validate credential: error"))
   })
 
   test.concurrent.each(suites)("can't add leafNode with unsupported credentialType %s", async (cs) => {
@@ -303,7 +313,7 @@ describe("Proposal Validation", () => {
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [updateProposal] },
       ),
-    ).rejects.toThrow(new ValidationError("Update Proposal requires a sender"))
+    ).rejects.toThrow(new ValidationError("Commit cannot contain an update proposal sent by committer"))
   })
 
   test.concurrent.each(suites)("committer can't remove themselves %s", async (cs) => {

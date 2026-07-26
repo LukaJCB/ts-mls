@@ -4,7 +4,7 @@ import { Encoder } from "./tlsEncoder.js"
 
 export function optionalEncoder<T>(encodeT: Encoder<T>): Encoder<T | undefined> {
   return (t) => {
-    if (t) {
+    if (t !== undefined) {
       const [len, write] = encodeT(t)
       return [
         len + 1,

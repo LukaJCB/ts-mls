@@ -607,7 +607,8 @@ export async function joinGroupExternal(params: {
 
   const credentialVerified = await authService.validateCredential(signerCredential, signaturePublicKey)
 
-  if (!credentialVerified) throw new ValidationError("Could not validate credential")
+  if (credentialVerified.kind === "error")
+    throw new ValidationError(`Could not validate credential: ${credentialVerified.error}`)
 
   const groupInfoSignatureVerified = await verifyGroupInfoSignature(groupInfo, signaturePublicKey, cs.signature)
 

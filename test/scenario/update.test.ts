@@ -14,7 +14,11 @@ import {
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
-import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
+import {
+  AuthenticationResult,
+  AuthenticationService,
+  unsafeTestingAuthenticationService,
+} from "../../src/authenticationService.js"
 import { generateSignatureKeyPair } from "../../src/signatureKeyPair.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
@@ -180,13 +184,21 @@ async function update(cipherSuite: CiphersuiteName) {
   ).toBe(true)
 
   //if alice doesn't deem bobby a valid successor to bob, the commit is invalid
-  const badAuthService = {
-    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<boolean> {
-      return true
+  const badAuthService: AuthenticationService = {
+    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
+      return { kind: "ok" }
     },
-    async validateSuccessorCredential(_oldCredential: Credential, _newCredential: Credential): Promise<boolean> {
-      return false
+    async validateSuccessorCredential(
+      _oldCredential: Credential,
+      _newCredential: Credential,
+    ): Promise<AuthenticationResult> {
+      return { kind: "error", error: "error" }
     },
+    async validateCredentialBatch(_batch) {
+      return { kind: "ok" }
+    },
+    batchSize: 32,
+    maxConcurrency: 4,
   }
 
   await expect(async () =>
@@ -198,7 +210,7 @@ async function update(cipherSuite: CiphersuiteName) {
       state: aliceGroup,
       message: emptyCommitResult2.commit,
     }),
-  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one"))
+  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one: error"))
 
   const aliceProcessCommitResult3 = await processMessageEnsureNoMutation({
     context: {
