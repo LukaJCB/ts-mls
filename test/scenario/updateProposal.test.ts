@@ -37,6 +37,116 @@ test.concurrent.each(Object.keys(ciphersuites))(`Update Proposal %s`, async (cs)
   await updateProposalRoundtrip(cs as CiphersuiteName, false)
 })
 
+test.concurrent.each(Object.keys(ciphersuites))(`Update Proposal from leaf index zero %s`, async (cs) => {
+  await updateProposalFromLeafZero(cs as CiphersuiteName, true)
+  await updateProposalFromLeafZero(cs as CiphersuiteName, false)
+})
+
+// The member at leaf index 0 sends an Update proposal by reference and another member commits it
+async function updateProposalFromLeafZero(cipherSuite: CiphersuiteName, publicMessage: boolean) {
+  const impl = await getCiphersuiteImpl(cipherSuite)
+  const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
+
+  const aliceCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("alice"),
+  }
+  const alice = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
+
+  let aliceGroup = await createGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    groupId: new TextEncoder().encode("group1"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+
+  const bobCredential: Credential = {
+    credentialType: defaultCredentialTypes.basic,
+    identity: new TextEncoder().encode("bob"),
+  }
+  const bob = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
+
+  const addBob: ProposalAdd = {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: bob.publicPackage },
+  }
+
+  const addBobCommit = await createCommitEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    wireAsPublicMessage: publicMessage,
+    extraProposals: [addBob],
+    ratchetTreeExtension: true,
+  })
+  aliceGroup = addBobCommit.newState
+
+  let bobGroup = await joinGroup({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    welcome: addBobCommit.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+  })
+  expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
+
+  expect(aliceGroup.privatePath.leafIndex).toBe(0)
+  expect(bobGroup.privatePath.leafIndex).toBe(1)
+
+  const aliceOldPub = getOwnLeafNode(aliceGroup).hpkePublicKey
+
+  const aliceUpdate = await createUpdateProposal({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    wireAsPublicMessage: publicMessage,
+  })
+  aliceGroup = aliceUpdate.newState
+
+  if (aliceUpdate.message.wireformat !== preferredWireformat) throw new Error(`Expected ${preferredWireformat} message`)
+  expect(fastEqual(aliceUpdate.newLeafKeypair.hpkePublicKey, aliceOldPub)).toBe(false)
+
+  aliceGroup = {
+    ...aliceGroup,
+    privatePath: updateLeafKey(aliceGroup.privatePath, aliceUpdate.newLeafKeypair.hpkePrivateKey),
+  }
+
+  // bob must accept the proposal even though its sender sits at leaf index 0
+  const bobProcessProposal = await processMessageEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: bobGroup,
+    message: aliceUpdate.message,
+    callback: acceptAll,
+  })
+  bobGroup = bobProcessProposal.newState
+  expect(Object.keys(bobGroup.unappliedProposals).length).toBe(1)
+
+  const bobCommit = await createCommitEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: bobGroup,
+    wireAsPublicMessage: publicMessage,
+    ratchetTreeExtension: false,
+  })
+  bobGroup = bobCommit.newState
+  if (bobCommit.commit.wireformat !== preferredWireformat) throw new Error(`Expected ${preferredWireformat} message`)
+
+  const aliceProcessCommit = await processMessageEnsureNoMutation({
+    context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
+    state: aliceGroup,
+    message: bobCommit.commit,
+    callback: acceptAll,
+  })
+  aliceGroup = aliceProcessCommit.newState
+
+  const aliceLeafAfter = getOwnLeafNode(aliceGroup)
+  expect(fastEqual(aliceLeafAfter.hpkePublicKey, aliceUpdate.newLeafKeypair.hpkePublicKey)).toBe(true)
+
+  expect(bobGroup.keySchedule.epochAuthenticator).toStrictEqual(aliceGroup.keySchedule.epochAuthenticator)
+  expect(aliceGroup.unappliedProposals).toEqual({})
+  expect(bobGroup.unappliedProposals).toEqual({})
+
+  await checkHpkeKeysMatch(aliceGroup, impl)
+  await checkHpkeKeysMatch(bobGroup, impl)
+  await testEveryoneCanMessageEveryone([aliceGroup, bobGroup], impl)
+}
+
 async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessage: boolean) {
   const impl = await getCiphersuiteImpl(cipherSuite)
   const preferredWireformat = publicMessage ? wireformats.mls_public_message : wireformats.mls_private_message
