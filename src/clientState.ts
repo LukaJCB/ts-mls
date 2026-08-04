@@ -867,7 +867,7 @@ export async function processProposal(
         )
         break
       case defaultProposalTypes.update:
-        if (!senderLeafIndex) throw new ValidationError("Received an Update proposal from a non-member")
+        if (senderLeafIndex === undefined) throw new ValidationError("Received an Update proposal from a non-member")
         await validateUpdateProposal(
           proposal,
           senderLeafIndex,
