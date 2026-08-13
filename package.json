@@ -75,7 +75,7 @@
     "madge": "8.0.0",
     "playwright": "^1.52.0",
     "prettier": "3.8.4",
-    "tinybench": "6.1.2",
+    "tinybench": "6.1.3",
     "tsx": "4.23.11",
     "typescript": "5.9.3",
     "typescript-docs-verifier": "3.0.2",
