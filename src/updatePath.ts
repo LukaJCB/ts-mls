@@ -22,7 +22,7 @@ import {
   RatchetTree,
 } from "./ratchetTree.js"
 import { treeHashRoot } from "./treeHash.js"
-import { isAncestor, LeafIndex, leafToNodeIndex, NodeIndex } from "./treemath.js"
+import { directPath, isAncestor, LeafIndex, leafToNodeIndex, leafWidth, NodeIndex } from "./treemath.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { decodeHpkeCiphertext, hpkeCiphertextEncoder, HPKECiphertext } from "./hpkeCiphertext.js"
 import { InternalError, ValidationError } from "./mlsError.js"
@@ -75,6 +75,7 @@ export async function createUpdatePath(
   groupContext: GroupContext,
   signaturePrivateKey: Uint8Array,
   cs: CiphersuiteImpl,
+  excludeNodes: NodeIndex[] = [],
 ): Promise<[RatchetTree, UpdatePath, PathSecret[], PrivateKey]> {
   const originalLeafNode = originalTree[leafToNodeIndex(senderLeafIndex)]
   if (originalLeafNode === undefined || originalLeafNode.nodeType === "parent")
@@ -88,6 +89,7 @@ export async function createUpdatePath(
   const fdp = filteredDirectPathAndCopathResolution(senderLeafIndex, originalTree)
 
   const copy = originalTree.slice()
+  blankStructuralDirectPath(copy, senderLeafIndex)
 
   const [ps, updatedTree]: [PathSecret[], RatchetTree] = await applyInitialTreeUpdate(
     fdp,
@@ -95,6 +97,7 @@ export async function createUpdatePath(
     senderLeafIndex,
     copy,
     cs,
+    new Set(excludeNodes),
   )
 
   const treeWithHashes = await insertParentHashes(fdp, updatedTree, cs)
@@ -191,11 +194,12 @@ async function insertParentHashes(
  * Note that the path secrets are returned root to leaf
  */
 async function applyInitialTreeUpdate(
-  fdp: { resolution: number[]; nodeIndex: number }[],
+  fdp: { resolution: NodeIndex[]; nodeIndex: NodeIndex }[],
   pathSecret: Uint8Array,
   senderLeafIndex: LeafIndex,
   tree: RatchetTree,
   cs: CiphersuiteImpl,
+  excludeNodes: Set<NodeIndex> = new Set(),
 ): Promise<[PathSecret[], RatchetTree]> {
   return await fdp.reduce(
     async (acc, { nodeIndex, resolution }) => {
@@ -214,13 +218,21 @@ async function applyInitialTreeUpdate(
         },
       }
 
-      return [[{ nodeIndex, secret: nextPathSecret, sendTo: resolution }, ...pathSecrets], tree]
+      const sendTo =
+        excludeNodes.size === 0 ? resolution : resolution.filter((nodeIndex) => !excludeNodes.has(nodeIndex))
+      return [[{ nodeIndex, secret: nextPathSecret, sendTo }, ...pathSecrets], tree]
     },
     Promise.resolve([[{ secret: pathSecret, nodeIndex: leafToNodeIndex(senderLeafIndex), sendTo: [] }], tree] as [
       PathSecret[],
       RatchetTree,
     ]),
   )
+}
+
+function blankStructuralDirectPath(tree: RatchetTree, senderLeafIndex: LeafIndex): void {
+  for (const nodeIndex of directPath(leafToNodeIndex(senderLeafIndex), leafWidth(tree.length))) {
+    tree[nodeIndex] = undefined
+  }
 }
 
 export async function applyUpdatePath(
@@ -259,6 +271,7 @@ export async function applyUpdatePath(
   copy[leafToNodeIndex(senderLeafIndex)] = { nodeType: "leaf", leaf: path.leafNode }
 
   const reverseFilteredDirectPath = filteredDirectPath(senderLeafIndex, tree).reverse()
+  blankStructuralDirectPath(copy, senderLeafIndex)
 
   // need to call .slice here so as not to mutate the original
   const reverseUpdatePath = path.nodes.slice().reverse()

@@ -11,7 +11,6 @@ import {
 import { GroupActiveState } from "./groupActiveState.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { decryptWithLabel } from "./crypto/hpke.js"
-import { deriveSecret } from "./crypto/kdf.js"
 import {
   createContentCommitSignature,
   createConfirmationTag,
@@ -31,7 +30,7 @@ import { initializeEpoch, EpochSecrets } from "./keySchedule.js"
 import { MLSMessage } from "./message.js"
 import { protect } from "./messageProtection.js"
 import { protectPublicMessage } from "./messageProtectionPublic.js"
-import { pathToPathSecrets } from "./pathSecrets.js"
+import { getCommitSecret, pathToPathSecrets } from "./pathSecrets.js"
 import { mergePrivateKeyPaths, updateLeafKey, toPrivateKeyPath, PrivateKeyPath } from "./privateKeyPath.js"
 import { Proposal, ProposalExternalInit } from "./proposal.js"
 import { ProposalOrRef } from "./proposalOrRefType.js"
@@ -46,7 +45,15 @@ import {
 } from "./ratchetTree.js"
 import { createSecretTree, SecretTree } from "./secretTree.js"
 import { treeHashRoot } from "./treeHash.js"
-import { LeafIndex, leafWidth, NodeIndex, nodeToLeafIndex, toLeafIndex, toNodeIndex } from "./treemath.js"
+import {
+  LeafIndex,
+  leafToNodeIndex,
+  leafWidth,
+  NodeIndex,
+  nodeToLeafIndex,
+  toLeafIndex,
+  toNodeIndex,
+} from "./treemath.js"
 import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath.js"
 import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
@@ -110,6 +117,14 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
 
   const suspendedPendingReinit = res.additionalResult.kind === "reinit" ? res.additionalResult.reinit : undefined
 
+  // New members receive the path secret in the Welcome, rather than through
+  // the UpdatePath.  Excluding them here keeps the ciphertext ordering aligned
+  // with recipients processing the Commit.
+  const excludeNodes =
+    res.additionalResult.kind === "memberCommit"
+      ? res.additionalResult.addedLeafNodes.map(([leafIndex]) => leafToNodeIndex(leafIndex))
+      : []
+
   const [tree, updatePath, pathSecrets, newPrivateKey] = res.needsUpdatePath
     ? await createUpdatePath(
         res.tree,
@@ -117,6 +132,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
         state.groupContext,
         state.signaturePrivateKey,
         cipherSuite,
+        excludeNodes,
       )
     : [res.tree, undefined, [] as PathSecret[], undefined]
 
@@ -139,7 +155,7 @@ export async function createCommit(context: MLSContext, options?: CreateCommitOp
   const commitSecret =
     lastPathSecret === undefined
       ? new Uint8Array(cipherSuite.kdf.size)
-      : await deriveSecret(lastPathSecret.secret, "path", cipherSuite.kdf)
+      : await getCommitSecret(tree, toNodeIndex(lastPathSecret.nodeIndex), lastPathSecret.secret, cipherSuite.kdf)
 
   const { signature, framedContent } = await createContentCommitSignature(
     state.groupContext,
@@ -568,7 +584,7 @@ export async function joinGroupExternal(
   const commitSecret =
     lastPathSecret === undefined
       ? new Uint8Array(cs.kdf.size)
-      : await deriveSecret(lastPathSecret.secret, "path", cs.kdf)
+      : await getCommitSecret(newTree, toNodeIndex(lastPathSecret.nodeIndex), lastPathSecret.secret, cs.kdf)
 
   const externalInitProposal: ProposalExternalInit = {
     proposalType: "external_init",

@@ -809,7 +809,7 @@ export async function applyProposals(
     const selfRemoved = mutatedTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
 
     const needsUpdatePath =
-      allProposals.length === 0 || Object.values(grouped.update).length > 1 || Object.values(grouped.remove).length > 1
+      allProposals.length === 0 || Object.values(grouped.update).length > 0 || Object.values(grouped.remove).length > 0
 
     return {
       tree: mutatedTree,

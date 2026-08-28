@@ -259,6 +259,25 @@ async function processCommit(
   if (result.needsUpdatePath && content.content.commit.path === undefined)
     throw new ValidationError("Update path is required")
 
+  // A member removed by this Commit cannot decrypt its UpdatePath secret: its
+  // leaf has already been removed from `result.tree`, so it is deliberately
+  // absent from every path resolution.  It therefore cannot derive the next
+  // epoch secrets or verify the confirmation tag.  Record the removal after
+  // the Commit has been authenticated and its proposals validated, without
+  // attempting to advance the private key path.
+  if (result.selfRemoved) {
+    return {
+      newState: {
+        ...state,
+        ratchetTree: result.tree,
+        unappliedProposals: {},
+        groupActiveState: { kind: "removedFromGroup" },
+      },
+      actionTaken: action,
+      consumed: [],
+    }
+  }
+
   const groupContextWithExtensions =
     result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions.length > 0
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
