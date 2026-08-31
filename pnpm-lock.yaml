@@ -31,8 +31,8 @@ importers:
         specifier: ^7.52.13
         version: 7.59.0(@types/node@26.3.0)
       '@noble/ciphers':
-        specifier: 2.1.1
-        version: 2.1.1
+        specifier: 2.4.0
+        version: 2.4.0
       '@noble/curves':
         specifier: 2.0.1
         version: 2.0.1
@@ -588,12 +588,12 @@ packages:
   '@microsoft/tsdoc@0.16.0':
     resolution: {integrity: sha512-xgAyonlVVS+q7Vc7qLW0UrJU7rSFcETRWsqdXZtjzRU8dF+6CkozTK4V4y1LwOX7j8r/vHphjDeMeGI4tNGeGA==}
 
-  '@noble/ciphers@2.1.1':
-    resolution: {integrity: sha512-bysYuiVfhxNJuldNXlFEitTVdNnYUc+XNJZd7Qm2a5j1vZHgY+fazadNFWFaMK/2vye0JVlxV3gHmC0WDfAOQw==}
-    engines: {node: '>= 20.19.0'}
-
   '@noble/ciphers@2.3.0':
     resolution: {integrity: sha512-Clu/xdfgVTf9o7ngLOURaxePwR0j8sjclKEtVij10/jGulwFsPWCvvRgG/XjUVf8Nei+jLG6uwyXzUTGY1DQrw==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/ciphers@2.4.0':
+    resolution: {integrity: sha512-AnjFn0Jv92laAkvMrghlFZq4qQCIN/4DxFV/eooqtC2YTjB7kBeLMS2T9KJX4Dn+ZVXLOwK0lSgqDtx9gvxtiw==}
     engines: {node: '>= 20.19.0'}
 
   '@noble/curves@2.0.1':
@@ -2956,9 +2956,9 @@ snapshots:
 
   '@microsoft/tsdoc@0.16.0': {}
 
-  '@noble/ciphers@2.1.1': {}
-
   '@noble/ciphers@2.3.0': {}
+
+  '@noble/ciphers@2.4.0': {}
 
   '@noble/curves@2.0.1':
     dependencies:
