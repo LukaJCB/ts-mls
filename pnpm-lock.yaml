@@ -37,8 +37,8 @@ importers:
         specifier: 2.4.0
         version: 2.4.0
       '@noble/hashes':
-        specifier: 2.3.0
-        version: 2.3.0
+        specifier: 2.4.0
+        version: 2.4.0
       '@noble/post-quantum':
         specifier: 0.7.0
         version: 0.7.0
