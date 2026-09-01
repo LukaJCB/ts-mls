@@ -65,7 +65,7 @@
     "@noble/ciphers": "2.1.1",
     "@noble/curves": "2.0.1",
     "@noble/hashes": "2.4.0",
-    "@noble/post-quantum": "0.7.0",
+    "@noble/post-quantum": "0.7.1",
     "@types/jest": "30.0.0",
     "@types/node": "^26.0.0",
     "@vitest/browser-playwright": "4.0.17",
