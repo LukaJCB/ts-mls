@@ -65,7 +65,7 @@ importers:
         version: 1.0.0(@typescript-eslint/parser@8.69.0(eslint@10.9.1(jiti@2.7.0))(typescript@6.0.3))(eslint@10.9.1(jiti@2.7.0))(typescript@6.0.3)
       knip:
         specifier: ^6.0.0
-        version: 6.33.0
+        version: 6.34.0
       madge:
         specifier: 8.0.0
         version: 8.0.0(typescript@6.0.3)
@@ -2148,8 +2148,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  knip@6.33.0:
-    resolution: {integrity: sha512-gMXWV2bqgJcdZKsaRgl1oH5V2J0VumhJ2ujfP4M6b9ftpca2BNpvlX3Dq++vVtEey7sU67EXCvZGNkQfG2w1RQ==}
+  knip@6.34.0:
+    resolution: {integrity: sha512-bbHIrnGspYwe4EBPjjx+lvkUor0F2qfKQc5BPzPI4SOAImYA+k2ueVpIcF7d/W1LEVT7XoJUPt6zELeGZhXBgA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -2939,8 +2939,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@4.5.3:
-    resolution: {integrity: sha512-DVADDs2rc+nEbqt+Lsd1ESk6FokySOACfLuon6MNrLnFfE4EBdgb3DcXrnHmngIZBBdPz2PJMPBtgzaMIk59ZA==}
+  zod@4.5.4:
+    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
 snapshots:
 
@@ -4976,7 +4976,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  knip@6.33.0:
+  knip@6.34.0:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.7)
       formatly: 0.7.0
@@ -4990,7 +4990,7 @@ snapshots:
       tinyglobby: 0.2.17
       unbash: 4.0.10
       yaml: 2.9.0
-      zod: 4.5.3
+      zod: 4.5.4
 
   levn@0.4.1:
     dependencies:
@@ -5863,4 +5863,4 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@4.5.3: {}
+  zod@4.5.4: {}
