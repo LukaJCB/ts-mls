@@ -25,8 +25,8 @@ importers:
         specifier: 0.7.0
         version: 0.7.0
       '@hpke/ml-kem':
-        specifier: 0.3.0
-        version: 0.3.0
+        specifier: 0.3.1
+        version: 0.3.1
       '@microsoft/api-extractor':
         specifier: ^7.52.13
         version: 7.60.1(@types/node@26.6.6)
@@ -520,8 +520,8 @@ packages:
     resolution: {integrity: sha512-95M8gJMperA4iWwHFgsEkmxjKcvAX8M4koheFnT85zXcqLL/vBh4597ucw2wLol6d2dC6gpKp9ZApL4d6hmDzA==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/ml-kem@0.3.0':
-    resolution: {integrity: sha512-+K0I37CCKOvom/MDiNuUQEOIbkij55yTTbw5o/NKOfBjANt/WeYKMmSOtot6essGmt8/9FJASRSFDkjAWu0eiQ==}
+  '@hpke/ml-kem@0.3.1':
+    resolution: {integrity: sha512-38R6lF8CxA2PZZ0/qDTvw42Bs1qTysDnn6RlnVStj//lOu94mBnc2gcKgx41DyJyYxthxZdLYUuyqamMvHfDFw==}
     engines: {node: '>=16.0.0'}
 
   '@humanfs/core@0.19.1':
@@ -2879,9 +2879,9 @@ snapshots:
       '@hpke/dhkem-x25519': 1.8.0
       mlkem: 2.7.0
 
-  '@hpke/ml-kem@0.3.0':
+  '@hpke/ml-kem@0.3.1':
     dependencies:
-      '@hpke/common': 1.10.0
+      '@hpke/common': 1.13.0
       mlkem: 2.7.0
 
   '@humanfs/core@0.19.1': {}
