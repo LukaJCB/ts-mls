@@ -22,8 +22,8 @@ importers:
         specifier: 1.8.1
         version: 1.8.1
       '@hpke/hybridkem-x-wing':
-        specifier: 0.7.0
-        version: 0.7.0
+        specifier: 0.7.1
+        version: 0.7.1
       '@hpke/ml-kem':
         specifier: 0.3.1
         version: 0.3.1
@@ -496,10 +496,6 @@ packages:
     resolution: {integrity: sha512-EqIpqvybIQrdMMbVcrF9cr6q8PZWbKQ60428iZyESjGO8j9jJCsILNHaCyWWBwnJYAKT8nZko5sNIkIXmlHsuw==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/common@1.10.0':
-    resolution: {integrity: sha512-uVq9pTNERQ1GcFlHZzQx+a0ZMC81wQzkbNzJPEyR/l3AWM7fASd/qYN2Cnq6uL1NPEfwcD4lgOmfjjZfx2k2XA==}
-    engines: {node: '>=16.0.0'}
-
   '@hpke/common@1.13.0':
     resolution: {integrity: sha512-PqaJR89RWJQmt/WOGuBLrcrtXtEMbWu91XIbxDjKDTDgKvqvhlxOzQ9BAf9a0Q+yqqbTtQ0pK6KUyVi2WMehbA==}
     engines: {node: '>=16.0.0'}
@@ -508,16 +504,12 @@ packages:
     resolution: {integrity: sha512-VZOk0rHC4vPsbW/fIRz7Q2IviSl0+9dRhP9yi/PmkKVKjj4vZDs1ufkN47twBFLZmiw37YFtTqBrxKAI7dlOrg==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/dhkem-x25519@1.8.0':
-    resolution: {integrity: sha512-S1MWWkAfu+TFxySgv5+2P3O4Mx/jk7BsoplzQaA1s3sfUJVJ2UsZsSzSsMc+FXJumLXncoJFlO6mK6mDGspfmA==}
-    engines: {node: '>=16.0.0'}
-
   '@hpke/dhkem-x448@1.8.1':
     resolution: {integrity: sha512-gsrEQHJUKmN1TfenktFAnZozFs1fUYnHGa4xbggJHIf2sn5gTPDNZfmmJWvat6Kom4aBRWzldyAogtEg6jsXwA==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/hybridkem-x-wing@0.7.0':
-    resolution: {integrity: sha512-95M8gJMperA4iWwHFgsEkmxjKcvAX8M4koheFnT85zXcqLL/vBh4597ucw2wLol6d2dC6gpKp9ZApL4d6hmDzA==}
+  '@hpke/hybridkem-x-wing@0.7.1':
+    resolution: {integrity: sha512-8BdZnfIagg8MFuShruSbVuj7/ujg63eNaRx/EE8dJzMg1keh2Vm8BPAigEu5Zzskgu9zv001yHYdV7PK8K0+aA==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/ml-kem@0.3.1':
@@ -2857,15 +2849,9 @@ snapshots:
     dependencies:
       '@hpke/common': 1.13.0
 
-  '@hpke/common@1.10.0': {}
-
   '@hpke/common@1.13.0': {}
 
   '@hpke/core@1.10.1':
-    dependencies:
-      '@hpke/common': 1.13.0
-
-  '@hpke/dhkem-x25519@1.8.0':
     dependencies:
       '@hpke/common': 1.13.0
 
@@ -2873,10 +2859,9 @@ snapshots:
     dependencies:
       '@hpke/common': 1.13.0
 
-  '@hpke/hybridkem-x-wing@0.7.0':
+  '@hpke/hybridkem-x-wing@0.7.1':
     dependencies:
-      '@hpke/common': 1.10.0
-      '@hpke/dhkem-x25519': 1.8.0
+      '@hpke/common': 1.13.0
       mlkem: 2.7.0
 
   '@hpke/ml-kem@0.3.1':
