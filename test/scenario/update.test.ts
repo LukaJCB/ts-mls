@@ -14,16 +14,13 @@ import {
 
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
-import {
-  AuthenticationResult,
-  AuthenticationService,
-  unsafeTestingAuthenticationService,
-} from "../../src/authenticationService.js"
+import { AuthenticationService, unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { generateSignatureKeyPair } from "../../src/signatureKeyPair.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
 import { fastEqual } from "../../src/util/byteArray.js"
-import { encode, ValidationError } from "../../src/index.js"
+import { encode } from "../../src/index.js"
+import { AuthenticationError } from "../../src/mlsError.js"
 import { capabilitiesEncoder } from "../../src/capabilities.js"
 import { varLenTypeEncoder } from "../../src/codec/variableLength.js"
 import { extensionEncoder } from "../../src/extension.js"
@@ -184,21 +181,13 @@ async function update(cipherSuite: CiphersuiteName) {
   ).toBe(true)
 
   //if alice doesn't deem bobby a valid successor to bob, the commit is invalid
+  const validateCredentialBatch = vi.fn<AuthenticationService["validateCredentialBatch"]>(async () => ({
+    kind: "error",
+    error: "error",
+  }))
   const badAuthService: AuthenticationService = {
-    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
-      return { kind: "ok" }
-    },
-    async validateSuccessorCredential(
-      _oldCredential: Credential,
-      _newCredential: Credential,
-    ): Promise<AuthenticationResult> {
-      return { kind: "error", error: "error" }
-    },
-    async validateCredentialBatch(_batch) {
-      return { kind: "ok" }
-    },
-    batchSize: 32,
-    maxConcurrency: 4,
+    ...unsafeTestingAuthenticationService,
+    validateCredentialBatch,
   }
 
   await expect(async () =>
@@ -210,7 +199,21 @@ async function update(cipherSuite: CiphersuiteName) {
       state: aliceGroup,
       message: emptyCommitResult2.commit,
     }),
-  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one: error"))
+  ).rejects.toThrow(new AuthenticationError("error"))
+
+  expect(validateCredentialBatch).toHaveBeenCalledTimes(1)
+  expect(validateCredentialBatch).toHaveBeenCalledWith([
+    [
+      {
+        credential: bobLeafNodePatch.credential,
+        signaturePublicKey: bobNewSignatureKeys.publicKey,
+        oldCredential: {
+          credential: bobOldLeafNode.credential,
+          signaturePublicKey: bobOldLeafNode.signaturePublicKey,
+        },
+      },
+    ],
+  ])
 
   const aliceProcessCommitResult3 = await processMessageEnsureNoMutation({
     context: {

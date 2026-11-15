@@ -34,7 +34,7 @@ describe("Required Capabilities extension", () => {
 
       await expect(
         processKeyPackage({ context: fixture.context, state: fixture.state, keyPackage: charlie.publicPackage }),
-      ).rejects.toThrow(new ValidationError("LeafNode does not support required capabilities"))
+      ).rejects.toThrow(new ValidationError("Commit contains proposals of member without required capabilities"))
     },
   )
 
@@ -87,12 +87,12 @@ describe("Required Capabilities extension", () => {
 
       await expect(
         processMessageEnsureNoMutation({ context: fixture.context, state: bobState, message: aliceCommit.commit }),
-      ).rejects.toThrow(new ValidationError("LeafNode does not support required capabilities"))
+      ).rejects.toThrow(new ValidationError("Commit contains proposals of member without required capabilities"))
     },
   )
 
   test.concurrent.each(Object.keys(ciphersuites))(
-    "sscenario 5: group has reqCaps but gce proposal adds different reqCaps and an add proposal doesn't have the new caps but has the old (%s)",
+    "scenario 5: group has reqCaps but gce proposal adds different reqCaps and an add proposal doesn't have the new caps but has the old (%s)",
     async (cs) => {
       const fixture = await setupGroup(cs as CiphersuiteName, { required: oldRequiredCapabilities, alice: [7, 9] })
       const charlie = await fixture.member("charlie", [7])

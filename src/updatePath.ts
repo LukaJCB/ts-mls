@@ -135,6 +135,7 @@ export async function createUpdatePath(
   }
 
   // we have to remove the leaf secret since we don't send it to anyone
+  //TODO can we just do .pop and then reverse? orsubarray
   const pathSecrets = ps.slice(0, ps.length - 1).reverse()
 
   const encrypt = encryptSecretsForPath(mutableTree, updatedGroupContext, cs)

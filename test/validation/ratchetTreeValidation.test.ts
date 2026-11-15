@@ -38,6 +38,8 @@ import { wireformats } from "../../src/wireformat.js"
 import { createContentCommitSignature } from "../../src/framedContent.js"
 import { protectPublicMessage } from "../../src/messageProtectionPublic.js"
 import { contentTypes } from "../../src/contentType.js"
+import { MlsFramedMessage, MlsPublicMessage } from "../../src/message.js"
+import { proposalOrRefTypes } from "../../src/proposalOrRefType.js"
 
 type CommitContext = MlsContext & { state: ClientState }
 
@@ -67,6 +69,40 @@ const generateDefaultKeyPackageWithKey = (
 const createCommit = (context: CommitContext, options?: CreateCommitOptions) => {
   const { state, ...baseContext } = context
   return createCommitBase({ context: baseContext, state, ...(options ?? {}) })
+}
+
+async function resignPublicCommitWithProposals(
+  state: ClientState,
+  message: MlsFramedMessage,
+  proposals: Proposal[],
+  cs: CiphersuiteImpl,
+): Promise<MlsPublicMessage> {
+  if (message.wireformat !== wireformats.mls_public_message) throw new Error("expected a public commit")
+  const { content, auth } = message.publicMessage
+  if (content.contentType !== contentTypes.commit) throw new Error("expected commit content")
+
+  const { framedContent, signature } = await createContentCommitSignature(
+    state.groupContext,
+    "mls_public_message",
+    {
+      ...content.commit,
+      proposals: proposals.map((proposal) => ({ proposalOrRefType: proposalOrRefTypes.proposal, proposal })),
+    },
+    content.sender,
+    content.authenticatedData,
+    state.signaturePrivateKey,
+    cs.signature,
+  )
+
+  // Recompute the signature and membership tag so malformed proposals reach
+  // receiver validation. They must fail before the reused confirmation tag is checked.
+  const publicMessage = await protectPublicMessage(
+    state.keySchedule.membershipKey,
+    state.groupContext,
+    { wireformat: wireformats.mls_public_message, content: framedContent, auth: { ...auth, signature } },
+    cs,
+  )
+  return { ...message, publicMessage }
 }
 
 describe("Ratchet Tree Validation", () => {
@@ -169,11 +205,10 @@ async function testAuthenticationBatching(cipherSuite: CiphersuiteName) {
       return { kind: "ok" }
     },
     async validateCredentialBatch(batch) {
-      batches.push(batch.length)
+      batches.push(...batch.map((n) => n.length))
       return { kind: "ok" }
     },
-    batchSize: 1,
-    maxConcurrency: 2,
+    batchSize: 2,
   }
 
   await expect(
@@ -187,7 +222,7 @@ async function testAuthenticationBatching(cipherSuite: CiphersuiteName) {
     ),
   ).resolves.toBeUndefined()
   expect(individualCalls).toBe(0)
-  expect(batches).toEqual([1, 1])
+  expect(batches).toEqual([2])
 
   const rejectedBatchAuthService: AuthenticationService = {
     ...batchedAuthService,
@@ -210,11 +245,11 @@ async function testAuthenticationBatching(cipherSuite: CiphersuiteName) {
     tree,
     groupInfo.groupContext,
     defaultLifetimeConfig,
-    { ...batchedAuthService, maxConcurrency: 0 },
+    { ...batchedAuthService, batchSize: 0 },
     groupInfo.groupContext.treeHash,
     impl,
   )
-  expect(err2).toEqual(new UsageError("maxParallelism should not be less than 1"))
+  expect(err2).toEqual(new UsageError("batchSize should not be less than 1"))
 }
 
 async function testStructuralIntegrity(cipherSuite: CiphersuiteName) {
@@ -791,10 +826,7 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
     },
   }
 
-  // tamper with the KeyPackage cipherSuite id to mismatch the group's cipher suite
-  charlie.publicPackage.cipherSuite = 0xffff
-
-  const createInvalidCommit = await createCommit(
+  const validCommit = await createCommit(
     {
       state: aliceGroup,
       cipherSuite: impl,
@@ -802,10 +834,20 @@ async function testInvalidCipherSuite(cipherSuite: CiphersuiteName) {
     },
     {
       extraProposals: [addCharlieProposal],
+      wireAsPublicMessage: true,
     },
   )
 
-  await expect(processMessage({ context, state: bobGroup, message: createInvalidCommit.commit })).rejects.toThrow(
+  const invalidAdd: Proposal = {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: { ...charlie.publicPackage, cipherSuite: 0xffff } },
+  }
+  await expect(createCommit({ ...context, state: aliceGroup }, { extraProposals: [invalidAdd] })).rejects.toThrow(
+    new ValidationError("Invalid CipherSuite"),
+  )
+
+  const invalidCommit = await resignPublicCommitWithProposals(aliceGroup, validCommit.commit, [invalidAdd], impl)
+  await expect(processMessage({ context, state: bobGroup, message: invalidCommit })).rejects.toThrow(
     new ValidationError("Invalid CipherSuite"),
   )
 }
@@ -876,10 +918,7 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
     },
   }
 
-  // tamper with the KeyPackage version id to mismatch the group's version
-  charlie.publicPackage.version = 2 as ProtocolVersionValue
-
-  const createInvalidCommit = await createCommit(
+  const validCommit = await createCommit(
     {
       state: aliceGroup,
       cipherSuite: impl,
@@ -887,10 +926,20 @@ async function testInvalidMlsVersion(cipherSuite: CiphersuiteName) {
     },
     {
       extraProposals: [addCharlieProposal],
+      wireAsPublicMessage: true,
     },
   )
 
-  await expect(processMessage({ context, state: bobGroup, message: createInvalidCommit.commit })).rejects.toThrow(
+  const invalidAdd: Proposal = {
+    proposalType: defaultProposalTypes.add,
+    add: { keyPackage: { ...charlie.publicPackage, version: 2 as ProtocolVersionValue } },
+  }
+  await expect(createCommit({ ...context, state: aliceGroup }, { extraProposals: [invalidAdd] })).rejects.toThrow(
+    new ValidationError("Invalid mls version"),
+  )
+
+  const invalidCommit = await resignPublicCommitWithProposals(aliceGroup, validCommit.commit, [invalidAdd], impl)
+  await expect(processMessage({ context, state: bobGroup, message: invalidCommit })).rejects.toThrow(
     new ValidationError("Invalid mls version"),
   )
 }
@@ -963,7 +1012,6 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
       return { kind: "error", error: "error" }
     },
     batchSize: 32,
-    maxConcurrency: 1,
   }
 
   const err = await validateRatchetTree(
@@ -976,7 +1024,7 @@ async function testInvalidCredential(cipherSuite: CiphersuiteName) {
   )
 
   expect(err).toBeInstanceOf(ValidationError)
-  expect(err?.message).toBe("Could not validate credential: error")
+  expect(err?.message).toBe("Could not validate credentials: error")
 }
 
 async function testSignatureKeyNotUnique(cipherSuite: CiphersuiteName) {

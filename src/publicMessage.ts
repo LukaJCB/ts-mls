@@ -1,7 +1,7 @@
 import { Decoder, flatMapDecoder, mapDecoder, mapDecoders, succeedDecoder } from "./codec/tlsDecoder.js"
 import { contramapBufferEncoders, Encoder, encVoid } from "./codec/tlsEncoder.js"
 import { varLenDataDecoder, varLenDataEncoder } from "./codec/variableLength.js"
-import { GroupContextExtension, isDefaultExtension } from "./extension.js"
+import { findExtension, GroupContextExtension } from "./extension.js"
 import { ExternalSender } from "./externalSender.js"
 import {
   framedContentDecoder,
@@ -107,6 +107,5 @@ export function findSignaturePublicKey(
 }
 
 function senderFromExtension(extensions: GroupContextExtension[], senderIndex: number): ExternalSender | undefined {
-  return extensions.find((ex) => isDefaultExtension(ex) && ex.extensionType === defaultExtensionTypes.external_senders)
-    ?.extensionData[senderIndex]
+  return findExtension(defaultExtensionTypes.external_senders, extensions)?.[senderIndex]
 }

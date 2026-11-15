@@ -18,11 +18,7 @@ import {
 import { acceptAll } from "../../src/incomingMessageAction.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
-import {
-  AuthenticationService,
-  AuthenticationResult,
-  unsafeTestingAuthenticationService,
-} from "../../src/authenticationService.js"
+import { AuthenticationService, unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { generateSignatureKeyPair } from "../../src/signatureKeyPair.js"
 import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { defaultCapabilities } from "../../src/defaultCapabilities.js"
@@ -30,7 +26,7 @@ import { CryptoVerificationError, encode } from "../../src/index.js"
 import { capabilitiesEncoder } from "../../src/capabilities.js"
 import { extensionEncoder } from "../../src/extension.js"
 import { varLenTypeEncoder } from "../../src/codec/variableLength.js"
-import { ValidationError } from "@hpke/core"
+import { AuthenticationError } from "../../src/mlsError.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Update Proposal %s`, async (cs) => {
   await updateProposalRoundtrip(cs as CiphersuiteName, true)
@@ -135,21 +131,13 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
     }),
   ).rejects.toThrow("OpenError")
 
+  const validateCredentialBatch = vi.fn<AuthenticationService["validateCredentialBatch"]>(async () => ({
+    kind: "error",
+    error: "error",
+  }))
   const badAuthService: AuthenticationService = {
-    async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
-      return { kind: "ok" }
-    },
-    async validateSuccessorCredential(
-      _oldCredential: Credential,
-      _newCredential: Credential,
-    ): Promise<AuthenticationResult> {
-      return { kind: "error", error: "error" }
-    },
-    async validateCredentialBatch(_batch) {
-      return { kind: "ok" }
-    },
-    batchSize: 32,
-    maxConcurrency: 4,
+    ...unsafeTestingAuthenticationService,
+    validateCredentialBatch,
   }
 
   //if alice doesn't deem bobby a valid successor to bob, the proposal is invalid
@@ -162,7 +150,21 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
       state: aliceGroup,
       message: bobUpdate.message,
     }),
-  ).rejects.toThrow(new ValidationError("Could not validate credential as successor to existing one: error"))
+  ).rejects.toThrow(new AuthenticationError("error"))
+
+  expect(validateCredentialBatch).toHaveBeenCalledTimes(1)
+  expect(validateCredentialBatch).toHaveBeenCalledWith([
+    [
+      {
+        credential: bobLeafNodePatch.credential,
+        signaturePublicKey: bobNewSignatureKeys.publicKey,
+        oldCredential: {
+          credential: bobCredential,
+          signaturePublicKey: bob.publicPackage.leafNode.signaturePublicKey,
+        },
+      },
+    ],
+  ])
 
   const aliceProcessProposal = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },

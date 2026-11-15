@@ -6,13 +6,7 @@ import {
   nextEpochContext,
   processProposal,
 } from "./clientState.js"
-import {
-  NewLeafNodeWithSender,
-  throwIfDefined,
-  validateKeyPackage,
-  validateLeafNodeCredentialAndKeyUniqueness,
-  validateLeafNodeUpdateOrCommit,
-} from "./validation.js"
+import { throwIfDefined, validateKeyPackage } from "./validation.js"
 import { GroupActiveState } from "./groupActiveState.js"
 import { applyUpdatePathSecret } from "./createCommit.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
@@ -57,10 +51,8 @@ import { defaultLifetimeConfig } from "./lifetimeConfig.js"
 import { KeyPackage } from "./keyPackage.js"
 import { ProposalAdd } from "./proposal.js"
 import { defaultProposalTypes } from "./defaultProposalType.js"
-import { defaultKeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
-import { nodeTypes } from "./nodeType.js"
-import { findRequiredCapabilities } from "./extension.js"
-import { LeafNode } from "./leafNode.js"
+import { findExtension } from "./extension.js"
+import { defaultExtensionTypes } from "./defaultExtensionType.js"
 
 /** @public */
 export type ProcessMessageResult =
@@ -208,8 +200,7 @@ export async function processPrivateMessage(params: {
           result.content,
           result.content.content.proposal,
           toLeafIndex(result.senderLeafIndex),
-          context.clientConfig?.lifetimeConfig ?? defaultLifetimeConfig,
-          context.clientConfig?.keyPackageEqualityConfig ?? defaultKeyPackageEqualityConfig,
+          context.clientConfig ?? defaultClientConfig,
           context.authService,
           cipherSuite,
         ),
@@ -277,8 +268,7 @@ export async function processPublicMessage(params: {
           content,
           content.content.proposal,
           getSenderLeafNodeIndex(content.content.sender),
-          context.clientConfig?.lifetimeConfig ?? defaultLifetimeConfig,
-          context.clientConfig?.keyPackageEqualityConfig ?? defaultKeyPackageEqualityConfig,
+          context.clientConfig ?? defaultClientConfig,
           context.authService,
           cipherSuite,
         ),
@@ -321,15 +311,17 @@ async function processCommit(
     content.sender.senderType === senderTypes.member ? toLeafIndex(content.sender.leafIndex) : undefined
 
   const mutableTree = state.ratchetTree.slice()
+
   const result = await applyProposals(
     state,
     mutableTree,
+    content.commit.path,
     content.commit.proposals,
     senderLeafIndex,
     pskSearch,
-    false,
     clientConfig,
     authService,
+    false,
     cs,
   )
 
@@ -364,50 +356,6 @@ async function processCommit(
     result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
-
-  if (content.commit.path !== undefined) {
-    const committerLeafIndex =
-      senderLeafIndex ??
-      (result.additionalResult.kind === "externalCommit" ? result.additionalResult.newMemberLeafIndex : undefined)
-
-    if (committerLeafIndex === undefined)
-      throw new ValidationError("Cannot verify commit leaf node because no commiter leaf index found")
-
-    const oldLeafNode =
-      result.additionalResult.kind !== "externalCommit" ? getLeafNodeAt(committerLeafIndex, state) : undefined
-
-    const requiredCapabilities = findRequiredCapabilities(groupContextWithExtensions.extensions)
-
-    //TODO we could authenticate this along with any additions
-    throwIfDefined(
-      await validateLeafNodeUpdateOrCommit(
-        content.commit.path.leafNode,
-        committerLeafIndex,
-        requiredCapabilities,
-        oldLeafNode,
-        state.groupContext,
-        authService,
-        true,
-        cs.signature,
-      ),
-    )
-
-    const withSender: NewLeafNodeWithSender = {
-      kind: "update",
-      leafNode: content.commit.path.leafNode,
-      senderLeafIndex: committerLeafIndex,
-      updatePath: content.commit.path.nodes,
-    }
-
-    throwIfDefined(
-      await validateLeafNodeCredentialAndKeyUniqueness(
-        mutableTree,
-        [withSender],
-        clientConfig.keyPackageEqualityConfig,
-        requiredCapabilities,
-      ),
-    )
-  }
 
   if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
 
@@ -487,13 +435,6 @@ async function processCommit(
     aad: content.authenticatedData,
     sender: content.sender,
   }
-}
-
-function getLeafNodeAt(committerLeafIndex: LeafIndex, state: ClientState): LeafNode {
-  const leafNodeIndex = leafToNodeIndex(committerLeafIndex)
-  const oldLeafNode = state.ratchetTree[leafNodeIndex]
-  if (oldLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Tried to update a non-leaf node")
-  return oldLeafNode.leaf
 }
 
 async function applyTreeUpdate(
@@ -625,7 +566,10 @@ export async function processKeyPackage(params: {
   state: ClientState
   keyPackage: KeyPackage
 }): Promise<ProposalAdd> {
-  const requiredCapabilities = findRequiredCapabilities(params.state.groupContext.extensions)
+  const requiredCapabilities = findExtension(
+    defaultExtensionTypes.required_capabilities,
+    params.state.groupContext.extensions,
+  )
 
   throwIfDefined(
     await validateKeyPackage(

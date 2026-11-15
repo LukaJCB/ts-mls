@@ -5,7 +5,7 @@ import { varLenDataDecoder, varLenTypeDecoder, varLenDataEncoder, varLenTypeEnco
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret, Kdf } from "./crypto/kdf.js"
 import { Signature, signWithLabel, verifyWithLabel } from "./crypto/signature.js"
-import { extensionEncoder, ExtensionRatchetTree, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
+import { extensionEncoder, findExtension, GroupInfoExtension, groupInfoExtensionDecoder } from "./extension.js"
 import { groupContextDecoder, groupContextEncoder, extractEpochSecret, GroupContext } from "./groupContext.js"
 import { ratchetTreeDecoder, RatchetTree } from "./ratchetTree.js"
 import { defaultExtensionTypes } from "./defaultExtensionType.js"
@@ -53,12 +53,10 @@ export const groupInfoDecoder: Decoder<GroupInfo> = mapDecoders(
 )
 
 export function ratchetTreeFromExtension(info: GroupInfo): RatchetTree | undefined {
-  const treeExtension = info.extensions.find(
-    (ex): ex is ExtensionRatchetTree => ex.extensionType === defaultExtensionTypes.ratchet_tree,
-  )
+  const treeExtension = findExtension(defaultExtensionTypes.ratchet_tree, info.extensions)
 
   if (treeExtension !== undefined) {
-    const tree = ratchetTreeDecoder(treeExtension.extensionData, 0)
+    const tree = ratchetTreeDecoder(treeExtension, 0)
     if (tree === undefined) throw new CodecError("Could not decode RatchetTree")
     return tree[0]
   }
