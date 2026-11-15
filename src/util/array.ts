@@ -3,31 +3,12 @@ export function arraysEqual<T>(a: T[], b: T[]): boolean {
   return a.every((val, index) => val === b[index])
 }
 
-export async function mapConcurrent<T, U>(
-  items: readonly T[],
-  concurrency: number,
-  fn: (item: T, index: number) => Promise<U>,
-): Promise<U[]> {
-  if (concurrency < 1) {
-    throw new Error("concurrency must be at least 1")
+export function chunk<T>(items: readonly T[], batchSize: number): T[][] {
+  const batches: T[][] = []
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    batches.push(items.slice(i, i + batchSize))
   }
 
-  const results = new Array<U>(items.length)
-  let nextIndex = 0
-
-  async function worker(): Promise<void> {
-    while (true) {
-      const index = nextIndex++
-
-      if (index >= items.length) {
-        return
-      }
-
-      results[index] = await fn(items[index]!, index)
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()))
-
-  return results
+  return batches
 }

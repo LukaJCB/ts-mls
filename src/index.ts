@@ -111,7 +111,8 @@ export { type Capabilities } from "./capabilities.js"
 export {
   type AuthenticationResult,
   type AuthenticationService,
-  type CredentialBatch,
+  type CredentialWithKey as CredentialBatch,
+  type CredentialBatchItem,
   unsafeTestingAuthenticationService,
 } from "./authenticationService.js"
 

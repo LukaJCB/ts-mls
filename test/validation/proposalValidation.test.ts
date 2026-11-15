@@ -9,7 +9,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
 import { Proposal, ProposalAdd, ProposalRemove } from "../../src/proposal.js"
 
-import { ValidationError } from "../../src/mlsError.js"
+import { AuthenticationError, ValidationError } from "../../src/mlsError.js"
 import { AuthenticationService } from "../../src/authenticationService.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { constantTimeEqual } from "../../src/util/constantTimeCompare.js"
@@ -60,10 +60,16 @@ describe("Proposal Validation", () => {
   test.concurrent.each(suites)("can't add someone already in the group %s", async (cs) => {
     const { impl, aliceGroup, addBobProposal } = await setupThreeMembers(cs as CiphersuiteName)
 
+    // Use fresh keys so this tests duplicate-client detection, not key uniqueness.
+    const bob = await generateKeyPackage({
+      credential: addBobProposal.add.keyPackage.leafNode.credential,
+      cipherSuite: impl,
+    })
+
     await expect(
       createCommit(
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
-        { extraProposals: [addBobProposal] },
+        { extraProposals: [{ proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }] },
       ),
     ).rejects.toThrow(new ValidationError("Commit cannot contain an Add proposal for someone already in the group"))
   })
@@ -172,8 +178,10 @@ describe("Proposal Validation", () => {
             c.credentialType === defaultCredentialTypes.basic &&
             isDefaultCredential(c) &&
             constantTimeEqual(c.identity, badCredential.identity)
-          )
+          ) {
+            console.log(c)
             return { kind: "error", error: "error" }
+          }
           return { kind: "ok" }
         },
         async validateSuccessorCredential(_oldCredential, _newCredential) {
@@ -183,7 +191,6 @@ describe("Proposal Validation", () => {
           return { kind: "error", error: "error" }
         },
         batchSize: 32,
-        maxConcurrency: 1,
       }
 
       await expect(
@@ -191,7 +198,7 @@ describe("Proposal Validation", () => {
           { state: aliceGroup, cipherSuite: impl, authService },
           { extraProposals: [proposalUnauthenticatedExternalSenders] },
         ),
-      ).rejects.toThrow(new ValidationError("Could not validate external credential: error"))
+      ).rejects.toThrow(new AuthenticationError("error"))
     },
   )
 
@@ -226,7 +233,6 @@ describe("Proposal Validation", () => {
         return { kind: "error", error: "error" }
       },
       batchSize: 32,
-      maxConcurrency: 1,
     }
 
     await expect(
@@ -247,7 +253,10 @@ describe("Proposal Validation", () => {
     const frankCredential: Credential = createCustomCredential(5, new Uint8Array([1, 2]))
     const frank = await generateKeyPackage({
       credential: frankCredential,
-
+      capabilities: {
+        ...defaultCapabilities(),
+        credentials: [defaultCredentialTypes.basic, frankCredential.credentialType],
+      },
       cipherSuite: impl,
     })
     const addFrank: Proposal = { proposalType: defaultProposalTypes.add, add: { keyPackage: frank.publicPackage } }
@@ -313,7 +322,7 @@ describe("Proposal Validation", () => {
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [updateProposal] },
       ),
-    ).rejects.toThrow(new ValidationError("Commit cannot contain an update proposal sent by committer"))
+    ).rejects.toThrow(new ValidationError("Committer can't update themselves via proposal"))
   })
 
   test.concurrent.each(suites)("committer can't remove themselves %s", async (cs) => {
@@ -326,7 +335,7 @@ describe("Proposal Validation", () => {
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [removeProposal] },
       ),
-    ).rejects.toThrow(new ValidationError("Commit cannot contain a remove proposal removing committer"))
+    ).rejects.toThrow(new ValidationError("Commiter can't remove themselves via inline proposal"))
   })
 
   test.concurrent.each(suites)("can't add the same keypackage twice %s", async (cs) => {
@@ -351,11 +360,7 @@ describe("Proposal Validation", () => {
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [addHannahProposal, addHannahProposal] },
       ),
-    ).rejects.toThrow(
-      new ValidationError(
-        "Commit cannot contain multiple Add proposals that contain KeyPackages that represent the same client",
-      ),
-    )
+    ).rejects.toThrow(new ValidationError("Duplicate HPKE public key"))
   })
 
   test.concurrent.each(suites)("can't reference the same psk in multiple proposals %s", async (cs) => {
@@ -373,7 +378,9 @@ describe("Proposal Validation", () => {
         { extraProposals: [pskProposal, pskProposal] },
       ),
     ).rejects.toThrow(
-      new ValidationError("Commit cannot contain PreSharedKey proposals that reference the same PreSharedKeyID"),
+      new ValidationError(
+        "Commit cannot contain multiple PreSharedKey proposals that reference the same PreSharedKeyID",
+      ),
     )
   })
 
@@ -390,7 +397,7 @@ describe("Proposal Validation", () => {
         { state: aliceGroup, cipherSuite: impl, authService: unsafeTestingAuthenticationService },
         { extraProposals: [groupContextExtensionsProposal, groupContextExtensionsProposal] },
       ),
-    ).rejects.toThrow(new ValidationError("Commit cannot contain multiple GroupContextExtensions proposals"))
+    ).rejects.toThrow(new ValidationError("Commit cannot contain multiple GroupContextExtension Proposals"))
   })
 
   test.concurrent.each(suites)("can't use proposeExternal on a group without external_senders %s", async (cs) => {

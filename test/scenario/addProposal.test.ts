@@ -19,8 +19,9 @@ import {
   AuthenticationResult,
   AuthenticationService,
   unsafeTestingAuthenticationService,
+  CredentialWithKey,
 } from "../../src/authenticationService.js"
-import { ValidationError } from "@hpke/core"
+import { AuthenticationError } from "../../src/mlsError.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Add Proposal %s`, async (cs) => {
   await addProposalRoundtrip(cs as CiphersuiteName, true)
@@ -101,8 +102,8 @@ async function addProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessage:
       return { kind: "error", error: "error" }
     },
     async validateSuccessorCredential(
-      _oldCredential: Credential,
-      _newCredential: Credential,
+      _oldCredential: CredentialWithKey,
+      _newCredential: CredentialWithKey,
     ): Promise<AuthenticationResult> {
       return { kind: "error", error: "error" }
     },
@@ -110,7 +111,6 @@ async function addProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessage:
       return { kind: "error", error: "error" }
     },
     batchSize: 32,
-    maxConcurrency: 4,
   }
 
   await expect(
@@ -119,7 +119,7 @@ async function addProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessage:
       state: aliceGroup,
       message: createProposalResult.message,
     }),
-  ).rejects.toThrow(new ValidationError("Could not validate credential: error"))
+  ).rejects.toThrow(new AuthenticationError("error"))
 
   const processProposalResult = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },

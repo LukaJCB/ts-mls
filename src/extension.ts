@@ -85,6 +85,14 @@ export function isDefaultExtension(e: Extension): e is DefaultExtension {
   return isDefaultExtensionTypeValue(e.extensionType)
 }
 
+export function isRequiredCapabilitiesExtension(e: Extension): e is ExtensionRequiredCapabilities {
+  return e.extensionType === defaultExtensionTypes.required_capabilities
+}
+
+export function isExternalSendersExtension(e: Extension): e is ExtensionExternalSenders {
+  return e.extensionType === defaultExtensionTypes.external_senders
+}
+
 export const extensionEncoder: Encoder<Extension> = contramapBufferEncoders([uint16Encoder, varLenDataEncoder], (e) => {
   if (isDefaultExtension(e)) {
     if (e.extensionType === defaultExtensionTypes.required_capabilities) {
@@ -185,8 +193,9 @@ export function extensionsSupportedByCapabilities(
     .every((ex) => capabilities.extensions.includes(ex.extensionType))
 }
 
-export function findRequiredCapabilities(extensions: GroupContextExtension[]): RequiredCapabilities | undefined {
-  return extensions.find(
-    (e): e is ExtensionRequiredCapabilities => e.extensionType === defaultExtensionTypes.required_capabilities,
-  )?.extensionData
+export function findExtension<
+  T extends { extensionType: number; extensionData: unknown },
+  E extends T["extensionType"],
+>(extensionType: E, extensions: readonly T[]): Extract<T, { extensionType: E }>["extensionData"] | undefined {
+  return extensions.find((e): e is Extract<T, { extensionType: E }> => e.extensionType === extensionType)?.extensionData
 }

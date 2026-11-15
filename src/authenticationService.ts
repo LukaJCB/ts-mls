@@ -3,14 +3,23 @@ import { Credential } from "./credential.js"
 /** @public */
 export interface AuthenticationService {
   validateCredential(credential: Credential, signaturePublicKey: Uint8Array): Promise<AuthenticationResult>
-  validateSuccessorCredential(oldCredential: Credential, newCredential: Credential): Promise<AuthenticationResult>
-  validateCredentialBatch(batch: CredentialBatch[]): Promise<AuthenticationResult>
-  maxConcurrency: number
+  validateSuccessorCredential(
+    oldCredential: CredentialWithKey,
+    newCredential: CredentialWithKey,
+  ): Promise<AuthenticationResult>
+  validateCredentialBatch(batches: CredentialBatchItem[][]): Promise<AuthenticationResult>
   batchSize: number
 }
 
 /** @public */
-export interface CredentialBatch {
+export interface CredentialBatchItem {
+  credential: Credential
+  signaturePublicKey: Uint8Array
+  oldCredential?: CredentialWithKey
+}
+
+/** @public */
+export interface CredentialWithKey {
   credential: Credential
   signaturePublicKey: Uint8Array
 }
@@ -23,15 +32,14 @@ export const unsafeTestingAuthenticationService: AuthenticationService = {
   async validateCredential(_credential: Credential, _signaturePublicKey: Uint8Array): Promise<AuthenticationResult> {
     return { kind: "ok" }
   },
-  async validateCredentialBatch(_batch: CredentialBatch[]): Promise<AuthenticationResult> {
+  async validateCredentialBatch(_batches: CredentialWithKey[][]): Promise<AuthenticationResult> {
     return { kind: "ok" }
   },
   async validateSuccessorCredential(
-    _oldCredential: Credential,
-    _newCredential: Credential,
+    _oldCredential: CredentialWithKey,
+    _newCredential: CredentialWithKey,
   ): Promise<AuthenticationResult> {
     return { kind: "ok" }
   },
-  maxConcurrency: 1,
   batchSize: 32,
 }

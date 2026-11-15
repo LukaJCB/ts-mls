@@ -29,13 +29,11 @@ export interface AuthenticationService {
     // (undocumented)
     batchSize: number;
     // (undocumented)
-    maxConcurrency: number;
-    // (undocumented)
     validateCredential(credential: Credential_2, signaturePublicKey: Uint8Array): Promise<AuthenticationResult>;
     // (undocumented)
-    validateCredentialBatch(batch: CredentialBatch[]): Promise<AuthenticationResult>;
+    validateCredentialBatch(batches: CredentialBatchItem[][]): Promise<AuthenticationResult>;
     // (undocumented)
-    validateSuccessorCredential(oldCredential: Credential_2, newCredential: Credential_2): Promise<AuthenticationResult>;
+    validateSuccessorCredential(oldCredential: CredentialBatch, newCredential: CredentialBatch): Promise<AuthenticationResult>;
 }
 
 // @public (undocumented)
@@ -300,6 +298,16 @@ export interface CredentialBasic {
 export interface CredentialBatch {
     // (undocumented)
     credential: Credential_2;
+    // (undocumented)
+    signaturePublicKey: Uint8Array;
+}
+
+// @public (undocumented)
+export interface CredentialBatchItem {
+    // (undocumented)
+    credential: Credential_2;
+    // (undocumented)
+    oldCredential?: CredentialBatch;
     // (undocumented)
     signaturePublicKey: Uint8Array;
 }
