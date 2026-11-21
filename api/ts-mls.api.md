@@ -134,6 +134,8 @@ export const ciphersuites: {
 // @public (undocumented)
 export interface ClientConfig {
     // (undocumented)
+    applyCustomProposals?: CustomProposalApplier;
+    // (undocumented)
     keyPackageEqualityConfig: KeyPackageEqualityConfig;
     // (undocumented)
     keyRetentionConfig: KeyRetentionConfig;
@@ -351,6 +353,9 @@ export interface CustomExtension {
     // (undocumented)
     extensionType: number;
 }
+
+// @public
+export type CustomProposalApplier = (extensions: GroupContextExtension[], proposals: ProposalWithSender[]) => GroupContextExtension[];
 
 // @public (undocumented)
 export function decode<T>(dec: Decoder<T>, t: Uint8Array, maxInputSize?: number): T | undefined;

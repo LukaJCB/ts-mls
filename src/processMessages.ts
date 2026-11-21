@@ -361,7 +361,8 @@ async function processCommit(
   }
 
   const groupContextWithExtensions =
-    result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
+    (result.additionalResult.kind === "memberCommit" || result.additionalResult.kind === "externalCommit") &&
+    result.additionalResult.extensions !== undefined
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
 

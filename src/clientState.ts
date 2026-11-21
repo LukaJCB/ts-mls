@@ -301,7 +301,12 @@ export interface ApplyProposalsResult {
 
 type ApplyProposalsData =
   | { kind: "memberCommit"; addedLeafNodes: [LeafIndex, KeyPackage][]; extensions: GroupContextExtension[] | undefined }
-  | { kind: "externalCommit"; externalInitSecret: Uint8Array; newMemberLeafIndex: LeafIndex }
+  | {
+      kind: "externalCommit"
+      externalInitSecret: Uint8Array
+      newMemberLeafIndex: LeafIndex
+      extensions: GroupContextExtension[] | undefined
+    }
   | { kind: "reinit"; reinit: Reinit }
 
 export async function applyProposals(
@@ -365,7 +370,12 @@ export async function applyProposals(
       ),
     )
 
-    const newExtensions = flattenExtensions(grouped[defaultProposalTypes.group_context_extensions])
+    const newExtensions = applyCustomProposals(
+      clientConfig,
+      state.groupContext.extensions,
+      flattenExtensions(grouped[defaultProposalTypes.group_context_extensions]),
+      allProposals,
+    )
 
     const addedLeafNodes = await applyTreeMutations(mutableTree, grouped)
 
@@ -445,6 +455,7 @@ export async function applyProposals(
         kind: "externalCommit",
         externalInitSecret,
         newMemberLeafIndex: nodeToLeafIndex(findBlankLeafNodeIndexOrExtend(mutableTree)),
+        extensions: applyCustomProposals(clientConfig, state.groupContext.extensions, undefined, allProposals),
       },
       selfRemoved: false,
       allProposals,
@@ -452,6 +463,17 @@ export async function applyProposals(
       removedLeaves,
     }
   }
+}
+
+function applyCustomProposals(
+  clientConfig: ClientConfig,
+  current: GroupContextExtension[],
+  fromGce: GroupContextExtension[] | undefined,
+  allProposals: ProposalWithSender[],
+): GroupContextExtension[] | undefined {
+  const custom = allProposals.filter(({ proposal }) => !isDefaultProposal(proposal))
+  if (custom.length === 0 || clientConfig.applyCustomProposals === undefined) return fromGce
+  return clientConfig.applyCustomProposals(fromGce ?? current, custom)
 }
 
 function groupProposals(allProposals: ProposalWithSender[]): GroupedProposals {

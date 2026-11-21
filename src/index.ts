@@ -115,7 +115,7 @@ export {
   unsafeTestingAuthenticationService,
 } from "./authenticationService.js"
 
-export { type ClientConfig } from "./clientConfig.js"
+export { type ClientConfig, type CustomProposalApplier } from "./clientConfig.js"
 
 export { defaultKeyPackageEqualityConfig, type KeyPackageEqualityConfig } from "./keyPackageEqualityConfig.js"
 
