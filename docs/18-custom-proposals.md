@@ -192,3 +192,4 @@ processCommitResult.consumed.forEach(zeroOutUint8Array)
 - **Application Semantics**: The MLS protocol doesn't interpret custom proposals—your application defines what they mean and how to validate them.
 - **Validation in Callbacks**: Use the callback parameter in `processMessage` to inspect and validate custom proposals before accepting them.
 - **Commit Required**: Custom proposals must be committed before they take effect, just like standard proposals.
+- **Changing the GroupContext**: To let custom proposals change the GroupContext extensions of the next epoch (for example AppDataUpdate from draft-ietf-mls-extensions), set `applyCustomProposals` in the `ClientConfig`. It receives the extensions (after any GroupContextExtensions proposal) and the custom proposals in the Commit, and returns the new extensions. Throwing rejects the Commit. Every member must apply the same logic, or the members end up in different epochs.
