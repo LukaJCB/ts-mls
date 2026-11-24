@@ -36,6 +36,46 @@ describe("Out of order message processing by epoch", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch limit reached fails %s`, async (cs) => {
     await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
   })
+
+  test("retainKeysForEpochs = 0 discards all historical epochs", async () => {
+    const { aliceGroup, bobGroup, impl, clientConfig } = await setupTestParticipants(
+      "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      { ...defaultKeyRetentionConfig, retainKeysForEpochs: 0 },
+    )
+    expect(aliceGroup.historicalReceiverData.size).toBe(0)
+
+    const context = {
+      cipherSuite: impl,
+      authService: unsafeTestingAuthenticationService,
+      clientConfig: {
+        ...clientConfig,
+        keyRetentionConfig: { ...clientConfig.keyRetentionConfig, retainKeysForEpochs: 0 },
+      },
+    }
+    const delayedMessage = await createApplicationMessage({
+      context,
+      state: aliceGroup,
+      message: new TextEncoder().encode("Message from the previous epoch"),
+    })
+    const commit = await createCommitEnsureNoMutation({ context, state: bobGroup })
+    const processedCommit = await processMessageEnsureNoMutation({
+      context,
+      state: delayedMessage.newState,
+      message: commit.commit,
+    })
+
+    expect(commit.newState.historicalReceiverData.size).toBe(0)
+    expect(processedCommit.newState.historicalReceiverData.size).toBe(0)
+    await expect(
+      processMessageEnsureNoMutation({
+        context,
+        state: commit.newState,
+        message: delayedMessage.message,
+      }),
+    ).rejects.toThrow(new ValidationError("Cannot process message, epoch too old"))
+
+    await testEveryoneCanMessageEveryone([processedCommit.newState, commit.newState], impl)
+  })
 })
 
 type TestParticipants = {
