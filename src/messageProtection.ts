@@ -29,6 +29,7 @@ import { encode } from "./codec/tlsEncoder.js"
 import { nodeTypes } from "./nodeType.js"
 import { contentTypes } from "./contentType.js"
 import { wireformats } from "./wireformat.js"
+import { throwIfDefined } from "./validation.js"
 
 interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -234,8 +235,7 @@ export async function unprotectPrivateMessage(
 
   if (senderData === undefined) throw new CodecError("Could not decode senderdata")
 
-  //todo
-  validateSenderData(senderData, ratchetTree)
+  throwIfDefined(validateSenderData(senderData, ratchetTree))
 
   const { key, nonce, newTree, consumed } = await ratchetToGeneration(
     secretTree,
