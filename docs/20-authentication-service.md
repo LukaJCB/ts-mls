@@ -21,7 +21,7 @@ import {
   createGroup,
   type AuthenticationResult,
   type Credential,
-  type CredentialBatch as CredentialWithKey,
+  type CredentialWithKey,
   type CredentialBatchItem,
   defaultCredentialTypes,
   getCiphersuiteImpl,

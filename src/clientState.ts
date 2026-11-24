@@ -118,6 +118,7 @@ import {
   authenticateCredentials,
   validateProposalsAgainstFullTree,
   LeafValidationInput,
+  ParsedGroupContextExtensions,
 } from "./validationTreeContext.js"
 import { ExternalSender } from "./externalSender.js"
 import { LeafChange } from "./leafChange.js"
@@ -558,13 +559,6 @@ function checkLeafTarget(
   }
 }
 
-type ParsedGroupContextExtensions = {
-  groupContextExtensions: GroupContextExtension[]
-  authenticated: boolean
-  newExternalSenders: ExternalSender[] | undefined
-  newRequiredCapabilities: RequiredCapabilities | undefined
-}
-
 function parseGce(gce: GroupContextExtensions, authenticated: boolean): ParsedGroupContextExtensions {
   const seen = new Set<number>()
   let newExternalSenders: ExternalSender[] | undefined = undefined
@@ -677,7 +671,7 @@ export async function applyProposals(
   ]
   const removedLeaves: LeafIndex[] = [...processedProposals.leafValidation.removals]
 
-  let proposalsData: ApplyProposalsData = await deriveProposalsData(
+  const proposalsData: ApplyProposalsData = await deriveProposalsData(
     processedProposals,
     cs,
     state,
