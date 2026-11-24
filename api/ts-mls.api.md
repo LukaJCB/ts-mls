@@ -887,6 +887,7 @@ export function joinGroupExternal(params: {
     resync: boolean;
     tree?: RatchetTree;
     authenticatedData?: Uint8Array;
+    psks?: PskId[];
 }): Promise<{
     commit: MlsPublicMessage;
     newState: ClientState;
