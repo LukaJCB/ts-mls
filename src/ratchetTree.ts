@@ -234,7 +234,13 @@ function condenseRatchetTreeAfterRemove(tree: RatchetTree) {
  * When the right subtree of the tree no longer has any non-blank nodes, it can be safely removed
  */
 function condenseRatchetTreeAfterRemoveMutable(tree: RatchetTree) {
-  return extendRatchetTree(stripBlankNodesMutable(tree))
+  stripBlankNodesMutable(tree)
+  if (tree.length === 0) {
+    // Keep a blank root so an external resync can replace the sole member at leaf 0.
+    tree.push(undefined)
+    return tree
+  }
+  return extendRatchetTree(tree)
 }
 
 export function resolution(tree: (Node | undefined)[], nodeIndex: NodeIndex): NodeIndex[] {
