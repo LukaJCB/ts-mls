@@ -90,6 +90,8 @@ export function sibling(x: NodeIndex, leafWidth: number): NodeIndex {
 }
 
 export function directPath(nodeIndex: NodeIndex, leafWidth: number): NodeIndex[] {
+  if (nodeIndex < 0 || nodeIndex >= nodeWidth(leafWidth)) throw new InternalError("node index out of bounds")
+
   const r = root(leafWidth)
   if (nodeIndex === r) return []
 

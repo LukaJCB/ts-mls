@@ -267,11 +267,11 @@ export function resolution(tree: (Node | undefined)[], nodeIndex: NodeIndex): No
 
 export function filteredDirectPath(leafIndex: LeafIndex, tree: RatchetTree): NodeIndex[] {
   const leafNodeIndex = leafToNodeIndex(leafIndex)
-  const leafWidth = nodeToLeafIndex(toNodeIndex(tree.length))
-  const cp = copath(leafNodeIndex, leafWidth)
+  const lWidth = leafWidth(tree.length)
+  const cp = copath(leafNodeIndex, lWidth)
   // the filtered direct path of a leaf node L is the node's direct path,
   // with any node removed whose child on the copath of L has an empty resolution
-  return directPath(leafNodeIndex, leafWidth).filter((_nodeIndex, n) => resolution(tree, cp[n]!).length !== 0)
+  return directPath(leafNodeIndex, lWidth).filter((_nodeIndex, n) => resolution(tree, cp[n]!).length !== 0)
 }
 
 export function filteredDirectPathAndCopathResolution(
