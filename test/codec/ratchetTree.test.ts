@@ -5,8 +5,18 @@ import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { leafNodeSources } from "../../src/leafNodeSource.js"
 import { nodeTypes } from "../../src/nodeType.js"
 import { encode } from "../../src/codec/tlsEncoder.js"
+import { InternalError } from "../../src/mlsError.js"
 
 describe("RatchetTree roundtrip", () => {
+  test.each([
+    { name: "empty", encoded: new Uint8Array([0]) },
+    { name: "all-blank", encoded: new Uint8Array([1, 0]) },
+  ])("rejects an $name tree received on the wire", ({ encoded }) => {
+    expect(() => ratchetTreeDecoder(encoded, 0)).toThrow(
+      new InternalError("The last node in the ratchet tree must be non-blank."),
+    )
+  })
+
   test("roundtrips single leaf", () => {
     const data: RatchetTree = [
       {
