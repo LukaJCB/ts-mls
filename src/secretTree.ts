@@ -22,16 +22,28 @@ const _rightBytes = new TextEncoder().encode("right")
 export interface GenerationSecret {
   secret: Uint8Array
   generation: number
-  unusedGenerations: Record<number, Uint8Array>
+  unusedGenerations: Record<number, KeyAndNonce>
 }
 
+/** @public */
+export type KeyAndNonce = { key: Uint8Array; nonce: Uint8Array }
+
+const keyAndNonceEncoder: Encoder<KeyAndNonce> = contramapBufferEncoders(
+  [varLenDataEncoder, varLenDataEncoder],
+  ({ key, nonce }) => [key, nonce] as const,
+)
+const keyAndNonceDecoder: Decoder<KeyAndNonce> = mapDecoders([varLenDataDecoder, varLenDataDecoder], (key, nonce) => ({
+  key,
+  nonce,
+}))
+
 const generationSecretEncoder: Encoder<GenerationSecret> = contramapBufferEncoders(
-  [varLenDataEncoder, uint32Encoder, numberRecordEncoder(uint32Encoder, varLenDataEncoder)],
+  [varLenDataEncoder, uint32Encoder, numberRecordEncoder(uint32Encoder, keyAndNonceEncoder)],
   (gs) => [gs.secret, gs.generation, gs.unusedGenerations] as const,
 )
 
 const generationSecretDecoder: Decoder<GenerationSecret> = mapDecoders(
-  [varLenDataDecoder, uint32Decoder, numberRecordDecoder(uint32Decoder, varLenDataDecoder)],
+  [varLenDataDecoder, uint32Decoder, numberRecordDecoder(uint32Decoder, keyAndNonceDecoder)],
   (secret, generation, unusedGenerations) => ({
     secret,
     generation,
@@ -88,10 +100,10 @@ export function appendSecretTreeValues(tree: SecretTree, out: Uint8Array[]): voi
     out.push(node.application.secret)
     out.push(node.handshake.secret)
     for (const gen of Object.values(node.application.unusedGenerations)) {
-      out.push(gen)
+      out.push(gen.key, gen.nonce)
     }
     for (const gen of Object.values(node.handshake.unusedGenerations)) {
-      out.push(gen)
+      out.push(gen.key, gen.nonce)
     }
   }
 
@@ -189,7 +201,7 @@ async function ratchetUntil(
   current: GenerationSecret,
   desiredGen: number,
   config: KeyRetentionConfig,
-  kdf: Kdf,
+  cs: CiphersuiteImpl,
 ): Promise<[GenerationSecret, Uint8Array[]]> {
   const generationDifference = desiredGen - current.generation
 
@@ -200,10 +212,11 @@ async function ratchetUntil(
   let result: GenerationSecret = { ...current }
 
   for (let i = 0; i < generationDifference; i++) {
-    const nextSecret = await deriveTreeSecret(result.secret, "secret", result.generation, kdf.size, kdf)
+    const nextSecret = await deriveTreeSecret(result.secret, "secret", result.generation, cs.kdf.size, cs.kdf)
+    const keyAndNonce = await createKeyAndNonce(result.secret, result.generation, cs)
 
-    const [updated, old] = updateUnusedGenerations(result, config.retainKeysForGenerations)
-    consumed.push(...old)
+    const [updated, old] = updateUnusedGenerations(result, keyAndNonce, config.retainKeysForGenerations)
+    consumed.push(result.secret, ...old)
 
     result = {
       secret: nextSecret,
@@ -217,22 +230,23 @@ async function ratchetUntil(
 
 function updateUnusedGenerations(
   s: GenerationSecret,
+  keyAndNonce: KeyAndNonce,
   retainGenerationsMax: number,
-): [Record<number, Uint8Array>, Uint8Array[]] {
-  const withNew: Record<number, Uint8Array> = { ...s.unusedGenerations, [s.generation]: s.secret }
+): [Record<number, KeyAndNonce>, Uint8Array[]] {
+  const withNew = { ...s.unusedGenerations, [s.generation]: keyAndNonce }
 
   const generations = Object.keys(withNew)
 
-  const result: [Record<number, Uint8Array>, Uint8Array[]] =
+  const result: [Record<number, KeyAndNonce>, Uint8Array[]] =
     generations.length >= retainGenerationsMax ? removeOldGenerations(withNew, retainGenerationsMax) : [withNew, []]
 
   return result
 }
 
 function removeOldGenerations(
-  unusedGenerations: Record<number, Uint8Array>,
+  unusedGenerations: Record<number, KeyAndNonce>,
   max: number,
-): [Record<number, Uint8Array>, Uint8Array[]] {
+): [Record<number, KeyAndNonce>, Uint8Array[]] {
   const generations = Object.keys(unusedGenerations)
     .map(Number)
     .sort((a, b) => a - b)
@@ -240,12 +254,12 @@ function removeOldGenerations(
   const cutoff = generations.length - max
 
   const consumed = new Array<Uint8Array>()
-  const record: Record<number, Uint8Array> = {}
+  const record: Record<number, KeyAndNonce> = {}
 
   for (const [n, gen] of generations.entries()) {
     const value = unusedGenerations[gen]!
     if (n < cutoff) {
-      consumed.push(value)
+      consumed.push(value.key, value.nonce)
     } else {
       record[gen] = value
     }
@@ -254,13 +268,9 @@ function removeOldGenerations(
   return [record, consumed]
 }
 
-async function derivePrivateMessageNonce(
-  secret: Uint8Array,
-  generation: number,
-  reuseGuard: Uint8Array,
-  cs: CiphersuiteImpl,
-): Promise<Uint8Array> {
-  const nonce = await deriveNonce(secret, generation, cs)
+function applyReuseGuard(baseNonce: Uint8Array, reuseGuard: Uint8Array): Uint8Array {
+  //copy here so that the existing nonce isn't modified in place
+  const nonce = baseNonce.slice()
 
   if (nonce.length >= 4 && reuseGuard.length >= 4) {
     for (let i = 0; i < 4; i++) {
@@ -291,12 +301,10 @@ export async function ratchetToGeneration(
     const desired = ratchet.unusedGenerations[senderData.generation]
 
     if (desired !== undefined) {
-      const { [senderData.generation]: consumedValue, ...removedDesiredGen } = ratchet.unusedGenerations
+      const { [senderData.generation]: _, ...removedDesiredGen } = ratchet.unusedGenerations
       const ratchetState = { ...ratchet, unusedGenerations: removedDesiredGen }
 
-      const consumed = consumedValue ? [...consumedSecrets, consumedValue] : consumedSecrets
-
-      return await createRatchetResultWithSecret(
+      return createRatchetResultWithKeys(
         node,
         nodeIndex,
         desired,
@@ -304,8 +312,7 @@ export async function ratchetToGeneration(
         senderData.reuseGuard,
         updatedTree,
         contentType,
-        consumed,
-        cs,
+        consumedSecrets,
         ratchetState,
       )
     }
@@ -316,7 +323,7 @@ export async function ratchetToGeneration(
     ratchetForContentType(node, contentType),
     senderData.generation,
     config,
-    cs.kdf,
+    cs,
   )
 
   return createRatchetResult(
@@ -397,33 +404,32 @@ async function createRatchetResult(
 
   const ratchetState = { ...currentSecret, secret: nextSecret, generation: currentSecret.generation + 1 }
 
-  return await createRatchetResultWithSecret(
+  return createRatchetResultWithKeys(
     node,
     leafToNodeIndex(index),
-    currentSecret.secret,
+    await createKeyAndNonce(currentSecret.secret, currentSecret.generation, cs),
     currentSecret.generation,
     reuseGuard,
     tree,
     contentType,
-    consumed,
-    cs,
+    [...consumed, currentSecret.secret],
     ratchetState,
   )
 }
 
-async function createRatchetResultWithSecret(
+function createRatchetResultWithKeys(
   node: SecretTreeNode,
   index: NodeIndex,
-  secret: Uint8Array,
+  keys: KeyAndNonce,
   generation: number,
   reuseGuard: ReuseGuard,
   tree: SecretTree,
   contentType: ContentTypeValue,
   consumed: Uint8Array[],
-  cs: CiphersuiteImpl,
   ratchetState: GenerationSecret,
-): Promise<ConsumeRatchetResult> {
-  const { nonce, key } = await createKeyAndNonce(secret, generation, reuseGuard, cs)
+): ConsumeRatchetResult {
+  const { key } = keys
+  const nonce = applyReuseGuard(keys.nonce, reuseGuard)
 
   const newNode =
     contentType === contentTypes.application
@@ -441,13 +447,13 @@ async function createRatchetResultWithSecret(
     nonce,
     key,
     newTree,
-    consumed: [...consumed, secret, key],
+    consumed: [...consumed, key, keys.nonce, nonce],
   }
 }
 
-async function createKeyAndNonce(secret: Uint8Array, generation: number, reuseGuard: ReuseGuard, cs: CiphersuiteImpl) {
+async function createKeyAndNonce(secret: Uint8Array, generation: number, cs: CiphersuiteImpl): Promise<KeyAndNonce> {
   const key = await deriveKey(secret, generation, cs)
-  const nonce = await derivePrivateMessageNonce(secret, generation, reuseGuard, cs)
+  const nonce = await deriveNonce(secret, generation, cs)
   return { nonce, key }
 }
 
