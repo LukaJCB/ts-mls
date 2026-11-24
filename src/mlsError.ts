@@ -15,6 +15,14 @@ export class ValidationError extends MlsError {
 }
 
 /** @public */
+export class AuthenticationError extends MlsError {
+  constructor(message: string) {
+    super(message)
+    this.name = "AuthenticationError"
+  }
+}
+
+/** @public */
 export class CodecError extends MlsError {
   constructor(message: string) {
     super(message)

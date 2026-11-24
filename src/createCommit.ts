@@ -66,7 +66,7 @@ import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
-import { ExtensionExternalPub, extensionsSupportedByCapabilities, GroupInfoExtension } from "./extension.js"
+import { extensionsSupportedByCapabilities, findExtension, GroupInfoExtension } from "./extension.js"
 import { encode } from "./codec/tlsEncoder.js"
 import { wireformats } from "./wireformat.js"
 import { MlsContext } from "./mlsContext.js"
@@ -121,12 +121,13 @@ export async function createCommitInternal(
   const res = await applyProposals(
     state,
     mutableTree,
+    undefined,
     allProposals,
     toLeafIndex(state.privatePath.leafIndex),
     pskIndex,
-    true,
     clientConfig,
     context.authService,
+    true,
     cipherSuite,
   )
 
@@ -224,7 +225,7 @@ export async function createCommitInternal(
     confirmationTag,
   }
 
-  const [commit, _newTree, consumedSecrets] = await protectCommit(
+  const [commit, _newSecretTree, consumedSecrets] = await protectCommit(
     wireAsPublicMessage,
     state,
     clientConfig,
@@ -278,7 +279,12 @@ export async function createCommitInternal(
     ? { welcome, wireformat: wireformats.mls_welcome, version: protocolVersions.mls10 }
     : undefined
 
-  return { newState, welcome: mlsWelcome, commit, consumed }
+  return {
+    newState,
+    welcome: mlsWelcome,
+    commit,
+    consumed,
+  }
 }
 
 /** @public */
@@ -569,9 +575,7 @@ export async function joinGroupExternal(params: {
   const tree = params.tree
   const authenticatedData = params.authenticatedData ?? new Uint8Array()
 
-  const externalPub = groupInfo.extensions.find(
-    (ex): ex is ExtensionExternalPub => ex.extensionType === defaultExtensionTypes.external_pub,
-  )
+  const externalPub = findExtension(defaultExtensionTypes.external_pub, groupInfo.extensions)
 
   if (externalPub === undefined) throw new UsageError("Could not find external_pub extension")
 
@@ -581,13 +585,14 @@ export async function joinGroupExternal(params: {
   )
   if (!allExtensionsSupported) throw new UsageError("client does not support every extension in the GroupContext")
 
-  const { enc, secret: initSecret } = await exportSecret(externalPub.extensionData, cs)
+  const { enc, secret: initSecret } = await exportSecret(externalPub, cs)
 
-  //copy tree if not
+  //copy tree if not from extension
   const ratchetTree = ratchetTreeFromExtension(groupInfo) ?? tree?.slice()
 
   if (ratchetTree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
 
+  //todo is this necessary?
   const mutableTree = ratchetTree
 
   throwIfDefined(
