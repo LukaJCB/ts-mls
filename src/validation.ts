@@ -147,7 +147,7 @@ export async function validateRatchetTree(
         const leafIndex = toLeafIndex(unmergedLeaf)
         const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
         const nodeIndex = leafToNodeIndex(leafIndex)
-        if (tree[nodeIndex]?.nodeType !== nodeTypes.leaf && !dp.includes(toNodeIndex(i)))
+        if (tree[nodeIndex]?.nodeType !== nodeTypes.leaf || !dp.includes(toNodeIndex(i)))
           return new ValidationError("Unmerged leaf did not represent a non-blank descendant leaf node")
 
         for (const parentIdx of dp) {
