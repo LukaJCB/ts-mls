@@ -435,8 +435,10 @@ function preprocessProposals(
       handleProposal(proposal.proposal, true)
       allProposals.push({ proposal: proposal.proposal, senderLeafIndex: committerLeafIndex, authenticated: false })
     } else {
-      const p = unappliedProposals[bytesToBase64(proposal.reference)]
-      if (p === undefined) throw new ValidationError("Could not find proposal with supplied reference")
+      const base64 = bytesToBase64(proposal.reference)
+      if (!Object.hasOwn(unappliedProposals, base64))
+        throw new ValidationError("Could not find proposal with supplied reference")
+      const p = unappliedProposals[base64]!
       hasReferences = true
       handleProposal(p.proposal, false, p.senderLeafIndex)
       allProposals.push({ ...p, authenticated: true })
