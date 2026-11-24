@@ -646,7 +646,7 @@ export interface GenerationSecret {
     // (undocumented)
     secret: Uint8Array;
     // (undocumented)
-    unusedGenerations: Record<number, Uint8Array>;
+    unusedGenerations: Record<number, KeyAndNonce>;
 }
 
 // @public (undocumented)
@@ -946,6 +946,12 @@ export type KdfAlgorithm = "HKDF-SHA256" | "HKDF-SHA384" | "HKDF-SHA512";
 
 // @public (undocumented)
 export type KemAlgorithm = "DHKEM-P256-HKDF-SHA256" | "DHKEM-X25519-HKDF-SHA256" | "DHKEM-X448-HKDF-SHA512" | "DHKEM-P521-HKDF-SHA512" | "DHKEM-P384-HKDF-SHA384" | "ML-KEM-512" | "ML-KEM-768" | "ML-KEM-1024" | "X-Wing";
+
+// @public (undocumented)
+export type KeyAndNonce = {
+    key: Uint8Array;
+    nonce: Uint8Array;
+};
 
 // @public (undocumented)
 export type KeyPackage = KeyPackageTBS & {

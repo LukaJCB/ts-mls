@@ -241,7 +241,7 @@ export {
   type LeafNodeUpdate,
 } from "./leafNode.js"
 
-export { type SecretTree, type SecretTreeNode, type GenerationSecret } from "./secretTree.js"
+export { type SecretTree, type SecretTreeNode, type GenerationSecret, type KeyAndNonce } from "./secretTree.js"
 
 export {
   type KeyPackage,
