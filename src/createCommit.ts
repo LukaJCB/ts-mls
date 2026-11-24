@@ -62,7 +62,7 @@ import {
   toNodeIndex,
 } from "./treemath.js"
 import { createUpdatePath, PathSecret, firstCommonAncestor, UpdatePath, firstMatchAncestor } from "./updatePath.js"
-import { base64ToBytes, zeroOutUint8Array } from "./util/byteArray.js"
+import { base64ToBytes, bytesToBase64, zeroOutUint8Array } from "./util/byteArray.js"
 import { Welcome, encryptGroupInfo, EncryptedGroupSecrets, encryptGroupSecrets } from "./welcome.js"
 import { CryptoVerificationError, InternalError, UsageError, ValidationError } from "./mlsError.js"
 import { ClientConfig, defaultClientConfig } from "./clientConfig.js"
@@ -71,6 +71,8 @@ import { encode } from "./codec/tlsEncoder.js"
 import { wireformats } from "./wireformat.js"
 import { MlsContext } from "./mlsContext.js"
 import { LeafNodePatch } from "./leafNodePatch.js"
+import { PskId, pskIdEncoder } from "./presharedkey.js"
+import { accumulatePskSecret } from "./pskIndex.js"
 
 /** @public */
 export interface CreateCommitResult {
@@ -561,6 +563,7 @@ export async function joinGroupExternal(params: {
   resync: boolean
   tree?: RatchetTree
   authenticatedData?: Uint8Array
+  psks?: PskId[]
 }): Promise<{ commit: MlsPublicMessage; newState: ClientState }> {
   const context = params.context
   const groupInfo = params.groupInfo
@@ -574,6 +577,24 @@ export async function joinGroupExternal(params: {
 
   const tree = params.tree
   const authenticatedData = params.authenticatedData ?? new Uint8Array()
+  const psks = params.psks ?? []
+
+  const pskIds = new Set<string>()
+  for (const psk of psks) {
+    if (psk.pskNonce.length !== cs.kdf.size) throw new ValidationError("PSK nonce must have length KDF.Nh")
+    const id = bytesToBase64(encode(pskIdEncoder, psk))
+    if (pskIds.has(id))
+      throw new ValidationError(
+        "Commit cannot contain multiple PreSharedKey proposals that reference the same PreSharedKeyID",
+      )
+    pskIds.add(id)
+  }
+  const [pskSecret] = await accumulatePskSecret(
+    psks,
+    makePskIndex(undefined, context.externalPsks ?? {}),
+    cs,
+    new Uint8Array(cs.kdf.size),
+  )
 
   const externalPub = findExtension(defaultExtensionTypes.external_pub, groupInfo.extensions)
 
@@ -666,7 +687,9 @@ export async function joinGroupExternal(params: {
       ? [{ proposalType: defaultProposalTypes.remove, remove: { removed: formerLeafIndex } }, externalInitProposal]
       : [externalInitProposal]
 
-  const pskSecret = new Uint8Array(cs.kdf.size)
+  for (const psk of psks) {
+    proposals.push({ proposalType: defaultProposalTypes.psk, psk: { preSharedKeyId: psk } })
+  }
 
   const { signature, framedContent } = await createContentCommitSignature(
     groupInfo.groupContext,
