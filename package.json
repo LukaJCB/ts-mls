@@ -29,6 +29,7 @@
     "@hpke/ml-kem": "0.3.0",
     "@noble/ciphers": "2.4.0",
     "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
     "@noble/post-quantum": "0.7.1"
   },
   "peerDependenciesMeta": {
@@ -45,6 +46,9 @@
       "optional": true
     },
     "@noble/curves": {
+      "optional": true
+    },
+    "@noble/hashes": {
       "optional": true
     },
     "@noble/post-quantum": {
