@@ -1343,7 +1343,11 @@ function removeOldHistoricalReceiverData(
     appendSecretTreeValues(historicalReceiverData.get(sortedEpochs[n]!)!.secretTree, toBeDeleted)
   }
 
-  const map = new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!]))
+  if (max === 0) {
+    return [new Map<bigint, EpochReceiverData>(), toBeDeleted]
+  } else {
+    const map = new Map(sortedEpochs.slice(-max).map((epoch) => [epoch, historicalReceiverData.get(epoch)!]))
 
-  return [map, toBeDeleted]
+    return [map, toBeDeleted]
+  }
 }

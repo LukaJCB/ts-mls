@@ -234,6 +234,7 @@ export async function unprotectPrivateMessage(
 
   if (senderData === undefined) throw new CodecError("Could not decode senderdata")
 
+  //todo
   validateSenderData(senderData, ratchetTree)
 
   const { key, nonce, newTree, consumed } = await ratchetToGeneration(
