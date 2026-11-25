@@ -21,6 +21,57 @@ test.concurrent.each(Object.keys(ciphersuites))(`Remove %s`, async (cs) => {
   await remove(cs as CiphersuiteName)
 })
 
+test("recognizes removal when an Add in the same commit reuses the removed member's leaf", async () => {
+  const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
+  const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
+  const makeMember = (identity: string) =>
+    generateKeyPackage({
+      credential: { credentialType: defaultCredentialTypes.basic, identity: new TextEncoder().encode(identity) },
+      cipherSuite: impl,
+    })
+  const [alice, bob, charlie] = await Promise.all([makeMember("alice"), makeMember("bob"), makeMember("charlie")])
+  const initialGroup = await createGroup({
+    context,
+    groupId: new TextEncoder().encode("remove-and-reuse-leaf"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+  const addedBob = await createCommitEnsureNoMutation({
+    context,
+    state: initialGroup,
+    extraProposals: [{ proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }],
+  })
+  const bobGroup = await joinGroup({
+    context,
+    welcome: addedBob.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: addedBob.newState.ratchetTree,
+  })
+
+  const replacedBob = await createCommitEnsureNoMutation({
+    context,
+    state: addedBob.newState,
+    extraProposals: [
+      { proposalType: defaultProposalTypes.remove, remove: { removed: bobGroup.privatePath.leafIndex } },
+      { proposalType: defaultProposalTypes.add, add: { keyPackage: charlie.publicPackage } },
+    ],
+  })
+  const charlieGroup = await joinGroup({
+    context,
+    welcome: replacedBob.welcome!.welcome,
+    keyPackage: charlie.publicPackage,
+    privateKeys: charlie.privatePackage,
+    ratchetTree: replacedBob.newState.ratchetTree,
+  })
+  expect(charlieGroup.privatePath.leafIndex).toBe(bobGroup.privatePath.leafIndex)
+
+  const removedBob = await processMessageEnsureNoMutation({ context, state: bobGroup, message: replacedBob.commit })
+  expect(removedBob.newState.groupActiveState).toStrictEqual({ kind: "removedFromGroup" })
+  await cannotMessageAnymore(removedBob.newState, impl)
+  await testEveryoneCanMessageEveryone([replacedBob.newState, charlieGroup], impl)
+})
+
 async function remove(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(cipherSuite)
 
