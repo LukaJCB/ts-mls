@@ -122,6 +122,7 @@ import {
 } from "./validationTreeContext.js"
 import { ExternalSender } from "./externalSender.js"
 import { LeafChange } from "./leafChange.js"
+import { supportsNonDefaultProposalType } from "./validationStructural.js"
 
 /** @public */
 export type ClientState = GroupState & PublicGroupState
@@ -359,6 +360,7 @@ function preprocessProposals(
   const psks = new Array<PSK>()
   const pskIds = new Set<string>()
   const allProposals = new Array<CommitProposals>()
+  const nonDefaultProposalTypes = new Set<number>()
   let gce: { groupContextExtensions: GroupContextExtensions; inline: boolean } | undefined
   let externalInit: ExternalInit | undefined
   let reinit: Reinit | undefined
@@ -427,6 +429,8 @@ function preprocessProposals(
           break
         }
       }
+    } else {
+      nonDefaultProposalTypes.add(proposal.proposalType)
     }
   }
 
@@ -446,6 +450,7 @@ function preprocessProposals(
   }
 
   if (externalInit !== undefined) {
+    if (nonDefaultProposalTypes.size > 0) throw new ValidationError("ExternalInit cannot have non-default proposals")
     if (removals.size > 1) throw new ValidationError("ExternalInit can only have up to one Remove proposal")
     if (adds.length > 0) throw new ValidationError("ExternalInit cannot have Add Proposal")
     if (leafChanges.size > 0) throw new ValidationError("ExternalInit cannot have Update Proposal")
@@ -539,6 +544,7 @@ function preprocessProposals(
     leafChanges,
     removals,
     groupContextExtensions,
+    nonDefaultProposalTypes,
   }
 
   return { kind: "memberCommit", committerLeafIndex, psks, leafValidation, allProposals }
@@ -1097,6 +1103,13 @@ export async function processProposal(
   //When a member receives an Add proposal adding a member to the group
 
   const requiredCapabilities = findExtension(defaultExtensionTypes.required_capabilities, state.groupContext.extensions)
+
+  if (
+    !isDefaultProposal(proposal) &&
+    !supportsNonDefaultProposalType(proposal.proposalType, getOwnLeafNode(state).capabilities.proposals)
+  ) {
+    throw new ValidationError(`Unsupported proposal type: ${proposal.proposalType}`)
+  }
 
   if (isDefaultProposal(proposal)) {
     switch (proposal.proposalType) {

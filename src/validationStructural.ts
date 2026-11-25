@@ -15,6 +15,7 @@ import { Signature } from "./crypto/signature.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
 import { KeyPackage, verifyKeyPackage } from "./keyPackage.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
+import { greaseValues } from "./grease.js"
 
 /**
  * Verifies a LeafNode according to section 7.3.
@@ -128,6 +129,10 @@ export function capabiltiesAreSupported(caps: RequiredCapabilities, cs: Capabili
     caps.extensionTypes.every((e) => cs.extensions.includes(e)) &&
     caps.proposalTypes.every((p) => cs.proposals.includes(p))
   )
+}
+
+export function supportsNonDefaultProposalType(proposalType: number, supportedTypes: readonly number[]): boolean {
+  return supportedTypes.includes(proposalType) && !greaseValues.some((value) => value === proposalType)
 }
 
 // function validateLeafNodeLifeTime(leafNode: LeafNodeKeyPackage) {
