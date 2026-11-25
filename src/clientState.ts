@@ -663,7 +663,7 @@ export async function applyProposals(
 
   const addedLeafNodes = await applyTreeMutations(mutableTree, processedProposals)
 
-  const selfRemoved = mutableTree[leafToNodeIndex(toLeafIndex(state.privatePath.leafIndex))] === undefined
+  const selfRemoved = processedProposals.leafValidation.removals.has(toLeafIndex(state.privatePath.leafIndex))
 
   const needsUpdatePath =
     processedProposals.allProposals.length === 0 ||
