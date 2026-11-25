@@ -17,6 +17,7 @@ import {
 } from "./leafNode.js"
 import { leafNodeSources } from "./leafNodeSource.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
+import { validateLifetime } from "./lifetime.js"
 import { MlsError, ValidationError, InternalError, CryptoVerificationError, UsageError } from "./mlsError.js"
 import { nodeTypes } from "./nodeType.js"
 import { verifyParentHashes } from "./parentHash.js"
@@ -288,12 +289,8 @@ async function validateLeafNodeKeyPackage(
   const signatureValid = await verifyLeafNodeSignatureKeyPackage(leafNode, s)
   if (!signatureValid) return new CryptoVerificationError("Could not verify leaf node signature")
 
-  //verify lifetime
-  if (sentByClient || config.validateLifetimeOnReceive) {
-    const currentTime = BigInt(Math.floor(Date.now() / 1000))
-    if (leafNode.lifetime.notBefore > currentTime || leafNode.lifetime.notAfter < currentTime)
-      return new ValidationError("Current time not within Lifetime")
-  }
+  const lifetimeError = validateLifetime(leafNode.lifetime, config, sentByClient)
+  if (lifetimeError !== undefined) return lifetimeError
 
   const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities, authService, shouldAuthenticate)
 
