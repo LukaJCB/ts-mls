@@ -16,7 +16,12 @@ import { throwIfDefined } from "./validation.js"
 import { LeafIndex, nodeToLeafIndex, toNodeIndex } from "./treemath.js"
 import { KeyPackage } from "./keyPackage.js"
 import { bytesToBase64, fastEqual } from "./util/byteArray.js"
-import { capabiltiesAreSupported, validateKeyPackage, validateLeafNodeUpdateOrCommit } from "./validationStructural.js"
+import {
+  capabiltiesAreSupported,
+  supportsNonDefaultProposalType,
+  validateKeyPackage,
+  validateLeafNodeUpdateOrCommit,
+} from "./validationStructural.js"
 import { LeafNode } from "./leafNode.js"
 import { nodeTypes } from "./nodeType.js"
 import { AuthenticationService, CredentialBatchItem } from "./authenticationService.js"
@@ -56,6 +61,7 @@ export interface LeafValidationInput {
   }[]
   leafChanges: Map<LeafIndex, LeafChange>
   removals: Set<LeafIndex>
+  nonDefaultProposalTypes?: ReadonlySet<number>
 
   groupContextExtensions: ParsedGroupContextExtensions | undefined
 }
@@ -224,6 +230,15 @@ export function validateProposalsAgainstFullTree(
     const leafIndex = nodeToLeafIndex(toNodeIndex(nodeIndex))
     if (node?.nodeType === nodeTypes.leaf) {
       if (!removals.has(leafIndex)) {
+        // Continuing members need support in their current leaf even if this Commit updates it
+        if (proposals.nonDefaultProposalTypes !== undefined && proposals.nonDefaultProposalTypes.size > 0) {
+          for (const proposalType of proposals.nonDefaultProposalTypes) {
+            if (!supportsNonDefaultProposalType(proposalType, node.leaf.capabilities.proposals)) {
+              return new ValidationError(`Proposal type ${proposalType} is not supported by all continuing members`)
+            }
+          }
+        }
+
         const leafChange = proposals.leafChanges.get(leafIndex)
 
         if (leafChange === undefined) {

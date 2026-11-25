@@ -187,7 +187,7 @@ processCommitResult.consumed.forEach(zeroOutUint8Array)
 ## Notes
 
 - **Proposal Type Range**: Use IDs (0xF000 - 0xFFFF) for custom proposal types to avoid conflicts.
-- **Capabilities**: All group members must declare support for custom proposal types in their capabilities before those proposals can be used.
+- **Capabilities**: **Capabilities**: All group members must declare support for custom proposal types in their capabilities before those proposals can be used. Members being added or removed are exempt.
 - **Proposal Data**: Custom proposals can include arbitrary binary data (`proposalData`) that's meaningful to your application.
 - **Application Semantics**: The MLS protocol doesn't interpret custom proposals—your application defines what they mean and how to validate them.
 - **Validation in Callbacks**: Use the callback parameter in `processMessage` to inspect and validate custom proposals before accepting them.
