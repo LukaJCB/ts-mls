@@ -13,6 +13,7 @@ import { Capabilities } from "./capabilities.js"
 import { extensionsSupportedByCapabilities } from "./extension.js"
 import { Signature } from "./crypto/signature.js"
 import { LifetimeConfig } from "./lifetimeConfig.js"
+import { validateLifetime } from "./lifetime.js"
 import { KeyPackage, verifyKeyPackage } from "./keyPackage.js"
 import { constantTimeEqual } from "./util/constantTimeCompare.js"
 import { greaseValues } from "./grease.js"
@@ -77,12 +78,8 @@ async function validateLeafNodeKeyPackage(
   const signatureValid = await verifyLeafNodeSignatureKeyPackage(leafNode, s)
   if (!signatureValid) return new CryptoVerificationError("Could not verify leaf node signature")
 
-  //verify lifetime
-  if (sentByClient || config.validateLifetimeOnReceive) {
-    const currentTime = BigInt(Math.floor(Date.now() / 1000))
-    if (leafNode.lifetime.notBefore > currentTime || leafNode.lifetime.notAfter < currentTime)
-      return new ValidationError("Current time not within Lifetime")
-  }
+  const lifetimeError = validateLifetime(leafNode.lifetime, config, sentByClient)
+  if (lifetimeError !== undefined) return lifetimeError
 
   const commonError = await validateLeafNodeCommon(leafNode, requiredCapabilities)
 
@@ -134,9 +131,3 @@ export function capabiltiesAreSupported(caps: RequiredCapabilities, cs: Capabili
 export function supportsNonDefaultProposalType(proposalType: number, supportedTypes: readonly number[]): boolean {
   return supportedTypes.includes(proposalType) && !greaseValues.some((value) => value === proposalType)
 }
-
-// function validateLeafNodeLifeTime(leafNode: LeafNodeKeyPackage) {
-//   const currentTime = BigInt(Math.floor(Date.now() / 1000))
-//   if (leafNode.lifetime.notBefore > currentTime || leafNode.lifetime.notAfter < currentTime)
-//     return new ValidationError("Current time not within Lifetime")
-// }

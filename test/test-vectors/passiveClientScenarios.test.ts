@@ -15,6 +15,7 @@ import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { defaultCryptoProvider } from "../../src/index.js"
 import { processMessageEnsureNoMutation } from "../scenario/common.js"
+import { defaultClientConfig } from "../../src/clientConfig.js"
 
 test.concurrent.each(jsonCommit.map((x, index) => [index, x]))(
   `passive-client-handling-commit test vectors %i`,
@@ -65,12 +66,21 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
     (acc, psk) => ({ ...acc, [bytesToBase64(hexToBytes(psk.psk_id))]: hexToBytes(psk.psk) }),
     {},
   )
-  let state = await joinGroup({
-    context: {
-      cipherSuite: impl,
-      authService: unsafeTestingAuthenticationService,
-      externalPsks: psks,
+  const context = {
+    cipherSuite: impl,
+    authService: unsafeTestingAuthenticationService,
+    externalPsks: psks,
+    clientConfig: {
+      ...defaultClientConfig,
+      lifetimeConfig: {
+        ...defaultClientConfig.lifetimeConfig,
+        // Protocol vectors use lifetimes up to the full uint64 range.
+        maximumTotalLifetime: (1n << 64n) - 1n,
+      },
     },
+  }
+  let state = await joinGroup({
+    context,
     welcome: welcome[0].welcome,
     keyPackage: kp[0].keyPackage,
     privateKeys: pks,
@@ -90,11 +100,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
         throw new Error("Could not decode proposal message")
 
       const res = await processMessageEnsureNoMutation({
-        context: {
-          cipherSuite: impl,
-          authService: unsafeTestingAuthenticationService,
-          externalPsks: psks,
-        },
+        context,
         state,
         message: mlsProposal[0],
       })
@@ -111,11 +117,7 @@ async function testPassiveClientScenario(data: MlsGroupState, impl: CiphersuiteI
       throw new Error("Could not decode commit message")
 
     const res = await processMessageEnsureNoMutation({
-      context: {
-        cipherSuite: impl,
-        authService: unsafeTestingAuthenticationService,
-        externalPsks: psks,
-      },
+      context,
       state,
       message: mlsCommit[0],
     })
