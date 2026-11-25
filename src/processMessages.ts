@@ -10,7 +10,7 @@ import { throwIfDefined, validateKeyPackage } from "./validation.js"
 import { GroupActiveState } from "./groupActiveState.js"
 import { applyUpdatePathSecret } from "./createCommit.js"
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
-import { Kdf, deriveSecret } from "./crypto/kdf.js"
+import { Kdf } from "./crypto/kdf.js"
 import { FramedContentAuthDataCommit, FramedContentCommit, verifyConfirmationTag } from "./framedContent.js"
 import { GroupContext } from "./groupContext.js"
 import { acceptAll, IncomingMessageAction, IncomingMessageCallback } from "./incomingMessageAction.js"
@@ -18,8 +18,8 @@ import { initializeEpoch } from "./keySchedule.js"
 import { MlsFramedMessage } from "./message.js"
 import { unprotectPrivateMessage } from "./messageProtection.js"
 import { unprotectPublicMessage } from "./messageProtectionPublic.js"
-import { CryptoVerificationError, InternalError, ValidationError } from "./mlsError.js"
-import { pathToRoot } from "./pathSecrets.js"
+import { CryptoVerificationError, ValidationError } from "./mlsError.js"
+import { derivePathSecrets } from "./pathSecrets.js"
 import { PrivateKeyPath, mergePrivateKeyPaths, toPrivateKeyPath } from "./privateKeyPath.js"
 import { PrivateMessage } from "./privateMessage.js"
 import { PskIndex } from "./pskIndex.js"
@@ -35,7 +35,6 @@ import {
   leafWidth,
   NodeIndex,
   nodeToLeafIndex,
-  root,
   toLeafIndex,
   toNodeIndex,
 } from "./treemath.js"
@@ -511,17 +510,12 @@ async function updatePrivateKeyPath(
     excludeNodes,
     cs,
   )
-  const pathSecrets = await pathToRoot(tree, toNodeIndex(secret.nodeIndex), secret.pathSecret, cs.kdf)
+  const { pathSecrets, commitSecret } = await derivePathSecrets(tree, secret.nodeIndex, secret.pathSecret, cs.kdf)
   const newPkp = mergePrivateKeyPaths(
     state.privatePath,
-    await toPrivateKeyPath(pathSecrets, state.privatePath.leafIndex, cs),
+    await toPrivateKeyPath(pathSecrets, state.privatePath.leafIndex, cs, tree),
   )
 
-  const rootIndex = root(leafWidth(tree.length))
-  const rootSecret = pathSecrets[rootIndex]
-  if (rootSecret === undefined) throw new InternalError("Could not find secret for root")
-
-  const commitSecret = await deriveSecret(rootSecret, "path", cs.kdf)
   return [newPkp, commitSecret] as const
 }
 

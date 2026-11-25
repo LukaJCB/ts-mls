@@ -933,6 +933,7 @@ export async function joinGroupInternal(params: {
             await pathToRoot(tree, ancestorNodeIndex, groupSecrets.pathSecret, cs.kdf),
             newLeaf,
             cs,
+            tree,
           ),
           privateKeyPath,
         )

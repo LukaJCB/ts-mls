@@ -175,7 +175,7 @@ export async function createCommitInternal(
     newPrivateKey !== undefined
       ? updateLeafKey(state.privatePath, await cipherSuite.hpke.exportPrivateKey(newPrivateKey))
       : state.privatePath,
-    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), state.privatePath.leafIndex, cipherSuite),
+    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), state.privatePath.leafIndex, cipherSuite, tree),
   )
 
   const lastPathSecret = pathSecrets.at(-1)
@@ -667,7 +667,7 @@ export async function joinGroupExternal(params: {
   )
 
   const privateKeyPath = updateLeafKey(
-    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), nodeToLeafIndex(newLeafNodeIndex), cs),
+    await toPrivateKeyPath(pathToPathSecrets(pathSecrets), nodeToLeafIndex(newLeafNodeIndex), cs, newTree),
     await cs.hpke.exportPrivateKey(newPrivateKey),
   )
 

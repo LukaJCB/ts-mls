@@ -71,7 +71,7 @@ async function treekemTest(data: TreeKEMState, impl: CiphersuiteImpl) {
     extensions: [],
   }
 
-  const privatePaths = await getPrivatePaths(data, impl)
+  const privatePaths = await getPrivatePaths(data, impl, tree[0])
 
   await testTreeKeys(data, tree, impl)
 
@@ -169,7 +169,11 @@ async function testCommitSecret(
   expect(commitSecret).toStrictEqual(hexToBytes(path.commit_secret))
 }
 
-async function getPrivatePaths(data: TreeKEMState, impl: CiphersuiteImpl): Promise<PrivateKeyPath[]> {
+async function getPrivatePaths(
+  data: TreeKEMState,
+  impl: CiphersuiteImpl,
+  tree: RatchetTree,
+): Promise<PrivateKeyPath[]> {
   return await Promise.all(
     data.leaves_private.map(async (leaf) => {
       const nodeSecrets: PathSecrets = leaf.path_secrets.reduce(
@@ -177,7 +181,7 @@ async function getPrivatePaths(data: TreeKEMState, impl: CiphersuiteImpl): Promi
         {},
       )
 
-      const pks = await toPrivateKeyPath(nodeSecrets, leaf.index, impl)
+      const pks = await toPrivateKeyPath(nodeSecrets, leaf.index, impl, tree)
 
       return {
         ...pks,
