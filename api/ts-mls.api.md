@@ -218,7 +218,11 @@ export interface CreateCommitResult {
     // (undocumented)
     consumed: Uint8Array[];
     // (undocumented)
+    consumedOnReject: Uint8Array[];
+    // (undocumented)
     newState: ClientState;
+    // (undocumented)
+    newStateOnReject: ClientState;
     // (undocumented)
     welcome: MlsWelcomeMessage | undefined;
 }

@@ -23,6 +23,7 @@ import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { MlsFramedMessage } from "../../src/message.js"
+import { zeroOutUint8Array } from "../../src/util/byteArray.js"
 
 describe("Out of order message processing by epoch", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch %s`, async (cs) => {
@@ -36,6 +37,40 @@ describe("Out of order message processing by epoch", () => {
   test.concurrent.each(Object.keys(ciphersuites))(`Out of order epoch limit reached fails %s`, async (cs) => {
     await epochOutOfOrderLimitFails(cs as CiphersuiteName, 3)
   })
+
+  test.each([false, true])(
+    "retains delayed messages after zeroing consumed commit buffers (public commit: %s)",
+    async (wireAsPublicMessage) => {
+      const { aliceGroup, bobGroup, impl, clientConfig } = await setupTestParticipants(
+        "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519",
+      )
+      const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService, clientConfig }
+      const plaintext = new TextEncoder().encode("Delayed message from the previous epoch")
+      const delayedMessage = await createApplicationMessage({ context, state: bobGroup, message: plaintext })
+
+      // Alice's leaf has not been derived yet, so protecting her private commit consumes the shared root.
+      const commit = await createCommitEnsureNoMutation({ context, state: aliceGroup, wireAsPublicMessage })
+      commit.consumed.forEach(zeroOutUint8Array)
+
+      const received = await processMessageEnsureNoMutation({
+        context,
+        state: commit.newState,
+        message: delayedMessage.message,
+      })
+      if (received.kind !== "applicationMessage") throw new Error("Expected application message")
+      expect(received.message).toStrictEqual(plaintext)
+      expect(received.newState.groupContext.epoch).toBe(commit.newState.groupContext.epoch)
+      received.consumed.forEach(zeroOutUint8Array)
+
+      const bobAfterCommit = await processMessageEnsureNoMutation({
+        context,
+        state: delayedMessage.newState,
+        message: commit.commit,
+      })
+      bobAfterCommit.consumed.forEach(zeroOutUint8Array)
+      await testEveryoneCanMessageEveryone([received.newState, bobAfterCommit.newState], impl)
+    },
+  )
 
   test("retainKeysForEpochs = 0 discards all historical epochs", async () => {
     const { aliceGroup, bobGroup, impl, clientConfig } = await setupTestParticipants(
@@ -58,11 +93,13 @@ describe("Out of order message processing by epoch", () => {
       message: new TextEncoder().encode("Message from the previous epoch"),
     })
     const commit = await createCommitEnsureNoMutation({ context, state: bobGroup })
+    commit.consumed.forEach(zeroOutUint8Array)
     const processedCommit = await processMessageEnsureNoMutation({
       context,
       state: delayedMessage.newState,
       message: commit.commit,
     })
+    processedCommit.consumed.forEach(zeroOutUint8Array)
 
     expect(commit.newState.historicalReceiverData.size).toBe(0)
     expect(processedCommit.newState.historicalReceiverData.size).toBe(0)
