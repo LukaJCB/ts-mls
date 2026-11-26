@@ -95,6 +95,42 @@ test("determineLength doesn't work if offset is too large", () => {
   expect(() => determineLength(new Uint8Array(0), 2)).toThrow(CodecError)
 })
 
+test.each([
+  { header: [0x40, 0x00] },
+  { header: [0x40, 0x01] },
+  { header: [0x40, 0x3f] },
+  { header: [0x80, 0x00, 0x00, 0x00] },
+  { header: [0x80, 0x00, 0x00, 0x01] },
+  { header: [0x80, 0x00, 0x00, 0x3f] },
+  { header: [0x80, 0x00, 0x00, 0x40] },
+  { header: [0x80, 0x00, 0x3f, 0xff] },
+])("determineLength rejects non-minimal header $header", ({ header }) => {
+  expect(() => determineLength(Uint8Array.from(header))).toThrow(CodecError)
+  expect(() => determineLength(Uint8Array.of(0xaa, 0xbb, ...header), 2)).toThrow(CodecError)
+})
+
+test.each([
+  { header: [0x00], length: 0 },
+  { header: [0x3f], length: 63 },
+  { header: [0x40, 0x40], length: 64 },
+  { header: [0x7f, 0xff], length: 16383 },
+  { header: [0x80, 0x00, 0x40, 0x00], length: 16384 },
+  { header: [0xbf, 0xff, 0xff, 0xff], length: 0x3fffffff },
+])("determineLength accepts minimal boundary encoding for $length", ({ header, length }) => {
+  const expected = { length, lengthFieldSize: header.length }
+  expect(determineLength(Uint8Array.from(header))).toStrictEqual(expected)
+  expect(determineLength(Uint8Array.of(0xaa, 0xbb, ...header), 2)).toStrictEqual(expected)
+})
+
+test.each([{ header: [0x40, 0x01] }, { header: [0x80, 0x00, 0x00, 0x01] }])(
+  "vector decoders reject non-minimal header $header even with a complete payload",
+  ({ header }) => {
+    const encoded = Uint8Array.of(...header, 0xaa)
+    expect(() => varLenDataDecoder(encoded, 0)).toThrow(CodecError)
+    expect(() => varLenTypeDecoder(uint8Decoder)(encoded, 0)).toThrow(CodecError)
+  },
+)
+
 test("determineLength doesn't work if prefix is too large", () => {
   expect(() => determineLength(encode(lengthEncoder, 50000000000), 1)).toThrow(CodecError)
 })

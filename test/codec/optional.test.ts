@@ -14,6 +14,33 @@ test("optional codec should return single 0 byte", () => {
   expect(e3).toStrictEqual(new Uint8Array([0]))
 })
 
+test("optional decoder rejects every presence byte other than 0 or 1", () => {
+  const decoder = optionalDecoder(uint8Decoder)
+  for (let presence = 2; presence <= 255; presence++) {
+    expect(decoder(Uint8Array.of(presence), 0)).toBeUndefined()
+    expect(decoder(Uint8Array.of(presence, 42), 0)).toBeUndefined()
+  }
+})
+
+test("optional decoder rejects a missing presence byte at empty input", () => {
+  expect(optionalDecoder(uint8Decoder)(Uint8Array.from([]), 0)).toBeUndefined()
+})
+
+test("optional decoder rejects a missing presence byte at the end of a nonempty input", () => {
+  expect(optionalDecoder(uint8Decoder)(Uint8Array.from([0]), 1)).toBeUndefined()
+})
+
+test("optional decoder rejects a present value with a truncated payload", () => {
+  expect(optionalDecoder(uint8Decoder)(Uint8Array.of(1), 0)).toBeUndefined()
+  expect(optionalDecoder(uint64Decoder)(Uint8Array.of(1, 0, 0), 0)).toBeUndefined()
+})
+
+test("optional decoder respects the offset and reports the consumed length", () => {
+  const decoder = optionalDecoder(uint8Decoder)
+  expect(decoder(Uint8Array.of(255, 0, 99), 1)).toStrictEqual([undefined, 1])
+  expect(decoder(Uint8Array.of(255, 1, 0, 99), 1)).toStrictEqual([0, 2])
+})
+
 test("optional codec roundtrip uint8: 255", () => {
   optionalRoundTrip(255, uint8Encoder, uint8Decoder)
 })

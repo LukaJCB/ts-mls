@@ -29,11 +29,10 @@ export function optionalEncoder<T>(encodeT: Encoder<T>): Encoder<T | undefined> 
 export function optionalDecoder<T>(decodeT: Decoder<T>): Decoder<T | undefined> {
   return (b, offset) => {
     const presenceOctet = uint8Decoder(b, offset)?.[0]
-    if (presenceOctet == 1) {
-      const result = decodeT(b, offset + 1)
-      return result === undefined ? undefined : [result[0], result[1] + 1]
-    } else {
-      return [undefined, 1]
-    }
+    if (presenceOctet === 0) return [undefined, 1]
+    if (presenceOctet !== 1) return undefined
+
+    const result = decodeT(b, offset + 1)
+    return result === undefined ? undefined : [result[0], result[1] + 1]
   }
 }
