@@ -336,6 +336,8 @@ async function processCommit(
     }
   }
 
+  if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
+
   if (result.selfRemoved) {
     return {
       newState: {
@@ -355,8 +357,6 @@ async function processCommit(
     result.additionalResult.kind === "memberCommit" && result.additionalResult.extensions !== undefined
       ? { ...state.groupContext, extensions: result.additionalResult.extensions }
       : state.groupContext
-
-  if (result.needsUpdatePath && content.commit.path === undefined) throw new ValidationError("Update path is required")
 
   const proposalTouchedLeaves: LeafIndex[] = [...result.updatedLeaves, ...result.removedLeaves]
   const [pkp, commitSecret, newTreeHash, treeHashCache] = await applyTreeUpdate(
