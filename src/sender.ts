@@ -128,6 +128,8 @@ export const reuseGuardEncoder: Encoder<ReuseGuard> = (g) => [
 ]
 
 export const reuseGuardDecoder: Decoder<ReuseGuard> = (b, offset) => {
+  if (offset + 4 > b.length) return undefined
+
   return [b.subarray(offset, offset + 4) as ReuseGuard, 4]
 }
 
