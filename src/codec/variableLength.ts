@@ -66,17 +66,18 @@ export function determineLength(data: Uint8Array, offset: number = 0): { length:
     return { length: firstByte & 0b00111111, lengthFieldSize: 1 }
   } else if (prefix === 1) {
     if (offset + 2 > data.length) throw new CodecError("Incomplete 2-byte length")
-    return { length: ((firstByte & 0b00111111) << 8) | (data[offset + 1] as number), lengthFieldSize: 2 }
+    const length = ((firstByte & 0b00111111) << 8) | (data[offset + 1] as number)
+    if (length < 64) throw new CodecError("Non-minimal 2-byte length")
+    return { length, lengthFieldSize: 2 }
   } else if (prefix === 2) {
     if (offset + 4 > data.length) throw new CodecError("Incomplete 4-byte length")
-    return {
-      length:
-        ((firstByte & 0b00111111) << 24) |
-        ((data[offset + 1] as number) << 16) |
-        ((data[offset + 2] as number) << 8) |
-        (data[offset + 3] as number),
-      lengthFieldSize: 4,
-    }
+    const length =
+      ((firstByte & 0b00111111) << 24) |
+      ((data[offset + 1] as number) << 16) |
+      ((data[offset + 2] as number) << 8) |
+      (data[offset + 3] as number)
+    if (length < 16384) throw new CodecError("Non-minimal 4-byte length")
+    return { length, lengthFieldSize: 4 }
   } else {
     throw new CodecError("8-byte length not supported in this implementation")
   }
