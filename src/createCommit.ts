@@ -78,8 +78,12 @@ import { accumulatePskSecret } from "./pskIndex.js"
 export interface CreateCommitResult {
   newState: ClientState
   welcome: MlsWelcomeMessage | undefined
+
   commit: MlsFramedMessage
   consumed: Uint8Array[]
+
+  newStateOnReject: ClientState
+  consumedOnReject: Uint8Array[]
 }
 
 /** @public */
@@ -227,7 +231,7 @@ export async function createCommitInternal(
     confirmationTag,
   }
 
-  const [commit, _newSecretTree, consumedSecrets] = await protectCommit(
+  const [commit, updatedSecretTree, consumedSecrets] = await protectCommit(
     wireAsPublicMessage,
     state,
     clientConfig,
@@ -256,7 +260,10 @@ export async function createCommitInternal(
       ? { kind: "suspendedPendingReinit", reinit: suspendedPendingReinit }
       : { kind: "active" }
 
-  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(state, clientConfig)
+  const currentState: ClientState = { ...state, secretTree: updatedSecretTree }
+
+  // Archive the advanced ratchet so historical data no longer references the consumed encryption secrets.
+  const [historicalReceiverData, consumedEpochData] = addHistoricalReceiverData(currentState, clientConfig)
 
   const newState: ClientState = {
     groupContext: updatedGroupContext,
@@ -276,6 +283,16 @@ export async function createCommitInternal(
   zeroOutUint8Array(epochSecrets.joinerSecret)
 
   const consumed = [...consumedSecrets, ...consumedEpochData, state.keySchedule.initSecret]
+  // Rejection must preserve the current epoch, its retained history, and any shared private path keys.
+  const newPrivateKeys = Object.entries(privateKeys.privateKeys)
+    .filter(([nodeIndex, key]) => key !== state.privatePath.privateKeys[Number(nodeIndex)])
+    .map(([, key]) => key)
+  const consumedOnReject = [
+    ...consumedSecrets,
+    ...Object.values({ ...epochSecrets.keySchedule }),
+    epochSecrets.encryptionSecret,
+    ...newPrivateKeys,
+  ]
 
   const mlsWelcome: MlsWelcomeMessage | undefined = welcome
     ? { welcome, wireformat: wireformats.mls_welcome, version: protocolVersions.mls10 }
@@ -283,9 +300,11 @@ export async function createCommitInternal(
 
   return {
     newState,
+    newStateOnReject: currentState,
     welcome: mlsWelcome,
     commit,
     consumed,
+    consumedOnReject,
   }
 }
 

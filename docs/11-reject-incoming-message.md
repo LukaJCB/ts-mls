@@ -1,6 +1,6 @@
-# Reject Incoming Message
+# Message and Commit Rejection
 
-This scenario demonstrates how a member can reject incoming messages (both proposals and commits). This is useful for implementing fine-grained control over which group changes are accepted.
+This page covers two distinct flows: rejecting incoming proposals and commits through the `processMessage` callback, and handling acceptance or rejection of your own outgoing candidate commit returned by `createCommit`. The incoming-message scenario below demonstrates control over which group changes are accepted. For the outgoing flow and its cleanup rules, see [Commit Acceptance and Rejection](#commit-acceptance-and-rejection).
 
 ## Steps Covered
 
@@ -10,7 +10,7 @@ This scenario demonstrates how a member can reject incoming messages (both propo
 4. **Bob Proposes Extensions**: Bob creates a proposal to modify the group context extensions.
 5. **Alice Rejects Proposal**: Alice receives Bob's proposal but rejects it, leaving her unapplied proposals empty.
 6. **Alice Commits**: Alice creates a commit without including Bob's rejected proposal.
-7. **Bob Rejects Commit**: Bob receives Alice's commit but rejects it, and his state remains unchanged.
+7. **Bob Rejects Commit**: Bob receives Alice's commit but rejects it, remaining in the current epoch.
 
 ## Key Concepts
 
@@ -151,7 +151,6 @@ const aliceCommitResult = await createCommit({
 })
 
 aliceGroup = aliceCommitResult.newState
-aliceCommitResult.consumed.forEach(zeroOutUint8Array)
 
 // Bob rejects Alice's commit
 const bobRejectsAliceCommitResult = await processMessage({
@@ -168,7 +167,12 @@ const bobRejectsAliceCommitResult = await processMessage({
     throw new Error("Should not happen for a commit message")
   },
 })
+bobGroup = bobRejectsAliceCommitResult.newState
 bobRejectsAliceCommitResult.consumed.forEach(zeroOutUint8Array)
+
+//Alice uses newStateOnReject and consumedOnReject to continue in the old epoch
+aliceGroup = aliceCommitResult.newStateOnReject
+aliceCommitResult.consumedOnReject.forEach(zeroOutUint8Array)
 ```
 
 ## Notes
@@ -176,4 +180,13 @@ bobRejectsAliceCommitResult.consumed.forEach(zeroOutUint8Array)
 - The `callback` parameter in `processMessage` allows you to control whether to accept or reject each incoming message.
 - The return value of `processMessage` includes an `actionTaken` field that indicates whether the message was `"accept"` or `"reject"`, allowing you to verify the outcome.
 - Message rejection can be used to implement custom validation logic or access control policies.
-- When a message is rejected, no state changes occur, making it safe to reject messages that don't meet your requirements.
+- Rejecting an incoming message preserves the current epoch and unapplied proposals. Always adopt the returned `newState` and zero `consumed`: decrypting a private message can advance its receive ratchet even when the callback rejects the message.
+
+## Commit Acceptance and Rejection
+
+`createCommit` protects a candidate commit using the current epoch's handshake ratchet. Even if that candidate is rejected, the message keys have been used. The returned `newStateOnReject` preserves the current epoch with that ratchet advanced; `newState` contains the candidate next epoch.
+
+- **Accepted:** adopt `newState`, zero `consumed`, and then deliver any Welcome. The current-epoch state is retired.
+- **Rejected or abandoned:** discard `newState` and the Welcome, zero `consumedOnReject`, and continue from `newStateOnReject`. This preserves its init secret, private keys, and retained historical epochs while erasing secrets derived for the rejected candidate.
+
+Serialize group operations while waiting for this decision. Before continuing current-epoch message processing or creating a revised candidate, abandon the pending candidate using the rejection path. Its `newState` is a snapshot and must not be installed after further current-epoch operations. Create a fresh candidate from the latest state if necessary. If another member's commit wins, reject your candidate first, then pass `newStateOnReject` to `processMessage` for the winning commit.
