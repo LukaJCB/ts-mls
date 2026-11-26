@@ -4,7 +4,7 @@ import { getCiphersuiteImpl } from "../../src/crypto/getCiphersuiteImpl.js"
 import { defaultCredentialTypes } from "../../src/defaultCredentialType.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { generateKeyPackage } from "../../src/keyPackage.js"
-import { CryptoVerificationError } from "../../src/mlsError.js"
+import { CryptoVerificationError, ValidationError } from "../../src/mlsError.js"
 import { processMessage } from "../../src/processMessages.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { encryptWithLabel } from "../../src/crypto/hpke.js"
@@ -14,6 +14,73 @@ import { contentTypes } from "../../src/contentType.js"
 import { createContentCommitSignature } from "../../src/framedContent.js"
 import { protectPublicMessage } from "../../src/messageProtectionPublic.js"
 import { wireformats } from "../../src/wireformat.js"
+
+test("rejects an authenticated removal commit without an UpdatePath before marking the recipient removed", async () => {
+  const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
+  const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
+  const makeMember = (identity: string) =>
+    generateKeyPackage({
+      credential: { credentialType: defaultCredentialTypes.basic, identity: new TextEncoder().encode(identity) },
+      cipherSuite: impl,
+    })
+  const alice = await makeMember("alice")
+  const bob = await makeMember("bob")
+  const initialGroup = await createGroup({
+    context,
+    groupId: new TextEncoder().encode("removal-requires-update-path"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+  const addedBob = await createCommit({
+    context,
+    state: initialGroup,
+    extraProposals: [{ proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } }],
+  })
+  const aliceGroup = addedBob.newState
+  const bobGroup = await joinGroup({
+    context,
+    welcome: addedBob.welcome!.welcome,
+    keyPackage: bob.publicPackage,
+    privateKeys: bob.privatePackage,
+    ratchetTree: aliceGroup.ratchetTree,
+  })
+  const previousState = structuredClone(bobGroup)
+  const removal = await createCommit({
+    context,
+    state: aliceGroup,
+    extraProposals: [
+      { proposalType: defaultProposalTypes.remove, remove: { removed: bobGroup.privatePath.leafIndex } },
+    ],
+    wireAsPublicMessage: true,
+  })
+  if (removal.commit.wireformat !== wireformats.mls_public_message) throw new Error("Expected public message")
+  const { content, auth } = removal.commit.publicMessage
+  if (content.contentType !== contentTypes.commit) throw new Error("Expected commit")
+
+  // Omit the required path then refresh both authentication values so they remain valid
+  const { framedContent, signature } = await createContentCommitSignature(
+    aliceGroup.groupContext,
+    "mls_public_message",
+    { ...content.commit, path: undefined },
+    content.sender,
+    content.authenticatedData,
+    aliceGroup.signaturePrivateKey,
+    impl.signature,
+  )
+  const publicMessage = await protectPublicMessage(
+    aliceGroup.keySchedule.membershipKey,
+    aliceGroup.groupContext,
+    { wireformat: wireformats.mls_public_message, content: framedContent, auth: { ...auth, signature } },
+    impl,
+  )
+  await expect(
+    processMessage({ context, state: bobGroup, message: { ...removal.commit, publicMessage } }),
+  ).rejects.toThrow(new ValidationError("Update path is required"))
+  expect(bobGroup).toStrictEqual(previousState)
+
+  const removed = await processMessage({ context, state: bobGroup, message: removal.commit })
+  expect(removed.newState.groupActiveState).toStrictEqual({ kind: "removedFromGroup" })
+})
 
 test("rejects an authenticated UpdatePath whose encrypted secret does not match its public key", async () => {
   const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")

@@ -370,13 +370,13 @@ function preprocessProposals(
     if (isDefaultProposal(proposal)) {
       switch (proposal.proposalType) {
         case defaultProposalTypes.add:
-          adds.push({ keyPackage: proposal.add.keyPackage, authenticated: !inline, sentByClient }) //todo correct?
+          adds.push({ keyPackage: proposal.add.keyPackage, authenticated: !inline, sentByClient })
           break
         case defaultProposalTypes.update: {
           if (inline) {
             throw new ValidationError("Committer can't update themselves via proposal")
           }
-          if (senderLeafIndex === undefined) throw new Error("Can't apply update proposal from unknown sender? TODO")
+          if (senderLeafIndex === undefined) throw new Error("Can't apply update proposal from unknown sender?")
           const leafIndex = toLeafIndex(senderLeafIndex)
           const existing = tree[leafToNodeIndex(leafIndex)]
           if (existing?.nodeType !== nodeTypes.leaf) throw new Error("Empty leaf for update proposal")
