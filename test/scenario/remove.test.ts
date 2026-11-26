@@ -72,6 +72,65 @@ test("recognizes removal when an Add in the same commit reuses the removed membe
   await testEveryoneCanMessageEveryone([replacedBob.newState, charlieGroup], impl)
 })
 
+test("removes the left subtree while preserving communication in the right subtree", async () => {
+  const impl = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
+  const context = { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
+  const makeMember = (identity: string) =>
+    generateKeyPackage({
+      credential: { credentialType: defaultCredentialTypes.basic, identity: new TextEncoder().encode(identity) },
+      cipherSuite: impl,
+    })
+  const [alice, bob, charlie, dave] = await Promise.all([
+    makeMember("alice"),
+    makeMember("bob"),
+    makeMember("charlie"),
+    makeMember("dave"),
+  ])
+  const initialGroup = await createGroup({
+    context,
+    groupId: new TextEncoder().encode("remove-left-subtree"),
+    keyPackage: alice.publicPackage,
+    privateKeyPackage: alice.privatePackage,
+  })
+  const added = await createCommitEnsureNoMutation({
+    context,
+    state: initialGroup,
+    extraProposals: [bob, charlie, dave].map((member): ProposalAdd => ({
+      proposalType: defaultProposalTypes.add,
+      add: { keyPackage: member.publicPackage },
+    })),
+  })
+  const joinMember = (member: typeof charlie) =>
+    joinGroup({
+      context,
+      welcome: added.welcome!.welcome,
+      keyPackage: member.publicPackage,
+      privateKeys: member.privatePackage,
+      ratchetTree: added.newState.ratchetTree,
+    })
+  const charlieGroup = await joinMember(charlie)
+  const daveGroup = await joinMember(dave)
+
+  // Remove leaves 0 and 1 together, leaving leaves 2 and 3 under a blank root at node 3.
+  const removed = await createCommitEnsureNoMutation({
+    context,
+    state: charlieGroup,
+    extraProposals: [0, 1].map((removed): ProposalRemove => ({
+      proposalType: defaultProposalTypes.remove,
+      remove: { removed },
+    })),
+  })
+  const received = await processMessageEnsureNoMutation({ context, state: daveGroup, message: removed.commit })
+
+  expect(removed.newState.ratchetTree[3]).toBeUndefined()
+  expect(received.newState.groupContext.treeHash).toStrictEqual(removed.newState.groupContext.treeHash)
+  expect(received.newState.privatePath.privateKeys[3]).toBeUndefined()
+  expect(received.newState.keySchedule.epochAuthenticator).toStrictEqual(
+    removed.newState.keySchedule.epochAuthenticator,
+  )
+  await testEveryoneCanMessageEveryone([removed.newState, received.newState], impl)
+})
+
 async function remove(cipherSuite: CiphersuiteName) {
   const impl = await getCiphersuiteImpl(cipherSuite)
 

@@ -10,7 +10,10 @@ import {
 import { CiphersuiteImpl } from "./crypto/ciphersuite.js"
 import { deriveSecret } from "./crypto/kdf.js"
 import { PathSecrets } from "./pathSecrets.js"
+import { CryptoVerificationError } from "./mlsError.js"
+import { getHpkePublicKey, RatchetTree } from "./ratchetTree.js"
 import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
+import { constantTimeEqual } from "./util/constantTimeCompare.js"
 
 /** @public */
 export interface PrivateKeyPath {
@@ -47,11 +50,18 @@ export async function toPrivateKeyPath(
   pathSecrets: PathSecrets,
   leafIndex: number,
   cs: CiphersuiteImpl,
+  tree: RatchetTree,
 ): Promise<PrivateKeyPath> {
   const asArray: [number, Uint8Array][] = await Promise.all(
     Object.entries(pathSecrets).map(async ([nodeIndex, pathSecret]) => {
       const nodeSecret = await deriveSecret(pathSecret, "node", cs.kdf)
-      const { privateKey } = await cs.hpke.deriveKeyPair(nodeSecret)
+      const { privateKey, publicKey } = await cs.hpke.deriveKeyPair(nodeSecret)
+
+      // RFC 9420 Section 7.5: verify derived keys against the advertised tree before storing them.
+      const node = tree[Number(nodeIndex)]
+      if (node === undefined || !constantTimeEqual(await cs.hpke.exportPublicKey(publicKey), getHpkePublicKey(node))) {
+        throw new CryptoVerificationError("Derived public key does not match the ratchet tree")
+      }
 
       return [Number(nodeIndex), await cs.hpke.exportPrivateKey(privateKey)] as const
     }),
