@@ -14,7 +14,7 @@ COPY interop ./interop
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 WORKDIR /app/interop
-RUN pnpm install --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 EXPOSE 50053
 

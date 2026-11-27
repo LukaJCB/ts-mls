@@ -1,6 +1,7 @@
 # Ignore artifacts:
 build
 coverage
+.interop/
 pnpm-lock.yaml
 api/*
 docs/migration-guide.md
