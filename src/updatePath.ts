@@ -15,13 +15,7 @@ import {
 } from "./leafNode.js"
 import { leafNodeSources } from "./leafNodeSource.js"
 import { calculateParentHash } from "./parentHash.js"
-import {
-  filteredDirectPath,
-  filteredDirectPathAndCopathResolution,
-  getHpkePublicKey,
-  Node,
-  RatchetTree,
-} from "./ratchetTree.js"
+import { filteredDirectPathAndCopathResolution, getHpkePublicKey, Node, RatchetTree } from "./ratchetTree.js"
 import { nodeTypes } from "./nodeType.js"
 import { treeHashRoot, TreeHashCache } from "./treeHash.js"
 import { directPath, isAncestor, LeafIndex, leafToNodeIndex, leafWidth, NodeIndex, toNodeIndex } from "./treemath.js"
@@ -249,6 +243,7 @@ export async function applyUpdatePath(
   h: Hash,
   mutableTreeHashCache: TreeHashCache,
   isExternal: boolean = false,
+  excludeNodes: NodeIndex[] = [],
 ): Promise<void> {
   // if this is an external commit, the leaf node did not exist prior
   if (!isExternal) {
@@ -274,7 +269,22 @@ export async function applyUpdatePath(
   if (pathNodePublicKeysExistInTree)
     throw new ValidationError("Public keys in the UpdatePath may not appear in a node of the new ratchet tree")
 
-  const reverseFilteredDirectPath = filteredDirectPath(senderLeafIndex, mutableTree).reverse()
+  const filteredPath = filteredDirectPathAndCopathResolution(senderLeafIndex, mutableTree)
+  if (path.nodes.length !== filteredPath.length) throw new ValidationError("Invalid length of UpdatePath")
+
+  // RFC 9420 Section 7.6: every node must contain exactly one ciphertext per eligible resolution node,
+  // including nodes from which this recipient will not decrypt a secret.
+  const excludedNodes = new Set(excludeNodes)
+  for (const [index, { resolution }] of filteredPath.entries()) {
+    let expectedCount = 0
+    for (const node of resolution) {
+      if (!excludedNodes.has(node)) expectedCount++
+    }
+    if (path.nodes[index]!.encryptedPathSecret.length !== expectedCount) {
+      throw new ValidationError("Encrypted path secret count does not match the copath resolution")
+    }
+  }
+  const reverseFilteredDirectPath = filteredPath.map(({ nodeIndex }) => nodeIndex).reverse()
 
   blankStructuralDirectPath(mutableTree, senderLeafIndex)
 
@@ -282,10 +292,6 @@ export async function applyUpdatePath(
 
   // need to call .slice here so as not to mutate the original
   const reverseUpdatePath = path.nodes.slice().reverse()
-
-  if (reverseUpdatePath.length !== reverseFilteredDirectPath.length) {
-    throw new ValidationError("Invalid length of UpdatePath")
-  }
 
   for (const [level, nodeIndex] of reverseFilteredDirectPath.entries()) {
     const parentHash = await calculateParentHash(mutableTree, nodeIndex, h, mutableTreeHashCache)

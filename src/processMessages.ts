@@ -455,7 +455,7 @@ async function applyTreeUpdate(
   if (sender.senderType === senderTypes.member) {
     const touched = [...proposalTouchedLeaves, toLeafIndex(sender.leafIndex)]
     const cache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touched)
-    await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash, cache)
+    await applyUpdatePath(mutableTree, toLeafIndex(sender.leafIndex), path, cs.hash, cache, false, excludeNodes)
 
     const newTreeHash = await treeHashRoot(mutableTree, cs.hash, cache)
 
@@ -475,7 +475,7 @@ async function applyTreeUpdate(
     const senderLeafIndex = nodeToLeafIndex(leafNodeIndex)
     const touched = [...proposalTouchedLeaves, senderLeafIndex]
     const cache = deriveTreeHashCache(mutableTree.length, state.treeHashCache, touched)
-    await applyUpdatePath(mutableTree, senderLeafIndex, path, cs.hash, cache, true)
+    await applyUpdatePath(mutableTree, senderLeafIndex, path, cs.hash, cache, true, excludeNodes)
 
     const newTreeHash = await treeHashRoot(mutableTree, cs.hash, cache)
 
