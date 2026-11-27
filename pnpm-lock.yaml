@@ -16,8 +16,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.15.0(jiti@2.7.0))
       '@hpke/chacha20poly1305':
-        specifier: 1.8.0
-        version: 1.8.0
+        specifier: 1.8.1
+        version: 1.8.1
       '@hpke/dhkem-x448':
         specifier: 1.8.0
         version: 1.8.0
@@ -494,8 +494,8 @@ packages:
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@hpke/chacha20poly1305@1.8.0':
-    resolution: {integrity: sha512-FcBfAQ+Y99vMNJP2yrZ9wpL8V0GOwp1+zMyzvc6alasrBygfFjFm1yeUtyADJCu/27C3Lm5mJzx6u7pwg+cX5w==}
+  '@hpke/chacha20poly1305@1.8.1':
+    resolution: {integrity: sha512-EqIpqvybIQrdMMbVcrF9cr6q8PZWbKQ60428iZyESjGO8j9jJCsILNHaCyWWBwnJYAKT8nZko5sNIkIXmlHsuw==}
     engines: {node: '>=16.0.0'}
 
   '@hpke/common@1.10.0':
@@ -3195,9 +3195,9 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@hpke/chacha20poly1305@1.8.0':
+  '@hpke/chacha20poly1305@1.8.1':
     dependencies:
-      '@hpke/common': 1.10.0
+      '@hpke/common': 1.13.0
 
   '@hpke/common@1.10.0': {}
 
