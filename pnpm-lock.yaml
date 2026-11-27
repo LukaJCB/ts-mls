@@ -25,8 +25,8 @@ importers:
         specifier: 0.7.1
         version: 0.7.1
       '@hpke/ml-kem':
-        specifier: 0.3.0
-        version: 0.3.0
+        specifier: 0.3.1
+        version: 0.3.1
       '@microsoft/api-extractor':
         specifier: 7.60.1
         version: 7.60.1(@types/node@26.6.6)
@@ -518,8 +518,8 @@ packages:
     resolution: {integrity: sha512-8BdZnfIagg8MFuShruSbVuj7/ujg63eNaRx/EE8dJzMg1keh2Vm8BPAigEu5Zzskgu9zv001yHYdV7PK8K0+aA==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/ml-kem@0.3.0':
-    resolution: {integrity: sha512-+K0I37CCKOvom/MDiNuUQEOIbkij55yTTbw5o/NKOfBjANt/WeYKMmSOtot6essGmt8/9FJASRSFDkjAWu0eiQ==}
+  '@hpke/ml-kem@0.3.1':
+    resolution: {integrity: sha512-38R6lF8CxA2PZZ0/qDTvw42Bs1qTysDnn6RlnVStj//lOu94mBnc2gcKgx41DyJyYxthxZdLYUuyqamMvHfDFw==}
     engines: {node: '>=16.0.0'}
 
   '@humanfs/core@0.19.2':
@@ -2231,10 +2231,6 @@ packages:
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
-  mlkem@2.7.0:
-    resolution: {integrity: sha512-I2bcB5d6jtkdan6MLGOxObpUbidqv0ej+PhbCGnXUqmcGYZ6X8F0qBpU6HE4mvYc81NSznBrVDp+Uc808Ba2RA==}
-    engines: {node: '>=16.0.0'}
-
   mlkem@2.7.2:
     resolution: {integrity: sha512-oXYAlmmosZ2bfe75Hb8zr3Egr3KDH5i0dq3Tlx8bqGwvh4BpGxN1GUFc3zmpl/X+vk4QOh89xmpHbhFrQ+nI3g==}
     engines: {node: '>=16.0.0'}
@@ -3216,10 +3212,10 @@ snapshots:
       '@hpke/common': 1.13.0
       mlkem: 2.7.2
 
-  '@hpke/ml-kem@0.3.0':
+  '@hpke/ml-kem@0.3.1':
     dependencies:
-      '@hpke/common': 1.10.0
-      mlkem: 2.7.0
+      '@hpke/common': 1.13.0
+      mlkem: 2.7.2
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -5092,8 +5088,6 @@ snapshots:
       brace-expansion: 1.1.13
 
   minimist@1.2.8: {}
-
-  mlkem@2.7.0: {}
 
   mlkem@2.7.2: {}
 
