@@ -145,6 +145,8 @@ export async function validateRatchetTree(
       else hpkeKeys.add(hpkeKey)
 
       for (const unmergedLeaf of n.parent.unmergedLeaves) {
+        if (!Number.isInteger(unmergedLeaf) || unmergedLeaf < 0 || unmergedLeaf >= leafWidth(tree.length))
+          return new ValidationError("Unmerged leaf index out of range")
         const leafIndex = toLeafIndex(unmergedLeaf)
         const dp = directPath(leafToNodeIndex(leafIndex), leafWidth(tree.length))
         const nodeIndex = leafToNodeIndex(leafIndex)
