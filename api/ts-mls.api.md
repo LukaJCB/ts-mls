@@ -152,7 +152,7 @@ export const clientStateEncoder: Encoder<ClientState>;
 
 // @public (undocumented)
 export class CodecError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
@@ -340,7 +340,7 @@ export interface CredentialX509 {
 
 // @public (undocumented)
 export class CryptoError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
@@ -351,7 +351,7 @@ export interface CryptoProvider {
 
 // @public (undocumented)
 export class CryptoVerificationError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
@@ -450,7 +450,7 @@ export const defaultProposalTypes: {
 
 // @public (undocumented)
 export class DependencyError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
@@ -871,7 +871,7 @@ export type IncomingMessageCallback = (incoming: {
 
 // @public (undocumented)
 export class InternalError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
@@ -1158,7 +1158,7 @@ export interface MlsContext {
 
 // @public (undocumented)
 export class MlsError extends Error {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
@@ -1781,12 +1781,12 @@ export interface UpdatePathNode {
 
 // @public (undocumented)
 export class UsageError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)
 export class ValidationError extends MlsError {
-    constructor(message: string);
+    constructor(message: string, options?: ErrorOptions);
 }
 
 // @public (undocumented)

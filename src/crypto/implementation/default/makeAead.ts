@@ -47,6 +47,7 @@ export async function makeAead(aeadAlg: AeadAlgorithm): Promise<[Aead, AeadInter
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@hpke/chacha20poly1305' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
   }

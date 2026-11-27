@@ -72,6 +72,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     }
@@ -94,6 +95,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
 
@@ -115,6 +117,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     case "P384":
@@ -135,6 +138,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     case "P521":
@@ -155,6 +159,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@noble/curves' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     case "ML-DSA-87":
@@ -175,6 +180,7 @@ export async function makeNobleSignatureImpl(alg: SignatureAlgorithm): Promise<S
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@noble/post-quantum' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
   }

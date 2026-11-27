@@ -26,7 +26,7 @@ import { CryptoVerificationError, encode } from "../../src/index.js"
 import { capabilitiesEncoder } from "../../src/capabilities.js"
 import { extensionEncoder } from "../../src/extension.js"
 import { varLenTypeEncoder } from "../../src/codec/variableLength.js"
-import { AuthenticationError } from "../../src/mlsError.js"
+import { AuthenticationError, CryptoError } from "../../src/mlsError.js"
 
 test.concurrent.each(Object.keys(ciphersuites))(`Update Proposal %s`, async (cs) => {
   await updateProposalRoundtrip(cs as CiphersuiteName, true)
@@ -239,7 +239,7 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
       message: aliceEarlyCommit.commit,
       callback: acceptAll,
     }),
-  ).rejects.toThrow("OpenError")
+  ).rejects.toThrow(CryptoError)
 
   const validateCredentialBatch = vi.fn<AuthenticationService["validateCredentialBatch"]>(async () => ({
     kind: "error",
@@ -301,7 +301,7 @@ async function updateProposalRoundtrip(cipherSuite: CiphersuiteName, publicMessa
       message: aliceCommit.commit,
       callback: acceptAll,
     }),
-  ).rejects.toThrow("OpenError")
+  ).rejects.toThrow(CryptoError)
 
   const bobProcessCommit = await processMessageEnsureNoMutation({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
