@@ -401,6 +401,33 @@ const bytes = encode(mlsMessageEncoder, msg)
 const msg2 = decode(mlsMessageDecoder, bytes)
 ```
 
+### Migrating saved 1.x state
+
+Use `decodeClientStateV1` for bytes written by 1.x's `encodeGroupState`. It returns a 2.x `ClientState`, which can then be persisted with the current encoder:
+
+```typescript
+import {
+  clientStateEncoder,
+  decodeClientStateV1,
+  encode,
+  getCiphersuiteImpl,
+} from "ts-mls"
+
+async function migrateSavedState(encodedState: Uint8Array) {
+  const cipherSuite = await getCiphersuiteImpl("MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519")
+  const state = await decodeClientStateV1({ encodedState, cipherSuite })
+  return { state, encodedState: encode(clientStateEncoder, state) }
+}
+```
+
+Choose the ciphersuite used by the saved group. Migration is asynchronous because 1.x retained generation secrets for skipped messages, while 2.x retains derived keys and nonces. The helper preserves ratchet generations, skipped message keys, historical epochs, pending proposals, and the group's active/removed/suspended status. The tree hash cache starts empty and is populated during normal use.
+
+This supports the binary state format introduced in 1.5 and used throughout 1.6, including the earlier key schedule slots that were later left empty. It does not read JSON snapshots or `encodeGroupStateWithoutTree` output. The serialized state did not include `clientConfig`; supply configuration and your authentication service through `MlsContext` when using the migrated state.
+
+The helper throws `CodecError` for malformed/trailing input and `UsageError` for a ciphersuite mismatch. The input size limit defaults to 64,000,000 bytes and can be overridden with `maxInputSize`. As with `clientStateDecoder`, returned buffers may reference the input; do not zero the input while using the returned state.
+
+Migration preserves wire identifiers and authenticated data. The 1.x experimental post-quantum suites used different numeric IDs from the 2.x built-ins; those groups require a compatible ciphersuite implementation retaining the original ID. Legacy states using 1.x's non-RFC single-sender `external_senders` extension encoding are unsupported: changing that encoding to the RFC vector would change the authenticated group context. Such extensions and affected historical epochs must be retired in 1.x before exporting the state.
+
 ## 5) Proposal and credential typing changes (type-level breaking)
 
 Notable changes:

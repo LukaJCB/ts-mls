@@ -102,3 +102,4 @@ addBobCommitResult.consumed.forEach(zeroOutUint8Array)
 - **Security Considerations**: Serialized state contains sensitive cryptographic material (private keys, secrets). Store it securely with appropriate encryption and access controls.
 - **Full Fidelity**: Serialization preserves all aspects of the state including keys, proposals, epoch information, and tree structure.
 - **Storage Best Practices**: Consider storing state after each epoch change to minimize potential data loss.
+- **Migrating 1.x State**: Use `await decodeClientStateV1({ encodedState, cipherSuite })` for bytes produced by 1.x's `encodeGroupState`. See the [migration guide](migration-guide.md#migrating-saved-1x-state) for an example and compatibility limits.
