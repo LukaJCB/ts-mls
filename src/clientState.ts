@@ -123,6 +123,7 @@ import {
 import { ExternalSender } from "./externalSender.js"
 import { LeafChange } from "./leafChange.js"
 import { supportsNonDefaultProposalType } from "./validationStructural.js"
+import { getLeafNode } from "./getLeafNodeAt.js"
 
 /** @public */
 export type ClientState = GroupState & PublicGroupState
@@ -252,11 +253,7 @@ export function getOwnLeafNode(state: ClientState): LeafNode {
 
 /** @public */
 export function getLeafNodeAt(state: ClientState, leafIndex: number): LeafNode {
-  const idx = leafToNodeIndex(toLeafIndex(leafIndex))
-  const leaf = state.ratchetTree[idx]
-  if (!leaf) throw new UsageError("No leaf at given leafIndex")
-  if (leaf.nodeType !== nodeTypes.leaf) throw new InternalError("Expected leaf node")
-  return leaf.leaf
+  return getLeafNode(state.ratchetTree, toLeafIndex(leafIndex))
 }
 
 /** @public */
@@ -377,12 +374,12 @@ function preprocessProposals(
             throw new ValidationError("Committer can't update themselves via proposal")
           }
           if (senderLeafIndex === undefined) throw new Error("Can't apply update proposal from unknown sender?")
+
           const leafIndex = toLeafIndex(senderLeafIndex)
-          const existing = tree[leafToNodeIndex(leafIndex)]
-          if (existing?.nodeType !== nodeTypes.leaf) throw new Error("Empty leaf for update proposal")
+          const leaf = getLeafNode(tree, leafIndex)
           checkLeafTarget(leafIndex, committerLeafIndex, leafChanges, removals)
           leafChanges.set(leafIndex, {
-            oldLeafNode: existing.leaf,
+            oldLeafNode: leaf,
             newLeafNode: proposal.update.leafNode,
             authenticated: true,
           })
@@ -522,10 +519,6 @@ function preprocessProposals(
   if (reinit !== undefined) {
     if (proposals.length > 1) {
       throw new ValidationError("Reinit cannot contain any other proposals")
-    }
-    const oldLeafNode = tree[leafToNodeIndex(committerLeafIndex)]
-    if (oldLeafNode?.nodeType !== nodeTypes.leaf) {
-      throw new InternalError("expected leaf node")
     }
 
     const leafValidation: LeafValidationInput = {
@@ -1133,15 +1126,7 @@ export async function processProposal(
       case defaultProposalTypes.group_context_extensions:
         if (senderLeafIndex === undefined)
           throw new ValidationError("Received a GroupContextExtensions proposal from a non-member")
-        await validateGroupContextExtensionProposal(
-          proposal,
-          senderLeafIndex,
-          state,
-          clientConfig,
-          authService,
-          state.ratchetTree,
-          impl,
-        )
+        await validateGroupContextExtensionProposal(proposal, state, clientConfig, authService, state.ratchetTree, impl)
         break
     }
   }
@@ -1209,14 +1194,12 @@ async function validateUpdateProposal(
   authService: AuthenticationService,
   impl: CiphersuiteImpl,
 ): Promise<void> {
-  const leafNodeIndex = leafToNodeIndex(senderLeafIndex)
-  const oldLeafNode = tree[leafNodeIndex]
-  if (oldLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Tried to update a non-leaf node")
+  const oldLeafNode = getLeafNode(tree, senderLeafIndex)
 
   const validationInput = {
     adds: [],
     leafChanges: new Map([
-      [senderLeafIndex, { oldLeafNode: oldLeafNode.leaf, newLeafNode: proposal.update.leafNode, authenticated: false }],
+      [senderLeafIndex, { oldLeafNode, newLeafNode: proposal.update.leafNode, authenticated: false }],
     ]),
     removals: new Set<LeafIndex>(),
     groupContextExtensions: undefined,
@@ -1257,17 +1240,12 @@ async function validateUpdateProposal(
  */
 async function validateGroupContextExtensionProposal(
   proposal: ProposalGroupContextExtensions,
-  senderLeafIndex: LeafIndex,
   state: ClientState,
   clientConfig: ClientConfig,
   authService: AuthenticationService,
   tree: RatchetTree,
   cs: CiphersuiteImpl,
 ): Promise<void> {
-  const leafNodeIndex = leafToNodeIndex(senderLeafIndex)
-  const oldLeafNode = tree[leafNodeIndex]
-  if (oldLeafNode?.nodeType !== nodeTypes.leaf) throw new InternalError("Tried to update a non-leaf node")
-
   const gce = parseGce(proposal.groupContextExtensions, false)
 
   const validationInput = {

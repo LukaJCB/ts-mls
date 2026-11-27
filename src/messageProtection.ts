@@ -21,15 +21,15 @@ import {
 import { consumeRatchet, ratchetToGeneration, SecretTree } from "./secretTree.js"
 import { getSignaturePublicKeyFromLeafIndex, RatchetTree } from "./ratchetTree.js"
 import { senderTypes, SenderData, SenderDataAAD } from "./sender.js"
-import { leafToNodeIndex, toLeafIndex } from "./treemath.js"
+import { toLeafIndex } from "./treemath.js"
 import { KeyRetentionConfig } from "./keyRetentionConfig.js"
 import { CryptoVerificationError, CodecError, ValidationError, MlsError } from "./mlsError.js"
 import { PaddingConfig } from "./paddingConfig.js"
 import { encode } from "./codec/tlsEncoder.js"
-import { nodeTypes } from "./nodeType.js"
 import { contentTypes } from "./contentType.js"
 import { wireformats } from "./wireformat.js"
 import { throwIfDefined } from "./validation.js"
+import { getLeafNode } from "./getLeafNodeAt.js"
 
 interface ProtectApplicationDataResult {
   privateMessage: PrivateMessage
@@ -280,6 +280,9 @@ export async function unprotectPrivateMessage(
 }
 
 function validateSenderData(senderData: SenderData, tree: RatchetTree): MlsError | undefined {
-  if (tree[leafToNodeIndex(toLeafIndex(senderData.leafIndex))]?.nodeType !== nodeTypes.leaf)
+  try {
+    getLeafNode(tree, toLeafIndex(senderData.leafIndex))
+  } catch (e) {
     return new ValidationError("SenderData did not point to a non-blank leaf node")
+  }
 }
