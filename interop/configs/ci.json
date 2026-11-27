@@ -1,0 +1,477 @@
+{
+  "scripts": {
+    "welcome_join_no_path_secret": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "createKeyPackage",
+        "actor": "bob"
+      },
+      {
+        "action": "addProposal",
+        "actor": "alice",
+        "keyPackage": 1
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [2],
+        "joiners": ["bob"]
+      }
+    ],
+    "welcome_join_with_path_secret": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "createKeyPackage",
+        "actor": "bob"
+      },
+      {
+        "action": "addProposal",
+        "actor": "alice",
+        "keyPackage": 1
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [2],
+        "joiners": ["bob"],
+        "force_path": true
+      }
+    ],
+    "welcome_join_with_psk": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "createKeyPackage",
+        "actor": "bob"
+      },
+      {
+        "action": "addProposal",
+        "actor": "alice",
+        "keyPackage": 1
+      },
+      {
+        "action": "installExternalPSK",
+        "clients": ["alice", "bob"]
+      },
+      {
+        "action": "externalPSKProposal",
+        "actor": "alice",
+        "pskID": 3
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [2, 4],
+        "joiners": ["bob"]
+      }
+    ],
+    "welcome_join_with_external_tree": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "createKeyPackage",
+        "actor": "bob"
+      },
+      {
+        "action": "addProposal",
+        "actor": "alice",
+        "keyPackage": 1
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [2],
+        "joiners": ["bob"],
+        "external_tree": true
+      }
+    ],
+    "application_in_order": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw1",
+        "plaintext": "hello world 1"
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw2",
+        "plaintext": "hello world 2"
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw3",
+        "plaintext": "hello world 3"
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 1
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 2
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 3
+      }
+    ],
+    "application_out_of_order_within_epoch": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw1",
+        "plaintext": "hello world 1"
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw2",
+        "plaintext": "hello world 2"
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw3",
+        "plaintext": "hello world 3"
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 3
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 2
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 1
+      }
+    ],
+    "application_out_of_order_across_epochs": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw1",
+        "plaintext": "hello world 1"
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw2",
+        "plaintext": "hello world 2"
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw3",
+        "plaintext": "hello world 3"
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "btw4",
+        "plaintext": "hello world 4"
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 5
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 4
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 2
+      },
+      {
+        "action": "unprotect",
+        "actor": "bob",
+        "ciphertext": 1
+      }
+    ],
+    "commit_empty": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "members": ["bob"]
+      }
+    ],
+    "commit_update": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "updateProposal",
+        "actor": "bob"
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [1],
+        "members": ["bob"]
+      }
+    ],
+    "commit_external_psk": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "installExternalPSK",
+        "clients": ["alice", "bob"]
+      },
+      {
+        "action": "installExternalPSK",
+        "clients": ["alice", "bob"]
+      },
+      {
+        "action": "installExternalPSK",
+        "clients": ["alice", "bob"]
+      },
+      {
+        "action": "externalPSKProposal",
+        "pskID": 1,
+        "actor": "alice"
+      },
+      {
+        "action": "externalPSKProposal",
+        "pskID": 2,
+        "actor": "bob"
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [4, 5],
+        "byValue": [
+          {
+            "proposalType": "externalPSK",
+            "pskID": 3
+          }
+        ],
+        "members": ["bob"],
+        "force_path": true
+      },
+      {
+        "action": "externalPSKProposal",
+        "pskID": 1,
+        "actor": "alice"
+      },
+      {
+        "action": "externalPSKProposal",
+        "pskID": 2,
+        "actor": "bob"
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [7, 8],
+        "byValue": [
+          {
+            "proposalType": "externalPSK",
+            "pskID": 3
+          }
+        ],
+        "members": ["bob"],
+        "force_path": false
+      }
+    ],
+    "add_update_remove": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "createKeyPackage",
+        "actor": "charlie"
+      },
+      {
+        "action": "addProposal",
+        "actor": "bob",
+        "keyPackage": 1
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [2],
+        "members": ["bob"],
+        "joiners": ["charlie"],
+        "force_path": true,
+        "external_tree": true
+      },
+      {
+        "action": "updateProposal",
+        "actor": "bob"
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [4],
+        "members": ["bob", "charlie"]
+      },
+      {
+        "action": "protect",
+        "actor": "bob",
+        "authenticatedData": "interop",
+        "plaintext": "after update"
+      },
+      {
+        "action": "unprotect",
+        "actor": "charlie",
+        "ciphertext": 6
+      },
+      {
+        "action": "removeProposal",
+        "actor": "charlie",
+        "removed": "bob"
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "byReference": [8],
+        "members": ["charlie"]
+      },
+      {
+        "action": "protect",
+        "actor": "alice",
+        "authenticatedData": "interop",
+        "plaintext": "after remove"
+      },
+      {
+        "action": "unprotect",
+        "actor": "charlie",
+        "ciphertext": 10
+      }
+    ],
+    "external_join_normal": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "externalJoin",
+        "actor": "alice",
+        "joiner": "bob"
+      }
+    ],
+    "external_join_with_psk": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "installExternalPSK",
+        "clients": ["alice"]
+      },
+      {
+        "action": "externalJoin",
+        "actor": "alice",
+        "joiner": "bob",
+        "psks": [1]
+      }
+    ],
+    "external_join_removing_prior": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "externalJoin",
+        "actor": "alice",
+        "joiner": "bob"
+      },
+      {
+        "action": "externalJoin",
+        "actor": "alice",
+        "joiner": "bob",
+        "removePrior": true
+      }
+    ],
+    "external_join_with_external_tree": [
+      {
+        "action": "createGroup",
+        "actor": "alice"
+      },
+      {
+        "action": "externalJoin",
+        "actor": "alice",
+        "joiner": "bob",
+        "externalTree": true
+      }
+    ],
+    "resumption_psk_by_value": [
+      {
+        "action": "createGroup",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "members": ["bob"]
+      },
+      {
+        "action": "fullCommit",
+        "actor": "alice",
+        "members": ["bob"],
+        "byValue": [
+          {
+            "proposalType": "resumptionPSK",
+            "epochID": 1
+          }
+        ],
+        "force_path": true
+      }
+    ]
+  }
+}

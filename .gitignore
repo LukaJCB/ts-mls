@@ -26,6 +26,8 @@ dist-ssr
 .ackrc
 
 coverage
+interop/results/
+.interop/
 .tmp-compiled-docs
 
 # API Extractor

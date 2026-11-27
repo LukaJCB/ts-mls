@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
+    "test": "tsx src/run.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

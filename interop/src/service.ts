@@ -117,21 +117,15 @@ function wrap<Req, Res>(fn: (req: Req) => Promise<Res>): grpc.handleUnaryCall<Re
 async function tryIngest(store: Store, entry: GroupEntry, bytes: Uint8Array): Promise<GroupEntry> {
   const key = bytesToBase64(bytes)
   if (entry.ingestedBytes.has(key)) return entry
-  try {
-    const framed = decodeFramedMessage(bytes)
-    if (await isOwnMemberMessage(framed, entry)) {
-      entry.ingestedBytes.add(key)
-      return entry
-    }
-    const result = await processMessage({ context: mlsContext(store, entry), state: entry.state, message: framed })
+  const framed = decodeFramedMessage(bytes)
+  if (await isOwnMemberMessage(framed, entry)) {
     entry.ingestedBytes.add(key)
-    if (result.kind === "newState") return { ...entry, state: result.newState }
-    return entry
-  } catch (e) {
-    const err = e as Error
-    console.error(`[tryIngest] FAILED: ${err.message}\n${err.stack ?? ""}`)
     return entry
   }
+  const result = await processMessage({ context: mlsContext(store, entry), state: entry.state, message: framed })
+  entry.ingestedBytes.add(key)
+  if (result.kind === "newState") return { ...entry, state: result.newState }
+  return entry
 }
 
 async function isOwnMemberMessage(framed: MlsFramedMessage, entry: GroupEntry): Promise<boolean> {
@@ -329,17 +323,16 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
       }) => {
         let entry = store.getGroup(req.state_id)
         for (const ref of req.by_reference ?? []) entry = await tryIngest(store, entry, toBytes(ref))
-        const extraProposals = (req.by_value ?? [])
-          .map((raw) => materializeByValueProposal(raw, entry))
-          .filter((p): p is Proposal => !!p)
+        const extraProposals = (req.by_value ?? []).map((raw) => materializeByValueProposal(raw, entry))
         const result = await createCommit({
           context: mlsContext(store, entry),
           state: entry.state,
           extraProposals,
           ratchetTreeExtension: true,
           wireAsPublicMessage: entry.wireAsPublicMessage,
+          leafNodePatch: req.force_path ? {} : undefined,
         })
-        store.updateGroup(req.state_id, { state: entry.state, pendingNewState: result.newState })
+        store.updateGroup(req.state_id, { state: result.newStateOnReject, pendingNewState: result.newState })
         const commit = encode(mlsMessageEncoder, result.commit)
         const welcome = result.welcome ? encode(mlsMessageEncoder, result.welcome) : new Uint8Array()
         const ratchet_tree = req.external_tree ? encodeRatchetTree(result.newState) : new Uint8Array()
@@ -530,17 +523,16 @@ export function makeService(store: Store): grpc.UntypedServiceImplementation {
         // Same as Commit; reinit proposal is delivered via by_reference/by_value.
         let entry = store.getGroup(req.state_id)
         for (const ref of req.by_reference ?? []) entry = await tryIngest(store, entry, toBytes(ref))
-        const extraProposals = (req.by_value ?? [])
-          .map((raw) => materializeByValueProposal(raw, entry))
-          .filter((p): p is Proposal => !!p)
+        const extraProposals = (req.by_value ?? []).map((raw) => materializeByValueProposal(raw, entry))
         const result = await createCommit({
           context: mlsContext(store, entry),
           state: entry.state,
           extraProposals,
           ratchetTreeExtension: true,
           wireAsPublicMessage: entry.wireAsPublicMessage,
+          leafNodePatch: req.force_path ? {} : undefined,
         })
-        store.updateGroup(req.state_id, { state: entry.state, pendingNewState: result.newState })
+        store.updateGroup(req.state_id, { state: result.newStateOnReject, pendingNewState: result.newState })
         return {
           commit: encode(mlsMessageEncoder, result.commit),
           welcome: new Uint8Array(),
@@ -796,7 +788,7 @@ async function makeProposal(
   return { proposal: encode(mlsMessageEncoder, result.message) }
 }
 
-function materializeByValueProposal(raw: unknown, entry: GroupEntry): Proposal | undefined {
+function materializeByValueProposal(raw: unknown, entry: GroupEntry): Proposal {
   const d = raw as {
     proposal_type?: unknown
     key_package?: unknown
@@ -846,8 +838,7 @@ function materializeByValueProposal(raw: unknown, entry: GroupEntry): Proposal |
       } satisfies ProposalReinit
     }
     default:
-      console.warn(`[by_value] unsupported proposal_type: ${typeStr} (ignored)`)
-      return undefined
+      throw new Error(`Unsupported by-value proposal_type: ${typeStr}`)
   }
 }
 

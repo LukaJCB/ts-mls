@@ -41,3 +41,72 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm playwright:install
       - run: pnpm test:browser
+
+  test-interop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: mlswg/mls-implementations
+          ref: cfd450286d1bfd9cd2519b95c80f9771f94a5b1a
+          path: .interop/mls-implementations
+      - uses: actions/checkout@v7
+        with:
+          repository: openmls/openmls
+          ref: 6b85f0edc560b4fe0f5b9266092947a774614f3f # openmls-v0.8.0
+          path: .interop/openmls
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.13.0"
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            interop/pnpm-lock.yaml
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.4"
+          cache-dependency-path: .interop/mls-implementations/go.mod
+      - name: Set up Rust
+        run: |
+          rustup toolchain install 1.92.0 --profile minimal
+          rustup default 1.92.0
+          cp interop/openmls.Cargo.lock .interop/openmls/Cargo.lock
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: .interop/openmls
+          cache-workspace-crates: true
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir interop install --ignore-workspace --frozen-lockfile --ignore-scripts
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.33.0
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+      - name: Build MLS WG runner
+        working-directory: .interop/mls-implementations
+        run: |
+          protoc -I interop/proto \
+            --go_out=interop/proto --go_opt=paths=source_relative \
+            --go-grpc_out=interop/proto --go-grpc_opt=paths=source_relative \
+            interop/proto/mls_client.proto
+          go build -mod=mod -o test-runner ./interop/test-runner
+      - name: Build OpenMLS client
+        run: cargo build --locked --manifest-path .interop/openmls/Cargo.toml -p interop_client
+      - name: Type-check interop adapter
+        run: pnpm --dir interop typecheck
+      - name: Test interoperability with OpenMLS
+        env:
+          MLS_INTEROP_RUNNER: .interop/mls-implementations/test-runner
+          OPENMLS_INTEROP_CLIENT: .interop/openmls/target/debug/interop_client
+        run: pnpm test:interop
+      - name: Upload interop results and server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interop-results
+          path: interop/results/
+          if-no-files-found: ignore

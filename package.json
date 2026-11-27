@@ -97,6 +97,7 @@
     "benchmark": "tsx bench/index.ts",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:interop": "pnpm --dir interop test",
     "playwright:install": "playwright install",
     "coverage": "vitest run --coverage",
     "lint": "eslint src/ test/",
