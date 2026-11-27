@@ -628,16 +628,13 @@ export async function joinGroupExternal(params: {
   const { enc, secret: initSecret } = await exportSecret(externalPub, cs)
 
   //copy tree if not from extension
-  const ratchetTree = ratchetTreeFromExtension(groupInfo) ?? tree?.slice()
+  const mutableTree = ratchetTreeFromExtension(groupInfo) ?? tree?.slice()
 
-  if (ratchetTree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
-
-  //todo is this necessary?
-  const mutableTree = ratchetTree
+  if (mutableTree === undefined) throw new UsageError("No RatchetTree passed and no ratchet_tree extension")
 
   throwIfDefined(
     await validateRatchetTree(
-      ratchetTree,
+      mutableTree,
       groupInfo.groupContext,
       clientConfig.lifetimeConfig,
       authService,
@@ -646,9 +643,9 @@ export async function joinGroupExternal(params: {
     ),
   )
 
-  const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
+  const signaturePublicKey = getSignaturePublicKeyFromLeafIndex(mutableTree, toLeafIndex(groupInfo.signer))
 
-  const signerCredential = getCredentialFromLeafIndex(ratchetTree, toLeafIndex(groupInfo.signer))
+  const signerCredential = getCredentialFromLeafIndex(mutableTree, toLeafIndex(groupInfo.signer))
 
   const credentialVerified = await authService.validateCredential(signerCredential, signaturePublicKey)
 
@@ -661,7 +658,7 @@ export async function joinGroupExternal(params: {
 
   let formerLeafIndex: LeafIndex | undefined
   if (resync) {
-    const idx = ratchetTree.findIndex(
+    const idx = mutableTree.findIndex(
       (n) =>
         n !== undefined &&
         n.nodeType === nodeTypes.leaf &&
