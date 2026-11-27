@@ -100,14 +100,7 @@ export async function validateProposalsExtractAuthIndices(
       await validateKeyPackage(add.keyPackage, groupContext, requiredCaps, add.sentByClient, config.lifetimeConfig, s),
     )
     const ln = add.keyPackage.leafNode
-    //TODO are we checking requiredCaps twice here? we should probably remove it from one of them
-    addCredentialsAndKeysCheckSupport(
-      proposedCredentialTypes,
-      ln,
-      hpkeKeys,
-      requiredCaps,
-      effectiveGroupContextExtensions,
-    )
+    addCredentialsAndKeysCheckSupport(proposedCredentialTypes, ln, hpkeKeys, effectiveGroupContextExtensions)
 
     const stringKey = bytesToBase64(ln.signaturePublicKey)
     if (signatureKeys.has(stringKey)) throw new ValidationError("Duplicate signature key")
@@ -129,13 +122,7 @@ export async function validateProposalsExtractAuthIndices(
       await validateLeafNodeUpdateOrCommit(update.newLeafNode, senderLeafIndex, requiredCaps, groupContext, s),
     )
 
-    addCredentialsAndKeysCheckSupport(
-      proposedCredentialTypes,
-      ln,
-      hpkeKeys,
-      requiredCaps,
-      effectiveGroupContextExtensions,
-    )
+    addCredentialsAndKeysCheckSupport(proposedCredentialTypes, ln, hpkeKeys, effectiveGroupContextExtensions)
 
     if (update.oldLeafNode !== undefined && fastEqual(ln.hpkePublicKey, update.oldLeafNode.hpkePublicKey)) {
       throw new ValidationError("Updated LeafNode cannot have the same HPKE key")
@@ -191,7 +178,6 @@ function addCredentialsAndKeysCheckSupport(
   credentialTypes: Set<number>,
   ln: LeafNode,
   hpkeKeys: Set<string>,
-  requiredCaps: RequiredCapabilities | undefined,
   effectiveExtensions: GroupContextExtension[],
 ) {
   credentialTypes.add(ln.credential.credentialType)
@@ -199,12 +185,6 @@ function addCredentialsAndKeysCheckSupport(
   const stringKey = bytesToBase64(ln.hpkePublicKey)
   if (hpkeKeys.has(stringKey)) throw new ValidationError("Duplicate HPKE public key")
   hpkeKeys.add(stringKey)
-
-  if (requiredCaps) {
-    if (!capabiltiesAreSupported(requiredCaps, ln.capabilities)) {
-      throw new ValidationError("Commit contains proposals of member without required capabilities")
-    }
-  }
 
   if (!extensionsSupportedByCapabilities(effectiveExtensions, ln.capabilities)) {
     throw new ValidationError("LeafNode does not support GroupContext extensions")
