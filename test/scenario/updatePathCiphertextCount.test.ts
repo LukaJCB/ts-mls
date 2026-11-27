@@ -180,6 +180,24 @@ test.each([false, true])(
   },
 )
 
+test("applyUpdatePathSecret rejects a truncated ciphertext list", async () => {
+  const { context, recipients, created, originalPath } = await setup()
+  const path = structuredClone(originalPath)
+  path.nodes[0]!.encryptedPathSecret.pop()
+
+  await expect(
+    applyUpdatePathSecret(
+      created.newState.ratchetTree,
+      recipients[0]!.privatePath,
+      toLeafIndex(created.newState.privatePath.leafIndex),
+      created.newState.groupContext,
+      path,
+      [],
+      context.cipherSuite,
+    ),
+  ).rejects.toThrow(new ValidationError("UpdatePathNode encrypted path secret count mismatch"))
+})
+
 test("rejects ciphertexts for a path node whose recipients are all newly added leaves", async () => {
   const { context, recipients, originalPath, authenticate } = await setup(true)
   const path = structuredClone(originalPath)

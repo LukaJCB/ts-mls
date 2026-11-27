@@ -553,10 +553,17 @@ export async function applyUpdatePathSecret(
     updateNode,
   } = firstMatchAncestor(tree, toLeafIndex(privatePath.leafIndex), senderLeafIndex, path)
 
-  for (const [i, nodeIndex] of filterNewLeaves(resolution, excludeNodes).entries()) {
+  if (updateNode === undefined) throw new ValidationError("UpdatePathNode missing for the common ancestor")
+
+  const targets = filterNewLeaves(resolution, excludeNodes)
+  if (updateNode.encryptedPathSecret.length !== targets.length)
+    throw new ValidationError("UpdatePathNode encrypted path secret count mismatch")
+
+  for (const [i, nodeIndex] of targets.entries()) {
     if (privatePath.privateKeys[nodeIndex] !== undefined) {
       const key = await cs.hpke.importPrivateKey(privatePath.privateKeys[nodeIndex])
-      const ct = updateNode!.encryptedPathSecret[i]!
+      const ct = updateNode.encryptedPathSecret[i]
+      if (ct === undefined) throw new ValidationError("UpdatePathNode encrypted path secret missing")
 
       const pathSecret = await decryptWithLabel(
         key,
