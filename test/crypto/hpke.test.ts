@@ -1,19 +1,12 @@
 import { Hpke, PrivateKey } from "../../src/crypto/hpke.js"
-import { makeHpke } from "../../src/crypto/implementation/default/makeHpke.js"
+import { defaultCryptoProvider } from "../../src/crypto/implementation/default/provider.js"
 import { CryptoError } from "../../src/mlsError.js"
-
-// Use a minimal valid algorithm config (using a likely supported one)
-const hpkeAlg = {
-  kem: "DHKEM-P256-HKDF-SHA256",
-  kdf: "HKDF-SHA256",
-  aead: "AES128GCM",
-} as const
 
 describe("Default hpke error handling", () => {
   let hpke: Hpke
   let secKey: PrivateKey
   beforeAll(async () => {
-    hpke = await makeHpke(hpkeAlg)
+    hpke = (await defaultCryptoProvider.getCiphersuiteImpl(2)).hpke
     const { privateKey } = await hpke.generateKeyPair()
     secKey = privateKey
   })
@@ -48,7 +41,7 @@ describe("Default hpke error handling", () => {
 describe("Default hpke happy path", () => {
   let hpke: Hpke
   beforeAll(async () => {
-    hpke = await makeHpke(hpkeAlg)
+    hpke = (await defaultCryptoProvider.getCiphersuiteImpl(2)).hpke
   })
 
   test("can seal and open a message", async () => {

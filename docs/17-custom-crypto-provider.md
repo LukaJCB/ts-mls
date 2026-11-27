@@ -108,5 +108,6 @@ let aliceGroup = await createGroup({
   - Testing with mock implementations
   - Adding logging or monitoring around crypto operations
 - **Provider Scope**: Pass the same provider to `getCiphersuiteImpl` throughout your application for consistent behavior.
+- **Error Handling**: Built-in providers wrap backend exceptions in `CryptoError` with operation context and the original `cause`. Custom providers control their own error handling.
 - **Alternative Libraries**: This example uses `@noble/hashes` for KDF, but you can use any library that implements the required interfaces.
 - **Performance**: Custom providers allow you to optimize cryptographic operations for your specific platform or hardware.

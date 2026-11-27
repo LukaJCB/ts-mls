@@ -21,6 +21,7 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@hpke/dhkem-x448' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     }
@@ -35,6 +36,7 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
 
@@ -45,6 +47,7 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     case "ML-KEM-1024":
@@ -54,6 +57,7 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@hpke/ml-kem' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
     case "X-Wing":
@@ -63,6 +67,7 @@ export async function makeDhKem(kemAlg: KemAlgorithm): Promise<KemInterface> {
       } catch (err) {
         throw new DependencyError(
           "Optional dependency '@hpke/hybridkem-x-wing' is not installed. Please install it to use this feature.",
+          { cause: err },
         )
       }
   }
