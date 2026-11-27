@@ -367,6 +367,16 @@ export interface CustomExtension {
 // @public (undocumented)
 export function decode<T>(dec: Decoder<T>, t: Uint8Array, maxInputSize?: number): T | undefined;
 
+// @public
+export function decodeClientStateV1(params: DecodeClientStateV1Params): Promise<ClientState>;
+
+// @public (undocumented)
+export interface DecodeClientStateV1Params {
+    cipherSuite: CiphersuiteImpl;
+    encodedState: Uint8Array;
+    maxInputSize?: number;
+}
+
 // @public (undocumented)
 export type Decoder<T> = (b: Uint8Array, offset: number) => [T, number] | undefined;
 

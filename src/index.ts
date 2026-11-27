@@ -40,6 +40,8 @@ export {
 
 export { type SignatureKeyPair, generateSignatureKeyPair } from "./signatureKeyPair.js"
 
+export { decodeClientStateV1, type DecodeClientStateV1Params } from "./clientStateMigration.js"
+
 export { type LeafNodePatch } from "./leafNodePatch.js"
 
 export {
