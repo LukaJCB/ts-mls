@@ -17,6 +17,7 @@ import {
 import { UsageError } from "../../src/mlsError.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { wireformats } from "../../src/wireformat.js"
+import { contentTypes } from "../../src/contentType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 test.concurrent.each(Object.keys(ciphersuites))(`Reinit %s`, async (cs) => {
   await reinit(cs as CiphersuiteName)
@@ -143,8 +144,16 @@ async function reinit(cipherSuite: CiphersuiteName) {
     memberKeyPackages: [bobNewKeyPackage.publicPackage],
     groupId: newGroupId,
     cipherSuite: newCiphersuite,
+    wireAsPublicMessage: true,
+    leafNodePatch: {},
   })
 
+  if (
+    resumeGroupResult.commit.wireformat !== wireformats.mls_public_message ||
+    resumeGroupResult.commit.publicMessage.content.contentType !== contentTypes.commit
+  )
+    throw new Error("Expected public commit")
+  expect(resumeGroupResult.commit.publicMessage.content.commit.path).toBeDefined()
   aliceGroup = resumeGroupResult.newState
 
   bobGroup = await joinGroupFromReinit({

@@ -6,6 +6,7 @@ import { defaultCryptoProvider } from "./crypto/implementation/default/provider.
 import { CryptoProvider } from "./crypto/provider.js"
 import { GroupContextExtension } from "./extension.js"
 import { KeyPackage, PrivateKeyPackage } from "./keyPackage.js"
+import { LeafNodePatch } from "./leafNodePatch.js"
 import { UsageError } from "./mlsError.js"
 import { pskTypes, resumptionPSKUsages, type ResumptionPSKUsageValue, PskId } from "./presharedkey.js"
 import { Proposal, ProposalAdd, ProposalPSK } from "./proposal.js"
@@ -57,6 +58,7 @@ export async function reinitCreateNewGroup(params: {
   provider?: CryptoProvider
   ratchetTreeExtension?: boolean
   wireAsPublicMessage?: boolean
+  leafNodePatch?: LeafNodePatch
 }): Promise<CreateCommitResult> {
   const {
     context,
@@ -70,11 +72,12 @@ export async function reinitCreateNewGroup(params: {
     provider,
     ratchetTreeExtension,
     wireAsPublicMessage,
+    leafNodePatch,
   } = params
   const authService = context.authService
   const cs = await getCiphersuiteImpl(cipherSuite, provider ?? defaultCryptoProvider)
   const newGroup = await createGroup({
-    context: { cipherSuite: cs, authService: context.authService },
+    context: { ...context, cipherSuite: cs },
     groupId,
     keyPackage,
     privateKeyPackage,
@@ -102,6 +105,7 @@ export async function reinitCreateNewGroup(params: {
     extraProposals: [...addProposals, resumptionPsk],
     ratchetTreeExtension,
     wireAsPublicMessage,
+    leafNodePatch,
   })
 }
 
@@ -133,8 +137,10 @@ export async function branchGroup(params: {
   privateKeyPackage: PrivateKeyPackage
   memberKeyPackages: KeyPackage[]
   newGroupId: Uint8Array
+  extensions?: GroupContextExtension[]
   ratchetTreeExtension?: boolean
   wireAsPublicMessage?: boolean
+  leafNodePatch?: LeafNodePatch
 }): Promise<CreateCommitResult> {
   const {
     context,
@@ -143,19 +149,21 @@ export async function branchGroup(params: {
     privateKeyPackage,
     memberKeyPackages,
     newGroupId,
+    extensions,
     ratchetTreeExtension,
     wireAsPublicMessage,
+    leafNodePatch,
   } = params
   const cs = context.cipherSuite
   const authService = context.authService
   const resumptionPsk = makeResumptionPsk(state, resumptionPSKUsages.branch, cs)
 
   const newGroup = await createGroup({
-    context: { cipherSuite: cs, authService },
+    context: { ...context, cipherSuite: cs, authService },
     groupId: newGroupId,
     keyPackage,
     privateKeyPackage,
-    extensions: state.groupContext.extensions,
+    extensions: extensions ?? state.groupContext.extensions,
   })
 
   const addMemberProposals: ProposalAdd[] = memberKeyPackages.map((kp) => ({
@@ -179,6 +187,7 @@ export async function branchGroup(params: {
     extraProposals: [...addMemberProposals, branchPskProposal],
     ratchetTreeExtension,
     wireAsPublicMessage,
+    leafNodePatch,
   })
 }
 

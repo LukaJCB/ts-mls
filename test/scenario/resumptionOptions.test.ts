@@ -9,6 +9,8 @@ import { Proposal, ProposalAdd } from "../../src/proposal.js"
 import { defaultProposalTypes } from "../../src/defaultProposalType.js"
 import { unsafeTestingAuthenticationService } from "../../src/authenticationService.js"
 import { wireformats } from "../../src/wireformat.js"
+import { contentTypes } from "../../src/contentType.js"
+import { defaultExtensionTypes } from "../../src/defaultExtensionType.js"
 import { pskTypes, resumptionPSKUsages } from "../../src/presharedkey.js"
 import {
   createCommitEnsureNoMutation,
@@ -72,6 +74,12 @@ async function branchOptionsTest(cipherSuite: CiphersuiteName) {
 
   const aliceNewKeyPackage = await generateKeyPackage({ credential: aliceCredential, cipherSuite: impl })
   const bobNewKeyPackage = await generateKeyPackage({ credential: bobCredential, cipherSuite: impl })
+  const extensions = [
+    {
+      extensionType: defaultExtensionTypes.required_capabilities,
+      extensionData: { extensionTypes: [], proposalTypes: [], credentialTypes: [] },
+    },
+  ]
 
   const branchCommit = await branchGroup({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
@@ -80,11 +88,18 @@ async function branchOptionsTest(cipherSuite: CiphersuiteName) {
     privateKeyPackage: aliceNewKeyPackage.privatePackage,
     memberKeyPackages: [bobNewKeyPackage.publicPackage],
     newGroupId: new TextEncoder().encode("branch-group"),
+    extensions,
     ratchetTreeExtension: true,
     wireAsPublicMessage: true,
+    leafNodePatch: {},
   })
 
-  expect(branchCommit.commit.wireformat).toBe(wireformats.mls_public_message)
+  if (
+    branchCommit.commit.wireformat !== wireformats.mls_public_message ||
+    branchCommit.commit.publicMessage.content.contentType !== contentTypes.commit
+  )
+    throw new Error("Expected public commit")
+  expect(branchCommit.commit.publicMessage.content.commit.path).toBeDefined()
 
   const branchedBob = await joinGroupFromBranch({
     context: { cipherSuite: impl, authService: unsafeTestingAuthenticationService },
@@ -95,6 +110,7 @@ async function branchOptionsTest(cipherSuite: CiphersuiteName) {
   })
 
   expect(branchedBob.keySchedule.epochAuthenticator).toStrictEqual(branchCommit.newState.keySchedule.epochAuthenticator)
+  expect(branchedBob.groupContext.extensions).toStrictEqual(extensions)
   await testEveryoneCanMessageEveryone([branchCommit.newState, branchedBob], impl)
 }
 

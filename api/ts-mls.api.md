@@ -47,8 +47,10 @@ export function branchGroup(params: {
     privateKeyPackage: PrivateKeyPackage;
     memberKeyPackages: KeyPackage[];
     newGroupId: Uint8Array;
+    extensions?: GroupContextExtension[];
     ratchetTreeExtension?: boolean;
     wireAsPublicMessage?: boolean;
+    leafNodePatch?: LeafNodePatch;
 }): Promise<CreateCommitResult>;
 
 // @public (undocumented)
@@ -1605,6 +1607,7 @@ export function reinitCreateNewGroup(params: {
     provider?: CryptoProvider;
     ratchetTreeExtension?: boolean;
     wireAsPublicMessage?: boolean;
+    leafNodePatch?: LeafNodePatch;
 }): Promise<CreateCommitResult>;
 
 // @public (undocumented)
